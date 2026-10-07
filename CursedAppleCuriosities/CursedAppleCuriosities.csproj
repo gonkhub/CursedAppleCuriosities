@@ -1,0 +1,201 @@
+<Project Sdk="Microsoft.NET.Sdk">
+
+  <PropertyGroup>
+    <TargetFramework>netstandard2.1</TargetFramework>
+    <AssemblyName>CursedAppleCuriosities</AssemblyName>
+    <RootNamespace>CursedAppleCuriosities</RootNamespace>
+    <LangVersion>latest</LangVersion>
+    <Nullable>enable</Nullable>
+    <AllowUnsafeBlocks>true</AllowUnsafeBlocks>
+
+    <!-- Update these two paths if your install locations differ -->
+    <ProfilePath>C:\r2heimman\RiskOfRain2\profiles\Alloyed Goonlective 3-24</ProfilePath>
+    <GameManagedPath>C:\Program Files (x86)\Steam\steamapps\common\Risk of Rain 2\Risk of Rain 2_Data\Managed</GameManagedPath>
+  </PropertyGroup>
+
+  <!-- ───── NLayer (MIT): decodes the cached Deadlock MP3s; RoR2 has Unity audio disabled ───── -->
+  <ItemGroup>
+    <PackageReference Include="NLayer" Version="1.16.0" />
+  </ItemGroup>
+
+  <!-- ───── BepInEx ───── -->
+  <ItemGroup>
+    <EmbeddedResource Include="Resources\icon_kineticdash.png" />
+    <EmbeddedResource Include="Resources\icon_berserker.png" />
+    <EmbeddedResource Include="Resources\icon_burstfire.png" />
+    <EmbeddedResource Include="Resources\icon_frenzy.png" />
+    <EmbeddedResource Include="Resources\icon_healingtempo.png" />
+    <EmbeddedResource Include="Resources\icon_heroicaura.png" />
+    <EmbeddedResource Include="Resources\icon_huntersaura.png" />
+    <EmbeddedResource Include="Resources\icon_intensifyingmagazine.png" />
+    <EmbeddedResource Include="Resources\icon_longrange.png" />
+    <EmbeddedResource Include="Resources\icon_luckyshot.png" />
+    <EmbeddedResource Include="Resources\icon_siphonbullets.png" />
+    <EmbeddedResource Include="Resources\icon_spellslinger.png" />
+    <EmbeddedResource Include="Resources\icon_tormentpulse.png" />
+    <EmbeddedResource Include="Resources\icon_lifestrike.png" />
+    <EmbeddedResource Include="Resources\icon_sprintboots.png" />
+    <EmbeddedResource Include="Resources\icon_spellbreaker.png" />
+    <EmbeddedResource Include="Resources\icon_glasscannon.png" />
+    <EmbeddedResource Include="Resources\icon_spiritsnatch.png" />
+    <EmbeddedResource Include="Resources\icon_restorativeshot.png" />
+    <EmbeddedResource Include="Resources\icon_counterspell.png" />
+    <EmbeddedResource Include="Resources\icon_colossus.png" />
+    <EmbeddedResource Include="Resources\icon_goldengooseegg.png" />
+    <EmbeddedResource Include="Resources\icon_fortitude.png" />
+    <EmbeddedResource Include="Resources\icon_battlevest.png" />
+    <EmbeddedResource Include="Resources\icon_trophycollector.png" />
+    <EmbeddedResource Include="Resources\icon_radiantregen.png" />
+    <EmbeddedResource Include="Resources\icon_toxicbullets.png" />
+    <EmbeddedResource Include="Resources\icon_mysticshot.png" />
+    <EmbeddedResource Include="Resources\icon_tankbuster.png" />
+    <EmbeddedResource Include="Resources\icon_spiritburn.png" />
+    <EmbeddedResource Include="Resources\icon_bloodtribute.png" />
+    <!-- icon_curiositycatalog.png pending art — re-add when ready -->
+    <Reference Include="BepInEx">
+      <HintPath>$(ProfilePath)\BepInEx\core\BepInEx.dll</HintPath>
+      <Private>False</Private>
+    </Reference>
+  </ItemGroup>
+
+  <!-- ───── RoR2 game assemblies ───── -->
+  <ItemGroup>
+    <Reference Include="RoR2">
+      <HintPath>$(GameManagedPath)\RoR2.dll</HintPath>
+      <Private>False</Private>
+    </Reference>
+    <Reference Include="UnityEngine">
+      <HintPath>$(GameManagedPath)\UnityEngine.dll</HintPath>
+      <Private>False</Private>
+    </Reference>
+    <Reference Include="UnityEngine.CoreModule">
+      <HintPath>$(GameManagedPath)\UnityEngine.CoreModule.dll</HintPath>
+      <Private>False</Private>
+    </Reference>
+    <!-- ImageConversionModule — provides ImageConversion.LoadImage for PNG icons -->
+    <Reference Include="UnityEngine.ImageConversionModule">
+      <HintPath>$(GameManagedPath)\UnityEngine.ImageConversionModule.dll</HintPath>
+      <Private>False</Private>
+    </Reference>
+    <!-- HLAPI — provides UnityEngine.Networking.NetworkServer -->
+    <Reference Include="com.unity.multiplayer-hlapi.Runtime">
+      <HintPath>$(GameManagedPath)\com.unity.multiplayer-hlapi.Runtime.dll</HintPath>
+      <Private>False</Private>
+    </Reference>
+    <!-- KCC — needed to access CharacterMotor.body / velocity -->
+    <Reference Include="KinematicCharacterController">
+      <HintPath>$(GameManagedPath)\KinematicCharacterController.dll</HintPath>
+      <Private>False</Private>
+    </Reference>
+    <Reference Include="UnityEngine.UI">
+      <HintPath>$(GameManagedPath)\UnityEngine.UI.dll</HintPath>
+      <Private>False</Private>
+    </Reference>
+    <Reference Include="UnityEngine.InputLegacyModule">
+      <HintPath>$(GameManagedPath)\UnityEngine.InputLegacyModule.dll</HintPath>
+      <Private>False</Private>
+    </Reference>
+    <Reference Include="Rewired_Core">
+      <HintPath>$(GameManagedPath)\Rewired_Core.dll</HintPath>
+      <Private>False</Private>
+    </Reference>
+    <Reference Include="Unity.Addressables">
+      <HintPath>$(GameManagedPath)\Unity.Addressables.dll</HintPath>
+      <Private>False</Private>
+    </Reference>
+    <Reference Include="Unity.ResourceManager">
+      <HintPath>$(GameManagedPath)\Unity.ResourceManager.dll</HintPath>
+      <Private>False</Private>
+    </Reference>
+    <Reference Include="UnityEngine.PhysicsModule">
+      <HintPath>$(GameManagedPath)\UnityEngine.PhysicsModule.dll</HintPath>
+      <Private>False</Private>
+    </Reference>
+    <Reference Include="UnityEngine.AudioModule">
+      <HintPath>$(GameManagedPath)\UnityEngine.AudioModule.dll</HintPath>
+      <Private>False</Private>
+    </Reference>
+    <Reference Include="UnityEngine.UnityWebRequestModule">
+      <HintPath>$(GameManagedPath)\UnityEngine.UnityWebRequestModule.dll</HintPath>
+      <Private>False</Private>
+    </Reference>
+    <Reference Include="UnityEngine.UnityWebRequestAudioModule">
+      <HintPath>$(GameManagedPath)\UnityEngine.UnityWebRequestAudioModule.dll</HintPath>
+      <Private>False</Private>
+    </Reference>
+    <Reference Include="UnityEngine.AnimationModule">
+      <HintPath>$(GameManagedPath)\UnityEngine.AnimationModule.dll</HintPath>
+      <Private>False</Private>
+    </Reference>
+  </ItemGroup>
+
+  <!-- ───── MMHOOK (generated On.* hooks) ───── -->
+  <ItemGroup>
+    <Reference Include="MMHOOK_RoR2">
+      <HintPath>$(ProfilePath)\BepInEx\plugins\MMHOOK\MMHOOK_RoR2.dll</HintPath>
+      <Private>False</Private>
+    </Reference>
+  </ItemGroup>
+
+  <!-- ───── R2API submodules ───── -->
+  <ItemGroup>
+    <Reference Include="R2API.Core">
+      <HintPath>$(ProfilePath)\BepInEx\plugins\RiskofThunder-R2API_Core\R2API.Core\R2API.Core.dll</HintPath>
+      <Private>False</Private>
+    </Reference>
+    <Reference Include="R2API.ContentManagement">
+      <HintPath>$(ProfilePath)\BepInEx\plugins\RiskofThunder-R2API_ContentManagement\R2API.ContentManagement\R2API.ContentManagement.dll</HintPath>
+      <Private>False</Private>
+    </Reference>
+    <Reference Include="R2API.Items">
+      <HintPath>$(ProfilePath)\BepInEx\plugins\RiskofThunder-R2API_Items\R2API.Items\R2API.Items.dll</HintPath>
+      <Private>False</Private>
+    </Reference>
+    <Reference Include="R2API.Language">
+      <HintPath>$(ProfilePath)\BepInEx\plugins\RiskofThunder-R2API_Language\R2API.Language\R2API.Language.dll</HintPath>
+      <Private>False</Private>
+    </Reference>
+    <Reference Include="R2API.RecalculateStats">
+      <HintPath>$(ProfilePath)\BepInEx\plugins\RiskofThunder-R2API_RecalculateStats\R2API.RecalculateStats\R2API.RecalculateStats.dll</HintPath>
+      <Private>False</Private>
+    </Reference>
+    <Reference Include="R2API.Prefab">
+      <HintPath>$(ProfilePath)\BepInEx\plugins\RiskofThunder-R2API_Prefab\R2API.Prefab\R2API.Prefab.dll</HintPath>
+      <Private>False</Private>
+    </Reference>
+    <Reference Include="R2API.Networking">
+      <HintPath>$(ProfilePath)\BepInEx\plugins\RiskofThunder-R2API_Networking\R2API.Networking\R2API.Networking.dll</HintPath>
+      <Private>False</Private>
+    </Reference>
+  </ItemGroup>
+
+  <!-- ───── Post-build: copy DLL to profile for quick in-game testing ───── -->
+  <Target Name="DeployToProfile" AfterTargets="Build">
+    <MakeDir Directories="$(ProfilePath)\BepInEx\plugins\CursedAppleCuriosities" />
+    <Copy SourceFiles="$(TargetPath);$(NLayerDll)" DestinationFolder="$(ProfilePath)\BepInEx\plugins\CursedAppleCuriosities" />
+    <!-- Lash Playtest profile (clone of "Alloyed Goonlective super real"): replaces the imported copy in place, so there is never a second GUID. -->
+    <Copy Condition="Exists('$(PlaytestPluginDir)')" SourceFiles="$(TargetPath);$(NLayerDll)" DestinationFolder="$(PlaytestPluginDir)" />
+  </Target>
+  <PropertyGroup>
+    <NLayerDll>$(NuGetPackageRoot)nlayer\1.16.0\lib\netstandard2.0\NLayer.dll</NLayerDll>
+    <PlaytestPluginDir Condition="'$(PlaytestPluginDir)' == ''">C:\r2heimman\RiskOfRain2\profiles\Lash Playtest\BepInEx\plugins\Unknown-CursedAppleCuriosities</PlaytestPluginDir>
+  </PropertyGroup>
+
+  <!-- ───── Deadlock model converter (Source2Viewer-CLI, MIT) next to the DLL, copied once from HeroBrew's ───── -->
+  <!-- It converts hero models from the player's OWN Deadlock install at runtime. No Valve file is ever shipped. -->
+  <PropertyGroup>
+    <VrfSource Condition="'$(VrfSource)' == ''">C:\r2heimman\Valheim\profiles\HeroBrew Playtest\BepInEx\plugins\gonkhub-HeroBrew\vrf</VrfSource>
+  </PropertyGroup>
+  <Target Name="DeployConverter" AfterTargets="DeployToProfile" Condition="Exists('$(VrfSource)\Source2Viewer-CLI.exe') And !Exists('$(ProfilePath)\BepInEx\plugins\CursedAppleCuriosities\vrf\Source2Viewer-CLI.exe')">
+    <ItemGroup><VrfFiles Include="$(VrfSource)\**\*" /></ItemGroup>
+    <Copy SourceFiles="@(VrfFiles)" DestinationFolder="$(ProfilePath)\BepInEx\plugins\CursedAppleCuriosities\vrf\%(RecursiveDir)" />
+    <Message Importance="high" Text="Deadlock converter copied to the profile (vrf)" />
+  </Target>
+
+  <!-- ───── Post-build (Release only): refresh the Thunderstore distributable zip ───── -->
+  <!-- Calls package-only.ps1 (NOT build-package.ps1) so it never re-invokes the build. -->
+  <Target Name="PackageThunderstore" AfterTargets="Build" Condition="'$(Configuration)' == 'Release'">
+    <Exec Command="powershell -NoProfile -ExecutionPolicy Bypass -File &quot;$(MSBuildProjectDirectory)\..\packaging\package-only.ps1&quot;" />
+  </Target>
+
+</Project>

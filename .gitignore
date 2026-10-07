@@ -1,0 +1,19 @@
+# Build output
+bin/
+obj/
+.vs/
+*.user
+dist/
+
+# Local Claude Code settings
+.claude/settings.local.json
+
+# Valve / Deadlock art: never commit (see README "Icons")
+CursedAppleCuriosities/Resources/Spirit/
+CursedAppleCuriosities/Resources/Vitality/
+CursedAppleCuriosities/Resources/Weapon/
+CursedAppleCuriosities/Resources/legacy icons/
+CursedAppleCuriosities/Resources/icon_*.png
+
+# Deadlock converter / converted assets
+vrf/
