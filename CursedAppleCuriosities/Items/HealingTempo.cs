@@ -11,6 +11,7 @@ namespace CursedAppleCuriosities.Items
         public override string ItemName => "Healing Tempo";
         public override string ItemLangTokenName => "HEALINGTEMPO";
 
+        public override string ItemPickupDesc => "Allies healed near you gain speed and receive stronger healing.";
         public override string ItemFullDescription =>
             $"Emit a <style=cIsUtility>{AuraRange}m</style> aura. " +
             $"Allies inside the aura that receive <style=cIsHealing>active healing</style> gain " +

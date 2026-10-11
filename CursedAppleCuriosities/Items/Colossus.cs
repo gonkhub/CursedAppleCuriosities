@@ -12,6 +12,7 @@ namespace CursedAppleCuriosities.Items
         public override string EquipmentName          => "Colossus";
         public override string EquipmentLangTokenName => "COLOSSUS";
 
+        public override string PickupDesc => "Grow huge, resisting damage and slowing nearby enemies.";
         public override string FullDescription =>
             $"<style=cIsUtility>Grow to massive size</style> for <style=cIsUtility>{Duration}s</style>. " +
             $"Gain <style=cIsHealing>{DamageResist * 100:0}% damage resistance</style> and " +
@@ -56,10 +57,17 @@ namespace CursedAppleCuriosities.Items
             ColossusBuffDef.buffColor = color;
             ColossusBuffDef.iconSprite = ItemBase.CreatePlaceholderSprite(color);
             ContentAddition.AddBuffDef(ColossusBuffDef);
+            EquipmentFx.RegisterBuffFx(ColossusBuffDef, "RoR2/Base/Equipment/GainArmor/ElephantDefense.prefab", "colossus_loop"); // Jade Elephant shell
 
             CreateLang();
             CreateEquipment();
             Hooks();
+        }
+
+        public override void RegisterSounds()
+        {
+            EquipmentFx.RegisterSound("colossus_cast", "sounds/mods/armor/colossus/colossus_cast", range: 60f);
+            EquipmentFx.RegisterSound("colossus_loop", "sounds/mods/armor/colossus/colossus_lp", volume: 0.5f, range: 30f);
         }
 
         public override void Hooks()
@@ -80,6 +88,8 @@ namespace CursedAppleCuriosities.Items
             else
                 body.gameObject.AddComponent<ColossusEffect>();
 
+            EquipmentFx.Sound("colossus_cast", body.corePosition, body.gameObject);
+            EquipmentFx.Effect("RoR2/Base/Characters/Parent/ParentSlamEffect.prefab", body.footPosition, SlowRadius * 0.5f);
             return true;
         }
 

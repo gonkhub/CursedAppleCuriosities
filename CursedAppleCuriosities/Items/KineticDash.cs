@@ -11,6 +11,7 @@ namespace CursedAppleCuriosities.Items
         public override string ItemName => "Kinetic Dash";
         public override string ItemLangTokenName => "KINETICDASH";
 
+        public override string ItemPickupDesc => "Using your utility skill increases attack speed.";
         public override string ItemFullDescription =>
             $"Using your <style=cIsUtility>utility skill</style> grants " +
             $"<style=cIsDamage>+{AttackSpeedPerStack * 100:0}% attack speed</style> " +

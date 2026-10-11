@@ -22,6 +22,7 @@
   <ItemGroup>
     <EmbeddedResource Include="Resources\icon_kineticdash.png" />
     <EmbeddedResource Include="Resources\icon_berserker.png" />
+    <EmbeddedResource Include="Resources\icon_ricochet.png" />
     <EmbeddedResource Include="Resources\icon_burstfire.png" />
     <EmbeddedResource Include="Resources\icon_frenzy.png" />
     <EmbeddedResource Include="Resources\icon_healingtempo.png" />
@@ -44,6 +45,7 @@
     <EmbeddedResource Include="Resources\icon_goldengooseegg.png" />
     <EmbeddedResource Include="Resources\icon_fortitude.png" />
     <EmbeddedResource Include="Resources\icon_battlevest.png" />
+    <EmbeddedResource Include="Resources\model_card.glb" />
     <EmbeddedResource Include="Resources\icon_trophycollector.png" />
     <EmbeddedResource Include="Resources\icon_radiantregen.png" />
     <EmbeddedResource Include="Resources\icon_toxicbullets.png" />
@@ -51,7 +53,14 @@
     <EmbeddedResource Include="Resources\icon_tankbuster.png" />
     <EmbeddedResource Include="Resources\icon_spiritburn.png" />
     <EmbeddedResource Include="Resources\icon_bloodtribute.png" />
-    <!-- icon_curiositycatalog.png pending art — re-add when ready -->
+    <EmbeddedResource Include="Resources\icon_mysticexpansion.png" />
+    <EmbeddedResource Include="Resources\icon_inhibitor.png" />
+    <EmbeddedResource Include="Resources\icon_etherealshift.png" />
+    <EmbeddedResource Include="Resources\icon_refresher.png" />
+    <EmbeddedResource Include="Resources\icon_arcticblast.png" />
+    <EmbeddedResource Include="Resources\icon_cultistsacrifice.png" />
+    <EmbeddedResource Include="Resources\icon_focuslens.png" />
+    <EmbeddedResource Include="Resources\icon_curiositycatalog.png" />
     <Reference Include="BepInEx">
       <HintPath>$(ProfilePath)\BepInEx\core\BepInEx.dll</HintPath>
       <Private>False</Private>
@@ -85,6 +94,10 @@
     <!-- KCC — needed to access CharacterMotor.body / velocity -->
     <Reference Include="KinematicCharacterController">
       <HintPath>$(GameManagedPath)\KinematicCharacterController.dll</HintPath>
+      <Private>False</Private>
+    </Reference>
+    <Reference Include="Unity.TextMeshPro">
+      <HintPath>$(GameManagedPath)\Unity.TextMeshPro.dll</HintPath>
       <Private>False</Private>
     </Reference>
     <Reference Include="UnityEngine.UI">
@@ -127,6 +140,10 @@
       <HintPath>$(GameManagedPath)\UnityEngine.AnimationModule.dll</HintPath>
       <Private>False</Private>
     </Reference>
+    <Reference Include="UnityEngine.ParticleSystemModule">
+      <HintPath>$(GameManagedPath)\UnityEngine.ParticleSystemModule.dll</HintPath>
+      <Private>False</Private>
+    </Reference>
   </ItemGroup>
 
   <!-- ───── MMHOOK (generated On.* hooks) ───── -->
@@ -167,6 +184,10 @@
       <HintPath>$(ProfilePath)\BepInEx\plugins\RiskofThunder-R2API_Networking\R2API.Networking\R2API.Networking.dll</HintPath>
       <Private>False</Private>
     </Reference>
+    <Reference Include="R2API.ProcType">
+      <HintPath>$(ProfilePath)\BepInEx\plugins\RiskofThunder-R2API_ProcType\R2API.ProcType\R2API.ProcType.dll</HintPath>
+      <Private>False</Private>
+    </Reference>
   </ItemGroup>
 
   <!-- ───── Post-build: copy DLL to profile for quick in-game testing ───── -->
@@ -175,27 +196,32 @@
     <Copy SourceFiles="$(TargetPath);$(NLayerDll)" DestinationFolder="$(ProfilePath)\BepInEx\plugins\CursedAppleCuriosities" />
     <!-- Lash Playtest profile (clone of "Alloyed Goonlective super real"): replaces the imported copy in place, so there is never a second GUID. -->
     <Copy Condition="Exists('$(PlaytestPluginDir)')" SourceFiles="$(TargetPath);$(NLayerDll)" DestinationFolder="$(PlaytestPluginDir)" />
+    <!-- Hallowed Concepts Release profile (post-DLC game build): same in-place replacement. -->
+    <Copy Condition="Exists('$(ReleasePluginDir)')" SourceFiles="$(TargetPath);$(NLayerDll)" DestinationFolder="$(ReleasePluginDir)" />
   </Target>
   <PropertyGroup>
     <NLayerDll>$(NuGetPackageRoot)nlayer\1.16.0\lib\netstandard2.0\NLayer.dll</NLayerDll>
     <PlaytestPluginDir Condition="'$(PlaytestPluginDir)' == ''">C:\r2heimman\RiskOfRain2\profiles\Lash Playtest\BepInEx\plugins\Unknown-CursedAppleCuriosities</PlaytestPluginDir>
+    <ReleasePluginDir Condition="'$(ReleasePluginDir)' == ''">C:\r2heimman\RiskOfRain2\profiles\Hallowed Concepts Release\BepInEx\plugins\Unknown-CursedAppleCuriosities</ReleasePluginDir>
   </PropertyGroup>
 
-  <!-- ───── Deadlock model converter (Source2Viewer-CLI, MIT) next to the DLL, copied once from HeroBrew's ───── -->
+  <!-- ───── Deadlock model converter (Source2Viewer-CLI, MIT) next to the DLL, copied once from VrfSource ───── -->
   <!-- It converts hero models from the player's OWN Deadlock install at runtime. No Valve file is ever shipped. -->
   <PropertyGroup>
     <VrfSource Condition="'$(VrfSource)' == ''">C:\r2heimman\Valheim\profiles\HeroBrew Playtest\BepInEx\plugins\gonkhub-HeroBrew\vrf</VrfSource>
   </PropertyGroup>
-  <Target Name="DeployConverter" AfterTargets="DeployToProfile" Condition="Exists('$(VrfSource)\Source2Viewer-CLI.exe') And !Exists('$(ProfilePath)\BepInEx\plugins\CursedAppleCuriosities\vrf\Source2Viewer-CLI.exe')">
+  <!-- Every profile the DLL goes to gets it too (without it a changed clip list can't convert there). -->
+  <Target Name="DeployConverter" AfterTargets="DeployToProfile" Condition="Exists('$(VrfSource)\Source2Viewer-CLI.exe')">
     <ItemGroup><VrfFiles Include="$(VrfSource)\**\*" /></ItemGroup>
-    <Copy SourceFiles="@(VrfFiles)" DestinationFolder="$(ProfilePath)\BepInEx\plugins\CursedAppleCuriosities\vrf\%(RecursiveDir)" />
-    <Message Importance="high" Text="Deadlock converter copied to the profile (vrf)" />
+    <Copy Condition="!Exists('$(ProfilePath)\BepInEx\plugins\CursedAppleCuriosities\vrf\Source2Viewer-CLI.exe')" SourceFiles="@(VrfFiles)" DestinationFolder="$(ProfilePath)\BepInEx\plugins\CursedAppleCuriosities\vrf\%(RecursiveDir)" />
+    <Copy Condition="Exists('$(PlaytestPluginDir)') And !Exists('$(PlaytestPluginDir)\vrf\Source2Viewer-CLI.exe')" SourceFiles="@(VrfFiles)" DestinationFolder="$(PlaytestPluginDir)\vrf\%(RecursiveDir)" />
+    <Copy Condition="Exists('$(ReleasePluginDir)') And !Exists('$(ReleasePluginDir)\vrf\Source2Viewer-CLI.exe')" SourceFiles="@(VrfFiles)" DestinationFolder="$(ReleasePluginDir)\vrf\%(RecursiveDir)" />
   </Target>
 
   <!-- ───── Post-build (Release only): refresh the Thunderstore distributable zip ───── -->
   <!-- Calls package-only.ps1 (NOT build-package.ps1) so it never re-invokes the build. -->
   <Target Name="PackageThunderstore" AfterTargets="Build" Condition="'$(Configuration)' == 'Release'">
-    <Exec Command="powershell -NoProfile -ExecutionPolicy Bypass -File &quot;$(MSBuildProjectDirectory)\..\packaging\package-only.ps1&quot;" />
+    <Exec Command="powershell -NoProfile -ExecutionPolicy Bypass -File &quot;$(MSBuildProjectDirectory)\..\packaging\package-only.ps1&quot; -VrfSource &quot;$(VrfSource)&quot;" />
   </Target>
 
 </Project>

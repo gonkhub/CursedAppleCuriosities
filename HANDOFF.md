@@ -4,8 +4,8 @@ A BepInEx plugin for **Risk of Rain 2** (Survivors of the Void, build 912) that 
 items and equipment **adapted from Deadlock's item catalogue**. The name is homage: Deadlock's
 map is the "Cursed Apple" and items are bought from a "curiosity shop."
 
-**State:** builds clean (0 errors), **28 items + 4 equipment**, v0.9.1.
-Last verified: 2026-06-23.
+**State:** builds clean (0 errors), **31 items + 9 equipment**, **v1.0.0** (released 2026-10-11).
+Last verified: 2026-10-11.
 
 ---
 
@@ -60,7 +60,7 @@ read it before touching tiers, buffs, pickups, or minion interactions.
 
 ---
 
-## Roster (28 items + 4 equipment)
+## Roster (31 items + 9 equipment)
 
 ### White (Tier 1)
 | Item | Mechanic | Art |
@@ -71,8 +71,8 @@ read it before touching tiers, buffs, pickups, or minion interactions.
 | Restorative Shot | Every 3s, next hit heals 3% max HP (+3%/stack) | ✅ |
 | Sprint Boots | While sprinting, ramp to +25% move speed (+12%/stack) over 6s; resets on stop | ✅ |
 | Battle Vest | Above 75% HP → +20%/stack bonus damage | ✅ |
-| Mystic Shot | Every 3s, next hit deals +3% (+3%/stack) bonus burst | ✅ |
-| Trophy Collector | Killing an elite grants a Trophy (max 1, +1 per item). Each Trophy = $50/min (flat — NO per-stack gold scaling). Cleared each stage. | ✅ |
+| Mystic Shot | Every 3s, next hit deals a 100% (+100%/stack) base-damage bonus burst | ✅ |
+| Mystic Expansion | +15%/stack radius on all your BlastAttacks (hook `BlastAttack.Fire`) plus custom area hits via `MysticExpansion.RadiusMultiplier(body)`: Abrams Siphon Life / Seismic Impact, Lash Death Slam impact, Torment Pulse, Spirit Burn. New custom AoEs must call it too. Vanilla VFX not scaled. Not playtested. | ✅ |
 
 ### Green (Tier 2)
 | Item | Mechanic | Art |
@@ -87,7 +87,7 @@ read it before touching tiers, buffs, pickups, or minion interactions.
 | Fortitude | +5% max HP/stack. After 10s no damage, regen 1%/s max HP per stack. | ✅ |
 | Radiant Regen | Skill use heals 20 HP (5s cd). Unique-enemy skill hits grant Radiance stacks (max 6/stack); each = 2 HP/s (+2/stack). | ✅ |
 | Toxic Bullets | 10 hits build Toxin; at max: 1% max HP/s DoT (+1%/stack) for 5s + -50% healing | ✅ |
-| Tankbuster | 500%+ single-hit → 10% of enemy HP bonus burst; 20s cd (-50%/stack, min 2s) | ✅ |
+| Tankbuster | 500%+ single-hit → 10% of enemy max HP bonus burst (+5% max HP per extra stack); flat 10s cd | ✅ |
 
 ### Red (Tier 3)
 | Item | Mechanic | Art |
@@ -98,17 +98,20 @@ read it before touching tiers, buffs, pickups, or minion interactions.
 | Spellslinger | Non-primary skill → stacking atk speed (+7% each), decays | ✅ |
 | Spellbreaker | Block 200+ dmg hit by 75%, 30s cd (-50%/stack) | ✅ |
 | Healing Tempo | +25% team active healing; on heal, allies gain +20% atk/move PER STACK for 8s (+6s/stack) | ✅ |
+| Ricochet | Hits (chance = proc coeff) ricochet to 2 (+1/stack) other enemies within 26m (+5m/stack) for 50% of the hit. Each ricochet has a 50% chance to carry the hit's proc coefficient (else 0 = no on-hit effects). Tagged with an R2API ModdedProcType so ricochets (and anything they proc) never ricochet again. Needs R2API_ProcType. | ✅ |
+| Inhibitor | On hit: enemy Inhibited 4s, deals 25% less damage (hyperbolic 1-1/(1+⅓·stacks)) + 25% slow. Not playtested. | ✅ |
 
 ### Void
 | Item | Tier | Mechanic | Art |
 |---|---|---|---|
 | Spirit Burn | VoidTier2 | Corrupts Tankbusters. 500%+ hit → 15m explosion igniting all enemies; 35% dmg/s (+35%/stack) for 5s. 3s cd. | ✅ |
+| Trophy Collector | VoidTier1 | Corrupts Sprint Boots. Killing an elite grants a Trophy (max 1, +1 per item). Each Trophy = $50/min (flat) and +10% sprint speed. Cleared on teleporter charge / each stage. | ✅ |
 
 ### Lunar
 | Item | Mechanic | Art |
 |---|---|---|
 | Glass Cannon | +25% dmg/stack; each kill = +1% fire rate (50 cap/stack); +25% dmg TAKEN/stack; charges lost on death/stage | ✅ |
-| Curiosity Catalog | At stage start, spawns a personal 3-tier shop ~10m off to the side of the teleporter. Base costs anchored to base-game chests (white 30 ≈ Small Chest, green 75 ≈ Large Chest, red 400 = Legendary Chest); price is difficulty-scaled **live per purchase** (cost = base × coeff^1.25). **Only the catalog holder can shop** the cubes. Blocks chests/multishops (cost==Money) but **allows printers and scrappers**. | ❌ |
+| Curiosity Catalog | When the teleporter event completes (charged **and** boss dead), a lunar droplet launches from the boss drop point and lands as **one combined shop** (CommandCube picker) listing every Curiosity item/equipment, grouped white → green → red. Base costs anchored to base-game chests (white 30, green 75, red 400), difficulty-scaled **live per purchase** (cost = base × coeff^1.25). The menu **stays open between purchases**; options the shopper can't afford are greyed out and refresh after each buy. Gold is only drained to XP when the player leaves via the teleporter, so the whole stage's gold can be spent. **Only catalog holders can shop.** Blocks chests/multishops (cost==Money) but **allows printers and scrappers**. No teleporter → no shop (Bazaar, Void Fields, Moon). | ✅ |
 
 ### Equipment
 | Item | Mechanic | Art |
@@ -117,15 +120,32 @@ read it before touching tiers, buffs, pickups, or minion interactions.
 | Colossus | 35s cd. 8s: grow 1.75×, 65% dmg resist, slow enemies in 20m, -30% move speed | ✅ |
 | Golden Goose Egg | Consumed on use. -10% dmg while held. Hatches into 1–4 items over time (white 0–10 min, green 10–20, red 20–30). Progress persists. | ✅ |
 | Blood Tribute | Toggle (1s cd). While active: drain 5% max HP/s + -50% healing received, but +100% attack speed / +50% move speed. | ✅ |
+| Ethereal Shift | 45s cd. 3s invulnerable (HiddenInvincibility) + Cloak, frozen in place (`CharacterMotor.UpdateVelocity` zeroed) and no skills (`SkillSilence`); then Special-source damage +100% for 8s (`DamageSource.Special`). Not playtested. | ✅ |
+| Refresher | 80s cd. `SkillLocator.ResetSkills()` (networked to the owning client). Not playtested. | ✅ |
+| Arctic Blast | 45s cd. 20m BlastAttack, 300% dmg, `Freeze2s` (frozen <30% HP get executed); unfreezables Slow80; all hit Slow60 4s. Not playtested. | ✅ |
+| Cultist Sacrifice | 120s cd. Aimed (40m, 20° cone, spherecast fallback, reticle): kill a non-boss/non-champion enemy via `Suicide`; pays 4x its own `goldReward` total (elites/rich enemies pay more). Blessing: +50 max HP for 105s (non-stacking). No target = no cooldown. Not playtested. | ✅ |
+| Focus Lens | 45s cd. Aimed (60m, 20° cone, spherecast fallback, reticle; bosses OK): target silenced 4.5s (`SkillSilence`); 50% of ALL damage it took in that window echoes when it ends. Not playtested. | ✅ |
 
 ---
 
-## Survivors (Deadlock heroes, ported from HeroBrew)
+### Equipment FX (2026-10-10)
+- `Items/EquipmentFx.cs`: `Effect(key, pos, scale)` (vanilla Addressables effect, transmitted), `Sound(id, pos, follow)` (Deadlock
+  sound to every client via `SoundMessage`, which now carries an optional follow object so vanilla `Fallback` Wwise events can play
+  for players without Deadlock), `RegisterBuffFx(buff, tempVisualPrefabKey, loopSoundId)` (vanilla TemporaryVisualEffect + sound loop
+  on any body holding the buff; hooks `CharacterBody.UpdateAllTemporaryVisualEffects`, runs on every client).
+- Equipment sounds register in `EquipmentBase.RegisterSounds()` (called by the plugin before `DeadlockInstall.Start`). Paths are
+  Deadlock's `sounds/mods/...` (listed read-only from pak01's directory).
+- `Items/EquipmentTargeting.cs`: shared crosshair targeting + Trophy Hunter's Tricorn reticle for the local player (Focus Lens, Cultist Sacrifice).
+- Slam skills deal no fall damage: `Deadlock/DeadlockFallGuard.cs` (server-side `OnCharacterHitGroundServer` window opened by each slam state; the landing state ends it 1.5 s after impact). Used by Abrams Seismic Impact and Lash Ground Strike.
+  Siphon Life: tethers removed, ring is blue.
 
-HeroBrew (`Documents\GitHub\HeroBrew`) is the Valheim sibling: Deadlock heroes as potion
-transformations. The RoR2 port reuses its pipeline: hero model, animations, sounds and icons are read
-**at runtime from the player's own Deadlock install** (read-only, never while deadlock.exe runs, no Valve
-file ever shipped — same rule as HeroBrew). Without Deadlock the hero plays the same on a stand-in model.
+## Survivors (Deadlock heroes)
+
+The source material is **Deadlock itself**: any hero on its roster is a candidate, and each hero's kit,
+numbers, clips and sounds come from Deadlock's own data (heroes/abilities vdata, animgraphs, localization).
+Hero model, animations, sounds and icons are read **at runtime from the player's own Deadlock install**
+(read-only, never while deadlock.exe runs, no Valve file ever shipped). Without Deadlock the hero plays the
+same on a stand-in model.
 
 - `Deadlock/` — shared layer: `DeadlockInstall` (finds Deadlock via Steam libraries, VPK reader, sounds →
   MP3, vtex → icons, runs `vrf\Source2Viewer-CLI.exe` once to convert model + clips into
@@ -135,26 +155,79 @@ file ever shipped — same rule as HeroBrew). Without Deadlock the hero plays th
 - `Survivors/Lash/` — **Lash** (`CursedAppleLashBody`). Commando's rig cloned as the stand-in (hurtboxes,
   camera, item display bones); `LashModelSwap` puts the Deadlock model on top and makes its renderers the
   `CharacterModel`'s; `LashAnimator` plays his Deadlock clips (anim table in `LashData`).
-  - Primary: 3-round burst gun. Secondary: **Ground Strike** (alt: **Flog**). Utility: **Grapple** (needs a
-    target, enemy or ally player; refunds air jump). Special: **Death Slam** (channel/lock-on, lift, throw).
-  - Passive "Perfect Cardio, Perfect Form, Perfect Hair": Deadlock movement in `LashMovement.cs` —
-    3 stamina pips (4.5 s each, HUD bars under the crosshair), sprint key = dash (ground 10 m / air 8 m, 1 pip),
-    2 air jumps + 2 air dashes (1 pip each), dash-jump, wall jump, slide (Left Ctrl, configurable), no fall damage.
-    `LashMain` replaces the Body machine's main state. Grapple resets air jumps/dashes and refunds a pip.
+  - Primary: 3-round burst gun. Secondary: **Grapple** (needs a
+    target, enemy or ally player; refunds air jump). Utility: **Ground Strike** (alt: **Flog**). Special: **Death Slam** (channel/lock-on, lift, throw).
+  - Passive "Perfect Cardio, Perfect Form, Perfect Hair": the shared Deadlock movement (see below) with Lash's
+    profile `LashData.Movement`: 4 stamina, 2 air jumps + 2 air dashes (heroes default to 3 / 1 / 1), 0.3 s
+    ground dash, slide on Mouse 4. Grapple resets air jumps/dashes and refunds a pip.
+- **Shared Deadlock movement** (`Deadlock/DeadlockMovement.cs`) for every Deadlock hero:
+  `DeadlockMovementProfile` (numbers, Deadlock defaults; sound ids `{Hero}_jump`, `_dash`, `_vo_effort`, `_slide`...;
+  an `Anim` hook) → `DeadlockMovement.Apply(body, profile[, mainStateSubclass])` adds a `DeadlockMover` (stamina),
+  sets `DeadlockMain` as the Body main state, and registers `DeadlockMain/Dash/Slide` + the stamina HUD once.
+  `profile.Bind(config, section)` exposes the player knobs. Includes stamina pips (4.5 s regen, HUD under the
+  crosshair), sprint key = dash, air jumps/dashes (1 pip each), wall jump, slide, out-of-combat sprint (they take fall damage).
+  - **Dash-jump** (Deadlock): jump in a window late in the ground dash (a share of the dash's duration; the pips
+    flash blue) = 2 stamina total, a fixed launch (`DashJumpSpeed` 30 m/s forward, `DashJumpUp` 10.8). A ground
+    dash can't be jumped out of otherwise: a press outside the window does nothing, locks the dash-jump out for
+    that dash, and shows "Dash-jump: too early / too late" under the pips. Window = Deadlock's
+    0.30-0.55 s (seconds, not a share: a share halved it on Lash's short dash). A ground dash always lasts 0.68 s:
+    Lash's 10 m burst takes 0.3 s, then eases to a run (`GroundDashTotalSeconds`, `GroundDashTailDecay`).
+    Works off a ledge mid-dash (coyote) without spending air jumps.
   - Ground Strike interrupts Grapple and Death Slam's hold (the throw fires at once). Grounded Ground Strike = no hop.
   - Numbers + config in `LashData` (`[Lash]` section).
   - Server work (Flog damage+heal, Death Slam lift/throw/impact) goes through R2API.Networking messages in `LashNet`.
-- Build copies the converter (122 MB) once from HeroBrew's playtest profile into
-  `plugins\CursedAppleCuriosities\vrf`. The Thunderstore zip does NOT include it yet — friends get the stand-in model.
+- Build copies the converter (Source2Viewer-CLI, 122 MB) once from `$(VrfSource)` (set in the csproj) into
+  `plugins\CursedAppleCuriosities\vrf`. Since 1.0.0 the Thunderstore zip bundles it as `plugins/vrf` (the csproj passes
+  `$(VrfSource)` to `package-only.ps1`), with `THIRD_PARTY_NOTICES.md` + `LICENSE-SPIRV-Cross.txt` for its licenses.
 - **Playtest profile:** `Lash Playtest` = clone of "Alloyed Goonlective super real" (full modpack) + DebugToolkit.
   The build replaces the DLL in its `Unknown-CursedAppleCuriosities` folder (same folder, so no duplicate GUID).
 - Test: pick Lash in the lobby, or `spawn_as CursedAppleLashBody` (DebugToolkit). Log lines start `[Lash]` / `[Deadlock]`.
-- Next heroes follow the same shape (HeroBrew has Abrams): data table + states + `ModelRequest`.
+- **Shared hero layer** (2026-10-10): `Deadlock/DeadlockHeroModel.cs` (`DeadlockHeroDef` + `DeadlockModelSwap` +
+  `DeadlockAnimator` + `DeadlockFootsteps`, lifted from Lash's model code; Lash's own rules are now his `LashModelSwap.Def`),
+  `Deadlock/DeadlockSurvivorKit.cs` (skills, slots, skin copy, extra state machine, mute stand-in) and
+  `Deadlock/DeadlockHeroVoice.cs` (pain / low health / kill / killstreak / death VO by `{hero}_vo_*`). Lash still uses his
+  own copies of the kit and voice code (unchanged); Abrams uses the shared ones.
+- `Survivors/Abrams/` — **Abrams** (`CursedAppleAbramsBody`), same shape as Lash: `AbramsData` (numbers, anims, sounds,
+  `[Abrams]` config), `AbramsModel` (hero def), `AbramsStates`, `AbramsNet` (server hits, carrying, Siphon/Resilience
+  components), `AbramsSurvivor`. Numbers read from Deadlock build 25841406 (`hero_atlas`, `citadel_ability_bull_*`;
+  Deadlock calls him "bull"/"atlas": icons `bull_*`, VO `sounds/vo/atlas/`). Clips picked from his animgraphs
+  (`abrams_playercontrol_abilities`, `abrams_upperbodyreplace`).
+  - Primary: **Shotgun** — 9 pellets every 0.63 s, infinite ammo (no reload, like Lash: reloading was cut by playtest).
+  - Secondary: **Siphon Life** (own `Siphon` state machine, runs alongside everything; synced buff + `AbramsSiphon`
+    ticks true damage every 0.25 s, heals 35%). Alt: **Heavy Melee** (wind-up lunge, 5 m cone punch).
+  - Utility: **Shoulder Charge** — 1.4 s, 18.75→30 m/s, steers 140°/s, scoops enemies up (server `AbramsCarry`), wall =
+    stun 1.1 s (Deadlock 0.3 + its upgrade, the "gift"); bosses bounce it. No shooting mid-charge (playtest); Siphon Life / Seismic Impact can still be cast.
+  - Special: **Seismic Impact** — leap, hover ≤3 s with a landing ring, special/primary to crash (100 m/s), enemies on
+    the way ride down, 9 m × 6 m impact, 1.6 s stun, 0.7 s planted.
+  - Passive: **Infernal Resilience** — 25% of damage taken regenerates over 20 s (Deadlock 13%), plus Deadlock's melee
+    lifesteal upgrade (Heavy Melee heals 18% of damage dealt). Shared movement with hero defaults (3 stamina, 1 air jump,
+    1 air dash), Lash's playtested controls (slide on Mouse 4, wall jump), and a longer, slower ground dash than Lash's
+    (14 m in 0.85 s vs 10 m in 0.3 s), with his own `dash_ground` clip (from Deadlock's hero_dash graph).
+    Pending Infernal Resilience heal is drawn on every health bar after current health (`AbramsResilienceBar`, ember
+    tint); the server syncs the amount with `AbramsPendingMessage`.
+  - His shotgun is a separate bone chain off root_motion (`weapon`). The clips already pose it in his right hand (grip on
+    `hand_R`); `DeadlockHeroDef.HandIK` = ("weapon", "hand_R") records that hand-to-gun offset before the aim bend and
+    restores it after, so the gun follows the hand. Don't snap to the `weapon_hand_R` socket: it sits 19 cm / ~98° off
+    the clips' grip and turned the gun sideways (playtest 2026-10-10).
+    `GlbLoader` also folds a clip's baked root_motion turn into bones under root_motion (his pelvis): newer AnimGraph2
+    clips like `dash_ground` have one, which laid him on his side.
+  - Coat fix: `GlbLoader.RemoveRootTravel` puts `$cloth_*` tracks in root_motion's frame (his coat ran
+    ahead and snapped back each loop). Applies to every hero's clips.
+  - **Not playtested yet.** Test: `spawn_as CursedAppleAbramsBody`; log lines `[Abrams]` / `[Deadlock]`.
 
 ---
 
 ## Recent changes (since last handoff)
 
+- **Curiosity Catalog rework (2026-10-10, untested in-game).** Replaced the persistent per-stage
+  3-cube shop with a single shop that **drops when the teleporter event completes**
+  (`onTeleporterChargedGlobal` → wait for `bossGroup.enabled == false`). The drop is a real
+  `PickupDroplet` tagged with `CuriosityShopDroplet`; an `On.PickupDropletController.CreatePickup`
+  hook swaps its landing pickup for the shop cube. All three tiers are merged into one picker;
+  `CuriosityPickerMarker` now holds parallel `Pickups`/`BaseCosts` arrays. Purchases no longer
+  destroy/respawn the cube: `SubmitChoice` charges gold and calls `SetOptionsServer` to re-grey
+  unaffordable options. Removed config `[Curiosity Catalog] Teleporter Offset (m)` and the
+  `Stage.Start` spawn.
 - **v0.9.1 — Critical config-crash fix.** A config key with an apostrophe
   (`"Hunter's Aura - ..."`) threw `ArgumentException` (BepInEx forbids `= \n \t \ " ' [ ]` in
   section/key names) **inside `HuntersAura.Init`**, which aborted the whole plugin `Awake`:
@@ -196,11 +269,17 @@ file ever shipped — same rule as HeroBrew). Without Deadlock the hero plays th
 
 ## Pending / next work
 
-**Art (the main gap):**
-- **Curiosity Catalog is the only item still iconless.** Its `IconFileName` already points at
-  `icon_curiositycatalog.png`, but that PNG doesn't exist in `Resources\` and its csproj
-  `<EmbeddedResource>` line is still commented out — drop the 128px PNG in and uncomment to finish.
-  Every other item and equipment now has a wired, embedded 128px icon.
+**Release packaging (1.0.0):**
+- `package-only.ps1` writes zip entries with `/` (Compress-Archive on Windows PowerShell wrote `\`).
+- Player docs: `packaging\README.md` / `CHANGELOG.md` (CHANGELOG backfilled from the old dist zips).
+- A full Release build shows ~55 pre-existing warnings (nullable CS86xx, obsolete RoR2 APIs CS0618); not errors.
+- Untested in-game at release: Abrams, the Catalog drop shop, Mystic Expansion, Inhibitor, Ethereal Shift,
+  Refresher, Arctic Blast, Cultist Sacrifice, Focus Lens.
+
+**Art:**
+- Every item and equipment has a wired, embedded 128px icon. The Curiosity Catalog's (1.0.0) is the
+  Deadlock Graphical Library's "(Gradient) MARK_Filled" mark, cropped and resized; the source PNG is
+  gitignored in `Resources\`. With an icon it also gets the ground icon-card model.
 - To add art: drop `icon_x.png` (128px) in `Resources\`, add `<EmbeddedResource>` line to csproj,
   add `protected override string IconFileName => "icon_x.png";` to the item class.
 - Stray asset: `Resources\icon_juggernaut.png` is an orphan (Juggernaut was deleted; not embedded,
@@ -211,10 +290,15 @@ file ever shipped — same rule as HeroBrew). Without Deadlock the hero plays th
 - `Spirit Burn` (VoidTier2) is in `_redPriceOverrides` → prices as red.
 - Equipment tabs: Golden Goose Egg → white, Blood Tribute → green, Counterspell → green, everything else → red.
 
-**Shelved — do NOT retry from scratch:**
-- **Custom world pickup model.** Script-built flat card cannot be forced opaque in RoR2's deferred
-  pipeline. Correct path is a Unity AssetBundle (Thunderkit). Items have NO world model
-  (pickupModelPrefab null) — that's the clean state.
+**World pickup models (2026-10-10):**
+- Every item and equipment with an icon shows a spinning icon card on the ground / multishop terminal:
+  `Resources\model_card.glb` (converted from battlevest.fbx), textured per item with its own icon at load
+  time by `Items\PickupModels.cs` (`ModelFileName` on `ItemBase`/`EquipmentBase`, default `PickupModels.IconCard`).
+  It avoids the two old blockers: clones Commando's opaque material (from-scratch hgstandard is see-through)
+  and pads mesh bounds to a cube (PickupDisplay scales by bounds volume). Confirmed working for Battle Vest.
+- A bespoke model: `blender -b --factory-startup -P tools\fbx_to_glb.py -- in.fbx CursedAppleCuriosities\Resources\model_x.glb`,
+  add the `<EmbeddedResource>` line, and `protected override string? ModelFileName => "model_x.glb";`.
+  Items without an icon (Curiosity Catalog) get no model.
 
 ---
 

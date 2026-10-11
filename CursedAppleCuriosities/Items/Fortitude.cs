@@ -11,6 +11,7 @@ namespace CursedAppleCuriosities.Items
         public override string ItemName => "Fortitude";
         public override string ItemLangTokenName => "FORTITUDE";
 
+        public override string ItemPickupDesc => "Increase max health. Regenerate quickly when out of danger.";
         public override string ItemFullDescription =>
             $"Gain <style=cIsHealing>+{HealthBonusPerStack * 100:0}% max health</style> " +
             $"<style=cStack>(+{HealthBonusPerStack * 100:0}% per stack)</style>. " +

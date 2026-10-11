@@ -11,6 +11,7 @@ namespace CursedAppleCuriosities.Items
         public override string ItemName => "Spellbreaker";
         public override string ItemLangTokenName => "SPELLBREAKER";
 
+        public override string ItemPickupDesc => "Reduce the damage of large hits.";
         public override string ItemFullDescription =>
             $"Taking a hit that deals <style=cIsHealth>{HealthFraction * 100:0}%+ of your current HP</style> " +
             $"reduces that hit by <style=cIsHealth>{DamageReduction * 100:0}%</style>. " +

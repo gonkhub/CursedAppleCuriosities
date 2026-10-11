@@ -1,43 +1,30 @@
 # Cursed Apple Curiosities
 
-A pack of **17 custom items** for Risk of Rain 2, built for playtesting with friends.
+Items, equipment and survivors adapted from Deadlock's item shop for Risk of Rain 2.
 
-## Items
+- **31 items** across white, green, red, void and lunar tiers
+- **9 equipment**
+- **Artifact of the Curio**: only this mod's items drop
+- **Curiosity Catalog** (lunar): clearing the teleporter drops a shop selling this mod's
+  items, in exchange for opening chests
+- **Lash** and **Abrams** as playable survivors, with Deadlock-style movement (stamina,
+  air dashes, dash-jumps, slides, wall jumps)
 
-### Tier 1 (White)
-- **Long Range** — Bonus damage to distant enemies, scaling with range.
-- **Kinetic Dash** — Using your utility ability boosts fire rate.
-- **Spirit Strike** — Close-range hits shred armor and deal small bonus damage.
-- **Intensifying Magazine** — Damage amps as you fire continuously.
-- **Restorative Shot** — Periodically, your next hit heals you.
-
-### Tier 2 (Green)
-- **Berserker** — Taking damage increases outgoing damage.
-- **Burst Fire** — Landing attacks boosts movement speed and fire rate.
-- **Heroic Aura** — Radiate damage resistance and attack speed to nearby allies.
-- **Superior Duration** — All timed buffs and debuffs last longer.
-- **Torment Pulse** — Periodically damage nearby enemies.
-- **Hunter's Aura** — Nearby enemies take more damage, especially when alone.
-
-### Tier 3 (Red)
-- **Lucky Shot** — Chance to double damage.
-- **Siphon Bullets** — Hitting enemies temporarily grants max HP.
-- **Frenzy** — When low on health, gain large stat bonuses.
-- **Spellslinger** — Using abilities rapidly builds fire rate.
-- **Spellbreaker** — Massively reduces the damage of a single large hit.
-- **Healing Tempo** — Healing is more effective and grants stat bonuses.
-
-## Installation
-
-Install with a mod manager (r2modman / Thunderstore Mod Manager). Dependencies are
-installed automatically. For local playtesting, use **Settings → Import local mod**
-and select the packaged `.zip`.
+The main numbers for every item and equipment can be changed in
+`BepInEx/config/com.cursedapple.curiosities.cfg`.
 
 ## Multiplayer
 
-All players in the lobby should have the mod installed at the same version.
+Everyone in the lobby needs the mod, at the same version.
 
 ## Notes
 
-This is an early playtest build (0.1.0). Item icons are present; balance and visual
-polish are ongoing. Feedback welcome.
+If you own Deadlock, Lash and Abrams use their models, animations and voices from your
+install (close Deadlock the first time you play). Otherwise they use a stand-in body.
+
+## Credits
+
+Item icons are cropped from Deadlock item card art © Valve, from the
+[Deadlock Graphical Library](https://forums.playdeadlock.com/resources/deadlock-graphical-library.30/).
+Not affiliated with Valve or Hopoo Games. Bundled third-party tools are listed in
+`THIRD_PARTY_NOTICES.md`.

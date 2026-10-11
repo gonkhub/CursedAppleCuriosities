@@ -11,6 +11,7 @@ namespace CursedAppleCuriosities.Items
         public override string ItemName => "Mystic Shot";
         public override string ItemLangTokenName => "MYSTICSHOT";
 
+        public override string ItemPickupDesc => "Periodically, your next hit deals bonus damage.";
         public override string ItemFullDescription =>
             $"Every <style=cIsUtility>{CooldownDuration}s</style>, " +
             $"your next hit deals a bonus burst of " +
@@ -26,12 +27,14 @@ namespace CursedAppleCuriosities.Items
 
         public const float CooldownDuration     = 3f;
         public static float BaseDamagePercent;
-        public const float DamagePercentPerStack = 0.03f;
+        public static float DamagePercentPerStack;
 
         public override void Init(ConfigFile config)
         {
-            BaseDamagePercent = config.Bind("White", "Mystic Shot - Burst Damage Percent", 0.03f,
+            BaseDamagePercent = config.Bind("White", "Mystic Shot - Burst Damage", 1.0f,
                 "Bonus burst damage (fraction of base damage) on the periodic charged hit at 1 stack.").Value;
+            DamagePercentPerStack = config.Bind("White", "Mystic Shot - Burst Damage Per Stack", 1.0f,
+                "Additional burst damage (fraction of base damage) per extra copy of the item.").Value;
             CreateLang();
             CreateItem();
             Hooks();

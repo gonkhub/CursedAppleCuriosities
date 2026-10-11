@@ -1,6 +1,7 @@
 using System.Collections.Generic;
 using CursedAppleCuriosities;
 using CursedAppleCuriosities.Deadlock;
+using CursedAppleCuriosities.Items;
 using CursedAppleCuriosities.Survivors.Lash;
 using RoR2;
 using UnityEngine;
@@ -127,7 +128,7 @@ namespace EntityStates.CursedApple.Lash
         public override InterruptPriority GetMinimumInterruptPriority() => InterruptPriority.Skill;
     }
 
-    // ================= Secondary: Ground Strike =================
+    // ================= Utility: Ground Strike =================
 
     /// <summary>
     /// Ground Strike. In the air, Lash dives where you aim (at most 60 degrees from straight down) and crashes down,
@@ -138,8 +139,9 @@ namespace EntityStates.CursedApple.Lash
         public override void OnEnter()
         {
             base.OnEnter();
+            DeadlockFallGuard.Protect(gameObject, 2f);
             DeadlockSounds.Play("lash_gs_whoosh", transform.position, gameObject);
-            DeadlockSounds.Play("lash_vo_power1", transform.position, gameObject);
+            DeadlockSounds.Play("lash_vo_power2", transform.position, gameObject);
             if (!isAuthority) return;
             if (characterMotor.isGrounded)
             {
@@ -170,6 +172,7 @@ namespace EntityStates.CursedApple.Lash
         public override void OnEnter()
         {
             base.OnEnter();
+            DeadlockFallGuard.Protect(gameObject, 15f); // the dive lasts until he lands
             LashModelSwap.Play(gameObject, "gs_drop");
             _loop = DeadlockSounds.Loop("lash_gs_loop", gameObject, 4f);
             if (!isAuthority) return;
@@ -221,11 +224,12 @@ namespace EntityStates.CursedApple.Lash
         public override void OnEnter()
         {
             base.OnEnter();
+            DeadlockFallGuard.Protect(gameObject, 1.5f, landed: true); // covers the landing report reaching the server
             LashModelSwap.Play(gameObject, "gs_land");
             Vector3 at = characterBody.footPosition;
             DeadlockSounds.Play("lash_gs_impact", at);
             if (LashSurvivor.GroundSlamEffect != null)
-                EffectManager.SpawnEffect(LashSurvivor.GroundSlamEffect, new EffectData { origin = at, scale = LashData.GroundStrikeRadius }, false);
+                EffectManager.SpawnEffect(LashSurvivor.GroundSlamEffect, new EffectData { origin = at, scale = LashData.GroundStrikeRadius * MysticExpansion.RadiusMultiplier(characterBody) }, false);
             if (!isAuthority) return;
             characterMotor.velocity = Vector3.zero;
             float coeff = LashData.GroundStrikeDamage
@@ -245,7 +249,7 @@ namespace EntityStates.CursedApple.Lash
                 falloffModel = BlastAttack.FalloffModel.None,
                 crit = RollCrit(),
                 procCoefficient = 1f,
-                damageType = DamageSource.Secondary,
+                damageType = DamageSource.Utility,
                 attackerFiltering = AttackerFiltering.NeverHitSelf,
             }.Fire();
             CursedAppleCuriositiesPlugin.Logger?.LogDebug($"[Lash] Ground Strike: fell {Fallen:0.0} m, {coeff * 100f:0}% damage, hit {r.hitCount}");
@@ -265,7 +269,7 @@ namespace EntityStates.CursedApple.Lash
         public override InterruptPriority GetMinimumInterruptPriority() => InterruptPriority.PrioritySkill;
     }
 
-    // ================= Secondary (alt): Flog =================
+    // ================= Utility (alt): Flog =================
 
     /// <summary>Flog: whip every enemy in a cone in front of Lash and heal for part of the damage.</summary>
     public class Flog : BaseSkillState
@@ -317,10 +321,10 @@ namespace EntityStates.CursedApple.Lash
         public override InterruptPriority GetMinimumInterruptPriority() => InterruptPriority.PrioritySkill;
     }
 
-    // ================= Utility: Grapple =================
+    // ================= Secondary: Grapple =================
 
     /// <summary>
-    /// Grapple: lash onto a target (enemy or friendly player) and get launched up at about 45 degrees toward it;
+    /// Grapple: lash onto a target (enemy or friendly player) and get launched up steeply (GrappleLaunchAngle) toward it;
     /// no steering until you jump or dash. Gift from Deadlock's upgrade: air jumps, air dashes and a stamina pip back.
     /// </summary>
     public class Grapple : BaseSkillState
@@ -332,7 +336,7 @@ namespace EntityStates.CursedApple.Lash
             base.OnEnter();
             LashModelSwap.Play(gameObject, "grapple_start");
             DeadlockSounds.Play("lash_grapple_cast", transform.position, gameObject);
-            DeadlockSounds.Play("lash_vo_power2", transform.position, gameObject);
+            DeadlockSounds.Play("lash_vo_power1", transform.position, gameObject);
             var tracker = GetComponent<LashGrappleTracker>();
             _target = tracker != null ? tracker.Target : null;
             if (_target != null)
@@ -345,7 +349,7 @@ namespace EntityStates.CursedApple.Lash
             }
             if (!isAuthority) return;
             if (_target == null) { outer.SetNextStateToMain(); return; }
-            // A speedy launch up at about 45 degrees toward the target (playtest: no arc onto it).
+            // A speedy, steep launch up toward the target (playtest: no arc onto it).
             Vector3 flat = _target.transform.position - characterBody.footPosition;
             flat.y = 0f;
             flat = flat.sqrMagnitude > 0.01f ? flat.normalized : characterDirection.forward;
@@ -356,7 +360,7 @@ namespace EntityStates.CursedApple.Lash
             characterMotor.disableAirControlUntilCollision = true;
             // Deadlock's Grapple upgrade, given free: air jumps and air dashes come back, plus a stamina pip.
             characterMotor.jumpCount = 1;
-            var stamina = GetComponent<LashStamina>();
+            var stamina = GetComponent<DeadlockMover>();
             if (stamina != null) { stamina.AirDashes = 0; stamina.Refund(1); }
             characterDirection.forward = new Vector3(v.x, 0f, v.z).sqrMagnitude > 0.01f ? new Vector3(v.x, 0f, v.z) : characterDirection.forward;
             // Just the launch: Lash is free at once (other skills, jumps, dashes) while the arc carries him (playtest).
@@ -383,7 +387,7 @@ namespace EntityStates.CursedApple.Lash
         public override void OnEnter()
         {
             base.OnEnter();
-            LashModelSwap.Play(gameObject, "ds_channel_start");
+            LashModelSwap.Play(gameObject, characterMotor != null && characterMotor.isGrounded ? "ds_channel_ground" : "ds_channel");
             DeadlockSounds.Play("lash_ds_cast", transform.position, gameObject);
             DeadlockSounds.Play("lash_vo_power4", transform.position, gameObject);
             _loop = DeadlockSounds.Loop("lash_ds_channel", gameObject, LashData.DeathSlamChannel + 0.2f);
@@ -404,7 +408,7 @@ namespace EntityStates.CursedApple.Lash
             if (_ring == null || characterBody == null) return;
             Vector3 me = characterBody.footPosition;
             Fx.Ring(_ring, me, LashData.DeathSlamRange);
-            bool ground = Physics.Raycast(me + Vector3.up * 0.5f, Vector3.down, out RaycastHit hit, LashData.DeathSlamHeight, LayerIndex.world.mask, QueryTriggerInteraction.Ignore) && hit.distance > 2f;
+            bool ground = Physics.Raycast(me + Vector3.up * 0.5f, Vector3.down, out RaycastHit hit, 2000f, LayerIndex.world.mask, QueryTriggerInteraction.Ignore) && hit.distance > 2f;
             if (_groundRing != null)
             {
                 _groundRing.enabled = ground;
@@ -417,9 +421,11 @@ namespace EntityStates.CursedApple.Lash
             base.FixedUpdate();
             if (!isAuthority) return;
             float dt = Time.fixedDeltaTime;
-            // Hover; horizontal momentum carries on untouched, no steering (playtest): grapple over a group, drift above it.
+            // Hover; horizontal momentum carries on, no steering (playtest): grapple over a group, drift above it,
+            // but no faster than DeathSlamChannelMaxSpeed (playtest: a grapple launch carried him far off).
             Vector3 v = characterMotor.velocity;
-            characterMotor.velocity = new Vector3(v.x, Mathf.Max(0f, v.y * 0.5f), v.z);
+            Vector3 flat = Vector3.ClampMagnitude(new Vector3(v.x, 0f, v.z), LashData.DeathSlamChannelMaxSpeed);
+            characterMotor.velocity = new Vector3(flat.x, Mathf.Max(0f, v.y * 0.5f), flat.z);
             StartAimMode(0.5f);
 
             Ray aim = GetAimRay();
@@ -434,7 +440,7 @@ namespace EntityStates.CursedApple.Lash
                     CharacterBody b = tc.body;
                     if (b == null || b.healthComponent == null || !b.healthComponent.alive) continue; // bosses too (playtest)
                     Vector3 d = b.corePosition - me;
-                    if (Mathf.Abs(d.y) <= LashData.DeathSlamHeight && new Vector2(d.x, d.z).magnitude <= LashData.DeathSlamRange) inRange.Add(b);
+                    if (d.y <= LashData.DeathSlamHeight && new Vector2(d.x, d.z).magnitude <= LashData.DeathSlamRange) inRange.Add(b);
                 }
             }
             foreach (CharacterBody b in inRange)
@@ -451,22 +457,17 @@ namespace EntityStates.CursedApple.Lash
             foreach (CharacterBody b in _locked.ToArray())
                 if (b == null || b.healthComponent == null || !b.healthComponent.alive) Unlock(b);
 
-            // Release early with primary (Deadlock: left mouse) or special again. The gun doesn't fire: only the main state reads it.
-            bool early = fixedAge > 0.2f && (inputBank.skill1.justPressed || inputBank.skill4.justPressed);
+            // Release early with primary (Deadlock: left mouse) or special again, once something is locked (playtest:
+            // a reflex click with nothing locked cancelled it). The gun doesn't fire: only the main state reads it.
+            bool early = fixedAge > 0.2f && _locked.Count > 0 && (inputBank.skill1.justPressed || inputBank.skill4.justPressed);
             if (fixedAge < LashData.DeathSlamChannel && !early) return;
             if (_locked.Count == 0) { DeadlockSounds.Play("lash_ds_miss", transform.position, gameObject); outer.SetNextStateToMain(); return; }
-            // Scoop up every locked enemy Lash can still see (a wall between them breaks the throw for that one).
+            // Every locked enemy is thrown (playtest: a line-of-sight check here silently cancelled throws whenever
+            // terrain was between Lash and his targets; the lock itself already needed them under the crosshair).
             var targets = new List<GameObject>();
-            foreach (CharacterBody b in _locked) if (InSight(b)) targets.Add(b.gameObject);
-            if (targets.Count == 0) { DeadlockSounds.Play("lash_ds_miss", transform.position, gameObject); outer.SetNextStateToMain(); return; }
+            foreach (CharacterBody b in _locked) targets.Add(b.gameObject);
             LashNet.ToServer(new SlamMessage { Phase = 0, Attacker = gameObject, Targets = targets.ToArray() });
             outer.SetNextState(new DeathSlamHold { Targets = targets.ToArray() });
-        }
-
-        private bool InSight(CharacterBody b)
-        {
-            Vector3 from = characterBody.corePosition, to = b.corePosition;
-            return !Physics.Linecast(from, to, LayerIndex.world.mask, QueryTriggerInteraction.Ignore);
         }
 
         private void Lock(CharacterBody b)
@@ -499,6 +500,22 @@ namespace EntityStates.CursedApple.Lash
     }
 
     /// <summary>
+    /// From the end of the channel through the throw, Lash doesn't move at all (playtest): no drift, no falling, no
+    /// movement input (the Body machine runs these states, so the motor would keep the last input's direction).
+    /// </summary>
+    internal static class DeathSlamFreeze
+    {
+        public static void Apply(CharacterMotor motor, CharacterDirection? direction)
+        {
+            if (motor == null) return;
+            motor.velocity = Vector3.zero;
+            motor.rootMotion = Vector3.zero;
+            motor.moveDirection = Vector3.zero;
+            if (direction != null) direction.moveVector = Vector3.zero;
+        }
+    }
+
+    /// <summary>
     /// The locked enemies are pulled up and held; Lash stops dead in the air. Ground Strike or Grapple can cut in
     /// (playtest: waiting felt far too long): the throw then happens at once, so Lash can dive after them.
     /// </summary>
@@ -510,14 +527,14 @@ namespace EntityStates.CursedApple.Lash
         public override void OnEnter()
         {
             base.OnEnter();
-            LashModelSwap.Play(gameObject, "ds_lift");
+            if (isAuthority) DeathSlamFreeze.Apply(characterMotor, characterDirection);
         }
 
         public override void FixedUpdate()
         {
             base.FixedUpdate();
             if (!isAuthority) return;
-            Hover();
+            DeathSlamFreeze.Apply(characterMotor, characterDirection);
             StartAimMode(0.5f);
             if (fixedAge < LashData.DeathSlamPull + LashData.DeathSlamHang) return;
             ThrowNow();
@@ -526,19 +543,12 @@ namespace EntityStates.CursedApple.Lash
 
         private LineRenderer? _ring;
 
-        /// <summary>No falling while holding them up; horizontal momentum carries on, no steering (playtest).</summary>
-        private void Hover()
-        {
-            Vector3 v = characterMotor.velocity;
-            characterMotor.velocity = new Vector3(v.x, 0f, v.z);
-        }
-
         public override void Update()
         {
             base.Update();
             if (!isAuthority || _thrown || characterBody == null) return;
             if (_ring == null) _ring = Fx.Outline("CursedApple_DeathSlamImpact");
-            Fx.Ring(_ring, ThrowPoint(), LashData.DeathSlamRadius);
+            Fx.Ring(_ring, ThrowPoint(), LashData.DeathSlamRadius * MysticExpansion.RadiusMultiplier(characterBody));
         }
 
         /// <summary>Where the crosshair points, at most throw_m away, brought down to the ground.</summary>
@@ -585,18 +595,17 @@ namespace EntityStates.CursedApple.Lash
         public override void OnEnter()
         {
             base.OnEnter();
-            LashModelSwap.Play(gameObject, "ds_throw");
+            LashModelSwap.Play(gameObject, characterMotor != null && characterMotor.isGrounded ? "ds_throw_ground" : "ds_throw");
             DeadlockSounds.Play("lash_ds_launch", transform.position, gameObject);
+            if (isAuthority) DeathSlamFreeze.Apply(characterMotor, characterDirection);
         }
 
         public override void FixedUpdate()
         {
             base.FixedUpdate();
             if (!isAuthority) return;
-            if (fixedAge >= 0.4f) { outer.SetNextStateToMain(); return; }
-            // Hover while they fly, still drifting on the momentum Lash had.
-            Vector3 v = characterMotor.velocity;
-            characterMotor.velocity = new Vector3(v.x, 0f, v.z);
+            DeathSlamFreeze.Apply(characterMotor, characterDirection); // dead still while they fly
+            if (fixedAge >= 0.4f) outer.SetNextStateToMain();
         }
 
         public override InterruptPriority GetMinimumInterruptPriority() => InterruptPriority.Any;

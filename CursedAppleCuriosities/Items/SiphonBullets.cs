@@ -12,6 +12,7 @@ namespace CursedAppleCuriosities.Items
         public override string ItemName          => "Siphon Bullets";
         public override string ItemLangTokenName => "SIPHONBULLETS";
 
+        public override string ItemPickupDesc => "Hits steal max health from enemies.";
         public override string ItemFullDescription =>
             $"Hitting an enemy steals " +
             $"<style=cIsHealing>{StealPerHitPercent * 100:0}% of the damage dealt</style> " +
@@ -91,7 +92,9 @@ namespace CursedAppleCuriosities.Items
 
         private void GetStatCoefficients(CharacterBody sender, RecalculateStatsAPI.StatHookEventArgs args)
         {
-            if (sender.inventory?.GetItemCountEffective(ItemDef) <= 0) return;
+            // Unity null checks (?. misses destroyed objects, e.g. a body torn down between stages).
+            if (sender == null || sender.inventory == null || ItemDef == null) return;
+            if (sender.inventory.GetItemCountEffective(ItemDef) <= 0) return;
             var tracker = sender.GetComponent<SiphonBulletsTracker>();
             if (tracker != null) args.baseHealthAdd += tracker.TotalStolen;
         }

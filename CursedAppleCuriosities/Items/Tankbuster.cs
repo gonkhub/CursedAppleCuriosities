@@ -11,11 +11,12 @@ namespace CursedAppleCuriosities.Items
         public override string ItemName => "Tankbuster";
         public override string ItemLangTokenName => "TANKBUSTER";
 
+        public override string ItemPickupDesc => "Big hits deal bonus damage based on the enemy's health.";
         public override string ItemFullDescription =>
             $"Dealing <style=cIsDamage>{DamageThreshold * 100:0}%+ damage</style> in a single hit " +
-            $"deals a bonus burst of <style=cIsDamage>{BurstPercent * 100:0}% of the enemy's HP</style>. " +
-            $"<style=cIsUtility>{BaseCooldown:0}s cooldown</style> " +
-            $"<style=cStack>(-{CooldownReduction * 100:0}% per stack)</style>.";
+            $"deals a bonus burst of <style=cIsDamage>{BurstPercent * 100:0}% of the enemy's max HP</style> " +
+            $"<style=cStack>(+{StackPercent * 100:0}% per stack)</style>. " +
+            $"<style=cIsUtility>{Cooldown:0}s cooldown</style>.";
 
         public override string ItemLore => "Somebody's been hitting the gym.";
 
@@ -25,9 +26,8 @@ namespace CursedAppleCuriosities.Items
 
         public const float DamageThreshold  = 5f;
         public static float BurstPercent;
-        public const float BaseCooldown     = 20f;
-        public const float CooldownReduction = 0.50f;
-        public const float MinCooldown      = 2f;
+        public static float StackPercent;
+        public const float Cooldown         = 10f;
 
         public static ItemDef? StaticItemDef;
 
@@ -35,6 +35,8 @@ namespace CursedAppleCuriosities.Items
         {
             BurstPercent = config.Bind("Green", "Tankbuster - Burst Percent Of Enemy HP", 0.10f,
                 "Bonus burst damage as a fraction of the enemy's max HP on a heavy hit.").Value;
+            StackPercent = config.Bind("Green", "Tankbuster - Stack Percent Of Enemy HP", 0.05f,
+                "Extra burst damage per additional stack, as a fraction of the enemy's max HP.").Value;
             CreateLang();
             CreateItem();
             StaticItemDef = ItemDef;
@@ -73,16 +75,14 @@ namespace CursedAppleCuriosities.Items
             var di = new DamageInfo();
             di.attacker         = attackerBody.gameObject;
             di.inflictor        = attackerBody.gameObject;
-            di.damage           = victimHC.fullHealth * BurstPercent;
+            di.damage           = victimHC.fullHealth * (BurstPercent + StackPercent * (itemCount - 1));
             di.procCoefficient  = 0f;
             di.damageType       = DamageType.BypassArmor;
             di.damageColorIndex = DamageColorIndex.WeakPoint;
             di.position         = damageInfo.position;
             victimHC.TakeDamage(di);
 
-            float cooldown = Mathf.Max(MinCooldown,
-                BaseCooldown * Mathf.Pow(1f - CooldownReduction, itemCount - 1));
-            tracker.StartCooldown(cooldown);
+            tracker.StartCooldown(Cooldown);
         }
     }
 

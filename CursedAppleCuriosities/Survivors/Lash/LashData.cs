@@ -4,7 +4,7 @@ using CursedAppleCuriosities.Deadlock;
 namespace CursedAppleCuriosities.Survivors.Lash
 {
     /// <summary>
-    /// Lash's numbers. Deadlock values (HeroBrew's sheets, synced from Deadlock) are kept where RoR2 has the same
+    /// Lash's numbers. Deadlock values (from Deadlock's hero data) are kept where RoR2 has the same
     /// scale (metres, seconds, speeds); damage becomes RoR2 damage coefficients and cooldowns RoR2-length.
     /// Headline knobs are in the [Lash] config section.
     /// </summary>
@@ -19,49 +19,31 @@ namespace CursedAppleCuriosities.Survivors.Lash
         public const float BaseDamage = 12f;
         public const float DamagePerLevel = 2.4f;
         public const float BaseSpeed = 7.2f;           // Deadlock EMaxMoveSpeed
-        public const int JumpCount = 3;                 // a ground jump + Lash's two air jumps (stamina each)
-
-        // ---- Deadlock movement (HeroBrew's movement sheet, synced from Deadlock) ----
-        public static int StaminaPips = 5;              // Deadlock EStamina 3; 5 by playtest (as in HeroBrew)
-        public const float StaminaRegenSeconds = 4.5f;  // 1 / EStaminaRegenPerSecond
-        public static float QuailStaminaRegen = 0.25f;  // Wax Quail: +25% stamina regen speed per stack (Lash never sprints, so no jump boost)
-        public const int AirDashesPerAir = 2;
-        public static bool GroundDash = true;
-        public const float GroundDashMetres = 10f;
-        public static float GroundDashSeconds = 0.3f;   // Deadlock 0.68; faster by playtest, quick enough to dodge projectiles
-        public const float AirDashMetres = 8f, AirDashSeconds = 0.47f, AirDashEndSpeed = 0.2f;
-        // Slide (Deadlock values; HeroBrew's movement sheet)
-        public static UnityEngine.KeyCode SlideKey = UnityEngine.KeyCode.Mouse3; // Mouse 4 (back side button), by playtest
-        public const float SlideDashSpeed = 16.5f, SlideActivation = 8.89f, SlideSustain = 4.32f;
-        public static float SlideFriction = 1.2f;       // Deadlock 0.8; more by playtest
-        public const float SlideMaxStart = 16.5f;       // a slide never starts faster than Deadlock's dash-slide (playtest: too fast)
-        public const float SlideFrictionSlope = 0.15f, SlideSlopeMinDeg = 8f, SlideSlopeFacingDeg = 75f;
-        public const float SlideAccMinSlopeDeg = 5f, SlideAccMaxSlopeDeg = 45f, SlideAccMin = 12.7f, SlideAccMax = 21.59f;
-        public const float SlideMaxSpeedMin = 30.48f, SlideMaxSpeed = 38.1f, SlideTurnDegPerSec = 90f;
-        // Wall jump
-        public static float WallJumpUp = 22f;           // Deadlock 13.3; much stronger by playtest
-        public const float WallJumpOutMax = 7.9f, WallJumpOutMin = 5.7f, WallJumpRecharge = 1.25f;
-        public const float WallJumpPowerMin = 0.6f;     // a chained wall jump within 1.25 s (Deadlock 0.2)
-        // Air movement (playtest: RoR2's air control felt sluggish). Lash keeps his momentum in the air; input
-        // steers it at AirAccel (RoR2's own is 20 m/s2 toward walk speed), speed above a run bleeds off slowly.
-        public static float AirAccel = 50f;
-        // Deadlock's sprint: out of combat (RoR2: 5 s without dealing or taking damage) and moving, Lash sprints for
-        // real (so every sprint item works: Energy Drink, Rose Buckler, Little Disciple, Weeping Fungus, modded ones),
-        // building up from a run to Deadlock's sprint speed over SprintRampSeconds. The sprint key only dashes.
-        public const float OutOfCombatSpeed = 2.1f / 7.2f; // Deadlock ESprintSpeed over EMaxMoveSpeed: +29%
-        public static float SprintRampSeconds = 2f;
-        public const float AirDrag = 3f;
-        public const float DashJumpMetres = 19f, DashJumpVertical = 10.8f, DashJumpWindowStart = 0.3f, DashJumpWindowEnd = 0.55f;
+        // ---- Deadlock movement (shared: Deadlock/DeadlockMovement.cs). Lash's overrides of the hero defaults ----
+        public static readonly DeadlockMovementProfile Movement = new DeadlockMovementProfile
+        {
+            Hero = Hero,
+            Anim = LashModelSwap.Play,
+            StaminaPips = 4,              // heroes have 3; Lash is unique in having more (nerfed to 4)
+            AirJumps = 2,                 // heroes have 1
+            AirDashesPerAir = 2,          // heroes have 1
+            GroundDashSeconds = 0.3f,     // the 10 m burst (Deadlock 0.68): quick enough to dodge projectiles, by playtest;
+                                          // then it eases to a run until 0.68 s, keeping Deadlock's 0.3-0.55 s dash-jump window
+            SlideKey = UnityEngine.KeyCode.Mouse3, // Mouse 4 (back side button), by playtest
+            SlideFriction = 1.2f,         // Deadlock 0.8; more by playtest
+            WallJumpUp = 22f,             // Deadlock 13.3; much stronger by playtest
+            WallJumpPowerMin = 0.6f,      // a chained wall jump within 1.25 s (Deadlock 0.2)
+        };
 
         // ---- primary: Lash's gun (3-round burst) ----
         public static float GunDamage = 0.75f;
         public const int BurstCount = 3;
-        public const float BurstInterval = 0.1f;        // Deadlock 0.084; slower by playtest
-        public static float BurstCycle = 0.55f;         // Deadlock 0.2625; slower by playtest
+        public const float BurstInterval = 0.084f;      // Deadlock
+        public static float BurstCycle = 0.2625f;       // Deadlock
         public static float GunSpread = 0.35f;          // share of RoR2's spread bloom (1 = Commando-like)
         public const float GunBloomPerShot = 0.1f;
 
-        // ---- secondary: Ground Strike ----
+        // ---- utility: Ground Strike ----
         public static float GroundStrikeDamage = 5f;
         public static float GroundStrikeDamagePerMetre = 0.5f;
         public const float GroundStrikeDamagePerMetreBeyond = 0.35f;
@@ -72,40 +54,42 @@ namespace CursedAppleCuriosities.Survivors.Lash
         public const float GroundStrikeMinAimDeg = 60f; // dive at most this far from straight down
         public static float GroundStrikeSpeed = 90f;  // Deadlock StrikeVelocity 50; faster by playtest
 
-        // ---- secondary alt: Flog ----
+        // ---- utility alt: Flog ----
         public static float FlogDamage = 6f;
         public static float FlogHealFraction = 0.25f;
         public static float FlogCooldown = 8f;
         public const float FlogRange = 25f;
         public const float FlogConeDeg = 40f;           // Deadlock TargetingConeAngle
 
-        // ---- utility: Grapple ----
+        // ---- secondary: Grapple ----
         public static float GrappleCooldown = 5f;
         public static float GrappleRange = 75f;         // Deadlock: 30 m; much longer by playtest
         public const float GrappleConeDeg = 25f;
         public static float GrappleLaunchSpeed = 35f;   // m/s, launched toward the target
-        public const float GrappleLaunchAngle = 45f;    // degrees above flat
+        public static float GrappleLaunchAngle = 55f;   // degrees above flat (45 at first; more vertical by playtest)
 
         // ---- special: Death Slam ----
         public static float DeathSlamDamage = 12f;
-        public static float DeathSlamCooldown = 16f;
+        public static float DeathSlamCooldown = 48f;
         // Lock-on area (playtest): a big cylinder around Lash, far above and below him; inside it, an enemy locks
         // when the crosshair stays near it (DeathSlamAimDeg from the camera's aim) for DeathSlamLockOn seconds.
         public static float DeathSlamRange = 30f;       // cylinder radius (Deadlock AbilityCastRange 20)
-        public const float DeathSlamHeight = 60f;       // above and below Lash
+        public const float DeathSlamHeight = 60f;       // above Lash; below him it is uncapped (playtest: grappling high lost targets underneath)
         public static float DeathSlamAimDeg = 12f;
         public const float DeathSlamChannel = 2.76f;
+        public static float DeathSlamChannelMaxSpeed = 6f; // horizontal drift cap while channeling (playtest: grapple speed carried him too far)
         public static float DeathSlamLockOn = 0.25f;    // Deadlock 0.7; faster by playtest
         public static int DeathSlamMaxTargets = 6;
         public const float DeathSlamPull = 1f;          // Deadlock BoostTime
         public const float DeathSlamHang = 0.6f;
-        public const float DeathSlamThrow = 14f;
+        public static float DeathSlamThrow = 28f;       // max throw distance, m (Deadlock 14; doubled by playtest)
         public const float DeathSlamSpeed = 40.6f;
         public const float DeathSlamRadius = 6f;        // Deadlock ImpactRadius
         public const float DeathSlamSlowSeconds = 4f;
 
         public static void Bind(ConfigFile c)
         {
+            Movement.Bind(c, Section);
             BaseHealth = c.Bind(Section, "Base Health", BaseHealth, "Lash max health at level 1 (+36 per level).").Value;
             GunDamage = c.Bind(Section, "Gun - Damage", GunDamage, "Damage coefficient per bullet (3-round bursts).").Value;
             BurstCycle = c.Bind(Section, "Gun - Time Between Bursts", BurstCycle, "Seconds after a burst before the next (before attack speed).").Value;
@@ -117,19 +101,13 @@ namespace CursedAppleCuriosities.Survivors.Lash
             FlogDamage = c.Bind(Section, "Flog - Damage", FlogDamage, "Damage coefficient to every enemy in the cone.").Value;
             FlogHealFraction = c.Bind(Section, "Flog - Heal Fraction", FlogHealFraction, "Share of Flog damage dealt healed back.").Value;
             FlogCooldown = c.Bind(Section, "Flog - Cooldown", FlogCooldown, "Seconds.").Value;
-            GrappleLaunchSpeed = c.Bind(Section, "Grapple - Launch Speed", GrappleLaunchSpeed, "Metres per second, launched up at 45 degrees toward the target.").Value;
+            GrappleLaunchSpeed = c.Bind(Section, "Grapple - Launch Speed", GrappleLaunchSpeed, "Metres per second, launched up toward the target.").Value;
+            GrappleLaunchAngle = c.Bind(Section, "Grapple - Launch Angle", GrappleLaunchAngle, "Degrees above flat Lash is launched at toward the target (90 = straight up).").Value;
+            DeathSlamThrow = c.Bind(Section, "Death Slam - Throw Distance", DeathSlamThrow, "Farthest (metres, flat) Death Slam can throw enemies toward your crosshair.").Value;
+            DeathSlamChannelMaxSpeed = c.Bind(Section, "Death Slam - Channel Speed Limit", DeathSlamChannelMaxSpeed, "Most horizontal speed (m/s) Lash keeps while channeling Death Slam.").Value;
             GrappleRange = c.Bind(Section, "Grapple - Range", GrappleRange, "Metres.").Value;
-            StaminaPips = c.Bind(Section, "Stamina", StaminaPips, "Stamina pips for dashes and air jumps.").Value;
-            GroundDashSeconds = c.Bind(Section, "Ground Dash - Duration", GroundDashSeconds, "Seconds to cover the 10 m ground dash (lower = faster).").Value;
-            SprintRampSeconds = c.Bind(Section, "Sprint - Build Up Time", SprintRampSeconds, "Seconds for the out-of-combat sprint to build up to full speed.").Value;
-            QuailStaminaRegen = c.Bind(Section, "Wax Quail - Stamina Regen", QuailStaminaRegen, "Faster stamina refill per Wax Quail (0.25 = +25% per stack).").Value;
-            GroundDash = c.Bind(Section, "Ground Dash", GroundDash, "Sprint key on the ground dashes (one stamina). Off = no ground dash (Lash never sprints either way).").Value;
-            SlideKey = c.Bind(Section, "Slide Key", SlideKey, "Hold on the ground while fast (sprint, dash) or on a downhill slope to slide; hold in the air to slide on landing. Deadlock's crouch.").Value;
-            SlideFriction = c.Bind(Section, "Slide - Friction", SlideFriction, "Share of slide speed lost per second on flat ground.").Value;
-            AirAccel = c.Bind(Section, "Air Control", AirAccel, "How hard Lash steers in the air (m/s2). He keeps his momentum either way.").Value;
             DeathSlamLockOn = c.Bind(Section, "Death Slam - Lock On Time", DeathSlamLockOn, "Seconds an enemy must stay in the cone to be locked on.").Value;
-            WallJumpUp = c.Bind(Section, "Wall Jump - Up Speed", WallJumpUp, "Upward launch speed off a wall (m/s). Chained wall jumps within 1.25 s start at 60% of it.").Value;
-            DeathSlamRange = c.Bind(Section, "Death Slam - Radius", DeathSlamRange, "Radius of the lock-on cylinder around Lash (metres; it reaches 60 m above and below him).").Value;
+            DeathSlamRange = c.Bind(Section, "Death Slam - Radius", DeathSlamRange, "Radius of the lock-on cylinder around Lash (metres; it reaches 60 m above him and all the way down below).").Value;
             DeathSlamAimDeg = c.Bind(Section, "Death Slam - Aim Angle", DeathSlamAimDeg, "How close (degrees) the crosshair must be to an enemy to lock onto it.").Value;
             GrappleCooldown = c.Bind(Section, "Grapple - Cooldown", GrappleCooldown, "Seconds (only spent when there is a target).").Value;
             DeathSlamDamage = c.Bind(Section, "Death Slam - Damage", DeathSlamDamage, "Damage coefficient where thrown enemies land.").Value;
@@ -144,7 +122,7 @@ namespace CursedAppleCuriosities.Survivors.Lash
         public const string MuzzleBone = "muzzle_fx";     // Lash's gun is his glove
 
         public const string IconPortrait = "panorama/images/heroes/lash_sm_psd.vtex_c";
-        // Deadlock's own file names are swapped for Lash's first ability (checked in HeroBrew).
+        // Deadlock's own file names are swapped for Lash's first ability.
         public const string IconGroundStrike = "panorama/images/hud/abilities/lash/lash_death_slam_psd.vtex_c";
         public const string IconGrapple = "panorama/images/hud/abilities/lash/lash_lash_psd.vtex_c";
         public const string IconFlog = "panorama/images/hud/abilities/lash/lash_flog_psd.vtex_c";
@@ -185,30 +163,28 @@ namespace CursedAppleCuriosities.Survivors.Lash
             ("grapple_air", "ability_grapple_in_air_loop", true, "", "full"),
             ("grapple_land", "ability_grapple_land", false, "locomotion", "full"),
             ("flog", "ability_flog", false, "locomotion", "full"),
-            ("ds_channel_start", "cast_channeling_start", false, "ds_channel", "full"),
-            ("ds_channel", "cast_channeling_loop", true, "", "full"),
-            ("ds_lift", "ability_deathslam_lift_inair", false, "hold", "full"),
+            // Death Slam's own targeting pose (cast_channeling_* is the generic item channel every hero shares).
+            // Death Slam, as Lash's Deadlock ability graph (lash_abilitymask) has it: the lift IS the channel (he
+            // raises them while locking on, then holds the pose), then the throw. Ground and in-air variants.
+            // (Not cast_channeling_*: the item cast graph; not lift_loop: a hero being lifted by someone else.)
+            ("ds_channel", "ability_deathslam_lift_inair", false, "hold", "full"),
+            ("ds_channel_ground", "ability_deathslam_lift", false, "hold", "full"),
             ("ds_throw", "ability_deathslam_throw_inair", false, "locomotion", "full"),
+            ("ds_throw_ground", "ability_deathslam_throw", false, "locomotion", "full"),
+            ("parry", "parry", false, "locomotion", "full"),          // Counterspell (DeadlockMover plays it)
+            ("parry_air", "parry_in_air", false, "in_air", "full"),
             ("death", "death_01", false, "hold", "full"),
         };
 
         /// <summary>
-        /// Clips whose own travel is removed (HeroBrew root_lock): Deadlock moves heroes with these animations, RoR2
+        /// Clips whose own travel is removed (root lock): Deadlock moves heroes with these animations, RoR2
         /// moves the body itself, so the model would run ahead. Measured pelvis drift: ground dash 13 m, sprints 5.4 m
         /// a loop, hard landing (the roll) 3.8 m, Ground Strike drop 2.8 m, death 1.6 m, air dashes 1.5 m, Death Slam
         /// throw 1.3 m, wall jump 1.3 m.
         /// </summary>
-        private static readonly System.Collections.Generic.HashSet<string> Locked = new System.Collections.Generic.HashSet<string>
-        { "dash_ground", "hard_land", "gs_drop", "death", "dash_air_forward", "dash_air_back", "dash_air_left", "dash_air_right", "ds_throw", "wall_jump" };
+        public static readonly System.Collections.Generic.HashSet<string> Locked = new System.Collections.Generic.HashSet<string>
+        { "dash_ground", "hard_land", "gs_drop", "death", "dash_air_forward", "dash_air_back", "dash_air_left", "dash_air_right", "ds_throw", "ds_throw_ground", "wall_jump" };
 
-        public static bool RootLocked(string state) => Locked.Contains(state) || state.StartsWith("sprint_");
-
-        public static string[] ClipNames()
-        {
-            var l = new System.Collections.Generic.List<string>();
-            foreach (var a in Anims) if (!l.Contains(a.Clip)) l.Add(a.Clip);
-            return l.ToArray();
-        }
 
         public static readonly DeadlockSound[] Sounds =
         {

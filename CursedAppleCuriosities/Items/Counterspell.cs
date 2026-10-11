@@ -1,4 +1,6 @@
 using BepInEx.Configuration;
+using CursedAppleCuriosities.Deadlock;
+using CursedAppleCuriosities.Survivors.Lash;
 using R2API;
 using RoR2;
 using UnityEngine;
@@ -11,6 +13,7 @@ namespace CursedAppleCuriosities.Items
         public override string EquipmentName => "Counterspell";
         public override string EquipmentLangTokenName => "COUNTERSPELL";
 
+        public override string PickupDesc => "Negate the next instance of damage you take.";
         public override string FullDescription =>
             $"Become <style=cIsHealing>warded</style> for <style=cIsUtility>{WardDuration}s</style>. " +
             $"The next instance of damage you take is <style=cIsHealing>completely negated</style>" +
@@ -27,6 +30,17 @@ namespace CursedAppleCuriosities.Items
         public const float WardDuration = 2f;
         public static float CooldownSeconds;
         public static float HealFraction; // reward on a successful block; set 0 for pure block
+
+        // Deadlock's own: the parry cast on activation, and m_strSuccessProcSound (Mods.Armor.Spellbreaker.Proc)
+        // when the ward blocks something.
+        public const string CastSound  = "counterspell_cast";
+        public const string BlockSound = "counterspell_block";
+
+        public override void RegisterSounds()
+        {
+            DeadlockSounds.Register(new DeadlockSound { Id = CastSound, VpkPrefix = "sounds/player/melee/shared/melee_parry_cast", Volume = 0.9f, Range = 30f });
+            DeadlockSounds.Register(new DeadlockSound { Id = BlockSound, VpkPrefix = "sounds/mods/armor/spellbreaker/spellbreaker_proc", Volume = 0.8f, Range = 40f, MinGap = 0.05f });
+        }
 
         public static BuffDef? WardBuffDef;
         public static EquipmentDef? StaticEquipmentDef;
@@ -46,6 +60,7 @@ namespace CursedAppleCuriosities.Items
             WardBuffDef.buffColor   = color;
             WardBuffDef.iconSprite  = ItemBase.CreatePlaceholderSprite(color);
             ContentAddition.AddBuffDef(WardBuffDef);
+            EquipmentFx.RegisterBuffFx(WardBuffDef, "RoR2/DLC1/Items/BearVoid/BearVoidEffect.prefab"); // Safer Spaces bubble while warded
 
             CreateLang();
             CreateEquipment();
@@ -66,6 +81,8 @@ namespace CursedAppleCuriosities.Items
             var ward = body.GetComponent<CounterspellWard>()
                 ?? body.gameObject.AddComponent<CounterspellWard>();
             ward.Activate(WardDuration);
+            SoundMessage.Everyone(CastSound, body.corePosition, body.gameObject);
+            EquipmentFx.Effect("RoR2/DLC1/Items/ImmuneToDebuff/ImmuneToDebuffEffect.prefab", body.corePosition, body.radius);
             return true; // start the cooldown
         }
 
@@ -85,6 +102,8 @@ namespace CursedAppleCuriosities.Items
                 if (ward != null && ward.IsActive)
                 {
                     ward.Consume();
+                    SoundMessage.Everyone(BlockSound, self.body.corePosition, self.body.gameObject);
+                    EquipmentFx.Effect("RoR2/Base/Items/Bear/BearProc.prefab", self.body.corePosition, self.body.radius);
 
                     if (HealFraction > 0f)
                         self.body.healthComponent?.Heal(self.body.maxHealth * HealFraction, default(ProcChainMask));

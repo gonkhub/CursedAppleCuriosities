@@ -32,6 +32,7 @@ namespace CursedAppleCuriosities.Items
         public override string EquipmentName          => "Golden Goose Egg";
         public override string EquipmentLangTokenName => "GOLDENGOOSEEGG";
 
+        public override string PickupDesc => "Lower your damage while held. Hatch it for items that grow rarer over time.";
         public override string FullDescription =>
             $"While held, deal <style=cIsHealth>-{DamagePenalty * 100:0}% damage</style>. " +
             $"<style=cIsUtility>Activate</style> to hatch: yields " +
@@ -77,6 +78,9 @@ namespace CursedAppleCuriosities.Items
             Hooks();
         }
 
+        public override void RegisterSounds()
+            => EquipmentFx.RegisterSound("gooseegg_hatch", "sounds/mods/tech/golden_egg/golden_egg_activate", fallback: "Play_UI_coin");
+
         public override void Hooks()
         {
             On.RoR2.CharacterBody.OnInventoryChanged += CharacterBody_OnInventoryChanged;
@@ -114,6 +118,9 @@ namespace CursedAppleCuriosities.Items
 
             var (tier, count) = GetReward(CurrentStage);
             SpawnItems(body, tier, count);
+            EquipmentFx.Sound("gooseegg_hatch", body.corePosition, body.gameObject);
+            EquipmentFx.Effect("RoR2/Base/Items/BonusGoldPackOnKill/MoneyPackPickupEffect.prefab", body.corePosition, body.radius * 2f);
+            EquipmentFx.Effect("RoR2/Base/Common/VFX/LevelUp/LevelUpEffect.prefab", body.corePosition, body.radius);
 
             if (MaturationBuffDef != null && MaturationBuffDef.buffIndex != BuffIndex.None)
                 body.SetBuffCount(MaturationBuffDef.buffIndex, 0);

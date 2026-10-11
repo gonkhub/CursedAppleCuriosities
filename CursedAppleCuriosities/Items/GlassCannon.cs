@@ -11,6 +11,7 @@ namespace CursedAppleCuriosities.Items
         public override string ItemName => "Glass Cannon";
         public override string ItemLangTokenName => "GLASSCANNON";
 
+        public override string ItemPickupDesc => "Deal more damage and gain attack speed from kills... but take more damage.";
         public override string ItemFullDescription =>
             $"Gain <style=cIsDamage>+{FlatDamageBonus * 100:0}% damage</style> <style=cStack>per stack</style>. " +
             $"Each <style=cIsDamage>kill</style> grants a <style=cIsDamage>Glass Charge</style>, adding " +

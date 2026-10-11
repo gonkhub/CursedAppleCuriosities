@@ -12,6 +12,7 @@ namespace CursedAppleCuriosities.Items
         public override string ItemName => "Radiant Regen";
         public override string ItemLangTokenName => "RADIANTREGEN";
 
+        public override string ItemPickupDesc => "Using skills heals you. Skill hits build health regeneration.";
         public override string ItemFullDescription =>
             $"Using a skill heals for <style=cIsHealing>{HealPerStack:0} HP</style> " +
             $"<style=cIsUtility>({BurstCooldown:0}s cooldown)</style>. " +

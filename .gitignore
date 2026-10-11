@@ -17,3 +17,6 @@ CursedAppleCuriosities/Resources/icon_*.png
 
 # Deadlock converter / converted assets
 vrf/
+
+# Source art for icons (Deadlock Graphical Library, Valve)
+CursedAppleCuriosities/Resources/(Gradient) MARK_Filled.png

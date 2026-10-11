@@ -1,0 +1,57 @@
+using BepInEx.Configuration;
+using RoR2;
+
+namespace CursedAppleCuriosities.Items
+{
+    public class MysticExpansion : ItemBase
+    {
+        public override string ItemName => "Mystic Expansion";
+        public override string ItemLangTokenName => "MYSTICEXPANSION";
+
+        public override string ItemPickupDesc => "Your explosions are larger.";
+        public override string ItemFullDescription =>
+            $"Increase the <style=cIsDamage>radius</style> of all your <style=cIsDamage>area-of-effect attacks</style> by " +
+            $"<style=cIsDamage>{RadiusPerStack * 100:0}%</style> <style=cStack>(+{RadiusPerStack * 100:0}% per stack)</style>.";
+
+        public override string ItemLore =>
+            "Same spell, bigger circle. Mind your eyebrows.";
+
+        public override ItemTier Tier => ItemTier.Tier1;
+        public override ItemTag[] ItemTags => new[] { ItemTag.Damage, ItemTag.Utility };
+        protected override string IconFileName => "icon_mysticexpansion.png";
+
+        public static float RadiusPerStack;
+
+        private static ItemDef? _def;
+
+        public override void Init(ConfigFile config)
+        {
+            RadiusPerStack = config.Bind("White", "Mystic Expansion - Radius Per Stack", 0.15f,
+                "Area-of-effect radius increase per stack (linear).").Value;
+            CreateLang();
+            CreateItem();
+            _def = ItemDef;
+            Hooks();
+        }
+
+        public override void Hooks()
+        {
+            // Nearly every area attack in the game (explosive projectiles, grenades, mines, Gasoline,
+            // Will-o'-the-wisp, Arctic Blast...) resolves through BlastAttack.Fire with the owner as attacker.
+            On.RoR2.BlastAttack.Fire += BlastAttack_Fire;
+        }
+
+        private static BlastAttack.Result BlastAttack_Fire(On.RoR2.BlastAttack.orig_Fire orig, BlastAttack self)
+        {
+            self.radius *= RadiusMultiplier(self.attacker != null ? self.attacker.GetComponent<CharacterBody>() : null);
+            return orig(self);
+        }
+
+        public static float RadiusMultiplier(CharacterBody? body)
+        {
+            if (_def == null || body == null || body.inventory == null) return 1f;
+            int count = body.inventory.GetItemCountEffective(_def);
+            return count > 0 ? 1f + RadiusPerStack * count : 1f;
+        }
+    }
+}

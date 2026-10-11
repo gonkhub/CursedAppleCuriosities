@@ -11,6 +11,7 @@ namespace CursedAppleCuriosities.Items
         public override string ItemName => "Berserker";
         public override string ItemLangTokenName => "BERSERKER";
 
+        public override string ItemPickupDesc => "Taking damage builds Rage, increasing your damage.";
         public override string ItemFullDescription =>
             $"Each time you take damage (once per <style=cIsUtility>{StackCooldown}s</style>), gain a " +
             $"<style=cIsDamage>Rage</style> stack granting <style=cIsDamage>+{DamagePerStack * 100:0}% damage</style> each. " +

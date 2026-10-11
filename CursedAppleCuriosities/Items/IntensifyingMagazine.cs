@@ -11,6 +11,7 @@ namespace CursedAppleCuriosities.Items
         public override string ItemName => "Intensifying Magazine";
         public override string ItemLangTokenName => "INTENSIFYINGMAGAZINE";
 
+        public override string ItemPickupDesc => "Repeatedly hitting enemies ramps up your damage.";
         public override string ItemFullDescription =>
             $"Repeatedly hitting enemies builds a damage bonus up to " +
             $"<style=cIsDamage>+{BaseMaxBonus * 100:0}% damage</style> over " +

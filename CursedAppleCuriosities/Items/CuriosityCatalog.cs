@@ -12,15 +12,15 @@ namespace CursedAppleCuriosities.Items
     {
         public override string ItemName          => "Curiosity Catalog";
         public override string ItemLangTokenName => "CURIOSITYCATALOG";
-        public override string ItemPickupDesc    => "Unlock a personal shop. Can no longer open chests or multishops.";
+        public override string ItemPickupDesc    => "Completing the teleporter drops a Curiosity shop. Can no longer open chests or multishops.";
 
         public override string ItemFullDescription =>
-            "At the start of each stage, a <style=cIsUtility>personal shop</style> appears nearby with " +
-            "three browsable tiers of Curiosity items, starting at " +
+            "When the <style=cIsUtility>teleporter event</style> is completed, a " +
+            "<style=cIsUtility>Curiosity shop</style> drops. Spend your gold on any Curiosity item: " +
             $"<style=cIsHealing>{WhiteCost}g whites</style>, " +
             $"<style=cIsDamage>{GreenCost}g greens</style>, " +
-            $"<style=cIsUtility>{RedCost}g reds</style>. " +
-            "<style=cIsHealth>Prices rise as the run grows more difficult, so shop early. " +
+            $"<style=cIsUtility>{RedCost}g reds</style>, as many times as you can afford. " +
+            "<style=cIsHealth>Prices rise as the run grows more difficult. " +
             "Cannot open chests, multishops, or equipment barrels.</style>";
 
         public override string ItemLore =>
@@ -32,28 +32,23 @@ namespace CursedAppleCuriosities.Items
         public override ItemTag[] ItemTags => new[] { ItemTag.Utility };
         protected override string? IconFileName => "icon_curiositycatalog.png";
 
-        // ── Shelf pricing ─────────────────────────────────────────────────────
+        // ── Shop pricing ──────────────────────────────────────────────────────
         // Base costs are anchored to the base game's guaranteed-tier chests so item
         // access tracks normal run progression: Small Chest (25) → white,
         // Large Chest (50) → green, Legendary Chest (400) → red. A catalog purchase
-        // is *better* than its chest (you pick the exact item, and the shop is
-        // repeatable), so each tier carries a modest premium over its anchor.
+        // is *better* than its chest (you pick the exact item), so each tier carries
+        // a modest premium over its anchor.
         //
         // These are BASE costs. The price actually charged is run through
         // Run.GetDifficultyScaledCost (cost = base × coeff^1.25) at purchase time,
-        // NOT at stage start — so lingering to farm a cleared stage steadily raises
-        // prices. Rush the teleporter and cash in while it's cheap.
+        // so lingering on a cleared stage steadily raises prices.
         public static int WhiteCost;
         public static int GreenCost;
         public static int RedCost;
 
-        // How far from the teleporter the shop spawns. Small enough to sit right next to it,
-        // large enough to clear the charge zone so the cubes don't block the boss fight.
-        public static float ShopTeleporterOffset;
-
         public static ItemDef? StaticItemDef;
 
-        // Items that ignore their natural tier and always appear in the Red tab
+        // Items that ignore their natural tier and always price as red
         private static readonly HashSet<string> _redPriceOverrides = new HashSet<string>(
             System.StringComparer.Ordinal)
         {
@@ -81,14 +76,28 @@ namespace CursedAppleCuriosities.Items
             body?.inventory != null && StaticItemDef != null
             && body.inventory.GetItemCountEffective(StaticItemDef) > 0;
 
-        // ── CommandCube prefab (loaded once, re-used every spawn) ─────────────
+        private static bool AnyPlayerHoldsCatalog()
+        {
+            foreach (var pcmc in PlayerCharacterMasterController.instances)
+                if (HoldsCatalog(pcmc.master?.GetBody())) return true;
+            return false;
+        }
+
+        // ── Prefabs (loaded once, re-used every drop) ─────────────────────────
         private static GameObject? _commandCubePrefab;
+        private static GameObject? _dropletPrefab;
 
         private static GameObject? CommandCubePrefab =>
             _commandCubePrefab != null
                 ? _commandCubePrefab
                 : _commandCubePrefab = Resources.Load<GameObject>(
                       "Prefabs/NetworkedObjects/CommandCube");
+
+        private static GameObject? DropletPrefab =>
+            _dropletPrefab != null
+                ? _dropletPrefab
+                : _dropletPrefab = Resources.Load<GameObject>(
+                      "Prefabs/NetworkedObjects/PickupDroplet");
 
         // ── ItemBase lifecycle ────────────────────────────────────────────────
         public override void Init(ConfigFile config)
@@ -99,9 +108,6 @@ namespace CursedAppleCuriosities.Items
                 "Base gold cost of a green-tier purchase (scaled live by difficulty).").Value;
             RedCost = config.Bind("Curiosity Catalog", "Red Base Cost", 400,
                 "Base gold cost of a red-tier purchase (scaled live by difficulty).").Value;
-            ShopTeleporterOffset = config.Bind("Curiosity Catalog", "Teleporter Offset (m)", 6f,
-                "Distance from the teleporter the shop spawns. Keeps it next to the teleporter "
-                + "while clearing the charge zone.").Value;
             CreateLang();
             CreateItem();
             StaticItemDef = ItemDef;
@@ -110,74 +116,78 @@ namespace CursedAppleCuriosities.Items
 
         public override void Hooks()
         {
-            On.RoR2.Stage.Start                               += Stage_Start;
+            TeleporterInteraction.onTeleporterChargedGlobal   += OnTeleporterCharged;
+            On.RoR2.PickupDropletController.CreatePickup      += PickupDroplet_CreatePickup;
             On.RoR2.PurchaseInteraction.OnInteractionBegin    += PurchaseInteraction_Block;
             On.RoR2.PickupPickerController.GetContextString   += PickupPicker_GetContextString;
             On.RoR2.PickupPickerController.OnInteractionBegin += PickupPicker_OnInteractionBegin;
             On.RoR2.PickupPickerController.SubmitChoice       += PickupPicker_SubmitChoice;
         }
 
-        // ── Stage start: spawn the shelf near a catalog holder ────────────────
-        private IEnumerator Stage_Start(On.RoR2.Stage.orig_Start orig, Stage self)
+        // ── Teleporter event completed: drop the shop ─────────────────────────
+        // "Completed" = charged AND the teleporter boss is dead, the same moment the
+        // boss reward drops. The boss can die before or after the charge finishes, so
+        // wait on whichever comes last. Gold is only converted to XP once the player
+        // activates the teleporter to leave, so there's a window to spend it all.
+        private static void OnTeleporterCharged(TeleporterInteraction tp)
         {
-            var result = orig(self);
-            if (NetworkServer.active)
-                self.StartCoroutine(SpawnShelfDelayed());
-            return result;
+            if (!NetworkServer.active || tp == null) return;
+            tp.StartCoroutine(DropShopWhenCleared(tp));
         }
 
-        private IEnumerator SpawnShelfDelayed()
+        private static IEnumerator DropShopWhenCleared(TeleporterInteraction tp)
         {
-            yield return new WaitForSeconds(1.5f);
-            if (StaticItemDef == null) yield break;
+            while (tp != null && tp.bossGroup != null && tp.bossGroup.enabled)
+                yield return new WaitForSeconds(0.25f);
+            yield return new WaitForSeconds(1f);
+            if (tp == null || !AnyPlayerHoldsCatalog()) yield break;
 
-            // Require at least one player holding the catalog
-            bool anyHolder = false;
-            foreach (var pcmc in PlayerCharacterMasterController.instances)
-            {
-                var body = pcmc.master?.GetBody();
-                if (body?.inventory != null
-                    && body.inventory.GetItemCountEffective(StaticItemDef) > 0)
-                {
-                    anyHolder = true;
-                    break;
-                }
-            }
-            if (!anyHolder) yield break;
+            var origin = tp.bossGroup != null && tp.bossGroup.dropPosition != null
+                ? tp.bossGroup.dropPosition.position
+                : tp.transform.position + Vector3.up * 4f;
+            var velocity = Quaternion.AngleAxis(Random.Range(0f, 360f), Vector3.up)
+                         * (Vector3.up * 25f + Vector3.forward * 6f);
+            DropShop(origin, velocity);
+        }
 
-            // Prefer the teleporter as an anchor; fall back to the first holder's position
-            // on stages that have no teleporter (Bazaar, Void Fields, etc.)
-            Vector3 anchor;
-            if (TeleporterInteraction.instance != null)
+        // Launch a droplet that lands as the shop. Shown as the catalog's own lunar
+        // droplet; the CreatePickup hook swaps the landing pickup for our cube.
+        internal static void DropShop(Vector3 position, Vector3 velocity)
+        {
+            var prefab = DropletPrefab;
+            if (prefab == null || StaticItemDef == null)
             {
-                // Spawn right next to the teleporter — close enough to read as "at the teleporter,"
-                // but offset so the cubes don't sit on top of it and block the boss-fight zone.
-                anchor = TeleporterInteraction.instance.transform.position
-                       + Vector3.forward * ShopTeleporterOffset
-                       + Vector3.up * 1.5f;
-            }
-            else
-            {
-                CharacterBody? fallback = null;
-                foreach (var pcmc in PlayerCharacterMasterController.instances)
-                {
-                    var b = pcmc.master?.GetBody();
-                    if (b?.inventory != null
-                        && b.inventory.GetItemCountEffective(StaticItemDef) > 0)
-                    { fallback = b; break; }
-                }
-                if (fallback == null) yield break;
-                anchor = fallback.transform.position
-                       + fallback.transform.forward * 5f
-                       + Vector3.up * 1.5f;
+                CursedAppleCuriositiesPlugin.Logger?.LogWarning(
+                    "[CuriosityCatalog] PickupDroplet prefab not found.");
+                return;
             }
 
-            // Store BASE costs on the cubes; the scaled price is computed live at
-            // browse/purchase time (see ScaledCost) so it climbs with difficulty as
-            // the player lingers, rather than being frozen at stage start.
-            SpawnTierCube(ItemTier.Tier1, anchor + Vector3.left  * 2.5f, WhiteCost);
-            SpawnTierCube(ItemTier.Tier2, anchor,                         GreenCost);
-            SpawnTierCube(ItemTier.Tier3, anchor + Vector3.right * 2.5f, RedCost);
+            var obj = UnityEngine.Object.Instantiate(prefab, position, Quaternion.identity);
+            obj.AddComponent<CuriosityShopDroplet>();
+
+            var pdc = obj.GetComponent<PickupDropletController>();
+            if (pdc != null)
+                pdc.NetworkpickupState = new UniquePickup(
+                    PickupCatalog.FindPickupIndex(StaticItemDef.itemIndex));
+
+            var rb = obj.GetComponent<Rigidbody>();
+            if (rb != null)
+            {
+                rb.velocity = velocity;
+                rb.AddTorque(Random.Range(120f, 150f) * Random.onUnitSphere);
+            }
+            NetworkServer.Spawn(obj);
+        }
+
+        private void PickupDroplet_CreatePickup(
+            On.RoR2.PickupDropletController.orig_CreatePickup orig, PickupDropletController self)
+        {
+            if (self.GetComponent<CuriosityShopDroplet>() != null)
+            {
+                SpawnShop(self.transform.position);
+                return;
+            }
+            orig(self);
         }
 
         // Live difficulty-scaled price for a base cost (cost = base × coeff^1.25),
@@ -185,8 +195,8 @@ namespace CursedAppleCuriosities.Items
         internal static int ScaledCost(int baseCost) =>
             Run.instance != null ? Run.instance.GetDifficultyScaledCost(baseCost) : baseCost;
 
-        // ── Cube spawning ─────────────────────────────────────────────────────
-        internal static void SpawnTierCube(ItemTier tab, Vector3 pos, int baseCost)
+        // ── Shop spawning ─────────────────────────────────────────────────────
+        internal static void SpawnShop(Vector3 pos)
         {
             var prefab = CommandCubePrefab;
             if (prefab == null)
@@ -196,53 +206,87 @@ namespace CursedAppleCuriosities.Items
                 return;
             }
 
-            var options = BuildOptions(tab);
-            if (options.Length == 0) return;
+            BuildStock(out var pickups, out var baseCosts);
+            if (pickups.Length == 0) return;
 
-            var obj = UnityEngine.Object.Instantiate(prefab, pos, Quaternion.identity);
+            var obj = UnityEngine.Object.Instantiate(prefab, pos + Vector3.up * 1.5f, Quaternion.identity);
 
-            var marker      = obj.AddComponent<CuriosityPickerMarker>();
-            marker.Tab      = tab;
-            marker.BaseCost = baseCost;
-            marker.Options  = options;
+            var marker       = obj.AddComponent<CuriosityPickerMarker>();
+            marker.Pickups   = pickups;
+            marker.BaseCosts = baseCosts;
+
+            // Vanilla cubes inherit the pickup of the droplet that made them; other mods
+            // (e.g. WolfoFixes' SetOptionsInternal hook) assume it's set and NRE otherwise.
+            // Using the catalog itself also gives the cube a lunar look.
+            var networker = obj.GetComponent<PickupIndexNetworker>();
+            if (networker != null && StaticItemDef != null)
+                networker.NetworkpickupState = new UniquePickup(
+                    PickupCatalog.FindPickupIndex(StaticItemDef.itemIndex));
 
             var ppc = obj.GetComponent<PickupPickerController>();
-            if (ppc != null) ppc.SetOptionsServer(options);
+            if (ppc != null) ppc.SetOptionsServer(BuildOptions(marker, money: uint.MaxValue));
 
             NetworkServer.Spawn(obj);
         }
 
-        // ── Build item list for a given tab ──────────────────────────────────
-        private static PickupPickerController.Option[] BuildOptions(ItemTier tab)
+        // ── Build the combined stock, ordered white → green → red ─────────────
+        private static void BuildStock(out PickupIndex[] pickups, out int[] baseCosts)
         {
-            var list = new List<PickupPickerController.Option>();
+            var stock = new List<(PickupIndex pickup, ItemTier tab)>();
 
             foreach (var itemDef in CursedAppleCuriositiesPlugin.ModItemDefs)
             {
                 if (itemDef == null || itemDef == StaticItemDef) continue;
-                if (GetItemTab(itemDef) != tab) continue;
-
                 var pidx = PickupCatalog.FindPickupIndex(itemDef.itemIndex);
-                if (pidx == PickupIndex.none) continue;
-#pragma warning disable CS0618
-                list.Add(new PickupPickerController.Option { pickupIndex = pidx, available = true });
-#pragma warning restore CS0618
+                if (pidx != PickupIndex.none) stock.Add((pidx, GetItemTab(itemDef)));
             }
 
             foreach (var eqDef in CursedAppleCuriositiesPlugin.ModEquipmentDefs)
             {
                 if (eqDef == null) continue;
-                if (GetEquipmentTab(eqDef) != tab) continue;
-
                 var pidx = PickupCatalog.FindPickupIndex(eqDef.equipmentIndex);
-                if (pidx == PickupIndex.none) continue;
-#pragma warning disable CS0618
-                list.Add(new PickupPickerController.Option { pickupIndex = pidx, available = true });
-#pragma warning restore CS0618
+                if (pidx != PickupIndex.none) stock.Add((pidx, GetEquipmentTab(eqDef)));
             }
 
-            return list.ToArray();
+            // Grouped by tier; registration order is kept within each tier.
+            var sorted = new List<(PickupIndex pickup, ItemTier tab)>();
+            foreach (var tab in new[] { ItemTier.Tier1, ItemTier.Tier2, ItemTier.Tier3 })
+                foreach (var entry in stock)
+                    if (entry.tab == tab) sorted.Add(entry);
+
+            pickups   = new PickupIndex[sorted.Count];
+            baseCosts = new int[sorted.Count];
+            for (int i = 0; i < sorted.Count; i++)
+            {
+                pickups[i]   = sorted[i].pickup;
+                baseCosts[i] = TabBaseCost(sorted[i].tab);
+            }
         }
+
+        // Options are greyed out when the shopper can't afford them at the current price.
+        private static PickupPickerController.Option[] BuildOptions(CuriosityPickerMarker marker, uint money)
+        {
+            var pickups = marker.Pickups ?? System.Array.Empty<PickupIndex>();
+            var options = new PickupPickerController.Option[pickups.Length];
+            for (int i = 0; i < pickups.Length; i++)
+            {
+#pragma warning disable CS0618
+                options[i] = new PickupPickerController.Option
+                {
+                    pickupIndex = pickups[i],
+                    available   = money >= (uint)ScaledCost(marker.BaseCosts![i]),
+                };
+#pragma warning restore CS0618
+            }
+            return options;
+        }
+
+        private static int TabBaseCost(ItemTier tab) => tab switch
+        {
+            ItemTier.Tier1 => WhiteCost,
+            ItemTier.Tier2 => GreenCost,
+            _              => RedCost,
+        };
 
         private static ItemTier GetItemTab(ItemDef def)
         {
@@ -260,6 +304,9 @@ namespace CursedAppleCuriosities.Items
             if (def == GoldenGooseEgg.StaticEquipmentDef) return ItemTier.Tier1;
             if (def == BloodTribute.StaticEquipmentDef)   return ItemTier.Tier2;
             if (def == Counterspell.StaticEquipmentDef)   return ItemTier.Tier2;
+            if (def == EtherealShift.StaticEquipmentDef)  return ItemTier.Tier2;
+            if (def == ArcticBlast.StaticEquipmentDef)    return ItemTier.Tier2;
+            if (def == CultistSacrifice.StaticEquipmentDef) return ItemTier.Tier2;
             return ItemTier.Tier3;
         }
 
@@ -281,30 +328,26 @@ namespace CursedAppleCuriosities.Items
             orig(self, activator);
         }
 
-        // ── Custom hover prompt on our cubes ──────────────────────────────────
+        // ── Custom hover prompt on the shop ───────────────────────────────────
         private string PickupPicker_GetContextString(
             On.RoR2.PickupPickerController.orig_GetContextString orig,
             PickupPickerController self, Interactor activator)
         {
-            var marker = self.GetComponent<CuriosityPickerMarker>();
-            if (marker != null)
+            if (self.GetComponent<CuriosityPickerMarker>() != null)
             {
-                // Only the catalog's owner can shop here.
+                // Only catalog holders can shop here.
                 if (!HoldsCatalog(activator?.GetComponent<CharacterBody>()))
                     return "Requires the Curiosity Catalog";
 
-                string tierLabel = marker.Tab switch
-                {
-                    ItemTier.Tier1 => "White",
-                    ItemTier.Tier2 => "Green",
-                    _              => "Red",
-                };
-                return $"Browse {tierLabel} Items — {ScaledCost(marker.BaseCost)}g";
+                return "Browse Curiosities — " +
+                       $"<color=#ffffff>{ScaledCost(WhiteCost)}g</color> / " +
+                       $"<color=#77ff17>{ScaledCost(GreenCost)}g</color> / " +
+                       $"<color=#e7543a>{ScaledCost(RedCost)}g</color>";
             }
             return orig(self, activator);
         }
 
-        // ── Record the activator so SubmitChoice can deduct their gold ────────
+        // ── Record the shopper and grey out what they can't afford ────────────
         private void PickupPicker_OnInteractionBegin(
             On.RoR2.PickupPickerController.orig_OnInteractionBegin orig,
             PickupPickerController self, Interactor activator)
@@ -317,15 +360,16 @@ namespace CursedAppleCuriosities.Items
                 if (!HoldsCatalog(body))
                 {
                     Chat.AddMessage(
-                        "<color=#8888ff>[Curiosity Catalog] Only the catalog's owner can shop here.</color>");
+                        "<color=#8888ff>[Curiosity Catalog] Only catalog holders can shop here.</color>");
                     return;
                 }
                 marker.ActivatorBody = body;
+                self.SetOptionsServer(BuildOptions(marker, body!.master?.money ?? 0));
             }
             orig(self, activator);
         }
 
-        // ── Intercept selection: gold check → give item → respawn cube ────────
+        // ── Intercept selection: gold check → drop item → keep the menu open ──
         private void PickupPicker_SubmitChoice(
             On.RoR2.PickupPickerController.orig_SubmitChoice orig,
             PickupPickerController self, int index)
@@ -337,29 +381,22 @@ namespace CursedAppleCuriosities.Items
                 return;
             }
 
-            var options = marker.Options;
-            if (options == null || index < 0 || index >= options.Length) return;
+            // Do NOT call orig — that would give a free item and close the shop.
+            var pickups = marker.Pickups;
+            if (pickups == null || index < 0 || index >= pickups.Length) return;
 
-#pragma warning disable CS0618
-            var pickup = options[index].pickupIndex;
-#pragma warning restore CS0618
-            var body     = marker.ActivatorBody;
-            int baseCost = marker.BaseCost;
-            int cost     = ScaledCost(baseCost); // live price at the moment of purchase
-            var pos      = self.transform.position;
-            var tab      = marker.Tab;
-
+            var body = marker.ActivatorBody;
             // Safety net: never let a non-holder complete a purchase.
-            if (!HoldsCatalog(body)) return;
+            if (!HoldsCatalog(body) || body!.master == null) return;
 
-            bool canAfford = body?.master != null && body.master.money >= (uint)cost;
-            if (canAfford)
+            int cost = ScaledCost(marker.BaseCosts![index]); // live price at the moment of purchase
+            if (body.master.money >= (uint)cost)
             {
-                body!.master.money -= (uint)cost;
+                body.master.money -= (uint)cost;
                 PickupDropletController.CreatePickupDroplet(
                     new GenericPickupController.CreatePickupInfo
                     {
-                        pickupIndex = pickup,
+                        pickupIndex = pickups[index],
                         rotation    = Quaternion.identity,
                     },
                     body.transform.position + Vector3.up * 1.5f,
@@ -370,19 +407,19 @@ namespace CursedAppleCuriosities.Items
                 Chat.AddMessage($"<color=#ff6644>Not enough gold — need {cost}g.</color>");
             }
 
-            // Destroy this instance and immediately put a fresh cube in its place.
-            // Respawn with the BASE cost so the replacement re-scales live too.
-            // Do NOT call orig — that would give a free item and also destroy the object.
-            NetworkServer.Destroy(self.gameObject);
-            SpawnTierCube(tab, pos, baseCost);
+            // The shop stays put so the player can keep spending; just re-grey
+            // whatever their remaining gold no longer covers.
+            self.SetOptionsServer(BuildOptions(marker, body.master.money));
         }
     }
 
     public class CuriosityPickerMarker : MonoBehaviour
     {
-        public ItemTier                      Tab;
-        public int                           BaseCost; // unscaled; price is scaled live per purchase
-        public CharacterBody?                ActivatorBody;
-        public PickupPickerController.Option[]? Options;
+        public PickupIndex[]? Pickups;
+        public int[]?         BaseCosts; // unscaled, parallel to Pickups; price is scaled live per purchase
+        public CharacterBody? ActivatorBody;
     }
+
+    // Tags the droplet that lands as the shop (server-side only).
+    public class CuriosityShopDroplet : MonoBehaviour { }
 }

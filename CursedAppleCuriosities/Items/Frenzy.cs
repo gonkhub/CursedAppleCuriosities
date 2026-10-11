@@ -11,6 +11,7 @@ namespace CursedAppleCuriosities.Items
         public override string ItemName => "Frenzy";
         public override string ItemLangTokenName => "FRENZY";
 
+        public override string ItemPickupDesc => "Gain damage and speed the lower your health falls.";
         public override string ItemFullDescription =>
             $"Below <style=cIsHealth>{RampStartBase * 100:0}% health</style> " +
             $"<style=cStack>(+{RampStartPerStack * 100:0}% per stack)</style>, gain " +

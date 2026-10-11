@@ -1,5 +1,6 @@
 using System.Collections.Generic;
 using CursedAppleCuriosities.Deadlock;
+using CursedAppleCuriosities.Items;
 using R2API.Networking;
 using R2API.Networking.Interfaces;
 using RoR2;
@@ -19,6 +20,7 @@ namespace CursedAppleCuriosities.Survivors.Lash
             NetworkingAPI.RegisterMessageType<FlogMessage>();
             NetworkingAPI.RegisterMessageType<SlamMessage>();
             NetworkingAPI.RegisterMessageType<SoundMessage>();
+            DeadlockFallGuard.Hook();
         }
 
         public static void ToServer(INetMessage m)
@@ -101,7 +103,7 @@ namespace CursedAppleCuriosities.Survivors.Lash
                 var hc = t != null ? t.GetComponent<HealthComponent>() : null;
                 if (hc == null) continue;
                 Vector3 push = (t!.transform.position - Attacker.transform.position).normalized * -400f; // pulled toward Lash
-                dealt += LashNet.Hit(body, hc, Damage, Crit, push, DamageSource.Secondary);
+                dealt += LashNet.Hit(body, hc, Damage, Crit, push, DamageSource.Utility);
             }
             if (dealt > 0f && HealFraction > 0f) body.healthComponent.Heal(dealt * HealFraction, default(ProcChainMask));
         }
@@ -171,12 +173,13 @@ namespace CursedAppleCuriosities.Survivors.Lash
     {
         public string Id = "";
         public Vector3 Point;
+        public GameObject? Follow; // optional: the sound tracks it, and its vanilla fallback can play on it
 
-        public void Serialize(NetworkWriter w) { w.Write(Id); w.Write(Point); }
-        public void Deserialize(NetworkReader r) { Id = r.ReadString(); Point = r.ReadVector3(); }
-        public void OnReceived() => DeadlockSounds.Play(Id, Point);
+        public void Serialize(NetworkWriter w) { w.Write(Id); w.Write(Point); w.Write(Follow); }
+        public void Deserialize(NetworkReader r) { Id = r.ReadString(); Point = r.ReadVector3(); Follow = r.ReadGameObject(); }
+        public void OnReceived() => DeadlockSounds.Play(Id, Follow != null ? Follow.transform.position : Point, Follow);
 
-        public static void Everyone(string id, Vector3 point) => new SoundMessage { Id = id, Point = point }.Send(NetworkDestination.Clients);
+        public static void Everyone(string id, Vector3 point, GameObject? follow = null) => new SoundMessage { Id = id, Point = point, Follow = follow }.Send(NetworkDestination.Clients);
     }
 
     /// <summary>
@@ -280,12 +283,13 @@ namespace CursedAppleCuriosities.Survivors.Lash
             Vector3 at = _body!.footPosition;
             if (_motor != null) _motor.velocity = Vector3.zero;
             else if (_rb != null && !_rb.isKinematic) _rb.velocity = Vector3.zero;
+            float radius = LashData.DeathSlamRadius * MysticExpansion.RadiusMultiplier(g.Attacker);
             if (LashSurvivor.SlamEffect != null)
-                EffectManager.SpawnEffect(LashSurvivor.SlamEffect, new EffectData { origin = at, scale = LashData.DeathSlamRadius }, transmit: true);
+                EffectManager.SpawnEffect(LashSurvivor.SlamEffect, new EffectData { origin = at, scale = radius }, transmit: true);
             SoundMessage.Everyone("lash_ds_impact", at);
             if (g.Attacker != null)
             {
-                var victims = LashNet.EnemiesIn(at, LashData.DeathSlamRadius, g.Attacker.teamComponent.teamIndex);
+                var victims = LashNet.EnemiesIn(at, radius, g.Attacker.teamComponent.teamIndex);
                 if (_body.healthComponent != null && !victims.Contains(_body.healthComponent)) victims.Insert(0, _body.healthComponent);
                 foreach (HealthComponent hc in victims)
                 {

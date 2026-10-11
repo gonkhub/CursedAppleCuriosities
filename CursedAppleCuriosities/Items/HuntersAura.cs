@@ -12,6 +12,7 @@ namespace CursedAppleCuriosities.Items
         public override string ItemName => "Hunter's Aura";
         public override string ItemLangTokenName => "HUNTERSAURA";
 
+        public override string ItemPickupDesc => "Nearby enemies take more damage, especially when isolated.";
         public override string ItemFullDescription =>
             $"Emit a fixed <style=cIsUtility>{BaseRange}m</style> aura that amplifies the " +
             $"<style=cIsDamage>incoming damage</style> of nearby enemies by " +

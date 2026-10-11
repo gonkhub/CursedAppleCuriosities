@@ -11,6 +11,7 @@ namespace CursedAppleCuriosities.Items
         public override string ItemName => "Toxic Bullets";
         public override string ItemLangTokenName => "TOXICBULLETS";
 
+        public override string ItemPickupDesc => "Repeated hits poison enemies and reduce their healing.";
         public override string ItemFullDescription =>
             $"Hits build up <style=cIsHealing>Toxin</style> on enemies " +
             $"(max <style=cIsUtility>{ChargesRequired} charges</style>). " +

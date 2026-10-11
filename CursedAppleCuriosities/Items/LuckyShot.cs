@@ -11,6 +11,7 @@ namespace CursedAppleCuriosities.Items
         public override string ItemName => "Lucky Shot";
         public override string ItemLangTokenName => "LUCKYSHOT";
 
+        public override string ItemPickupDesc => "Critical strikes have a chance to strike twice.";
         public override string ItemFullDescription =>
             $"Your <style=cIsDamage>critical strikes</style> have a " +
             $"<style=cIsDamage>{OneStackChance:0}% chance</style> to strike a second time " +

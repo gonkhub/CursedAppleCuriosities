@@ -11,6 +11,7 @@ namespace CursedAppleCuriosities.Items
         public override string ItemName => "Long Range";
         public override string ItemLangTokenName => "LONGRANGE";
 
+        public override string ItemPickupDesc => "Deal bonus damage to distant enemies.";
         public override string ItemFullDescription =>
             $"Hitting an enemy beyond <style=cIsUtility>{MinRange}m</style> deals " +
             $"<style=cIsDamage>+{MinBonusPerStack * 100:0}%</style> to " +

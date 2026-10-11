@@ -11,6 +11,7 @@ namespace CursedAppleCuriosities.Items
         public override string ItemName => "Lifestrike";
         public override string ItemLangTokenName => "LIFESTRIKE";
 
+        public override string ItemPickupDesc => "Hitting nearby enemies heals you and slows them.";
         public override string ItemFullDescription =>
             $"Hitting an enemy within <style=cIsUtility>{Range}m</style> heals you for " +
             $"<style=cIsHealing>{BaseHealFraction * 100:0}% of the damage dealt</style> " +

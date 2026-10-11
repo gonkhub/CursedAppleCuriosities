@@ -13,6 +13,7 @@ namespace CursedAppleCuriosities.Items
         public override string ItemName => "Spirit Burn";
         public override string ItemLangTokenName => "SPIRITBURN";
 
+        public override string ItemPickupDesc => "Big hits cause an explosion that ignites enemies. <style=cIsVoid>Corrupts all Tankbusters</style>.";
         public override string ItemFullDescription =>
             $"<style=cIsVoid>Corrupts all Tankbusters</style>. " +
             $"Dealing <style=cIsDamage>{DamageThreshold * 100:0}%+ damage</style> in a single hit " +
@@ -101,7 +102,7 @@ namespace CursedAppleCuriosities.Items
             new SphereSearch
             {
                 origin = blastCenter,
-                radius = ExplosionRadius,
+                radius = ExplosionRadius * MysticExpansion.RadiusMultiplier(attackerBody),
                 mask   = LayerIndex.entityPrecise.mask,
             }.RefreshCandidates()
              .FilterCandidatesByHurtBoxTeam(TeamMask.GetEnemyTeams(attackerBody.teamComponent.teamIndex))

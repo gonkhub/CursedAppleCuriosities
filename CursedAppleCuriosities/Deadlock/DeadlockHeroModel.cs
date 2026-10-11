@@ -1,0 +1,710 @@
+using System;
+using System.Collections.Generic;
+using RoR2;
+using UnityEngine;
+
+namespace CursedAppleCuriosities.Deadlock
+{
+    /// <summary>
+    /// What the shared model layer needs to know about one Deadlock hero: its model, its animation table and the few
+    /// hero-specific animation rules. Registered once by the hero's survivor; components look it up by Hero key (a
+    /// string survives Unity cloning the body prefab, a reference to this object would not).
+    /// </summary>
+    public class DeadlockHeroDef
+    {
+        public string Hero = "";
+        public string DisplayName = "";
+        public string DlModel = "";
+        public string[] HideMeshes = Array.Empty<string>();
+        public float ModelHeightScale = 1f;   // the hero's height over the stand-in capsule
+        public float BaseSpeed = 7f;          // run speed when the body has none (display)
+        /// <summary>The bone the gun fires from, and the ChildLocator slot the body reserved for it.</summary>
+        public string? MuzzleBone;
+        public string MuzzleName = "";
+
+        /// <summary>State, Deadlock clip, loop, next state ("locomotion", "hold", a state, or "" for loops), layer ("full" / "additive").</summary>
+        public (string State, string Clip, bool Loop, string Next, string Layer)[] Anims = Array.Empty<(string, string, bool, string, string)>();
+        /// <summary>
+        /// Clips whose own travel is removed (root lock): Deadlock moves heroes with these animations, RoR2
+        /// moves the body itself, so the model would run ahead. Sprints are always locked.
+        /// </summary>
+        public HashSet<string> RootLocked = new HashSet<string>();
+        /// <summary>How long a finished one-shot whose next is "hold" keeps its last frame (default 3 s).</summary>
+        public Func<string, float>? HoldSeconds;
+        /// <summary>Hero loop exits: given the looping state, the state to switch to (null = keep it).</summary>
+        public Func<DeadlockAnimator.Ctx, string?>? LoopRule;
+        /// <summary>
+        /// A held weapon on its own bone chain (off root_motion, not under the arm): (weapon bone, hand bone), e.g.
+        /// Abrams' ("weapon", "hand_R"). The clips already put its grip in the hand; this keeps the hand-to-weapon
+        /// offset the clip gave it after the aim bend moves the hand. Null for a hero whose gun is part of the arm (Lash's glove).
+        /// </summary>
+        public (string Weapon, string Hand)? HandIK;
+        /// <summary>A locomotion set, e.g. "siphon": locomotion state X becomes "siphon.X" when the table has it.</summary>
+        public Func<CharacterBody, string?>? LocoSet;
+        /// <summary>
+        /// Fitted item attach points: ChildLocator name -> (hero bone, local position, angles, scale on that bone).
+        /// Points not listed sit on the bone HeroBoneFor picks, turned like the stand-in's point at attach time.
+        /// </summary>
+        public Dictionary<string, (string Bone, Vector3 Pos, Vector3 Angles, Vector3 Scale)>? ItemAnchors;
+
+        public string Sound(string key) => Hero + "_" + key;
+        public bool IsRootLocked(string state) => RootLocked.Contains(state) || state.StartsWith("sprint_") || state.Contains(".sprint_");
+
+        public string[] ClipNames()
+        {
+            var l = new List<string>();
+            foreach (var a in Anims) if (!l.Contains(a.Clip)) l.Add(a.Clip);
+            return l.ToArray();
+        }
+
+        public DeadlockInstall.ModelRequest ModelRequest() =>
+            new DeadlockInstall.ModelRequest { Hero = Hero, DlModel = DlModel, Clips = ClipNames(), HideMeshes = HideMeshes };
+    }
+
+    public static class DeadlockHeroes
+    {
+        private static readonly Dictionary<string, DeadlockHeroDef> Defs = new Dictionary<string, DeadlockHeroDef>();
+        private static Material? _baseMaterial;
+
+        public static void Register(DeadlockHeroDef def) => Defs[def.Hero] = def;
+        public static DeadlockHeroDef? Get(string hero) => Defs.TryGetValue(hero, out DeadlockHeroDef d) ? d : null;
+
+        /// <summary>
+        /// A hero material: Commando's opaque deferred character material (RoR2's own shader, overlays and all) with
+        /// the hero's base colour texture. A from-scratch hgstandard material renders see-through, so it is cloned.
+        /// </summary>
+        public static Material MakeMaterial(string hero, string name, Texture2D? tex)
+        {
+            if (_baseMaterial == null)
+                _baseMaterial = UnityEngine.AddressableAssets.Addressables.LoadAssetAsync<Material>("RoR2/Base/Commando/matCommandoDualies.mat").WaitForCompletion();
+            Material m = new Material(_baseMaterial);
+            m.name = "mat" + hero + "_" + name;
+            m.mainTexture = tex;
+            m.color = Color.white;
+            foreach (string p in new[] { "_NormalTex", "_EmTex", "_FresnelRamp", "_PrintRamp", "_SplatmapTex", "_FlowHeightmap", "_FlowHeightRamp" })
+                if (m.HasProperty(p)) m.SetTexture(p, null);
+            if (m.HasProperty("_EmPower")) m.SetFloat("_EmPower", 0f);
+            if (m.HasProperty("_NormalStrength")) m.SetFloat("_NormalStrength", 0f);
+            if (m.HasProperty("_SpecularStrength")) m.SetFloat("_SpecularStrength", 0.15f);
+            m.DisableKeyword("FORCE_SPEC");
+            return m;
+        }
+    }
+
+    /// <summary>
+    /// Sits on the stand-in model (body and character-select display). When this player's Deadlock model is
+    /// converted, the hero is put on the stand-in's feet facing its way, its renderers become the CharacterModel's
+    /// renderers (hit flash, elite and item overlays, cloaking all work) and the stand-in's are hidden. The stand-in
+    /// skeleton keeps animating underneath for item displays. Without Deadlock the stand-in simply stays.
+    /// </summary>
+    public class DeadlockModelSwap : MonoBehaviour
+    {
+        public string HeroKey = "";
+        public bool IsDisplay;
+
+        private DeadlockHeroDef? _def;
+        private CharacterModel? _model;
+        private CharacterBody? _body;
+        private GameObject? _hero;
+        private CharacterModel.RendererInfo[] _heroInfos = Array.Empty<CharacterModel.RendererInfo>();
+        private readonly List<Renderer> _hidden = new List<Renderer>();
+        private float _nextTry;
+        private int _tries;
+
+        public DeadlockAnimator? Animator { get; private set; }
+
+        private string Tag => "[" + (_def != null ? _def.DisplayName : HeroKey) + "]";
+
+        private void Awake()
+        {
+            _model = GetComponent<CharacterModel>();
+            var skins = GetComponent<ModelSkinController>();
+            if (skins != null) skins.onSkinApplied += _ => Reassert();
+        }
+
+        private void Start()
+        {
+            _def = DeadlockHeroes.Get(HeroKey);
+            _body = _model != null ? _model.body : null;
+            if (_def == null) { CursedAppleCuriositiesPlugin.Logger?.LogWarning($"[Deadlock] no hero registered as '{HeroKey}'"); enabled = false; return; }
+            TryAttach();
+            if (IsDisplay) DeadlockSounds.Play(_def.Sound("vo_select"), transform.position);
+        }
+
+        private void Update()
+        {
+            // First launch: the model may still be converting. Keep trying for a few minutes, then give up.
+            if (_hero == null && _tries < 200 && Time.unscaledTime >= _nextTry) { _nextTry = Time.unscaledTime + 1f; TryAttach(); }
+        }
+
+        private void TryAttach()
+        {
+            if (_def == null) return;
+            _tries++;
+            DeadlockHeroDef def = _def;
+            GlbModel? template = DeadlockInstall.Model(def.Hero, (name, tex) => DeadlockHeroes.MakeMaterial(def.DisplayName, name, tex));
+            if (template == null)
+            {
+                // Say why the hero is the stand-in, to their own player only (or in the lobby).
+                if (IsDisplay || (_body != null && _body.hasEffectiveAuthority && _body.isPlayerControlled))
+                    DeadlockInstall.ShowModelNotice(def.Hero, def.DisplayName);
+                return;
+            }
+
+            Transform frame = transform.parent != null ? transform.parent : transform; // ModelBase: turned by CharacterDirection
+            _hero = Instantiate(template.Root, transform, false);
+            _hero.name = "CursedApple_" + def.DisplayName;
+
+            // Face the frame's forward: the hips run left to right along the frame's right.
+            Quaternion yaw = Quaternion.identity;
+            if (template.RestInRoot.TryGetValue("leg_upper_L", out Matrix4x4 ll) && template.RestInRoot.TryGetValue("leg_upper_R", out Matrix4x4 lr))
+            {
+                Vector3 right = (Vector3)lr.GetColumn(3) - (Vector3)ll.GetColumn(3);
+                right.y = 0f;
+                if (right.sqrMagnitude > 1e-6f) yaw = Quaternion.FromToRotation(right.normalized, Vector3.right);
+            }
+            float height = 1.9f * frame.lossyScale.y * def.ModelHeightScale / 1.08f; // lobby display: follow the display's own scale
+            Vector3 feet = transform.position;
+            if (_body != null)
+            {
+                var capsule = _body.GetComponent<CapsuleCollider>();
+                if (capsule != null) height = capsule.height * _body.transform.lossyScale.y * def.ModelHeightScale;
+                feet = _body.footPosition;
+            }
+            _hero.transform.SetPositionAndRotation(feet, frame.rotation * yaw);
+            float scale = height / Mathf.Max(0.1f, template.Height);
+            _hero.transform.localScale = Vector3.one * (scale / Mathf.Max(1e-4f, transform.lossyScale.x));
+            _hero.SetActive(true);
+
+            // Animations first: nothing below can leave the hero frozen in the bind pose.
+            Animator = _hero.AddComponent<DeadlockAnimator>();
+            Animator.Init(def, _body, frame, IsDisplay);
+
+            var infos = new List<CharacterModel.RendererInfo>();
+            foreach (Renderer r in _hero.GetComponentsInChildren<Renderer>(true))
+            {
+                r.gameObject.layer = gameObject.layer;
+                infos.Add(new CharacterModel.RendererInfo
+                {
+                    renderer = r,
+                    defaultMaterial = r.sharedMaterial,
+                    defaultShadowCastingMode = UnityEngine.Rendering.ShadowCastingMode.On,
+                    ignoreOverlays = false,
+                });
+            }
+            _heroInfos = infos.ToArray();
+
+            // The muzzle on the hero's gun, findable by the gun state. ChildLocators are locked after load (AddChild
+            // throws): the body reserves the slot at build time and it is pointed at the bone here.
+            var locator = GetComponent<ChildLocator>();
+            Transform? muzzle = def.MuzzleBone != null ? FindDeep(_hero.transform, def.MuzzleBone) : null;
+            try { if (locator != null && muzzle != null) SetChild(locator, def.MuzzleName, muzzle); }
+            catch (Exception e) { CursedAppleCuriositiesPlugin.Logger?.LogWarning($"{Tag} muzzle: " + e.Message); }
+
+            // The stand-in's animator still drives its (hidden) skeleton: item displays hang off it.
+            var standIn = GetComponent<UnityEngine.Animator>();
+            if (standIn != null) standIn.cullingMode = AnimatorCullingMode.AlwaysAnimate;
+
+            if (!IsDisplay)
+            {
+                try { MoveItemPoints(locator); }
+                catch (Exception e) { CursedAppleCuriositiesPlugin.Logger?.LogWarning($"{Tag} item points: " + e); }
+            }
+            try { Reassert(); }
+            catch (Exception e) { CursedAppleCuriositiesPlugin.Logger?.LogWarning($"{Tag} renderers: " + e); }
+            CursedAppleCuriositiesPlugin.Logger?.LogInfo($"{Tag} Deadlock model attached ({(IsDisplay ? "display" : "body")}, {_heroInfos.Length} renderers, scale {scale:0.00})");
+        }
+
+        /// <summary>After any skin is applied (it sets the stand-in's renderers), make the hero's renderers the model's again.</summary>
+        private void Reassert()
+        {
+            if (_hero == null || _model == null) return;
+            foreach (Renderer r in GetComponentsInChildren<Renderer>(true))
+            {
+                if (r.transform.IsChildOf(_hero.transform) || !(r is SkinnedMeshRenderer || r is MeshRenderer)) continue;
+                if (r.GetComponentInParent<ItemDisplay>() != null) continue; // items hang off the stand-in skeleton: keep them
+                if (r.enabled) { r.enabled = false; _hidden.Add(r); }
+                r.shadowCastingMode = UnityEngine.Rendering.ShadowCastingMode.Off;
+            }
+            _model.baseRendererInfos = _heroInfos;
+            _model.forceUpdate = true;
+        }
+
+        private float _nextHide;
+
+        private void LateUpdate()
+        {
+            if (_hero == null) return;
+            // Skins, item displays and death effects can switch stand-in renderers back on.
+            if (Time.unscaledTime >= _nextHide)
+            {
+                _nextHide = Time.unscaledTime + 0.5f;
+                if (_model != null && _model.baseRendererInfos != _heroInfos) Reassert();
+                AdoptItemDisplays();
+            }
+        }
+
+        // ---------------- items on the hero ----------------
+
+        /// <summary>Stand-in bone -> the anchor on the hero that replaced it in the ChildLocator.</summary>
+        private readonly Dictionary<Transform, Transform> _itemAnchors = new Dictionary<Transform, Transform>();
+
+        /// <summary>
+        /// Item displays hang off ChildLocator points (Head, Chest, HandL...) authored for the stand-in skeleton,
+        /// which is hidden. Each point is repointed (entry count can't change at runtime) to an anchor on the hero's
+        /// matching bone, turned and scaled like the stand-in bone was, so items keep their authored offsets but
+        /// ride on the hero.
+        /// </summary>
+        private void MoveItemPoints(ChildLocator? locator)
+        {
+            if (locator == null || _hero == null || _def == null) return;
+            var heroBones = new Dictionary<string, Transform>();
+            foreach (Transform t in _hero.GetComponentsInChildren<Transform>(true)) if (!heroBones.ContainsKey(t.name)) heroBones[t.name] = t;
+            var pairs = (ChildLocator.NameTransformPair[])PairsField.GetValue(locator);
+            int moved = 0;
+            for (int i = 0; i < pairs.Length; i++)
+            {
+                Transform standIn = pairs[i].transform;
+                if (standIn == null || pairs[i].name == _def.MuzzleName || standIn.IsChildOf(_hero.transform)) continue;
+                if (_def.ItemAnchors != null && _def.ItemAnchors.TryGetValue(pairs[i].name, out var fit) && heroBones.TryGetValue(fit.Bone, out Transform fitBone))
+                {
+                    if (!_itemAnchors.TryGetValue(standIn, out Transform fitted))
+                    {
+                        fitted = new GameObject("HeroItemAnchor_" + pairs[i].name).transform;
+                        fitted.SetParent(fitBone, false);
+                        fitted.localPosition = fit.Pos;
+                        fitted.localRotation = Quaternion.Euler(fit.Angles);
+                        fitted.localScale = fit.Scale;
+                        _itemAnchors[standIn] = fitted;
+                    }
+                    pairs[i].transform = fitted;
+                    moved++;
+                    continue;
+                }
+                string? heroName = HeroBoneFor(pairs[i].name);
+                if (heroName == null || !heroBones.TryGetValue(heroName, out Transform bone)) continue;
+                if (!_itemAnchors.TryGetValue(standIn, out Transform anchor))
+                {
+                    anchor = new GameObject("HeroItemAnchor_" + pairs[i].name).transform;
+                    anchor.SetParent(bone, false);
+                    anchor.SetPositionAndRotation(bone.position, standIn.rotation);
+                    Vector3 want = standIn.lossyScale, have = bone.lossyScale;
+                    anchor.localScale = new Vector3(want.x / Mathf.Max(1e-4f, have.x), want.y / Mathf.Max(1e-4f, have.y), want.z / Mathf.Max(1e-4f, have.z));
+                    _itemAnchors[standIn] = anchor;
+                }
+                pairs[i].transform = anchor;
+                moved++;
+            }
+            AdoptItemDisplays();
+            CursedAppleCuriositiesPlugin.Logger?.LogInfo($"{Tag} {moved} item attach points moved onto the hero");
+        }
+
+        /// <summary>Item displays already hanging on the stand-in skeleton move to the hero's anchors (keeping their local offsets).</summary>
+        private void AdoptItemDisplays()
+        {
+            foreach (var kv in _itemAnchors)
+            {
+                if (kv.Key == null || kv.Value == null) continue;
+                for (int c = kv.Key.childCount - 1; c >= 0; c--)
+                {
+                    Transform child = kv.Key.GetChild(c);
+                    if (child.GetComponent<ItemDisplay>() != null) child.SetParent(kv.Value, false);
+                }
+            }
+        }
+
+        /// <summary>The Deadlock bone for a stand-in ChildLocator name (Commando's: Head, Chest, ThighL, HandR, GunL...). Deadlock heroes share bone names.</summary>
+        private static string? HeroBoneFor(string name)
+        {
+            string n = name.ToLowerInvariant();
+            string side = n.EndsWith("l") || n.Contains("left") ? "_L" : n.EndsWith("r") || n.Contains("right") ? "_R" : "";
+            if (n.Contains("head")) return "head";
+            if (n.Contains("neck")) return "neck_0";
+            if (n.Contains("chest") || n.Contains("upperbody")) return "spine_3";
+            if (n.Contains("stomach") || n.Contains("spine")) return "spine_1";
+            if (n.Contains("pelvis") || n.Contains("hip")) return "pelvis";
+            if (side == "") return n == "base" || n == "root" ? "pelvis" : null;
+            if (n.Contains("clavicle") || n.Contains("shoulder")) return "clavicle" + side;
+            if (n.Contains("upperarm")) return "arm_upper" + side;
+            if (n.Contains("lowerarm") || n.Contains("forearm") || n.Contains("elbow")) return "arm_lower" + side;
+            if (n.Contains("hand") || n.Contains("gun") || n.Contains("muzzle")) return "hand" + side;
+            if (n.Contains("thigh")) return "leg_upper" + side;
+            if (n.Contains("calf") || n.Contains("shin") || n.Contains("knee")) return "leg_lower" + side;
+            if (n.Contains("foot") || n.Contains("toe")) return "ankle" + side;
+            return null;
+        }
+
+        private static readonly System.Reflection.FieldInfo PairsField =
+            typeof(ChildLocator).GetField("transformPairs", System.Reflection.BindingFlags.NonPublic | System.Reflection.BindingFlags.Instance);
+
+        /// <summary>Repoint an existing ChildLocator entry (the entry count can't change at runtime).</summary>
+        private static void SetChild(ChildLocator locator, string name, Transform t)
+        {
+            var pairs = (ChildLocator.NameTransformPair[])PairsField.GetValue(locator);
+            for (int i = 0; i < pairs.Length; i++)
+                if (pairs[i].name == name) { pairs[i].transform = t; return; }
+        }
+
+        private static Transform? FindDeep(Transform root, string name)
+        {
+            foreach (Transform t in root.GetComponentsInChildren<Transform>(true)) if (t.name == name) return t;
+            return null;
+        }
+
+        /// <summary>The hero's animator on a body, for entity states (null when this player has no Deadlock model).</summary>
+        public static DeadlockAnimator? AnimatorOf(GameObject bodyObject)
+        {
+            var locator = bodyObject != null ? bodyObject.GetComponent<ModelLocator>() : null;
+            Transform? model = locator != null ? locator.modelTransform : null;
+            return model != null && model.TryGetComponent(out DeadlockModelSwap swap) ? swap.Animator : null;
+        }
+
+        /// <summary>Entity states ask for animation states by name (every client runs OnEnter, so all see it).</summary>
+        public static void Play(GameObject bodyObject, string state) => AnimatorOf(bodyObject)?.Play(state);
+    }
+
+    /// <summary>
+    /// The hero's Deadlock footsteps, on the stand-in skeleton's footstep animation events (the same events RoR2's
+    /// FootstepHandler uses for dust; its own Wwise footstep is blanked). Sound id "{hero}_footstep".
+    /// </summary>
+    public class DeadlockFootsteps : MonoBehaviour
+    {
+        public string HeroKey = "";
+        private CharacterModel? _model;
+        private EntityStateMachine? _machine;
+
+        private void Awake() => _model = GetComponent<CharacterModel>();
+
+        public void Footstep(AnimationEvent e) => Step(); // same signature as FootstepHandler's animation event
+
+        private void Step()
+        {
+            CharacterBody? body = _model != null ? _model.body : null;
+            if (body == null || body.characterMotor == null || !body.characterMotor.isGrounded) return;
+            // The stand-in's animator keeps "running" under a slide, dash or ability: only real walking steps.
+            if (_machine == null) _machine = EntityStateMachine.FindByCustomName(body.gameObject, "Body");
+            if (_machine != null && !(_machine.state is EntityStates.CursedApple.Deadlock.DeadlockMain)) return;
+            DeadlockSounds.Play(HeroKey + "_footstep", body.footPosition, body.gameObject);
+        }
+    }
+
+    /// <summary>
+    /// Plays a hero's own Deadlock clips on their Deadlock skeleton. Locomotion
+    /// comes from how the body moves; one-shots are requested by entity states, which run on every client.
+    /// </summary>
+    public class DeadlockAnimator : MonoBehaviour
+    {
+        /// <summary>What a hero's LoopRule sees.</summary>
+        public readonly struct Ctx
+        {
+            public readonly string State, Loco;
+            public readonly bool Grounded;
+            public readonly float GroundedFor, AirTime, StateTime;
+            public Ctx(string state, string loco, bool grounded, float groundedFor, float airTime, float stateTime)
+            { State = state; Loco = loco; Grounded = grounded; GroundedFor = groundedFor; AirTime = airTime; StateTime = stateTime; }
+        }
+
+        private class Row { public string State = "", Clip = "", Next = "", Layer = ""; public bool Loop; }
+        private class Layer { public Row Row = null!; public AnimClip Clip = null!; public float T; public bool Valid; }
+
+        private DeadlockHeroDef _def = null!;
+        private CharacterBody? _body;
+        private Transform _frame = null!;
+        private bool _display;
+        private Dictionary<string, AnimClip>? _clips;
+        private readonly Dictionary<string, Row> _states = new Dictionary<string, Row>();
+        private readonly Dictionary<string, Transform> _bones = new Dictionary<string, Transform>();
+        private readonly Dictionary<AnimClip, Dictionary<string, AnimTrack>> _index = new Dictionary<AnimClip, Dictionary<string, AnimTrack>>();
+        private Layer _cur = new Layer(), _prev = new Layer(), _over = new Layer();
+        private float _fade = 1f, _fadeTime = 0.15f, _overWeight, _stateTime, _airTime, _groundedFor, _nextClipTry;
+        private Vector3 _lastPos, _vel;
+        private bool _wasGrounded = true;
+        private Transform? _spine1, _spine2, _spine3;
+        private Transform? _ikWeapon, _ikHand;
+        private Quaternion _ikRot;
+        private Vector3 _ikPos;
+
+        public bool Ready => _clips != null && _cur.Valid;
+        public string Current => _cur.Valid ? _cur.Row.State : "";
+
+        public void Init(DeadlockHeroDef def, CharacterBody? body, Transform frame, bool display)
+        {
+            _def = def;
+            _body = body;
+            _frame = frame;
+            _display = display;
+            foreach (var a in def.Anims) _states[a.State] = new Row { State = a.State, Clip = a.Clip, Loop = a.Loop, Next = a.Next, Layer = a.Layer };
+            foreach (Transform t in GetComponentsInChildren<Transform>(true)) if (!_bones.ContainsKey(t.name)) _bones[t.name] = t;
+            _bones.TryGetValue("spine_1", out _spine1);
+            _bones.TryGetValue("spine_2", out _spine2);
+            _bones.TryGetValue("spine_3", out _spine3);
+            if (def.HandIK is var (weapon, hand) && _bones.TryGetValue(weapon, out Transform w) && _bones.TryGetValue(hand, out Transform h))
+                (_ikWeapon, _ikHand) = (w, h);
+            _lastPos = transform.position;
+            TryClips();
+        }
+
+        private void TryClips()
+        {
+            if (_clips != null) return;
+            _clips = DeadlockInstall.Clips(_def.Hero);
+            if (_clips != null && _clips.Count == 0) _clips = null;
+            if (_clips != null) Switch("idle", 0f);
+        }
+
+        // ---- states ----
+
+        public void Play(string id)
+        {
+            if (_clips == null || !_states.TryGetValue(id, out Row row)) return;
+            if (row.Layer == "additive") { SetLayer(_over, row); _overWeight = Mathf.Max(_overWeight, 0.01f); }
+            else Switch(id, 0.08f);
+        }
+
+        /// <summary>Only while just moving around (doesn't cut into an ability), e.g. a jump or landing.</summary>
+        private void PlaySoft(string id)
+        {
+            if (_cur.Valid && !IsLocomotion(_cur.Row.State) && _cur.Row.State != "in_air" && _cur.Row.State != "falling") return;
+            Play(id);
+        }
+
+        private bool SetLayer(Layer l, Row row)
+        {
+            l.Row = row;
+            l.T = 0f;
+            l.Valid = _clips!.TryGetValue(row.Clip, out l.Clip);
+            return l.Valid;
+        }
+
+        private bool Switch(string id, float blend)
+        {
+            if (!_states.TryGetValue(id, out Row row)) return false;
+            if (_cur.Valid && _cur.Row.State == id && row.Loop) return true; // already looping it
+            var old = _prev;
+            _prev = _cur;
+            _cur = old;
+            if (!SetLayer(_cur, row)) { var swap = _prev; _prev = _cur; _cur = swap; return false; }
+            _fadeTime = Mathf.Max(0.01f, blend);
+            _fade = _prev.Valid ? 0f : 1f;
+            _stateTime = 0f;
+            return true;
+        }
+
+        /// <summary>Idle, runs and sprints, in any locomotion set ("siphon.run_n").</summary>
+        private static bool IsLocomotion(string id)
+        {
+            int dot = id.LastIndexOf('.');
+            string b = dot >= 0 ? id.Substring(dot + 1) : id;
+            return b == "idle" || b.StartsWith("run_") || b.StartsWith("sprint_");
+        }
+
+        private bool Grounded => _body == null || _body.characterMotor == null || _body.characterMotor.isGrounded;
+        private bool Dead => _body != null && _body.healthComponent != null && !_body.healthComponent.alive;
+
+        private string Locomotion(out float speedScale)
+        {
+            speedScale = 1f;
+            if (!Grounded && _groundedFor <= 0f) return _vel.y > 0.5f ? "in_air" : "falling";
+            string id;
+            Vector3 v = _vel;
+            v.y = 0f;
+            if (v.magnitude < 0.6f) id = "idle";
+            else
+            {
+                float move = _body != null ? Mathf.Max(1f, _body.moveSpeed) : _def.BaseSpeed;
+                speedScale = Mathf.Clamp(v.magnitude / move, 0.5f, 1.8f);
+                Vector3 fwd = _frame.forward;
+                fwd.y = 0f;
+                float angle = Vector3.SignedAngle(fwd, v, Vector3.up);
+                string[] dirs = { "n", "ne", "e", "se", "s", "sw", "w", "nw" };
+                string dir = dirs[((Mathf.RoundToInt(angle / 45f) % 8) + 8) % 8];
+                bool sprint = _body != null && _body.isSprinting && dir != "s" && dir != "se" && dir != "sw";
+                id = (sprint ? "sprint_" : "run_") + dir;
+            }
+            // A hero's locomotion set (Abrams runs differently while Siphon Life drains).
+            string? set = _body != null && _def.LocoSet != null ? _def.LocoSet(_body) : null;
+            if (set != null && _states.ContainsKey(set + "." + id)) return set + "." + id;
+            return id;
+        }
+
+        private float Decide(float dt)
+        {
+            bool grounded = Grounded;
+            _groundedFor = grounded ? _groundedFor + dt : 0f;
+            _airTime = grounded ? 0f : _airTime + dt;
+            _stateTime += dt;
+            string id = _cur.Row.State;
+
+            if (Dead) { if (id != "death") Switch("death", 0.1f); return 1f; }
+
+            // Jumps and landings, read from movement (works for every client).
+            if (_wasGrounded && !grounded && _vel.y > 2f) { PlaySoft("jump"); if (_body != null) DeadlockSounds.Play(_def.Sound("jump"), transform.position, _body.gameObject); }
+            if (grounded && !_wasGrounded && _airTime <= 0f && _lastAir > 0.35f)
+            {
+                PlaySoft(_lastFallSpeed < -18f && _states.ContainsKey("hard_land") ? "hard_land" : "land");
+                if (_body != null) DeadlockSounds.Play(_def.Sound("land"), transform.position, _body.gameObject);
+            }
+            _wasGrounded = grounded;
+
+            string loco = Locomotion(out float scale);
+            if (!_cur.Row.Loop && _cur.T >= _cur.Clip.Length)
+            {
+                string next = _cur.Row.Next;
+                float holdFor = _def.HoldSeconds != null ? _def.HoldSeconds(id) : 3f; // held last frame
+                if (next == "hold") { if (_stateTime > holdFor) Switch(loco, 0.2f); }
+                else if (!Switch(next == "locomotion" ? loco : next, 0.15f)) Switch(loco, 0.15f); // never freeze on a missing clip
+                return 1f;
+            }
+            if (!_cur.Row.Loop) return 1f; // one-shot still playing
+            string? rule = _def.LoopRule?.Invoke(new Ctx(id, loco, grounded, _groundedFor, _airTime, _stateTime));
+            if (rule != null) { if (!Switch(rule, 0.1f)) Switch(loco, 0.1f); return 1f; }
+            switch (id)
+            {
+                case "slide": if (!grounded && _airTime > 0.3f) Switch(loco, 0.15f); break; // the slide state asks for its getup
+                case "in_air":
+                case "falling":
+                    if (grounded && _groundedFor > 0.05f) Switch(loco, 0.1f);
+                    else if (id != loco && (loco == "in_air" || loco == "falling")) Switch(loco, 0.25f);
+                    break;
+                default:
+                    if (IsLocomotion(id) && loco != id) Switch(loco, 0.15f);
+                    break;
+            }
+            return IsLocomotion(_cur.Row.State) && !_cur.Row.State.EndsWith("idle") ? scale : 1f;
+        }
+
+        private float _lastAir, _lastFallSpeed;
+
+        private void LateUpdate()
+        {
+            float dt = Time.deltaTime;
+            if (dt <= 0f) return;
+            if (_clips == null)
+            {
+                if (Time.unscaledTime >= _nextClipTry) { _nextClipTry = Time.unscaledTime + 2f; TryClips(); }
+                if (_clips == null) return;
+            }
+            // Velocity from how the model actually moved: right for remote players too.
+            Vector3 v = (transform.position - _lastPos) / dt;
+            _lastPos = transform.position;
+            if (v.magnitude < 60f) _vel = Vector3.Lerp(_vel, v, 1f - Mathf.Exp(-dt * 12f));
+            if (!Grounded) { _lastAir = _airTime + dt; _lastFallSpeed = Mathf.Min(_lastFallSpeed, _vel.y); }
+            else if (_groundedFor > 0.2f) _lastFallSpeed = 0f;
+
+            float scale = _display ? 1f : Decide(dt);
+            Advance(_cur, dt * scale);
+            if (_prev.Valid) Advance(_prev, dt);
+            _fade = Mathf.Min(1f, _fade + dt / _fadeTime);
+            if (_over.Valid)
+            {
+                Advance(_over, dt);
+                bool done = _over.T >= _over.Clip.Length;
+                _overWeight = Mathf.MoveTowards(_overWeight, done ? 0f : 1f, dt / 0.08f);
+                if (done && _overWeight <= 0f) _over.Valid = false;
+            }
+            Apply();
+            GripCapture();
+            AimPitch();
+            HandIK();
+        }
+
+        /// <summary>The weapon in the hand's space as the clips posed it (before the aim bend moves the hand).</summary>
+        private void GripCapture()
+        {
+            if (_ikWeapon == null || _ikHand == null) return;
+            Quaternion inv = Quaternion.Inverse(_ikHand.rotation);
+            _ikRot = inv * _ikWeapon.rotation;
+            _ikPos = inv * (_ikWeapon.position - _ikHand.position);
+        }
+
+        /// <summary>
+        /// Carry the weapon with the hand: put it back at the clip's grip after the aim bend. (Not the hand's
+        /// weapon_hand_R socket: that sits 19 cm and ~98 deg off the grip the clips use, which turned Abrams' gun sideways.)
+        /// </summary>
+        private void HandIK()
+        {
+            if (_ikWeapon == null || _ikHand == null) return;
+            _ikWeapon.SetPositionAndRotation(_ikHand.position + _ikHand.rotation * _ikPos, _ikHand.rotation * _ikRot);
+        }
+
+        private static void Advance(Layer l, float dt)
+        {
+            if (!l.Valid) return;
+            l.T += dt;
+            if (l.Row.Loop && l.Clip.Length > 0f) l.T %= l.Clip.Length;
+            else l.T = Mathf.Min(l.T, l.Clip.Length);
+        }
+
+        private void Apply()
+        {
+            float w = _prev.Valid ? Mathf.SmoothStep(0f, 1f, _fade) : 1f;
+            foreach (AnimTrack tr in _cur.Clip.Tracks)
+            {
+                if (!_bones.TryGetValue(tr.Bone, out Transform bone)) continue;
+                bool hasR = tr.SampleRot(_cur.T, out Quaternion r);
+                bool hasP = SamplePos(_cur, tr, out Vector3 p);
+                if (w < 1f && _prev.Valid && Find(_prev.Clip, tr.Bone) is AnimTrack pt)
+                {
+                    if (hasR && pt.SampleRot(_prev.T, out Quaternion pr)) r = Quaternion.Slerp(pr, r, w);
+                    if (hasP && SamplePos(_prev, pt, out Vector3 pp)) p = Vector3.Lerp(pp, p, w);
+                }
+                if (_overWeight > 0f && _over.Valid && Find(_over.Clip, tr.Bone) is AnimTrack ut)
+                {
+                    // Deadlock's additive clips store offsets on top of the current pose.
+                    // Root-level bones carry the converter's axis turn instead of an offset, and Source 2 cloth points
+                    // ($cloth_*, Abrams' coat) a reference pose: read those relative to the clip's first frame, or the
+                    // pose is added on top and the coat stretches.
+                    bool cloth = tr.Bone.StartsWith("$cloth", StringComparison.Ordinal);
+                    if (hasR && ut.SampleRot(_over.T, out Quaternion ur))
+                    {
+                        if (cloth || Quaternion.Angle(Quaternion.identity, ut.Rot![0]) > 45f) ur = Quaternion.Inverse(ut.Rot![0]) * ur;
+                        r = r * Quaternion.Slerp(Quaternion.identity, ur, _overWeight);
+                    }
+                    if (hasP && ut.SamplePos(_over.T, out Vector3 up))
+                    {
+                        if (cloth) up -= ut.Pos![0];
+                        p += up * _overWeight;
+                    }
+                }
+                if (hasR) bone.localRotation = r;
+                if (hasP) bone.localPosition = p;
+            }
+            if (w >= 1f) _prev.Valid = false;
+        }
+
+        /// <summary>
+        /// A bone's position in a layer. Root-locked clips (Deadlock moves heroes with these animations; RoR2 moves
+        /// the body itself) keep the pelvis at its first-frame horizontal spot, or the model runs ahead of the hero.
+        /// </summary>
+        private bool SamplePos(Layer l, AnimTrack t, out Vector3 p)
+        {
+            if (!t.SamplePos(l.T, out p)) return false;
+            if (t.Bone == "pelvis" && t.Pos != null && t.Pos.Length > 0 && _def.IsRootLocked(l.Row.State)) { p.x = t.Pos[0].x; p.z = t.Pos[0].z; }
+            return true;
+        }
+
+        /// <summary>Bend the spine toward where the player aims (Deadlock clips only aim straight ahead).</summary>
+        private void AimPitch()
+        {
+            if (_body == null || _body.inputBank == null || Dead || _spine1 == null) return;
+            if (!IsLocomotion(_cur.Row.State) && _cur.Row.State != "in_air" && _cur.Row.State != "falling") return;
+            Vector3 aim = _body.inputBank.aimDirection;
+            float pitch = Mathf.Clamp(Mathf.Asin(Mathf.Clamp(aim.y, -1f, 1f)) * Mathf.Rad2Deg, -70f, 70f);
+            Vector3 right = _frame.right;
+            Quaternion q = Quaternion.AngleAxis(-pitch / 3f, right);
+            foreach (Transform? s in new[] { _spine1, _spine2, _spine3 })
+                if (s != null) s.rotation = q * s.rotation;
+        }
+
+        private AnimTrack? Find(AnimClip clip, string bone)
+        {
+            if (!_index.TryGetValue(clip, out var map))
+            {
+                map = new Dictionary<string, AnimTrack>();
+                foreach (AnimTrack t in clip.Tracks) map[t.Bone] = t;
+                _index[clip] = map;
+            }
+            return map.TryGetValue(bone, out AnimTrack tr) ? tr : null;
+        }
+    }
+}

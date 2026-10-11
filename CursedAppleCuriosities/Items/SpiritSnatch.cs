@@ -11,6 +11,7 @@ namespace CursedAppleCuriosities.Items
         public override string ItemName => "Spirit Snatch";
         public override string ItemLangTokenName => "SPIRITSNATCH";
 
+        public override string ItemPickupDesc => "Hits on nearby enemies deal bonus damage and steal their armor.";
         public override string ItemFullDescription =>
             $"Hitting an enemy within <style=cIsUtility>{Range}m</style> " +
             $"deals a bonus <style=cIsDamage>{BonusDamageCoefficient * 100:0}% base damage burst</style> " +

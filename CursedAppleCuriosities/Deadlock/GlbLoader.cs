@@ -61,8 +61,8 @@ namespace CursedAppleCuriosities.Deadlock
     }
 
     /// <summary>
-    /// Minimal binary glTF (GLB) loader for one skinned Deadlock hero, ported from HeroBrew (Valheim). glTF is
-    /// right-handed, Unity left-handed: X is mirrored and winding reversed. Unlike HeroBrew, every primitive gets
+    /// Minimal binary glTF (GLB) loader for one skinned Deadlock hero. glTF is
+    /// right-handed, Unity left-handed: X is mirrored and winding reversed. Every primitive gets
     /// its own renderer with a single submesh: RoR2's CharacterModel gives each renderer one material plus its
     /// overlays (hit flash, elites, cloak), which only works on single-submesh renderers.
     /// </summary>
@@ -75,10 +75,11 @@ namespace CursedAppleCuriosities.Deadlock
             public int BinStart;
         }
 
-        private static Glb Read(string file)
+        private static Glb Read(string file) => Read(File.ReadAllBytes(file), file);
+
+        private static Glb Read(byte[] glb, string name)
         {
-            byte[] glb = File.ReadAllBytes(file);
-            if (BitConverter.ToUInt32(glb, 0) != 0x46546C67) throw new InvalidDataException("not a GLB: " + file);
+            if (BitConverter.ToUInt32(glb, 0) != 0x46546C67) throw new InvalidDataException("not a GLB: " + name);
             int jsonLen = BitConverter.ToInt32(glb, 12);
             return new Glb
             {
@@ -96,6 +97,17 @@ namespace CursedAppleCuriosities.Deadlock
             var clips = new Dictionary<string, AnimClip>();
             var anims = MiniJson.Arr(g.J, "animations");
             if (anims == null) return clips;
+            // Which bones hang off root_motion (Abrams' pelvis does; Lash's hangs off the model root), and its rest turn.
+            var underRoot = new HashSet<string>();
+            Quaternion rootRest = Quaternion.identity;
+            foreach (object n in nodes)
+            {
+                if (MiniJson.Str(n, "name") != "root_motion") continue;
+                if (MiniJson.Arr(n, "rotation") is List<object> r && r.Count == 4)
+                    rootRest = new Quaternion(Convert.ToSingle(r[0]), -Convert.ToSingle(r[1]), -Convert.ToSingle(r[2]), Convert.ToSingle(r[3]));
+                if (MiniJson.Arr(n, "children") is List<object> kids)
+                    foreach (object c in kids) underRoot.Add(MiniJson.Str(nodes[Convert.ToInt32(c)], "name") ?? "");
+            }
             foreach (object a in anims)
             {
                 string name = (MiniJson.Str(a, "name") ?? "").Replace('\\', '/');
@@ -133,22 +145,79 @@ namespace CursedAppleCuriosities.Deadlock
                     }
                     if (times.Length > 0 && track != root) clip.Length = Mathf.Max(clip.Length, times[times.Length - 1]);
                 }
+                RemoveRootTravel(clip, root, rootRest, underRoot);
                 clips[name] = clip;
             }
             return clips;
         }
 
         /// <summary>
+        /// root_motion is never played (RoR2 moves the body itself), so what it carries has to be moved into the bones:
+        /// <list type="bullet">
+        /// <item>Its travel (a run moves it 4.7 m a loop) is dropped. Source 2 cloth points ($cloth_*, Abrams' coat) hang
+        /// off the model root beside it and carry that travel too: take it out of them, or the coat runs ahead and
+        /// snaps back each loop.</item>
+        /// <item>Its resting turn is kept. Most clips leave it at the skeleton's rest, but newer AnimGraph2 clips
+        /// (Abrams' dash_ground) bake an axis turn into it, with the bones under it (his pelvis) in that turned frame.
+        /// Left out, the hero lies on his side: the turn goes into those bones instead.</item>
+        /// </list>
+        /// </summary>
+        private static void RemoveRootTravel(AnimClip clip, AnimTrack root, Quaternion rootRest, HashSet<string> underRoot)
+        {
+            if ((root.Pos == null || root.Pos.Length == 0) && (root.Rot == null || root.Rot.Length == 0)) return;
+            // Additive clips (the shot, landings, Abrams' wall impact) have no travel and a converter axis turn on
+            // root_motion: they store offsets, leave them alone. Their pelvis starts at zero offset (a full clip's
+            // stands ~1.6 m up).
+            AnimTrack? pelvis = clip.Tracks.Find(x => x.Bone == "pelvis");
+            if (pelvis != null && pelvis.Pos != null && pelvis.Pos.Length > 0 && pelvis.Pos[0].magnitude < 0.05f) return;
+
+            Quaternion turn0 = root.Rot != null && root.Rot.Length > 0 ? root.Rot[0] : rootRest; // the clip's resting turn
+            Quaternion toRest = Quaternion.Inverse(rootRest) * turn0;
+            if (Quaternion.Angle(Quaternion.identity, toRest) > 1f)
+                foreach (AnimTrack t in clip.Tracks)
+                {
+                    if (!underRoot.Contains(t.Bone)) continue;
+                    if (t.Pos != null) for (int k = 0; k < t.Pos.Length; k++) t.Pos[k] = toRest * t.Pos[k];
+                    if (t.Rot != null) for (int k = 0; k < t.Rot.Length; k++) t.Rot[k] = toRest * t.Rot[k];
+                }
+
+            foreach (AnimTrack t in clip.Tracks)
+            {
+                if (!t.Bone.StartsWith("$cloth", StringComparison.Ordinal)) continue;
+                // Into root_motion's frame (no travel), then back out by its resting turn (kept, as for the skeleton).
+                if (t.Pos != null)
+                    for (int k = 0; k < t.Pos.Length; k++)
+                    {
+                        float at = t.PosTimes![k];
+                        root.SamplePos(at, out Vector3 rp);
+                        Quaternion rr = root.SampleRot(at, out Quaternion q) ? q : turn0;
+                        t.Pos[k] = turn0 * Quaternion.Inverse(rr) * (t.Pos[k] - rp);
+                    }
+                if (t.Rot != null && root.Rot != null && root.Rot.Length > 0)
+                    for (int k = 0; k < t.Rot.Length; k++)
+                    {
+                        root.SampleRot(t.RotTimes![k], out Quaternion rr);
+                        t.Rot[k] = turn0 * Quaternion.Inverse(rr) * t.Rot[k];
+                    }
+            }
+        }
+
+        /// <summary>
         /// Load the model. makeMaterial turns a base-colour texture (or null) into the material each renderer uses.
         /// </summary>
         public static GlbModel Load(string file, Func<string, Texture2D?, Material> makeMaterial, ICollection<string> hideMeshes)
+            => Load(Read(file), Path.GetFileNameWithoutExtension(file), Path.GetDirectoryName(file), makeMaterial, hideMeshes);
+
+        /// <summary>Load a model from GLB bytes (e.g. an embedded resource). External image files are not resolved.</summary>
+        public static GlbModel Load(byte[] glb, string name, Func<string, Texture2D?, Material> makeMaterial)
+            => Load(Read(glb, name), name, null, makeMaterial, Array.Empty<string>());
+
+        private static GlbModel Load(Glb g, string name, string? dir, Func<string, Texture2D?, Material> makeMaterial, ICollection<string> hideMeshes)
         {
-            Glb g = Read(file);
             var j = g.J;
-            string dir = Path.GetDirectoryName(file);
 
             var model = new GlbModel();
-            model.Root = new GameObject(Path.GetFileNameWithoutExtension(file));
+            model.Root = new GameObject(name);
             model.Root.SetActive(false);
             UnityEngine.Object.DontDestroyOnLoad(model.Root);
 
@@ -187,7 +256,7 @@ namespace CursedAppleCuriosities.Deadlock
                     {
                         string? uri = MiniJson.Str(images[img], "uri");
                         tex = new Texture2D(2, 2, TextureFormat.RGBA32, true) { name = uri ?? "tex" };
-                        if (uri != null && File.Exists(Path.Combine(dir, uri))) LoadPng(tex, File.ReadAllBytes(Path.Combine(dir, uri)));
+                        if (uri != null && dir != null && File.Exists(Path.Combine(dir, uri))) LoadPng(tex, File.ReadAllBytes(Path.Combine(dir, uri)));
                         textures[img] = tex;
                     }
                 }

@@ -33,11 +33,19 @@ namespace CursedAppleCuriosities.Survivors.Lash
             _team = GetComponent<TeamComponent>();
         }
 
-        private void OnEnable() { if (_indicator != null) _indicator.active = true; }
         private void OnDisable() { if (_indicator != null) _indicator.active = false; }
+
+        /// <summary>The marker only shows while Grapple is off cooldown (and still Lash's secondary).</summary>
+        private bool GrappleReady()
+        {
+            GenericSkill? secondary = _body != null && _body.skillLocator != null ? _body.skillLocator.secondary : null;
+            return secondary != null && secondary.skillDef is LashGrappleSkillDef && secondary.stock >= secondary.skillDef.requiredStock;
+        }
 
         private void FixedUpdate()
         {
+            bool show = GrappleReady();
+            if (_indicator != null && _indicator.active != show) _indicator.active = show;
             _stopwatch += Time.fixedDeltaTime;
             if (_stopwatch < 0.1f || _input == null) return;
             _stopwatch = 0f;

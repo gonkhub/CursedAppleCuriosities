@@ -12,6 +12,7 @@ namespace CursedAppleCuriosities.Items
         public override string ItemName => "Torment Pulse";
         public override string ItemLangTokenName => "TORMENTPULSE";
 
+        public override string ItemPickupDesc => "Periodically damage nearby enemies.";
         public override string ItemFullDescription =>
             $"Every <style=cIsUtility>{PulseInterval}s</style>, deal " +
             $"<style=cIsDamage>{DamageCoefficient * 100:0}% base damage</style> " +
@@ -101,7 +102,7 @@ namespace CursedAppleCuriosities.Items
         {
             var search = new SphereSearch();
             search.origin = _body.transform.position;
-            search.radius = range;
+            search.radius = range * MysticExpansion.RadiusMultiplier(_body);
             search.mask   = LayerIndex.entityPrecise.mask;
 
             var hurtBoxes = new List<HurtBox>();

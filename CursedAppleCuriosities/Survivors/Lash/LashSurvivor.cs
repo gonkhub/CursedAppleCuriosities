@@ -15,7 +15,7 @@ using UnityEngine.AddressableAssets;
 namespace CursedAppleCuriosities.Survivors.Lash
 {
     /// <summary>
-    /// Lash from Deadlock as a RoR2 survivor (ported from HeroBrew, the Valheim version). The body is a clone of
+    /// Lash from Deadlock as a RoR2 survivor. The body is a clone of
     /// Commando's rig (hurtboxes, camera, motor, item display bones); the Deadlock model, animations, sounds and
     /// icons come from the player's own Deadlock install at runtime. Without Deadlock, Lash plays the same with the
     /// stand-in model.
@@ -25,7 +25,7 @@ namespace CursedAppleCuriosities.Survivors.Lash
         public const string Token = "CURSEDAPPLE_LASH_";
         public const string BodyName = "CursedAppleLashBody";
         public const string MuzzleName = "LashMuzzle";
-        public static readonly Color Color = new Color(0.71f, 0.55f, 1f); // HeroBrew's Lash aura #B48CFF
+        public static readonly Color Color = new Color(0.71f, 0.55f, 1f); // violet #B48CFF
 
         public static GameObject? BodyPrefab, DisplayPrefab;
         public static SurvivorDef? Survivor;
@@ -45,22 +45,21 @@ namespace CursedAppleCuriosities.Survivors.Lash
             LashData.Bind(config);
 
             foreach (DeadlockSound s in LashData.Sounds) DeadlockSounds.Register(s);
+            DeadlockPingVoice.Track(BodyName, LashData.Hero, "lash");
             foreach (string icon in new[] { LashData.IconPortrait, LashData.IconGroundStrike, LashData.IconGrapple, LashData.IconFlog, LashData.IconDeathSlam })
                 DeadlockInstall.WantIcon(icon);
-            DeadlockInstall.WantModel(new DeadlockInstall.ModelRequest
-            {
-                Hero = LashData.Hero, DlModel = LashData.DlModel, Clips = LashData.ClipNames(), HideMeshes = new[] { "sparkles" },
-            });
+            DeadlockHeroes.Register(LashModelSwap.Def);
+            DeadlockInstall.WantModel(LashModelSwap.Def.ModelRequest());
 
             LoadAssets();
             RegisterStates();
             CreateSkills();
             BodyPrefab = CreateBody();
             DisplayPrefab = CreateDisplay();
+            LashItemDisplays.Register();
             CreateSurvivor();
             AddLanguage();
             LashNet.Register();
-            LashStaminaHud.Hook();
 
             host.AddComponent<LashIcons>();
             GlobalEventManager.onCharacterDeathGlobal += OnDeath;
@@ -82,7 +81,6 @@ namespace CursedAppleCuriosities.Survivors.Lash
             // Shader.Find is off limits in RoR2 (RoR2BepInExPack throws for unknown names): borrow Loader's hook rope.
             Material? rope = TryLoad<Material>("RoR2/Base/Loader/matLoaderHookRope.mat");
             LineMaterial = rope != null ? new Material(rope) : _baseMaterial!;
-            LashJump.LandEffect = TryLoad<GameObject>("RoR2/Base/Common/VFX/CharacterLandImpact.prefab");
             Material? laser = TryLoad<Material>("RoR2/Base/Common/VFX/matLaserPointerBeam.mat");
             IndicatorMaterial = laser != null ? new Material(laser) : LineMaterial;
         }
@@ -94,31 +92,12 @@ namespace CursedAppleCuriosities.Survivors.Lash
             catch (Exception e) { CursedAppleCuriositiesPlugin.Logger?.LogWarning($"[Lash] asset {key}: {e.Message}"); return null; }
         }
 
-        /// <summary>
-        /// A Lash material: Commando's opaque deferred character material (RoR2's own shader, overlays and all) with
-        /// Lash's base colour texture. A from-scratch hgstandard material renders see-through, so it is cloned.
-        /// </summary>
-        public static Material MakeMaterial(string name, Texture2D? tex)
-        {
-            Material m = new Material(_baseMaterial!);
-            m.name = "matLash_" + name;
-            m.mainTexture = tex;
-            m.color = Color.white;
-            foreach (string p in new[] { "_NormalTex", "_EmTex", "_FresnelRamp", "_PrintRamp", "_SplatmapTex", "_FlowHeightmap", "_FlowHeightRamp" })
-                if (m.HasProperty(p)) m.SetTexture(p, null);
-            if (m.HasProperty("_EmPower")) m.SetFloat("_EmPower", 0f);
-            if (m.HasProperty("_NormalStrength")) m.SetFloat("_NormalStrength", 0f);
-            if (m.HasProperty("_SpecularStrength")) m.SetFloat("_SpecularStrength", 0.15f);
-            m.DisableKeyword("FORCE_SPEC");
-            return m;
-        }
-
         // ---------------- states and skills ----------------
 
         private static void RegisterStates()
         {
             foreach (Type t in new[] { typeof(FireBurst), typeof(GroundStrike), typeof(GroundStrikeDive), typeof(GroundStrikeLand), typeof(Flog),
-                         typeof(Grapple), typeof(LashMain), typeof(LashDash), typeof(LashSlide), typeof(DeathSlamChannel), typeof(DeathSlamHold), typeof(DeathSlamThrow) })
+                         typeof(Grapple), typeof(DeathSlamChannel), typeof(DeathSlamHold), typeof(DeathSlamThrow) })
                 ContentAddition.AddEntityState(t, out _);
         }
 
@@ -194,19 +173,13 @@ namespace CursedAppleCuriosities.Survivors.Lash
             cb.baseDamage = LashData.BaseDamage;
             cb.levelDamage = LashData.DamagePerLevel;
             cb.baseMoveSpeed = LashData.BaseSpeed;
-            cb.baseJumpCount = LashData.JumpCount;
-            cb.bodyFlags |= CharacterBody.BodyFlags.IgnoreFallDamage; // Deadlock heroes take no fall damage
-            cb.sprintingSpeedMultiplier = 1f;   // Deadlock sprint builds this up out of combat (LashMain)
-            cb.useSprintCrosshair = false;       // he sprints on his own: keep the gun crosshair
-            body.GetComponent<CharacterMotor>().airControl = 0f; // LashMain steers in the air itself (keeps momentum)
-            cb.bodyFlags |= CharacterBody.BodyFlags.SprintAnyDirection; // RoR2 drops sprint input off-forward: dashes go any way
 
             // Skills: Commando's slots out, Lash's in.
             foreach (GenericSkill old in body.GetComponents<GenericSkill>()) UnityEngine.Object.DestroyImmediate(old);
             var locator = body.GetComponent<SkillLocator>();
             locator.primary = Slot(body, "Primary", _gun!);
-            locator.secondary = Slot(body, "Secondary", _groundStrike!, _flog!);
-            locator.utility = Slot(body, "Utility", _grapple!);
+            locator.secondary = Slot(body, "Secondary", _grapple!);
+            locator.utility = Slot(body, "Utility", _groundStrike!, _flog!);
             locator.special = Slot(body, "Special", _deathSlam!);
             locator.passiveSkill = new SkillLocator.PassiveSkill
             {
@@ -216,13 +189,11 @@ namespace CursedAppleCuriosities.Survivors.Lash
                 icon = ItemBase.CreatePlaceholderSprite(Color),
             };
             body.AddComponent<LashGrappleTracker>();
-            body.AddComponent<LashStamina>();
-            foreach (EntityStateMachine esm in body.GetComponents<EntityStateMachine>())
-                if (esm.customName == "Body") esm.mainStateType = new SerializableEntityStateType(typeof(LashMain));
+            DeadlockMovement.Apply(body, LashData.Movement); // stamina, dashes, jumps, slide
 
             // Model: Lash goes on top of the stand-in; one skin (a copy of Commando's default) so the lobby has one.
             Transform model = body.GetComponent<ModelLocator>().modelTransform;
-            model.gameObject.AddComponent<LashModelSwap>();
+            model.gameObject.AddComponent<DeadlockModelSwap>().HeroKey = LashData.Hero;
             MuteStandIn(body, model.gameObject);
             // Reserve the muzzle slot now: ChildLocators can't grow after load. It points at the glove once Lash is on.
             var locatorChildren = model.GetComponent<ChildLocator>();
@@ -236,10 +207,13 @@ namespace CursedAppleCuriosities.Survivors.Lash
         private static GameObject CreateDisplay()
         {
             GameObject display = Load<GameObject>("RoR2/Base/Commando/CommandoDisplay.prefab").InstantiateClone("CursedAppleLashDisplay", false);
+            DeadlockSurvivorKit.MuteDisplay(display);
             var cm = display.GetComponentInChildren<CharacterModel>(true);
             if (cm != null)
             {
-                cm.gameObject.AddComponent<LashModelSwap>().IsDisplay = true;
+                var swap = cm.gameObject.AddComponent<DeadlockModelSwap>();
+                swap.HeroKey = LashData.Hero;
+                swap.IsDisplay = true;
                 OwnSkin(cm.gameObject, "DISPLAY");
             }
             return display;
@@ -315,7 +289,7 @@ namespace CursedAppleCuriosities.Survivors.Lash
                 steps.baseFootliftString = "";
                 steps.sprintFootliftOverrideString = "";
             }
-            model.AddComponent<LashFootsteps>();
+            model.AddComponent<DeadlockFootsteps>().HeroKey = LashData.Hero;
         }
 
         private static readonly Dictionary<GameObject, float> LastHealth = new Dictionary<GameObject, float>();
@@ -323,7 +297,7 @@ namespace CursedAppleCuriosities.Survivors.Lash
         /// <summary>Every client: Lash grunts when hit (big hits more often) and warns when his health runs low.</summary>
         private static void OnDamaged(DamageDealtMessage msg)
         {
-            if (msg.victim == null || msg.victim.GetComponent<LashStamina>() == null) return;
+            if (msg.victim == null || !(msg.victim.GetComponent<DeadlockMover>() is DeadlockMover mover && mover.HeroKey == LashData.Hero)) return;
             var hc = msg.victim.GetComponent<HealthComponent>();
             if (hc == null || !hc.alive) return;
             float max = Mathf.Max(1f, hc.fullCombinedHealth);
@@ -344,10 +318,10 @@ namespace CursedAppleCuriosities.Survivors.Lash
         {
             if (report.attackerBody != null && report.attackerBody.bodyIndex == BodyCatalog.FindBodyIndex(BodyName) && report.attackerBody.hasEffectiveAuthority)
             {
-                // Three kills within 4 s: a killstreak line instead of the usual kill one.
+                // Twelve kills within 10 s: a killstreak line instead of the usual kill one.
                 RecentKills.Add(Time.time);
-                RecentKills.RemoveAll(t => Time.time - t > 4f);
-                if (RecentKills.Count >= 3) { DeadlockSounds.Play("lash_vo_killstreak", report.attackerBody.corePosition, report.attackerBody.gameObject); RecentKills.Clear(); }
+                RecentKills.RemoveAll(t => Time.time - t > 10f);
+                if (RecentKills.Count >= 12) { DeadlockSounds.Play("lash_vo_killstreak", report.attackerBody.corePosition, report.attackerBody.gameObject); RecentKills.Clear(); }
                 else DeadlockSounds.Play("lash_vo_kill", report.attackerBody.corePosition, report.attackerBody.gameObject);
             }
             if (report.victimBody != null && report.victimBody.bodyIndex == BodyCatalog.FindBodyIndex(BodyName))
@@ -367,10 +341,10 @@ namespace CursedAppleCuriosities.Survivors.Lash
             LanguageAPI.Add(Token + "SUBTITLE", "Showman of the Cursed Apple");
             LanguageAPI.Add(Token + "SKIN_DEFAULT", "Default");
             LanguageAPI.Add(Token + "DESCRIPTION",
-                "Lash dives from the sky and drags enemies into the dirt. Get high, then come down hard.<color=#CCD3E0>\n\n" +
+                "Jacob Lash is an Asshole<color=#CCD3E0>\n\n" +
                 "< ! > Ground Strike hits harder the further you fall. Grapple up, then strike back down.\n\n" +
                 "< ! > Grapple only needs a target: it locks onto enemies and allies, and gives your air jumps and dashes back.\n\n" +
-                "< ! > Death Slam reaches far above and below you: keep your crosshair on enemies to lock on. Press primary (or special again) to release early.\n\n" +
+                "< ! > Death Slam reaches far above and below you: keep your crosshair on enemies to lock on. Once one is locked, press primary (or special again) to release early.\n\n" +
                 "< ! > Flog heals you for part of the damage, so whip whole crowds.</color>\n");
             LanguageAPI.Add(Token + "OUTRO", "..and so he left, still waiting for an audience worth the show.");
             LanguageAPI.Add(Token + "FAILURE", "..and so he vanished, the crowd finally silent.");
@@ -378,18 +352,15 @@ namespace CursedAppleCuriosities.Survivors.Lash
 
             LanguageAPI.Add(Token + "PASSIVE_NAME", "Perfect Cardio, Perfect Form, Perfect Hair");
             LanguageAPI.Add(Token + "PASSIVE_DESC",
-                $"Lash moves like he does in Deadlock: <style=cIsUtility>{LashData.StaminaPips} stamina</style> (one back every {LashData.StaminaRegenSeconds:0.#}s). " +
-                "<style=cIsUtility>Sprint dashes</style> and he has <style=cIsUtility>two air jumps and two air dashes</style>, one stamina each. " +
-                $"Jump late in a ground dash for a long <style=cIsUtility>dash-jump</style>, <style=cIsUtility>wall jump</style> off walls, and hold {KeyName(LashData.SlideKey)} to <style=cIsUtility>slide</style>. " +
-                $"Out of combat he <style=cIsUtility>sprints</style> on his own, building up to <style=cIsUtility>{LashData.OutOfCombatSpeed * 100f:0}% faster</style>; sprint items work. Items that grant extra jumps give <style=cIsUtility>extra stamina</style> instead, and Wax Quail <style=cIsUtility>refills stamina faster</style>. " +
-                "He <style=cIsUtility>takes no fall damage</style>.");
+                "Lash <style=cIsUtility>sprints automatically</style> when out of combat. " +
+                $"He can <style=cIsUtility>slide</style>, and <style=cIsUtility>air jump/dash</style> up to {LashData.Movement.AirJumps} times.");
 
             LanguageAPI.Add(Token + "GUN_NAME", "Lash's Glove");
             LanguageAPI.Add(Token + "GUN_DESC", $"Fire a three-round burst for <style=cIsDamage>3x{D(LashData.GunDamage)} damage</style>.");
 
             LanguageAPI.Add(Token + "GROUNDSTRIKE_NAME", "Ground Strike");
             LanguageAPI.Add(Token + "GROUNDSTRIKE_DESC",
-                $"Leap if needed, then <style=cIsUtility>dive</style> where you aim. Land for <style=cIsDamage>{D(LashData.GroundStrikeDamage)} damage</style> " +
+                $"<style=cIsUtility>Dive</style> where you aim. Land for <style=cIsDamage>{D(LashData.GroundStrikeDamage)} damage</style> " +
                 $"<style=cIsDamage>+{D(LashData.GroundStrikeDamagePerMetre)} per metre fallen</style> in a wave in front of you.");
 
             LanguageAPI.Add(Token + "FLOG_NAME", "Flog");

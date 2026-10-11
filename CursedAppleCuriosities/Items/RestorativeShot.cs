@@ -11,6 +11,7 @@ namespace CursedAppleCuriosities.Items
         public override string ItemName => "Restorative Shot";
         public override string ItemLangTokenName => "RESTORATIVESHOT";
 
+        public override string ItemPickupDesc => "Periodically, your next hit heals you.";
         public override string ItemFullDescription =>
             $"Every <style=cIsUtility>{CooldownDuration}s</style>, " +
             $"your next hit heals you for <style=cIsHealing>{BaseHealPercent * 100:0}% max HP</style> " +

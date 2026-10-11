@@ -11,6 +11,7 @@ namespace CursedAppleCuriosities.Items
         public override string ItemName => "Spellslinger";
         public override string ItemLangTokenName => "SPELLSLINGER";
 
+        public override string ItemPickupDesc => "Using abilities builds attack speed.";
         public override string ItemFullDescription =>
             $"Using a <style=cIsUtility>secondary, utility, or special ability</style> grants a " +
             $"<style=cIsDamage>Spellslinger</style> stack, adding " +

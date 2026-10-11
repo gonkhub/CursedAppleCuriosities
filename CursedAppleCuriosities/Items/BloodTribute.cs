@@ -11,6 +11,7 @@ namespace CursedAppleCuriosities.Items
         public override string EquipmentName          => "Blood Tribute";
         public override string EquipmentLangTokenName => "BLOODTRIBUTE";
 
+        public override string PickupDesc => "Toggle: drain your health for attack and movement speed.";
         public override string FullDescription =>
             $"<style=cIsUtility>Toggle</style>. While active, drain " +
             $"<style=cIsHealth>{HpDrainPercent * 100:0}% max HP/s</style> and reduce " +
@@ -40,6 +41,7 @@ namespace CursedAppleCuriosities.Items
             ActiveBuffDef.isDebuff  = false;
             ActiveBuffDef.buffColor = color;
             ContentAddition.AddBuffDef(ActiveBuffDef);
+            EquipmentFx.RegisterBuffFx(ActiveBuffDef, "RoR2/Base/Equipment/Tonic/TonicBuffEffect.prefab", "bloodtribute_loop"); // Spinel Tonic aura while active
 
             HpDrainPercent = config.Bind("Equipment", "Blood Tribute - HP Drain Per Second", 0.05f,
                 "Max HP drained per second while active.").Value;
@@ -63,6 +65,13 @@ namespace CursedAppleCuriosities.Items
             }
 
             Hooks();
+        }
+
+        public override void RegisterSounds()
+        {
+            EquipmentFx.RegisterSound("bloodtribute_on", "sounds/mods/weapon/blood_tribute/blood_tribute_activate");
+            EquipmentFx.RegisterSound("bloodtribute_off", "sounds/mods/weapon/blood_tribute/blood_tribute_deactivate");
+            EquipmentFx.RegisterSound("bloodtribute_loop", "sounds/mods/weapon/blood_tribute/blood_tribute_activated_lp", volume: 0.4f, range: 25f);
         }
 
         public override void Hooks()
@@ -90,9 +99,16 @@ namespace CursedAppleCuriosities.Items
             if (body == null || ActiveBuffDef == null) return false;
 
             if (body.HasBuff(ActiveBuffDef.buffIndex))
+            {
                 body.RemoveBuff(ActiveBuffDef.buffIndex);
+                EquipmentFx.Sound("bloodtribute_off", body.corePosition, body.gameObject);
+            }
             else
+            {
                 body.AddBuff(ActiveBuffDef);
+                EquipmentFx.Sound("bloodtribute_on", body.corePosition, body.gameObject);
+                EquipmentFx.Effect("RoR2/Base/Items/BleedOnHitAndExplode/BleedOnHitAndExplode_Explosion.prefab", body.corePosition, body.radius);
+            }
 
             return true;
         }

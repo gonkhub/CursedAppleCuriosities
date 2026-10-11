@@ -11,6 +11,7 @@ namespace CursedAppleCuriosities.Items
         public override string ItemName => "Sprint Boots";
         public override string ItemLangTokenName => "SPRINTBOOTS";
 
+        public override string ItemPickupDesc => "Build up movement speed while sprinting.";
         public override string ItemFullDescription =>
             $"While <style=cIsUtility>sprinting</style>, build up to " +
             $"<style=cIsUtility>+{BaseMaxBonus * 100:0}% movement speed</style> " +

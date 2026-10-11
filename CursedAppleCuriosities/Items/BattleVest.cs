@@ -11,6 +11,7 @@ namespace CursedAppleCuriosities.Items
         public override string ItemName => "Battle Vest";
         public override string ItemLangTokenName => "BATTLEVEST";
 
+        public override string ItemPickupDesc => "Deal more damage while at high health.";
         public override string ItemFullDescription =>
             $"While above <style=cIsHealing>{HealthThreshold * 100:0}% health</style>, " +
             $"deal <style=cIsDamage>+{DamageBonusPerStack * 100:0}% more damage</style> " +

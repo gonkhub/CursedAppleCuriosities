@@ -10,6 +10,11 @@
     dist\CursedAppleCuriosities-<version>.zip   (version read from manifest.json)
 #>
 
+param(
+    # Source2Viewer-CLI folder (MIT) bundled as plugins/vrf. The csproj passes its $(VrfSource).
+    [string]$VrfSource = 'C:\r2heimman\Valheim\profiles\HeroBrew Playtest\BepInEx\plugins\gonkhub-HeroBrew\vrf'
+)
+
 $ErrorActionPreference = 'Stop'
 
 $packagingDir = Split-Path -Parent $MyInvocation.MyCommand.Path
@@ -34,19 +39,36 @@ try {
     Copy-Item (Join-Path $packagingDir 'README.md')    (Join-Path $stage 'README.md')
     Copy-Item (Join-Path $packagingDir 'CHANGELOG.md') (Join-Path $stage 'CHANGELOG.md')
     Copy-Item (Join-Path $packagingDir 'icon.png')     (Join-Path $stage 'icon.png')
+    Copy-Item (Join-Path $packagingDir 'THIRD_PARTY_NOTICES.md') (Join-Path $stage 'THIRD_PARTY_NOTICES.md')
+    Copy-Item (Join-Path $packagingDir 'LICENSE-SPIRV-Cross.txt') (Join-Path $stage 'LICENSE-SPIRV-Cross.txt')
 
     $pluginsDir = Join-Path $stage 'plugins'
     New-Item -ItemType Directory -Path $pluginsDir | Out-Null
     Copy-Item $builtDll (Join-Path $pluginsDir 'CursedAppleCuriosities.dll')
     # NLayer (MIT) decodes the player's own cached Deadlock MP3s (RoR2 has Unity audio disabled).
     $nlayer = Join-Path $env:USERPROFILE '.nuget\packages\nlayer\1.16.0\lib\netstandard2.0\NLayer.dll'
-    if (Test-Path $nlayer) { Copy-Item $nlayer (Join-Path $pluginsDir 'NLayer.dll') }
+    if (-not (Test-Path $nlayer)) { throw "NLayer.dll not found at $nlayer (run a build to restore it)." }
+    Copy-Item $nlayer (Join-Path $pluginsDir 'NLayer.dll')
+    # Model converter: turns the player's OWN Deadlock hero models into glTF at runtime. No Valve file is shipped.
+    if (-not (Test-Path (Join-Path $VrfSource 'Source2Viewer-CLI.exe'))) { throw "Source2Viewer-CLI.exe not found in $VrfSource." }
+    Copy-Item $VrfSource (Join-Path $pluginsDir 'vrf') -Recurse
 
     if (-not (Test-Path $distDir)) { New-Item -ItemType Directory -Path $distDir | Out-Null }
     $zipPath = Join-Path $distDir "$pkgName-$version.zip"
     if (Test-Path $zipPath) { Remove-Item $zipPath -Force }
 
-    Compress-Archive -Path (Join-Path $stage '*') -DestinationPath $zipPath -Force
+    # Not Compress-Archive: Windows PowerShell 5.1 writes '\' entry separators, which
+    # Thunderstore and Linux/Proton mod managers don't treat as folders. Write '/' explicitly.
+    Add-Type -AssemblyName System.IO.Compression, System.IO.Compression.FileSystem
+    $zip = [System.IO.Compression.ZipFile]::Open($zipPath, [System.IO.Compression.ZipArchiveMode]::Create)
+    $stageFull = (Get-Item $stage).FullName
+    try {
+        Get-ChildItem $stageFull -Recurse -File | ForEach-Object {
+            $entry = $_.FullName.Substring($stageFull.Length).TrimStart('\', '/').Replace('\', '/')
+            [void][System.IO.Compression.ZipFileExtensions]::CreateEntryFromFile($zip, $_.FullName, $entry)
+        }
+    }
+    finally { $zip.Dispose() }
     Write-Host "Packaged $pkgName v$version -> dist\$pkgName-$version.zip" -ForegroundColor Green
 }
 finally {

@@ -11,6 +11,7 @@ namespace CursedAppleCuriosities.Items
         public override string ItemName => "Burst Fire";
         public override string ItemLangTokenName => "BURSTFIRE";
 
+        public override string ItemPickupDesc => "Landing hits briefly increases movement and attack speed.";
         public override string ItemFullDescription =>
             $"Landing a hit grants " +
             $"<style=cIsUtility>+{MoveSpeedBonusPerStack * 100:0}% movement speed</style> and " +

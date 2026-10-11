@@ -18,5 +18,9 @@ Item icons (`CursedAppleCuriosities/Resources/icon_*.png`) are derived from Dead
 which belongs to Valve, so they are **not in this repo**. To build, drop the 128px icons into
 `CursedAppleCuriosities/Resources/` (the names are listed in the csproj's `<EmbeddedResource>` entries).
 
+The item card art they're cropped from (`Resources/Spirit|Vitality|Weapon`) comes from the
+[Deadlock Graphical Library](https://forums.playdeadlock.com/resources/deadlock-graphical-library.30/) on the official Deadlock forums. Each 128px icon is the
+card's top 200×200 square, resized.
+
 Deadlock models, animations and sounds for survivors are read at runtime from the player's own
 Deadlock install and are never shipped.

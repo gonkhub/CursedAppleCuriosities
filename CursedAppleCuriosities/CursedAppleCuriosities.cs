@@ -3,6 +3,7 @@ using BepInEx.Logging;
 using CursedAppleCuriosities.Artifacts;
 using CursedAppleCuriosities.Deadlock;
 using CursedAppleCuriosities.Items;
+using CursedAppleCuriosities.Survivors.Abrams;
 using CursedAppleCuriosities.Survivors.Lash;
 using RoR2;
 using System;
@@ -19,6 +20,7 @@ namespace CursedAppleCuriosities
     [BepInDependency("com.bepis.r2api.recalculatestats", BepInDependency.DependencyFlags.HardDependency)]
     [BepInDependency("com.bepis.r2api.prefab", BepInDependency.DependencyFlags.HardDependency)]
     [BepInDependency("com.bepis.r2api.networking", BepInDependency.DependencyFlags.HardDependency)]
+    [BepInDependency("com.bepis.r2api.proctype", BepInDependency.DependencyFlags.HardDependency)]
     public class CursedAppleCuriositiesPlugin : BaseUnityPlugin
     {
         public static CursedAppleCuriositiesPlugin? Instance { get; private set; }
@@ -104,6 +106,20 @@ namespace CursedAppleCuriosities
             {
                 Logger?.LogError($"  ! [Survivor] Lash failed to init: {e}");
             }
+            try
+            {
+                AbramsSurvivor.Init(Config, gameObject);
+                Logger?.LogInfo("  + [Survivor] Abrams");
+            }
+            catch (Exception e)
+            {
+                Logger?.LogError($"  ! [Survivor] Abrams failed to init: {e}");
+            }
+            foreach (var eq in _equipments) // registered before the reader starts so it copies them
+            {
+                try { eq.RegisterSounds(); }
+                catch (Exception e) { Logger?.LogError($"  ! [Equipment] {eq.EquipmentName} sounds failed: {e}"); }
+            }
             DeadlockInstall.Start();
         }
 
@@ -178,6 +194,6 @@ namespace CursedAppleCuriosities
     {
         public const string PLUGIN_GUID = "com.cursedapple.curiosities";
         public const string PLUGIN_NAME = "Cursed Apple Curiosities";
-        public const string PLUGIN_VERSION = "0.9.1";
+        public const string PLUGIN_VERSION = "1.0.0";
     }
 }

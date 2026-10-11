@@ -29,6 +29,11 @@ namespace CursedAppleCuriosities.Items
         // since ItemDef does not exist until CreateItem() runs.
         protected virtual string? IconFileName => null;
 
+        // Embedded GLB (made with tools\fbx_to_glb.py) shown as the world pickup model (ground droplet /
+        // multishop terminal), textured with the icon. Every item with an icon gets the shared icon card;
+        // override to give an item its own model.
+        protected virtual string? ModelFileName => PickupModels.IconCard;
+
         // ── Runtime ref ───────────────────────────────────────────────────────
         public ItemDef? ItemDef { get; private set; }
 
@@ -38,7 +43,7 @@ namespace CursedAppleCuriosities.Items
         protected void CreateLang()
         {
             LanguageAPI.Add($"CURSEDAPPLE_{ItemLangTokenName}_NAME", ItemName);
-            LanguageAPI.Add($"CURSEDAPPLE_{ItemLangTokenName}_PICKUP", ItemPickupDesc);
+            LanguageAPI.Add($"CURSEDAPPLE_{ItemLangTokenName}_PICKUP", string.IsNullOrEmpty(ItemPickupDesc) ? ItemFullDescription : ItemPickupDesc); // the game shows this one in most places
             LanguageAPI.Add($"CURSEDAPPLE_{ItemLangTokenName}_DESC", ItemFullDescription);
             LanguageAPI.Add($"CURSEDAPPLE_{ItemLangTokenName}_LORE", ItemLore);
         }
@@ -59,12 +64,15 @@ namespace CursedAppleCuriosities.Items
             ItemDef.tags = ItemTags;
             ItemDef.canRemove = CanRemove;
 
-            // 2D pickup icon (inventory bar, logbook, multishop list, pickup ping). The 3D world
-            // pickup model (ground droplet / multishop terminal) is intentionally left null —
-            // rendering a custom flat model in RoR2's deferred pipeline from script proved
-            // unworkable (hgstandard can't be forced opaque without an authored material). Revisit
-            // via a Unity AssetBundle if a real pickup model is ever wanted.
+            // 2D pickup icon (inventory bar, logbook, multishop list, pickup ping).
             ItemDef.pickupIconSprite = IconFileName != null ? LoadEmbeddedIcon(IconFileName) : null;
+
+            // 3D world pickup model (ground droplet / multishop terminal). Items without one stay null.
+            // pickupModelPrefab is marked obsolete but CreatePickupDef still reads it into displayPrefab.
+#pragma warning disable CS0618
+            if (ModelFileName != null && ItemDef.pickupIconSprite != null)
+                ItemDef.pickupModelPrefab = PickupModels.Load(ModelFileName, ItemDef.pickupIconSprite.texture);
+#pragma warning restore CS0618
 
             ItemAPI.Add(new CustomItem(ItemDef, new ItemDisplayRuleDict(null)));
         }

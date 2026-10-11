@@ -12,6 +12,7 @@ namespace CursedAppleCuriosities.Items
         public override string ItemName => "Heroic Aura";
         public override string ItemLangTokenName => "HEROICAURA";
 
+        public override string ItemPickupDesc => "You and nearby allies take less damage and attack faster.";
         public override string ItemFullDescription =>
             $"Emit a <style=cIsUtility>{AuraRange}m</style> aura granting you and nearby allies " +
             $"<style=cIsHealing>-{BaseDamageResist * 100:0}% incoming damage</style> and " +

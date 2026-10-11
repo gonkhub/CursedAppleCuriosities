@@ -1,0 +1,6 @@
+data/
+out/
+__pycache__/
+
+# Renders of Deadlock hero models (Valve-derived)
+*_preview.png

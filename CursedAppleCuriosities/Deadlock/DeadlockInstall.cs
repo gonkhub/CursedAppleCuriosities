@@ -10,7 +10,7 @@ using UnityEngine;
 namespace CursedAppleCuriosities.Deadlock
 {
     /// <summary>
-    /// Reads the player's own Deadlock install (ported from HeroBrew): hero models and animations (converted once
+    /// Reads the player's own Deadlock install: hero models and animations (converted once
     /// by Source2Viewer-CLI, MIT), sounds and HUD icons, copied into a local cache.
     ///
     /// Ban safety: Deadlock is read-only data. It is never launched, written, hooked or injected; nothing is
@@ -29,6 +29,7 @@ namespace CursedAppleCuriosities.Deadlock
         }
 
         public static ConfigEntry<string>? ConverterPath;
+        public static ConfigEntry<string>? DeadlockFolder;
         public static ConfigEntry<bool>? ShowModels;
 
         public static string CacheDir { get; private set; } = "";
@@ -47,6 +48,7 @@ namespace CursedAppleCuriosities.Deadlock
         private static readonly Dictionary<string, string> ReadyModels = new Dictionary<string, string>();  // hero -> glb
         private static readonly Dictionary<string, string> ReadyClips = new Dictionary<string, string>();   // hero -> clips glb
         private static readonly HashSet<string> FailedModels = new HashSet<string>();
+        private static readonly Dictionary<string, string> ModelNotes = new Dictionary<string, string>(); // hero -> why there's no model (yet)
         private static readonly Dictionary<string, GlbModel> LoadedModels = new Dictionary<string, GlbModel>();
         private static readonly Dictionary<string, Dictionary<string, AnimClip>> LoadedClips = new Dictionary<string, Dictionary<string, AnimClip>>();
 
@@ -57,6 +59,8 @@ namespace CursedAppleCuriosities.Deadlock
         {
             ConverterPath = config.Bind("Deadlock", "Converter", "",
                 "Source2Viewer-CLI.exe used once to convert Deadlock hero models from YOUR Deadlock install. Blank = the vrf folder next to the mod DLL.");
+            DeadlockFolder = config.Bind("Deadlock", "Deadlock Folder", "",
+                "Your Deadlock install folder (the one holding game\\citadel), if it isn't found on its own. Blank = find it through Steam.");
             ShowModels = config.Bind("Deadlock", "Hero Models", true,
                 "Show Deadlock hero models (needs Deadlock installed). Off = heroes use the stand-in vanilla model.");
             CacheDir = Path.Combine(Application.persistentDataPath, "CursedApple", "deadlock"); // main thread only
@@ -79,7 +83,7 @@ namespace CursedAppleCuriosities.Deadlock
                 foreach (ModelRequest m in WantedModels)
                 {
                     try { ConvertModel(m, converter); }
-                    catch (Exception e) { lock (FailedModels) FailedModels.Add(m.Hero); Warn($"model {m.Hero}: {e.Message}"); }
+                    catch (Exception e) { lock (FailedModels) FailedModels.Add(m.Hero); Note(m.Hero, "couldn't be converted from Deadlock (see LogOutput.log)"); Warn($"model {m.Hero}: {e.Message}"); }
                 }
             }) { IsBackground = true, Name = "CursedApple Deadlock reader" }.Start();
         }
@@ -90,7 +94,36 @@ namespace CursedAppleCuriosities.Deadlock
             return Path.Combine(here, "vrf", "Source2Viewer-CLI.exe");
         }
 
+        private static readonly HashSet<string> Noticed = new HashSet<string>();
+
+        /// <summary>
+        /// Tell the player in chat (locally, once per reason) why a hero is showing the stand-in model. Call it while
+        /// the hero has no model, from the local player's body or the lobby display.
+        /// </summary>
+        public static void ShowModelNotice(string hero, string displayName)
+        {
+            string? why = ModelNotice(hero, out bool pending);
+            if (why == null || !Noticed.Add(hero + why)) return;
+            string color = pending ? "#9fd3ff" : "#ffb347";
+            RoR2.Chat.AddMessage($"<color={color}>{displayName}'s Deadlock model {why}.{(pending ? "" : " Until then, a stand-in model is used.")}</color>");
+        }
+
+        private static void Note(string hero, string? why) { lock (ModelNotes) { if (why == null) ModelNotes.Remove(hero); else ModelNotes[hero] = why; } }
+
         // ---- main-thread accessors ----
+
+        /// <summary>
+        /// Why a hero shows the stand-in model, for the player (null = the model is there, or switched off on purpose).
+        /// Pending is true while it is still converting (it appears on its own).
+        /// </summary>
+        public static string? ModelNotice(string hero, out bool pending)
+        {
+            pending = false;
+            if (ShowModels != null && !ShowModels.Value) return null;
+            if (LoadedModels.ContainsKey(hero)) return null;
+            lock (ModelNotes) if (ModelNotes.TryGetValue(hero, out string why)) { pending = why.StartsWith("is being converted"); return why; }
+            return null;
+        }
 
         /// <summary>The hero's model template once converted (null until then, when unavailable, or switched off).</summary>
         public static GlbModel? Model(string hero, Func<string, Texture2D?, Material> makeMaterial)
@@ -113,6 +146,7 @@ namespace CursedAppleCuriosities.Deadlock
             catch (Exception e)
             {
                 lock (FailedModels) FailedModels.Add(hero);
+                Note(hero, "failed to load (see LogOutput.log)");
                 Warn($"model {hero} failed to load: {e}");
                 return null;
             }
@@ -176,8 +210,8 @@ namespace CursedAppleCuriosities.Deadlock
         {
             foreach (string root in Candidates())
             {
-                string citadel = Path.Combine(root, "game", "citadel");
-                if (File.Exists(Path.Combine(citadel, "pak01_dir.vpk"))) return citadel;
+                foreach (string citadel in new[] { Path.Combine(root, "game", "citadel"), root }) // the install folder, or citadel itself
+                    if (File.Exists(Path.Combine(citadel, "pak01_dir.vpk"))) return citadel;
             }
             return null;
         }
@@ -186,11 +220,17 @@ namespace CursedAppleCuriosities.Deadlock
 
         private static IEnumerable<string> Candidates()
         {
+            string? set = DeadlockFolder?.Value?.Trim().Trim('"');
+            if (!string.IsNullOrEmpty(set)) yield return set!;
             string env = Environment.GetEnvironmentVariable("CURSEDAPPLE_DEADLOCK_DIR");
             if (!string.IsNullOrEmpty(env)) yield return env;
-            // Steam libraries: the default Steam folder, the library RoR2 itself runs from, and every library
-            // the libraryfolders.vdf files list.
-            var libraries = new List<string> { @"C:\Program Files (x86)\Steam", @"C:\Program Files\Steam" };
+            // Steam libraries: Steam's own folder (from the registry), the default Steam folders, the library RoR2
+            // itself runs from, and every library the libraryfolders.vdf files list.
+            var libraries = new List<string>();
+            string? steam = SteamPathFromRegistry();
+            if (steam != null) libraries.Add(steam);
+            libraries.Add(@"C:\Program Files (x86)\Steam");
+            libraries.Add(@"C:\Program Files\Steam");
             int steamapps = _gameDir.IndexOf(@"\steamapps\", StringComparison.OrdinalIgnoreCase);
             if (steamapps > 0) libraries.Add(_gameDir.Substring(0, steamapps));
             foreach (string lib in libraries.ToArray())
@@ -207,6 +247,22 @@ namespace CursedAppleCuriosities.Deadlock
                 Match dir = Regex.Match(File.ReadAllText(manifest), "\"installdir\"\\s+\"([^\"]+)\"");
                 if (dir.Success) yield return Path.Combine(lib, "steamapps", "common", dir.Groups[1].Value);
             }
+        }
+
+        /// <summary>
+        /// Steam's install folder as Steam records it (HKCU\Software\Valve\Steam, SteamPath), or null.
+        /// Read through reflection: netstandard2.1 doesn't expose the registry, Unity's Mono runtime does.
+        /// </summary>
+        private static string? SteamPathFromRegistry()
+        {
+            try
+            {
+                Type? registry = Type.GetType("Microsoft.Win32.Registry, mscorlib") ?? Type.GetType("Microsoft.Win32.Registry");
+                var getValue = registry?.GetMethod("GetValue", new[] { typeof(string), typeof(string), typeof(object) });
+                string? path = getValue?.Invoke(null, new object?[] { @"HKEY_CURRENT_USER\Software\Valve\Steam", "SteamPath", null }) as string;
+                return string.IsNullOrEmpty(path) ? null : Path.GetFullPath(path).Replace('/', '\\');
+            }
+            catch (Exception e) { Warn("couldn't read Steam's folder from the registry: " + e.Message); return null; }
         }
 
         // ---- sounds and icons ----
@@ -284,6 +340,21 @@ namespace CursedAppleCuriosities.Deadlock
             return h.ToString("x8");
         }
 
+        /// <summary>The newest clip file converted for an earlier clip list, if any.</summary>
+        private static void UseOlderClips(string hero, string folder, string baseName)
+        {
+            if (!Directory.Exists(folder)) return;
+            string? newest = null;
+            DateTime best = DateTime.MinValue;
+            foreach (string f in Directory.GetFiles(folder, baseName + "_clips_*.glb"))
+            {
+                if (f.Contains(".part")) continue;
+                DateTime t = File.GetLastWriteTimeUtc(f);
+                if (t > best) { best = t; newest = f; }
+            }
+            if (newest != null) lock (ReadyClips) ReadyClips[hero] = newest;
+        }
+
         private static void ConvertModel(ModelRequest m, string converter)
         {
             string baseName = Path.GetFileNameWithoutExtension(m.DlModel);
@@ -294,25 +365,44 @@ namespace CursedAppleCuriosities.Deadlock
 
             if (File.Exists(cache)) lock (ReadyModels) ReadyModels[m.Hero] = cache;
             if (File.Exists(animCache)) lock (ReadyClips) ReadyClips[m.Hero] = animCache;
+            else UseOlderClips(m.Hero, folder, baseName); // until the new clip list converts: the last one (a few clips missing beats none)
             if (File.Exists(cache) && (clips.Length == 0 || File.Exists(animCache))) { Log($"model {m.Hero}: cached"); return; }
 
+            // Below, a cached model always stays: only a model that was never converted counts as failed.
             string? citadel = CitadelDir();
-            if (citadel == null) { Log($"model {m.Hero}: Deadlock not found, stand-in model"); return; }
-            if (DeadlockRunning()) { Log($"model {m.Hero}: Deadlock is running, conversion waits for the next launch"); return; }
-            if (!File.Exists(converter)) { Warn($"model {m.Hero}: converter missing at {converter}"); lock (FailedModels) FailedModels.Add(m.Hero); return; }
+            if (citadel == null)
+            {
+                Log($"model {m.Hero}: Deadlock not found, {(File.Exists(cache) ? "older animations" : "stand-in model")}");
+                if (!File.Exists(cache)) Note(m.Hero, "needs Deadlock installed (it comes from your own Deadlock install)");
+                return;
+            }
+            if (DeadlockRunning())
+            {
+                Log($"model {m.Hero}: Deadlock is running, conversion waits for the next launch");
+                if (!File.Exists(cache)) Note(m.Hero, "can't be converted while Deadlock is running: close Deadlock and restart Risk of Rain 2");
+                return;
+            }
+            if (!File.Exists(converter))
+            {
+                Warn($"model {m.Hero}: converter missing at {converter}{(File.Exists(cache) ? " (cached model kept, new animations wait)" : "")}");
+                if (!File.Exists(cache)) { lock (FailedModels) FailedModels.Add(m.Hero); Note(m.Hero, "needs the model converter (vrf/Source2Viewer-CLI.exe), missing from the mod's folder"); }
+                return;
+            }
             Directory.CreateDirectory(folder);
             string vpk = Path.Combine(citadel, "pak01_dir.vpk");
 
             if (!File.Exists(cache))
             {
                 Log($"converting {m.Hero} model (once, read-only)...");
+                Note(m.Hero, "is being converted from your Deadlock install (first launch only) and appears in a minute or two");
                 if (RunConverter(converter, $"-i \"{vpk}\" -f \"{m.DlModel}\" -d --gltf_export_format glb --gltf_export_materials " +
                         "--gltf_textures_adapt --gltf_export_animations --gltf_animation_list cursedapple_none", cache))
                 {
                     lock (ReadyModels) ReadyModels[m.Hero] = cache;
+                    Note(m.Hero, null);
                     Log($"{m.Hero} model cached at {cache}");
                 }
-                else { Warn($"{m.Hero}: conversion produced no model"); lock (FailedModels) FailedModels.Add(m.Hero); return; }
+                else { Warn($"{m.Hero}: conversion produced no model"); lock (FailedModels) FailedModels.Add(m.Hero); Note(m.Hero, "couldn't be converted from Deadlock (see LogOutput.log)"); return; }
             }
             if (clips.Length > 0 && !File.Exists(animCache))
             {
