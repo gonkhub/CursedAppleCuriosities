@@ -17,7 +17,10 @@ Last verified: 2026-10-11.
 - **Build (Release, distributable):**
   `dotnet build "CursedAppleCuriosities\CursedAppleCuriosities.csproj" -c Release`
   Also auto-packages the Thunderstore zip to `dist\`.
-- **Profile path:** `C:\r2heimman\RiskOfRain2\profiles\Alloyed Goonlective 3-24`
+- **Profile path (dev):** `C:\r2heimman\RiskOfRain2\profiles\Curiosities Dev` — clone of Hallowed Concepts Release
+  (the post-DLC profile), made 2026-10-11. Builds replace the DLL in its `Unknown-CursedAppleCuriosities` folder, and
+  the csproj compiles against its BepInEx/R2API/MMHOOK. **Hallowed Concepts Release is frozen at 1.0.0: never deploy to it.**
+  Alloyed Goonlective 3-24 (the old dev profile, pre-DLC MMHOOK) no longer receives builds.
 - **Game Managed DLLs:** `C:\Program Files (x86)\Steam\steamapps\common\Risk of Rain 2\Risk of Rain 2_Data\Managed`
 - **Log (read after each launch):** `<profile>\BepInEx\LogOutput.log`
 - **Testing in-game (DebugToolkit console, Ctrl+Alt+`):**

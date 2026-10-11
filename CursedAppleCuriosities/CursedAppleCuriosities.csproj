@@ -9,7 +9,7 @@
     <AllowUnsafeBlocks>true</AllowUnsafeBlocks>
 
     <!-- Update these two paths if your install locations differ -->
-    <ProfilePath>C:\r2heimman\RiskOfRain2\profiles\Alloyed Goonlective 3-24</ProfilePath>
+    <ProfilePath>C:\r2heimman\RiskOfRain2\profiles\Curiosities Dev</ProfilePath>
     <GameManagedPath>C:\Program Files (x86)\Steam\steamapps\common\Risk of Rain 2\Risk of Rain 2_Data\Managed</GameManagedPath>
   </PropertyGroup>
 
@@ -190,19 +190,19 @@
     </Reference>
   </ItemGroup>
 
-  <!-- ───── Post-build: copy DLL to profile for quick in-game testing ───── -->
+  <!-- ───── Post-build: copy DLL to the dev profile for quick in-game testing ───── -->
+  <!-- Curiosities Dev is a clone of Hallowed Concepts Release (the post-DLC profile). The mod sits in Unknown-CursedAppleCuriosities
+       there, so the build replaces it in place and there is never a second GUID. Hallowed Concepts Release stays frozen at 1.0.0. -->
   <Target Name="DeployToProfile" AfterTargets="Build">
-    <MakeDir Directories="$(ProfilePath)\BepInEx\plugins\CursedAppleCuriosities" />
-    <Copy SourceFiles="$(TargetPath);$(NLayerDll)" DestinationFolder="$(ProfilePath)\BepInEx\plugins\CursedAppleCuriosities" />
-    <!-- Lash Playtest profile (clone of "Alloyed Goonlective super real"): replaces the imported copy in place, so there is never a second GUID. -->
+    <MakeDir Directories="$(DevPluginDir)" />
+    <Copy SourceFiles="$(TargetPath);$(NLayerDll)" DestinationFolder="$(DevPluginDir)" />
+    <!-- Lash Playtest profile (clone of "Alloyed Goonlective super real"): same in-place replacement. -->
     <Copy Condition="Exists('$(PlaytestPluginDir)')" SourceFiles="$(TargetPath);$(NLayerDll)" DestinationFolder="$(PlaytestPluginDir)" />
-    <!-- Hallowed Concepts Release profile (post-DLC game build): same in-place replacement. -->
-    <Copy Condition="Exists('$(ReleasePluginDir)')" SourceFiles="$(TargetPath);$(NLayerDll)" DestinationFolder="$(ReleasePluginDir)" />
   </Target>
   <PropertyGroup>
     <NLayerDll>$(NuGetPackageRoot)nlayer\1.16.0\lib\netstandard2.0\NLayer.dll</NLayerDll>
+    <DevPluginDir>$(ProfilePath)\BepInEx\plugins\Unknown-CursedAppleCuriosities</DevPluginDir>
     <PlaytestPluginDir Condition="'$(PlaytestPluginDir)' == ''">C:\r2heimman\RiskOfRain2\profiles\Lash Playtest\BepInEx\plugins\Unknown-CursedAppleCuriosities</PlaytestPluginDir>
-    <ReleasePluginDir Condition="'$(ReleasePluginDir)' == ''">C:\r2heimman\RiskOfRain2\profiles\Hallowed Concepts Release\BepInEx\plugins\Unknown-CursedAppleCuriosities</ReleasePluginDir>
   </PropertyGroup>
 
   <!-- ───── Deadlock model converter (Source2Viewer-CLI, MIT) next to the DLL, copied once from VrfSource ───── -->
@@ -213,9 +213,8 @@
   <!-- Every profile the DLL goes to gets it too (without it a changed clip list can't convert there). -->
   <Target Name="DeployConverter" AfterTargets="DeployToProfile" Condition="Exists('$(VrfSource)\Source2Viewer-CLI.exe')">
     <ItemGroup><VrfFiles Include="$(VrfSource)\**\*" /></ItemGroup>
-    <Copy Condition="!Exists('$(ProfilePath)\BepInEx\plugins\CursedAppleCuriosities\vrf\Source2Viewer-CLI.exe')" SourceFiles="@(VrfFiles)" DestinationFolder="$(ProfilePath)\BepInEx\plugins\CursedAppleCuriosities\vrf\%(RecursiveDir)" />
+    <Copy Condition="!Exists('$(DevPluginDir)\vrf\Source2Viewer-CLI.exe')" SourceFiles="@(VrfFiles)" DestinationFolder="$(DevPluginDir)\vrf\%(RecursiveDir)" />
     <Copy Condition="Exists('$(PlaytestPluginDir)') And !Exists('$(PlaytestPluginDir)\vrf\Source2Viewer-CLI.exe')" SourceFiles="@(VrfFiles)" DestinationFolder="$(PlaytestPluginDir)\vrf\%(RecursiveDir)" />
-    <Copy Condition="Exists('$(ReleasePluginDir)') And !Exists('$(ReleasePluginDir)\vrf\Source2Viewer-CLI.exe')" SourceFiles="@(VrfFiles)" DestinationFolder="$(ReleasePluginDir)\vrf\%(RecursiveDir)" />
   </Target>
 
   <!-- ───── Post-build (Release only): refresh the Thunderstore distributable zip ───── -->
