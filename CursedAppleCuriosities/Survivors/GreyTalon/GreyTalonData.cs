@@ -74,6 +74,7 @@ namespace CursedAppleCuriosities.Survivors.GreyTalon
         public const int RainArrows = 5;                // Deadlock BulletSplitShot
         public const float RainFanDeg = 3.5f;           // between neighbouring arrows
         public const float RainDamageBonus = 0.13f;     // Deadlock WeaponDamageBonus +3 on the bow's 23.5
+        public static float RainRepeatHit = 0.5f;       // later arrows of one fan on an enemy already hit by it (user: first full, the rest half)
 
         // ---- special: Guided Owl (user: 1200%, steered; very long cooldown; untargetable while casting) ----
         public static float OwlDamage = 12f;            // (Deadlock Damage 230 +0.94x spirit)
@@ -105,6 +106,7 @@ namespace CursedAppleCuriosities.Survivors.GreyTalon
             RainCooldown = c.Bind(Section, "Rain of Arrows - Cooldown", RainCooldown, "Seconds.").Value;
             RainLaunchSpeed = c.Bind(Section, "Rain of Arrows - Leap Speed", RainLaunchSpeed, "Metres per second of the leap (kept if you cancel it on the way up).").Value;
             RainHeight = c.Bind(Section, "Rain of Arrows - Leap Height", RainHeight, "Metres up where the leap stops and the glide begins.").Value;
+            RainRepeatHit = c.Bind(Section, "Rain of Arrows - Repeat Hit Damage", RainRepeatHit, "Damage multiplier for each further arrow of one 5-arrow shot that hits the same enemy.").Value;
             RainDuration = c.Bind(Section, "Rain of Arrows - Glide", RainDuration, "Seconds of glide and split arrows.").Value;
             OwlDamage = c.Bind(Section, "Guided Owl - Damage", OwlDamage, "Damage coefficient of the owl's blast.").Value;
             OwlBossBonus = c.Bind(Section, "Guided Owl - Boss Kill Bonus", OwlBossBonus, "Extra owl damage for each boss it has killed this run (0.2 = +20%).").Value;

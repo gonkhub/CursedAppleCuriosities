@@ -326,7 +326,8 @@ namespace CursedAppleCuriosities.Survivors.GreyTalon
             LanguageAPI.Add(Token + "RAIN_NAME", "Rain of Arrows");
             LanguageAPI.Add(Token + "RAIN_DESC",
                 $"<style=cIsUtility>Leap high into the air</style> and <style=cIsUtility>glide</style> for {GreyTalonData.RainDuration:0}s. While airborne, your bow fires " +
-                $"<style=cIsDamage>{GreyTalonData.RainArrows} arrows</style> in a fan, each dealing <style=cIsDamage>+{D(GreyTalonData.RainDamageBonus)}</style> damage. Jump to drop early.");
+                $"<style=cIsDamage>{GreyTalonData.RainArrows} arrows</style> in a fan, each dealing <style=cIsDamage>+{D(GreyTalonData.RainDamageBonus)}</style> damage; " +
+                $"after the first, arrows that hit the same enemy deal {D(GreyTalonData.RainRepeatHit)}. Jump to drop early, keeping your speed.");
 
             LanguageAPI.Add(Token + "OWL_NAME", "Guided Owl");
             LanguageAPI.Add(Token + "OWL_DESC",

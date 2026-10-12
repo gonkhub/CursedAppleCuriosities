@@ -40,6 +40,8 @@ namespace EntityStates.CursedApple.GreyTalon
             // The fan spreads sideways across the view.
             Vector3 right = Vector3.Cross(Vector3.up, aim.direction);
             Vector3 fanAxis = right.sqrMagnitude > 1e-4f ? Vector3.Cross(aim.direction, right.normalized).normalized : Vector3.up;
+            // One shot's arrows: the first to hit an enemy deals full damage, every further one on it half (user).
+            var struck = new System.Collections.Generic.HashSet<HealthComponent>();
             for (int i = 0; i < arrows; i++)
             {
                 float angle = (i - (arrows - 1) * 0.5f) * GreyTalonData.RainFanDeg;
@@ -64,7 +66,11 @@ namespace EntityStates.CursedApple.GreyTalon
                     falloffModel = BulletAttack.FalloffModel.None,
                     // Falloff by distance (user): full damage across about half a map, easing to half.
                     modifyOutgoingDamageCallback = (BulletAttack _, ref BulletAttack.BulletHit hit, DamageInfo info) =>
-                        info.damage *= GreyTalonData.BowFalloff(hit.distance),
+                    {
+                        info.damage *= GreyTalonData.BowFalloff(hit.distance);
+                        HealthComponent? hc = hit.hitHurtBox != null ? hit.hitHurtBox.healthComponent : null;
+                        if (arrows > 1 && hc != null && !struck.Add(hc)) info.damage *= GreyTalonData.RainRepeatHit;
+                    },
                     damageType = DamageSource.Primary,
                 }.Fire();
             }
