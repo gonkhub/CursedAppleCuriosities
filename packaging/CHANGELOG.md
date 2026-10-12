@@ -1,5 +1,7 @@
 # Changelog
 
+## 1.3.0 (unreleased)
+
 ## 1.2.5
 - New survivors: **Seven** (Cold Calculus, Lightning Ball / Static Charge, Power Surge,
   Storm Cloud) and **Vyper** (The Rattler, Screwjab Dagger, Lethal Venom, Petrifying Bola,
