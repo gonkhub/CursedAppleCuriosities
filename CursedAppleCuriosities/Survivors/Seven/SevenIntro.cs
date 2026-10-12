@@ -9,6 +9,9 @@ namespace CursedAppleCuriosities.Survivors.Seven
     /// Seven's character-select entrance: he sinks onto the pedestal from above the screen in his Storm Cloud float,
     /// lightning striking the floor around him on the way down, and ends the storm as he touches down. While he floats he
     /// wears Storm Cloud's look, as in a run: only his glowing orange skeleton shows (SevenStormLook).
+    /// Deadlock's float spins his pelvis (storm start 36 -> 93 deg, the loop on round, the end clip -75 -> -9 in 0.4 s), which
+    /// read as an awkward spin with his legs pointing off as he landed (user): the display counter-turns to keep his hips
+    /// square to the camera the whole way down and through the landing, then eases back.
     /// </summary>
     public class SevenDisplayIntro : DeadlockDisplayIntro
     {
@@ -16,6 +19,11 @@ namespace CursedAppleCuriosities.Survivors.Seven
         private const float Descent = 2.6f;     // seconds to the ground, slowing as he arrives
         private const int Bolts = 5;            // lightning strikes around him on the way down
         private const float BoltRingMin = 2f, BoltRingMax = 4.5f; // metres from the pedestal
+        private const float Settle = 0.7f;      // seconds after touching down that his hips are still held to the camera
+        private const float Ease = 0.4f;        // then seconds to hand the turn back
+
+        private Transform? _hipL, _hipR;
+        private float _face;
 
         protected override IEnumerator Run()
         {
@@ -34,6 +42,7 @@ namespace CursedAppleCuriosities.Survivors.Seven
             {
                 float u = t / Descent;
                 Lift(StartHeight * (1f - u) * (1f - u)); // easing in to land
+                HipsToCamera();
                 if (Current != "storm_start" && Current != "storm") Play("storm"); // clips that finished loading mid-descent
                 if (bolts < Bolts && t >= nextBolt)
                 {
@@ -49,6 +58,32 @@ namespace CursedAppleCuriosities.Survivors.Seven
             if (look != null) look.ForceStorm = false;
             Play("storm_end");
             DeadlockSounds.Play("seven_storm_end", Home);
+            for (float t = 0f; t < Settle; t += Time.deltaTime) { HipsToCamera(); yield return null; }
+            float from = _face;
+            for (float t = 0f; t < Ease; t += Time.deltaTime) { _face = Mathf.SmoothStep(from, 0f, t / Ease); Face(_face); yield return null; }
+            Face(0f);
+        }
+
+        /// <summary>Turn the display so his hip line (left to right thigh) runs across the screen, as it does standing.</summary>
+        private void HipsToCamera()
+        {
+            if (_hipL == null || _hipR == null)
+            {
+                GameObject? hero = GetComponentInChildren<DeadlockModelSwap>(true)?.HeroObject;
+                if (hero == null) return;
+                foreach (Transform t in hero.GetComponentsInChildren<Transform>(true))
+                {
+                    if (t.name == "leg_upper_L") _hipL = t;
+                    else if (t.name == "leg_upper_R") _hipR = t;
+                }
+                if (_hipL == null || _hipR == null) return;
+            }
+            Vector3 right = _hipR.position - _hipL.position;
+            right.y = 0f;
+            if (right.sqrMagnitude < 1e-6f) return;
+            float error = Vector3.SignedAngle(right, HomeRotation * Vector3.right, Vector3.up);
+            _face += error * 0.5f; // half the error a frame: steady, no jitter from the one-frame-old pose
+            Face(_face);
         }
 
         /// <summary>A lightning strike on the floor somewhere around the pedestal.</summary>

@@ -187,6 +187,8 @@ same on a stand-in model.
   Lash: `Survivors/Lash/LashIntro.cs` Ground Strikes onto the pedestal from 30 m (gs_drop/gs_dive, gs_land, impact sound,
   Loader slam effect). The select VO waits for the intro to end (`DeadlockModelSwap.PlaySelectVoice` at the pedestal).
   Seven: `SevenIntro.cs` sinks from 7 m in the Storm Cloud float over 2.6 s, 5 bolts around the pedestal, storm_end on landing.
+  His float clips spin his pelvis (storm_end -75 -> -9 deg in 0.4 s: an awkward spin on landing, user): the intro counter-turns the display to
+  keep his hip line across the screen through the landing, then eases back.
   Vyper: `VyperIntro.cs` slides in from 10 m back and to screen right (user: behind her final facing), getup turning to face the camera.
   Seven/Vyper not playtested. **Abrams has no intro on purpose** (user: his head clipping off the top of the screen is funny).
 - **Shared Deadlock movement** (`Deadlock/DeadlockMovement.cs`) for every Deadlock hero:
