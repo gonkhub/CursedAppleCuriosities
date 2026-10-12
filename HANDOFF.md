@@ -321,7 +321,8 @@ same on a stand-in model.
     `Reanimate`), then up at 50% health with a 1000% blast + 1.5 s stun. 240 s cooldown on the master (`VictorReviveClock`), shown as a
     cooldown buff and carried into the next stage's body.
   - VFX green (user), recoloured with `Kit.Recoloured` at hue 0.33; UI colour grey-green. Sounds picked by me (user: no review pass needed).
-  - Not done yet: item displays (tools/itempass), lobby intro (pitch first), ping VO, Deadlock's ability upgrades beyond the T3 heal.
+  - Lobby intro `VictorIntro.cs` (user: Shocking Reanimation): lies on the pedestal 1.4 s with green zaps, gets up in the blast.
+  - Not done yet: item displays (tools/itempass), ping VO, Deadlock's ability upgrades beyond the T3 heal.
 
 ## Recent changes (since last handoff)
 

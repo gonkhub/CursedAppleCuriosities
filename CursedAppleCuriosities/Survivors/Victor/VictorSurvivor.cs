@@ -234,6 +234,7 @@ namespace CursedAppleCuriosities.Survivors.Victor
                 swap.IsDisplay = true;
                 Kit.OwnSkin(cm.gameObject, "skinCursedAppleVictorDISPLAY", Token + "SKIN_DEFAULT");
             }
+            display.AddComponent<VictorDisplayIntro>();
             return display;
         }
 
