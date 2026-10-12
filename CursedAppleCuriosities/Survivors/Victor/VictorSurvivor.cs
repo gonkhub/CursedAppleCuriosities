@@ -31,8 +31,7 @@ namespace CursedAppleCuriosities.Survivors.Victor
         public static BuffDef? BatteryBuff, JumpstartBuff, AuraBuff, ReanimatingBuff, ReviveCooldownBuff, ReviveSlow;
 
         public static GameObject? TracerEffect, HitEffect, MuzzleEffect, BoltTracer, ZapEffect, WaveEffect, BlastEffect;
-        public static Material? RangeMaterial;
-        public static Mesh? RangeMesh;
+        public static Material? IndicatorMaterial; // the aura ring (Abrams' Siphon Life ring material)
 
         private static SkillDef? _gun, _battery, _jumpstart, _aura;
 
@@ -77,56 +76,8 @@ namespace CursedAppleCuriosities.Survivors.Victor
             WaveEffect = Kit.Recoloured(TryLoad<GameObject>("RoR2/Base/Captain/CaptainTazerNova.prefab", "RoR2/Base/Characters/Captain/CaptainTazerNova.prefab",
                 "RoR2/Base/Lightning/LightningStrikeImpact.prefab"), "CursedAppleVictorWave", Hue, effect: true);
             BlastEffect = Kit.Recoloured(TryLoad<GameObject>("RoR2/Base/Lightning/LightningStrikeImpact.prefab", "RoR2/Base/Equipment/Lightning/LightningStrikeImpact.prefab"), "CursedAppleVictorBlast", Hue, effect: true);
-            LoadRangeIndicator();
-        }
-
-        /// <summary>
-        /// Aura of Suffering's radius (user: filled grey, lowered opacity, on the terrain like vanilla auras): Focus Crystal's
-        /// range indicator, whose shader paints where its sphere meets the ground, copied and turned grey. Falls back to a
-        /// grey see-through sphere (Helfire's range material) when that asset can't be found.
-        /// </summary>
-        private static void LoadRangeIndicator()
-        {
-            GameObject? crystal = TryLoad<GameObject>("RoR2/Base/NearbyDamageBonus/NearbyDamageBonusIndicator.prefab", "RoR2/Base/Items/NearbyDamageBonus/NearbyDamageBonusIndicator.prefab");
-            Renderer? source = crystal != null ? crystal.GetComponentInChildren<MeshRenderer>(true) : null;
-            Material? baseMat = source != null ? source.sharedMaterial : null;
-            if (source != null) RangeMesh = source.GetComponent<MeshFilter>()?.sharedMesh;
-            if (baseMat == null)
-            {
-                RangeMesh = null;
-                baseMat = TryLoad<Material>("RoR2/Base/BurnNearby/matHelfireRangeIndicator.mat", "RoR2/Base/Equipment/BurnNearby/matHelfireRangeIndicator.mat");
-            }
-            if (baseMat == null) return;
-            RangeMaterial = new Material(baseMat) { name = "matCursedAppleVictorAuraRange" };
-            var grey = new Color(0.62f, 0.62f, 0.62f);
-            // A fixed alpha: vanilla's indicator material starts at alpha 0 and is faded in by its prefab (a scaled copy
-            // of that stayed invisible, playtest 2026-10-12).
-            string before = "";
-            foreach (string p in new[] { "_TintColor", "_Color" })
-                if (RangeMaterial.HasProperty(p))
-                {
-                    before += $" {p}={RangeMaterial.GetColor(p)}";
-                    RangeMaterial.SetColor(p, new Color(grey.r, grey.g, grey.b, VictorData.AuraRangeAlpha)); // lowered opacity (user)
-                }
-            foreach (string p in new[] { "_Boost", "_AlphaBoost" })
-                if (RangeMaterial.HasProperty(p)) { before += $" {p}={RangeMaterial.GetFloat(p)}"; if (RangeMaterial.GetFloat(p) < 1f) RangeMaterial.SetFloat(p, 1f); }
-            if (RangeMaterial.HasProperty("_RemapTex")) RangeMaterial.SetTexture("_RemapTex", GreyRamp());
-            CursedAppleCuriositiesPlugin.Logger?.LogInfo($"[Victor] aura range: {(RangeMesh != null ? "Focus Crystal indicator" : "sphere fallback")}, " +
-                $"shader {RangeMaterial.shader?.name}, mesh {(RangeMesh != null ? RangeMesh.bounds.extents.x.ToString("0.##") : "-")}, was{before}");
-        }
-
-        /// <summary>A grey remap ramp: brightness and alpha both rise along it, so the fill stays faint and the edge reads.</summary>
-        private static Texture2D GreyRamp()
-        {
-            var t = new Texture2D(256, 1, TextureFormat.RGBA32, false) { wrapMode = TextureWrapMode.Clamp, name = "texCursedAppleVictorGreyRamp" };
-            for (int x = 0; x < 256; x++)
-            {
-                float u = x / 255f;
-                float v = Mathf.Lerp(0.45f, 0.8f, u);
-                t.SetPixel(x, 0, new Color(v, v, v, Mathf.Lerp(0.25f, 0.6f, u)));
-            }
-            t.Apply();
-            return t;
+            Material? laser = TryLoad<Material>("RoR2/Base/Common/VFX/matLaserPointerBeam.mat");
+            IndicatorMaterial = laser != null ? new Material(laser) : TryLoad<Material>("RoR2/Base/Loader/matLoaderHookRope.mat");
         }
 
         private static void CreateBuffs()

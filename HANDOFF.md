@@ -319,8 +319,8 @@ same on a stand-in model.
     fading rate (`VictorJumpstart`), +3 m/s fading in 10 buff steps. 2 charges (user), 12 s each.
   - Special Aura of Suffering (toggle, user): own "Aura" state machine (he keeps shooting); stays on until Special again or he dies (going down
     to Reanimation counts); 2 s cooldown after it ends. Server `VictorAura` ticks every 0.25 s: enemies within 8 m take 100% -> 600%/s over 8 s, then holds (Special source, proc 0.5, crits rolled, `OnHitEnemy`/`OnHitAll`, so on-hit, lifesteal, on-kill, Ethereal Shift's special
-    bonus all apply), Victor takes 1.1% -> 5% max health/s (same ramp) and can die of it. Mystic Expansion widens it. Radius shown by `VictorAuraFx` (user: filled grey, lowered opacity, on the terrain): Focus Crystal's
-    indicator mesh + material copied grey (sphere fallback); the log line `[Victor] aura range:` says which loaded.
+    bonus all apply), Victor takes 1.1% -> 5% max health/s (same ramp) and can die of it. Mystic Expansion widens it. Radius shown by `VictorAuraFx` as Abrams' Siphon Life ring (user, after the
+    Focus Crystal terrain indicator never rendered): grey, terrain-hugging, Mystic Expansion radius.
   - Passive Shocking Reanimation (`VictorRevive`): while ready, hits on Victor are NonLethal; one that leaves him at 1 health starts it:
     slow wave (125% fading over 3 s, 18 m), 3 s HiddenInvincibility + Reanimating buff (SkillSilence; the owner's body machine enters
     `Reanimate`), then up at 50% health with a 1000% blast + 1.5 s stun. 240 s cooldown on the master (`VictorReviveClock`), shown as a

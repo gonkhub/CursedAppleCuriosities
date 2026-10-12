@@ -78,7 +78,6 @@ namespace CursedAppleCuriosities.Survivors.Victor
         public static float AuraProc = 0.5f;            // per tick (4 ticks a second), like Torment Pulse
         public static float AuraCooldown = 2f;          // after it ends (Deadlock AbilityCooldown); it stays on until toggled off or he dies (user)
         public const float AuraEndGrace = 0.3f;         // special again after this ends it early (Deadlock "End Aura")
-        public const float AuraRangeAlpha = 0.35f;      // the grey range indicator's opacity (user: lowered)
 
         // ---- passive: Shocking Reanimation (Deadlock ultimate, here automatic: user; 240 s cooldown: user) ----
         public static float ReviveCooldown = 240f;      // Deadlock AbilityCooldown

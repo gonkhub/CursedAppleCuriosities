@@ -377,50 +377,57 @@ namespace CursedAppleCuriosities.Survivors.Victor
     }
 
     /// <summary>
-    /// Every client, on Victor: the aura's radius while it runs (user): a filled grey area at lowered opacity, drawn on the
-    /// terrain like vanilla's item auras. It is Focus Crystal's range indicator (a sphere whose shader paints where it meets
-    /// the ground) recoloured grey (<see cref="VictorSurvivor.RangeMaterial"/>), sized to the real radius incl. Mystic Expansion.
+    /// Every client, on Victor: the aura's reach while it runs, drawn like Abrams' Siphon Life (user): a grey ring on the
+    /// ground around him, hugging the terrain, sized to the real radius incl. Mystic Expansion.
     /// </summary>
     public class VictorAuraFx : MonoBehaviour
     {
+        private const int Points = 64;
+        private static readonly Color Grey = new Color(0.7f, 0.7f, 0.7f, 0.6f);
         private CharacterBody _body = null!;
-        private GameObject? _dome;
-        private float _meshRadius = 0.5f;
+        private LineRenderer? _ring;
 
         private void Awake() => _body = GetComponent<CharacterBody>();
 
         private void Update()
         {
             bool on = VictorSurvivor.AuraBuff != null && _body.HasBuff(VictorSurvivor.AuraBuff) && _body.healthComponent != null && _body.healthComponent.alive;
-            if (on && _dome == null && VictorSurvivor.RangeMaterial != null) Build();
-            if (_dome == null) return;
-            if (_dome.activeSelf != on) _dome.SetActive(on);
-            if (!on) return;
+            if (!on) { Clear(); return; }
+            if (_ring == null) _ring = Line();
             float radius = VictorData.AuraRadius * MysticExpansion.RadiusMultiplier(_body);
-            _dome.transform.position = _body.corePosition;
-            _dome.transform.localScale = Vector3.one * radius / _meshRadius;
-        }
-
-        private void Build()
-        {
-            // Not parented to the body: the model's scale (and its lobby display scale) must not touch the size.
-            _dome = new GameObject("CursedAppleVictorAuraRange");
-            Mesh? mesh = VictorSurvivor.RangeMesh;
-            if (mesh == null)
+            Vector3 c = _body.footPosition;
+            for (int i = 0; i < Points; i++)
             {
-                GameObject sphere = GameObject.CreatePrimitive(PrimitiveType.Sphere);
-                mesh = sphere.GetComponent<MeshFilter>().sharedMesh;
-                Destroy(sphere);
+                float a = i * Mathf.PI * 2f / Points;
+                Vector3 pt = c + new Vector3(Mathf.Cos(a), 0f, Mathf.Sin(a)) * radius;
+                if (Physics.Raycast(pt + Vector3.up * 3f, Vector3.down, out RaycastHit hit, 8f, LayerIndex.world.mask, QueryTriggerInteraction.Ignore)) pt.y = hit.point.y;
+                _ring.SetPosition(i, pt + Vector3.up * 0.15f);
             }
-            _meshRadius = Mathf.Max(0.01f, mesh.bounds.extents.x);
-            _dome.AddComponent<MeshFilter>().sharedMesh = mesh;
-            var r = _dome.AddComponent<MeshRenderer>();
-            r.sharedMaterial = VictorSurvivor.RangeMaterial;
-            r.shadowCastingMode = UnityEngine.Rendering.ShadowCastingMode.Off;
-            r.receiveShadows = false;
         }
 
-        private void OnDestroy() { if (_dome != null) Destroy(_dome); }
+        private static LineRenderer Line()
+        {
+            var go = new GameObject("CursedAppleVictorAuraRing");
+            var lr = go.AddComponent<LineRenderer>();
+            lr.material = VictorSurvivor.IndicatorMaterial;
+            if (lr.material != null && lr.material.HasProperty("_TintColor")) lr.material.SetColor("_TintColor", Grey);
+            lr.startColor = lr.endColor = Grey;
+            lr.startWidth = lr.endWidth = 0.08f;
+            lr.positionCount = Points;
+            lr.loop = true;
+            lr.useWorldSpace = true;
+            lr.shadowCastingMode = UnityEngine.Rendering.ShadowCastingMode.Off;
+            lr.receiveShadows = false;
+            return lr;
+        }
+
+        private void Clear()
+        {
+            if (_ring != null) Destroy(_ring.gameObject);
+            _ring = null;
+        }
+
+        private void OnDisable() => Clear();
     }
 
     // ================= Shocking Reanimation =================
