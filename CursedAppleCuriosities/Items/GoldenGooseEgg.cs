@@ -57,7 +57,7 @@ namespace CursedAppleCuriosities.Items
         {
             if (All.Count == 0)
             {
-                SecondsPerStack = config.Bind("Equipment", "Goose Eggs - Seconds Per Stack", 150f,
+                SecondsPerStack = config.Bind("Equipment", "Goose Eggs - Seconds Per Stack", 300f, // 150 at first; 5 min by playtest
                     "Seconds an egg must be held to gain a stack.").Value;
                 DamagePenalty = config.Bind("Equipment", "Goose Eggs - Damage Penalty", 0.10f,
                     "Damage reduction while any egg is held.").Value;

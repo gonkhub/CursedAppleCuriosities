@@ -4,9 +4,9 @@ A BepInEx plugin for **Risk of Rain 2** (Survivors of the Void, build 912) that 
 items and equipment **adapted from Deadlock's item catalogue**. The name is homage: Deadlock's
 map is the "Cursed Apple" and items are bought from a "curiosity shop."
 
-**State:** builds clean (0 errors), **31 items + 14 equipment**, 4 survivors (Lash, Abrams, Seven, Vyper). **v1.0.0** released
-2026-10-11; **v1.2.5** packaged 2026-10-12 for friends (local import; tag `v1.2.5` on main). New work happens on branch `1.3` (version 1.3.0). The user has
-playtested most post-1.0 work.
+**State:** builds clean (0 errors), **31 items + 14 equipment**, 5 survivors (Lash, Abrams, Seven, Vyper, Grey Talon). **v1.0.0** released
+2026-10-11; **v1.2.5** packaged 2026-10-12 for friends (tag `v1.2.5` on main); **v1.3.0** finished 2026-10-12 on branch `1.3`
+(tag `v1.3.0`, not packaged). New work happens on branch `1.4` (version 1.4.0). The user playtests as we go.
 
 ---
 
@@ -128,7 +128,7 @@ read it before touching tiers, buffs, pickups, or minion interactions.
 |---|---|---|
 | Counterspell | 25s cd. Ward 2s → fully negate next non-DoT hit + heal 8% maxHP | ✅ |
 | Colossus | 35s cd. 8s: grow 1.75×, 65% dmg resist, slow enemies in 20m, -30% move speed | ✅ |
-| Goose Eggs (Grey/Green/Red/Golden/Void) | `GoldenGooseEgg.cs` (`GooseEgg` base). Consumed on use, -10% dmg while held. +1 stack per 2:30 held, uncapped, starts at 0 (activating at 0 does nothing). Per stack: Grey 15 whites, Green 5 greens, Red 1 red, Golden 2 boss items, Void 2 void items (Void Cradle's `dtVoidChest`). Progress per egg kind, run-wide. Only Grey is droppable; every drop table rolls it into a weighted egg (45/27/12/8/8, config). Holding Void, picking up another egg absorbs it as +1 stack (`GenericPickupController.AttemptGrant`). Icons: golden art recoloured. All eggs priced white in the Catalog. | ✅ |
+| Goose Eggs (Grey/Green/Red/Golden/Void) | `GoldenGooseEgg.cs` (`GooseEgg` base). Consumed on use, -10% dmg while held. +1 stack per 5:00 held, uncapped, starts at 0 (activating at 0 does nothing). Per stack: Grey 15 whites, Green 5 greens, Red 1 red, Golden 2 boss items, Void 2 void items (Void Cradle's `dtVoidChest`). Progress per egg kind, run-wide. Only Grey is droppable; every drop table rolls it into a weighted egg (45/27/12/8/8, config). Holding Void, picking up another egg absorbs it as +1 stack (`GenericPickupController.AttemptGrant`). Icons: golden art recoloured. All eggs priced white in the Catalog. | ✅ |
 | Blood Tribute | Toggle (1s cd). While active: drain 5% max HP/s + -50% healing received, but +100% attack speed / +50% move speed. | ✅ |
 | Ethereal Shift | 45s cd. 3s invulnerable (HiddenInvincibility) + Cloak, frozen in place (`CharacterMotor.UpdateVelocity` zeroed) and no skills (`SkillSilence`); then Special-source damage +100% for 8s (`DamageSource.Special`). Not playtested. | ✅ |
 | Refresher | 80s cd. `SkillLocator.ResetSkills()` (networked to the owning client). Not playtested. | ✅ |
@@ -285,14 +285,21 @@ same on a stand-in model.
     (DLC4) x2.5, 203 m/s, pierces every enemy (`GreyTalonChargedArrow` sweeps its path), 800%, no falloff. 6 s cd.
   - Utility Rain of Arrows: 0.2 s, launch 27.5 m/s at 60 deg, 4 s glide (fall <= 0.64 m/s, drift 6.6 m/s), jump cancels. 8 s cd.
   - Special Guided Owl: 1.5 s cast, then the owl flies on the owner's client (`GreyTalonOwl`) steered by look (110 deg/s), 15 -> 36 m/s
-    while forward is held, bursts on touch (12 m, 1200%, 0.75 s stun); camera = `ICameraStateProvider` override that keeps the
+    while forward is held, bursts on touch or on Primary (12 m, 2500%, 0.75 s stun); camera = `ICameraStateProvider` override that keeps the
     player's look rotation and only moves the position behind the owl. Jump releases it. Grey Talon is HiddenInvincibility + Cloak +
     SkillSilence while steering. Boss kills: +20% owl damage each, whole run (`GreyTalonOwlTrophies` on the master, shown as a buff).
     125 s cd (Deadlock's, user wanted it very long). The owl model is Deadlock's `archer_guided_arrow` (converted as `greytalon_owl`)
     inside the Engi harpoon ghost; others see a ghost from position messages. The perched owl (`owl_bodygroup`) hides while it flies.
-  - **Sounds are off** (`GreyTalonData.SoundsApproved = false`) until the user approves `sound_review/greytalon_review.html`.
+  - Sounds approved by the user except Rain of Arrows' cast (silent). Item displays fitted (`GreyTalonItemDisplays.cs`; itempass
+    `head_floor` keeps his braids out of the head region). Owl on his arm hidden; blast is green (Captain airstrike + omni, recoloured).
+  - Playtest changes (2026-10-12): Rain of Arrows leaps at 45 m/s along 60 deg with no gravity, stops dead at 10 m, then glides;
+    jump during the rise keeps the speed (the press is swallowed: `DeadlockMover.SuppressJumpUntil`); air dash works in the glide; one
+    fan's repeat hits on an enemy deal 50%. Charged Shot hit radius 1.5 m, Lynx arrow ghost + trail. Owl 2500%, cruises 6 m/s,
+    Primary detonates it, 2 s invulnerable grace after. Slide friction 1.2. Bow shot uses the new "delta" overlay layer (shoot_idle
+    is a full pose); `GlbLoader` no longer removes root travel twice from cloth (his skirt).
+  - Lobby intro `GreyTalonIntro.cs`: the owl dives onto the pedestal and he stands in the blast.
   - Shared change: a held ("hold") one-shot now also asks the hero's LoopRule (his jump pose ends on landing; his set has no in-air loop).
-  - Pending: playtest, sound approval, ping VO, lobby intro (pitch first), writing review.
+  - Pending: ping VO, Rain of Arrows cast sound, dash pose/sound sync in multiplayer (the in-glide dash plays locally only), writing review.
 
 ## Recent changes (since last handoff)
 
