@@ -4,6 +4,7 @@ using CursedAppleCuriosities.Artifacts;
 using CursedAppleCuriosities.Deadlock;
 using CursedAppleCuriosities.Items;
 using CursedAppleCuriosities.Survivors.Abrams;
+using CursedAppleCuriosities.Survivors.GreyTalon;
 using CursedAppleCuriosities.Survivors.Lash;
 using CursedAppleCuriosities.Survivors.Seven;
 using CursedAppleCuriosities.Survivors.Vyper;
@@ -140,6 +141,15 @@ namespace CursedAppleCuriosities
             catch (Exception e)
             {
                 Logger?.LogError($"  ! [Survivor] Vyper failed to init: {e}");
+            }
+            try
+            {
+                GreyTalonSurvivor.Init(Config, gameObject);
+                Logger?.LogInfo("  + [Survivor] Grey Talon");
+            }
+            catch (Exception e)
+            {
+                Logger?.LogError($"  ! [Survivor] Grey Talon failed to init: {e}");
             }
             foreach (var eq in _equipments) // registered before the reader starts so it copies them
             {

@@ -593,7 +593,13 @@ namespace CursedAppleCuriosities.Deadlock
             {
                 string next = _cur.Row.Next;
                 float holdFor = _def.HoldSeconds != null ? _def.HoldSeconds(id) : 3f; // held last frame
-                if (next == "hold") { if (_stateTime > holdFor) Switch(loco, 0.2f); }
+                if (next == "hold")
+                {
+                    // A held pose can end early by the hero's rule too (Grey Talon holds a jump pose until he lands).
+                    string? held = _def.LoopRule?.Invoke(new Ctx(id, loco, grounded, _groundedFor, _airTime, _stateTime));
+                    if (held != null) { if (!Switch(held, 0.1f)) Switch(loco, 0.1f); }
+                    else if (_stateTime > holdFor) Switch(loco, 0.2f);
+                }
                 else if (!Switch(next == "locomotion" ? loco : next, 0.15f)) Switch(loco, 0.15f); // never freeze on a missing clip
                 return 1f;
             }
