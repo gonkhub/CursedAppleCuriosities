@@ -52,7 +52,7 @@ namespace CursedAppleCuriosities.Survivors.GreyTalon
         public const float ChargeTime = 0.5f;           // Deadlock AbilityCastDelay: drawn after this, then held
         public const float ChargedMoveSpeed = 1.5f;     // Deadlock ChannelMoveSpeed 1.5 m/s while drawing and holding
         public const float ChargedSpeed = 203.2f;       // Deadlock m_flBulletSpeed 8000 hu/s
-        public const float ChargedRadius = 0.61f;       // Deadlock m_flBulletRadius 24 hu
+        public static float ChargedRadius = 1.5f;       // wider than Deadlock's 24 hu (0.61 m) (user)
         public const float ChargedRange = 600f;         // Deadlock 10000 hu; no falloff (user)
         public const float ChargedDrop = 3f;            // m/s2 (Deadlock gravity scale 0.3)
         // Camera while drawn (Deadlock CameraHeightOffset 20 hu, CameraHorizontalOffset 15 hu): over the right shoulder, zoomed.
@@ -102,6 +102,7 @@ namespace CursedAppleCuriosities.Survivors.GreyTalon
             BowFalloffStart = c.Bind(Section, "Bow - Falloff Start", BowFalloffStart, "Metres of full damage.").Value;
             BowFalloffEnd = c.Bind(Section, "Bow - Falloff End", BowFalloffEnd, "Metres where damage reaches its floor (50%).").Value;
             ChargedDamage = c.Bind(Section, "Charged Shot - Damage", ChargedDamage, "Damage coefficient to every enemy it pierces.").Value;
+            ChargedRadius = c.Bind(Section, "Charged Shot - Hit Radius", ChargedRadius, "Metres around the arrow's path that it hits.").Value;
             ChargedCooldown = c.Bind(Section, "Charged Shot - Cooldown", ChargedCooldown, "Seconds.").Value;
             RainCooldown = c.Bind(Section, "Rain of Arrows - Cooldown", RainCooldown, "Seconds.").Value;
             RainLaunchSpeed = c.Bind(Section, "Rain of Arrows - Leap Speed", RainLaunchSpeed, "Metres per second of the leap (kept if you cancel it on the way up).").Value;

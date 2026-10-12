@@ -188,8 +188,8 @@ namespace EntityStates.CursedApple.GreyTalon
     {
         private enum Phase { Crouch, Rise, Glide }
         private Phase _phase;
-        private float _glide, _riseFrom, _riseAge, _glideAt;
-        private Vector3 _launch;
+        private float _glide, _riseFrom, _riseAge, _glideAt, _dashUntil = -1f, _dashSpeed;
+        private Vector3 _launch, _dashDir;
         private DeadlockVoice? _hum;
 
         public override void OnEnter()
@@ -229,15 +229,14 @@ namespace EntityStates.CursedApple.GreyTalon
                 case Phase.Rise:
                     _riseAge += dt;
                     if (Cancelled()) return; // keeps the leap's speed
+                    if (TryDash()) { StartGlide(); return; } // the rise ends where he is, and he dashes into the glide
                     // Held on the leap's line at full speed (no gravity) until the glide height; a ceiling ends it early.
                     bool high = transform.position.y - _riseFrom >= GreyTalonData.RainHeight;
                     bool blocked = _riseAge > 0.1f && characterMotor.velocity.y < _launch.y * 0.5f;
                     if (high || blocked || _riseAge > 1f)
                     {
-                        _phase = Phase.Glide;
-                        _glideAt = fixedAge;
+                        StartGlide();
                         characterMotor.velocity = Vector3.zero; // stopped dead at the top (user)
-                        GreyTalonRain.Begin(gameObject, _glide);
                         return;
                     }
                     characterMotor.velocity = _launch;
@@ -248,6 +247,13 @@ namespace EntityStates.CursedApple.GreyTalon
                     // which is what normally reads skill buttons, so they are passed through by hand.
                     if (inputBank.skill1.down) skillLocator.primary?.ExecuteIfReady();
                     if (inputBank.skill2.justPressed) skillLocator.secondary?.ExecuteIfReady();
+                    TryDash();
+                    if (fixedAge < _dashUntil)
+                    {
+                        characterMotor.velocity = _dashDir * _dashSpeed; // the air dash, level
+                        break;
+                    }
+                    if (_dashUntil > 0f) { characterMotor.velocity = _dashDir * _dashSpeed * GreyTalonData.Movement.AirDashEndSpeed; _dashUntil = -1f; }
                     // Slow drift with movement, and a capped fall.
                     Vector3 v = characterMotor.velocity;
                     Vector3 flat = new Vector3(v.x, 0f, v.z);
@@ -260,6 +266,37 @@ namespace EntityStates.CursedApple.GreyTalon
                     break;
             }
             StartAimMode(0.5f);
+        }
+
+        private void StartGlide()
+        {
+            _phase = Phase.Glide;
+            _glideAt = fixedAge;
+            GreyTalonRain.Begin(gameObject, _glide);
+        }
+
+        /// <summary>
+        /// His air dash inside the glide (user): the main state that normally dashes isn't running, so the same dash (distance,
+        /// time, one stamina pip, his air dashes per air) is done here and the glide carries on after it.
+        /// </summary>
+        private bool TryDash()
+        {
+            if (fixedAge < _dashUntil || !global::EntityStates.CursedApple.Deadlock.DeadlockMain.SprintKeyPressed(characterBody, inputBank)) return false;
+            var mover = GetComponent<DeadlockMover>();
+            DeadlockMovementProfile p = GreyTalonData.Movement;
+            if (mover == null || mover.AirDashes >= p.AirDashesPerAir || !mover.TrySpend()) return false;
+            mover.AirDashes++;
+            Vector3 dir = inputBank.moveVector;
+            dir.y = 0f;
+            if (dir.sqrMagnitude < 0.01f) { dir = inputBank.aimDirection; dir.y = 0f; }
+            _dashDir = dir.sqrMagnitude > 1e-4f ? dir.normalized : transform.forward;
+            _dashSpeed = p.AirDashMetres / p.AirDashSeconds;
+            _dashUntil = fixedAge + p.AirDashSeconds;
+            Vector3 fwd = characterDirection != null ? characterDirection.forward : transform.forward;
+            float rel = Vector3.SignedAngle(new Vector3(fwd.x, 0f, fwd.z), _dashDir, Vector3.up);
+            GreyTalonModel.Play(gameObject, Mathf.Abs(rel) <= 45f ? "dash_air_forward" : Mathf.Abs(rel) >= 135f ? "dash_air_back" : rel > 0f ? "dash_air_right" : "dash_air_left");
+            DeadlockSounds.Play(p.Sound("dash"), transform.position, gameObject);
+            return true;
         }
 
         /// <summary>Jump ends Rain of Arrows; the press is used up, so it doesn't also air-jump (which would reset his rise).</summary>

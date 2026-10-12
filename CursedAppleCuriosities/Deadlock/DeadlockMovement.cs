@@ -393,11 +393,14 @@ namespace EntityStates.CursedApple.Deadlock
         /// The sprint key, read straight from the player's input (Rewired action 18, honours rebinds). RoR2's sprint
         /// button state follows isSprinting, so reading that would dash every time the hero starts sprinting.
         /// </summary>
-        private bool SprintKeyPressed()
+        private bool SprintKeyPressed() => SprintKeyPressed(characterBody, inputBank);
+
+        /// <summary>The dash key this frame, for any state on a Deadlock hero (Grey Talon dashes inside Rain of Arrows' glide).</summary>
+        public static bool SprintKeyPressed(CharacterBody body, InputBankTest bank)
         {
-            var player = characterBody.master != null && characterBody.master.playerCharacterMasterController != null
-                ? characterBody.master.playerCharacterMasterController.networkUser?.localUser?.inputPlayer : null;
-            return player != null ? player.GetButtonDown(RewiredConsts.Action.Sprint) : inputBank.sprint.justPressed;
+            var player = body.master != null && body.master.playerCharacterMasterController != null
+                ? body.master.playerCharacterMasterController.networkUser?.localUser?.inputPlayer : null;
+            return player != null ? player.GetButtonDown(RewiredConsts.Action.Sprint) : bank.sprint.justPressed;
         }
 
         /// <summary>
