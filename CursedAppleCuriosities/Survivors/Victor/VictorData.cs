@@ -159,7 +159,8 @@ namespace CursedAppleCuriosities.Survivors.Victor
             ("wall_jump", "jump_ground", true, "", "full"),
             ("in_air", "in_air_loop_apex", true, "", "full"),
             ("falling", "in_air_loop_apex", true, "", "full"),
-            ("land", "landing_impact_idle", false, "locomotion", "additive"),
+            ("land", "landing_impact_idle", false, "locomotion", "delta"),     // his clip holds a constant 1.74 m pelvis offset: as an
+                                                                                 // additive it threw his model up and aside on landing (playtest)
             ("dash_ground", "dash_ground", false, "locomotion", "full"),
             ("dash_air_forward", "dash_air_forward", true, "", "full"), // 1.33 s: ended by the same rule
             ("dash_air_back", "dash_air_back", true, "", "full"),
