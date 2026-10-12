@@ -8,7 +8,10 @@
   **Shocking Reanimation**: once every 90 seconds (and again each new stage), dying knocks you down instead, and you get back up with
   half your health and a stunning blast.
 - Each survivor has its own colour on the character select screen.
+- New artifact: **Artifact of the Goose**. Every player starts the run holding a random Goose Egg.
+- **Goose Eggs**: each egg now matures on its own. Two players holding the same kind of egg no longer share one timer, and an egg you swap out keeps its own progress on the ground.
 - **Frenzy**: the bonus now lasts 5 s at its strongest after you heal back above the threshold.
+- **Sprint Boots**: also regenerate +1 health per second (+0.5 per stack) while out of danger.
 
 ## 1.4.0
 - New interactable: the **Cursed Broker**, a rare shrine (stage 3 onward, or any stage after looping).

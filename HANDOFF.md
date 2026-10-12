@@ -79,7 +79,7 @@ read it before touching tiers, buffs, pickups, or minion interactions.
 | Kinetic Dash | Utility skill → +20%/stack fire rate for 6s | ✅ |
 | Intensifying Magazine | Sustained basic-attack fire ramps damage up to +45% (+30%/stack) over 3s | ✅ |
 | Restorative Shot | Every 3s, next hit heals 3% max HP (+3%/stack) | ✅ |
-| Sprint Boots | While sprinting, ramp to +25% move speed (+12%/stack) over 6s; resets on stop | ✅ |
+| Sprint Boots | While sprinting, ramp to +25% move speed (+12%/stack) over 6s; resets on stop; +1 hp/s (+0.5/stack) out of danger, flat (user, 1.5.0) | ✅ |
 | Battle Vest | Above 75% HP → +20%/stack bonus damage | ✅ |
 | Mystic Shot | Every 3s, next hit deals a 100% (+100%/stack) base-damage bonus burst | ✅ |
 | Mystic Expansion | +30%/stack radius AND range (doubled from 15%, 2026-10-12). BlastAttacks (hook `BlastAttack.Fire`; their effects grow to match, projectile explosions via `ProjectileExplosion.DetonateServer`), and everything that calls `MysticExpansion.RadiusMultiplier(body)`: Siphon Life, Seismic Impact, Death Slam (impact, lock-on area, throw distance), Grapple range, Heavy Melee reach, Shoulder Charge width, Torment Pulse, Spirit Burn, Heroic/Hunter's Aura, Colossus slow, Ricochet, Lifestrike/Spirit Snatch "close" range, Long Range window (slides closer), Focus Lens/Cultist reach, Majestic Leap distance. Vanilla (`MysticExpansionReach.cs`): Ukulele, Tesla, N'kuhanna, Razorwire, Focus Crystal (IL), Warbanner (level-up AND teleporter)/Fungus/Rachis/Pauldron/cripple wards, Frost Relic ward, Faraday Spur zone (IL); Focus Crystal ring grown client-side (`MysticIndicatorScale`). Torment Pulse draws a faint red range ring (local player). New custom AoEs/ranges must call it too. Not playtested. | ✅ |
@@ -129,7 +129,7 @@ read it before touching tiers, buffs, pickups, or minion interactions.
 |---|---|---|
 | Counterspell | 25s cd. Ward 2s → fully negate next non-DoT hit + heal 8% maxHP | ✅ |
 | Colossus | 35s cd. 8s: grow 1.75×, 65% dmg resist, slow enemies in 20m, -30% move speed | ✅ |
-| Goose Eggs (Grey/Green/Red/Golden/Void) | `GoldenGooseEgg.cs` (`GooseEgg` base). Consumed on use, -10% dmg while held. +1 stack per 5:00 held, uncapped, starts at 0 (activating at 0 does nothing). Per stack: Grey 15 whites, Green 5 greens, Red 1 red, Golden 2 boss items, Void 2 void items (Void Cradle's `dtVoidChest`). Progress per egg kind, run-wide. Only Grey is droppable; every drop table rolls it into a weighted egg (45/27/12/8/8, config). Holding Void, picking up another egg absorbs it as +1 stack (`GenericPickupController.AttemptGrant`). Icons: golden art recoloured. All eggs priced white in the Catalog. | ✅ |
+| Goose Eggs (Grey/Green/Red/Golden/Void) | `GoldenGooseEgg.cs` (`GooseEgg` base). Consumed on use, -10% dmg while held. +1 stack per 5:00 held, uncapped, starts at 0 (activating at 0 does nothing). Per stack: Grey 15 whites, Green 5 greens, Red 1 red, Golden 2 boss items, Void 2 void items (Void Cradle's `dtVoidChest`). Progress per individual egg (1.5.0): `GooseEggProgress` on the inventory per equipment location while held, `GooseEggPickupProgress` on the pickup when swapped out (carried in the `AttemptGrant` hook); a recycled egg starts fresh. Only Grey is droppable; every drop table rolls it into a weighted egg (45/27/12/8/8, config). Holding Void, picking up another egg absorbs it as +1 stack (`GenericPickupController.AttemptGrant`). Icons: golden art recoloured. All eggs priced white in the Catalog. | ✅ |
 | Blood Tribute | Toggle (1s cd). While active: drain 5% max HP/s + -50% healing received, but +100% attack speed / +50% move speed. | ✅ |
 | Ethereal Shift | 45s cd. 3s invulnerable (HiddenInvincibility) + Cloak, frozen in place (`CharacterMotor.UpdateVelocity` zeroed) and no skills (`SkillSilence`); then Special-source damage +100% for 8s (`DamageSource.Special`). Not playtested. | ✅ |
 | Refresher | 80s cd. `SkillLocator.ResetSkills()` (networked to the owning client). Not playtested. | ✅ |
@@ -204,6 +204,11 @@ same on a stand-in model.
     0.30-0.55 s (seconds, not a share: a share halved it on Lash's short dash). A ground dash always lasts 0.68 s:
     Lash's 10 m burst takes 0.3 s, then eases to a run (`GroundDashTotalSeconds`, `GroundDashTailDecay`).
     Works off a ledge mid-dash (coyote) without spending air jumps.
+  - **Down-dash** (user 2026-10-12): double-tap the slide key in the air (`DownDashDoubleTap` 0.3 s, second tap airborne) =
+    half a stamina pip, +10 m/s downward, horizontal kept. Stamina (`DeadlockMover.Pips`) is a float now; a refill adds a whole pip;
+    the HUD shows half bars. `DeadlockMover.TryDownDash(motor)` is called by DeadlockMain and Viscous' GooBall state.
+  - **Air control boost** (user): any `TrySpend` while airborne (air jump, air dash, down-dash, Grey Talon's glide dash) sets
+    `AirBoost` until landing: `AirSteer` accel x`AirControlBoost` (1.35); Goo Ball's air turn rate too.
   - Ground Strike interrupts Grapple and Death Slam's hold (the throw fires at once). Grounded Ground Strike = no hop.
   - Numbers + config in `LashData` (`[Lash]` section).
   - Server work (Flog damage+heal, Death Slam lift/throw/impact) goes through R2API.Networking messages in `LashNet`.
@@ -341,6 +346,22 @@ same on a stand-in model.
   - Lobby intro `VictorIntro.cs` (user: Shocking Reanimation): his parts reassemble on the pedestal (3 s), he gets up; no lightning strikes (user).
   - Item displays fitted 2026-10-12 (`VictorItemDisplays.cs`, `HERO=victor`; items skip his `weapon` mesh). Chance Doll sits in his hip.
   - Not done yet: ping VO, Deadlock's ability upgrades beyond the T3 heal.
+
+- `Survivors/Viscous/` — **Viscous** (`CursedAppleViscousBody`, Deadlock `hero_viscous`, model `models/heroes_staging/viscous/viscous`, Kelvin's
+  skeleton, AnimGraph1 clip names like Abrams). **Goo Ball prototype** (user 2026-10-12: get the ball right before the rest of him), built,
+  **never launched**. Only M1 (placeholder gun, 0.21 s) and Special **Goo Ball**; no secondary/utility slot yet.
+  - Goo Ball = Deadlock `viscous_goo_bowling_ball`: 0.55 s curl (`rolling_goo`), then 11 s rolling (own `GooBall` Body state, owner moves it via
+    rootMotion): 11.4 m/s, Primary held = 20.3 m/s (accel 15.2, decel 1.27 m/s2), steers to the crosshair 110/50 deg/s, walls bounce it
+    (sphere cast 0.45 m smaller than the 1.4 m ball, so curbs roll over; 65% speed kept, 0.1 s no steering), jump + 1 double jump (12.7 m/s),
+    1.8 m hit radius (Mystic Expansion), 550%, 0.5 s stun, 10 m/s knock, each enemy every 1.2 s; it rolls through normal enemies.
+    Bosses (user): double damage, no stun, the ball freezes dead 0.3 s (`BossFreeze`, roll timer paused) then bounces off as off a wall.
+    Down-dash works in the ball too (shared movement). 35% resist = armor via
+    the synced `BallBuff`. Special again ends it; cooldown 40 s starts when it ends. Camera pulled back x1.5 and up 1.2 m.
+  - The ball is his own model's hidden mesh group `inflated` (renderers `inflated_N`, skinned to `inflated_center`, radius 1.51 model units).
+    `ViscousBallLook` (body + display, runs after the animator) swaps body/gun/outline for it while the Body state is `GooBall`, and puts
+    `inflated_center` at foot + 1.4 m, scaled to 1.4 m, rolled from the body's real motion (works for remote players).
+  - Model height quirk: the loader scales by the tallest vertex, which is the ball's helmet (2.94 m) not him (2.45 m): `BallHeightFix`.
+  - Open: hurtbox stays Commando-sized while rolling. No item anchors.
 
 ## Recent changes (since last handoff)
 
