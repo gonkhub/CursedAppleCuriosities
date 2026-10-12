@@ -6,8 +6,8 @@ namespace CursedAppleCuriosities.Survivors.GreyTalon
 {
     /// <summary>
     /// Grey Talon on the shared Deadlock model layer (Deadlock/DeadlockHeroModel.cs). His bow hangs off his left hand
-    /// (weapon_hand_L, muzzle_fx under it), so it follows the hand without Abrams' HandIK. His owl rides his right arm
-    /// (owl_bodygroup): it is hidden while the Guided Owl flies (GreyTalonOwlLook).
+    /// (weapon_hand_L, muzzle_fx under it), so it follows the hand without Abrams' HandIK. The owl that rides his right
+    /// arm in Deadlock (owl_bodygroup) is hidden (user).
     /// </summary>
     public static class GreyTalonModel
     {
@@ -17,8 +17,8 @@ namespace CursedAppleCuriosities.Survivors.GreyTalon
             DisplayName = "Grey Talon",
             DlModel = GreyTalonData.DlModel,
             // Reload props (infinite ammo here): the arrow clip in his hand and the quiver's animated clip set, which sits
-            // on top of the static one.
-            HideMeshes = new[] { "archer_clip_inhand_model", "archer_quiverclips_anim_model" },
+            // on top of the static one. The owl on his arm is hidden too (user).
+            HideMeshes = new[] { "archer_clip_inhand_model", "archer_quiverclips_anim_model", GreyTalonData.PerchedOwlMesh },
             ModelHeightScale = GreyTalonData.ModelHeightScale,
             BaseSpeed = GreyTalonData.BaseSpeed,
             MuzzleBone = GreyTalonData.MuzzleBone,
@@ -41,35 +41,5 @@ namespace CursedAppleCuriosities.Survivors.GreyTalon
 
         /// <summary>Entity states ask for animation states by name (every client runs OnEnter, so all see it).</summary>
         public static void Play(GameObject bodyObject, string state) => DeadlockModelSwap.Play(bodyObject, state);
-    }
-
-    /// <summary>Every client: hides the owl on his arm while his Guided Owl is out (the owl buff is synced).</summary>
-    public class GreyTalonOwlLook : MonoBehaviour
-    {
-        private CharacterBody? _body;
-        private readonly System.Collections.Generic.List<GameObject> _owl = new System.Collections.Generic.List<GameObject>();
-        private float _nextSearch;
-        private bool? _flying;
-
-        private void Awake() => _body = GetComponent<CharacterBody>();
-
-        private void Update()
-        {
-            bool flying = _body != null && GreyTalonSurvivor.OwlFlyingBuff != null && _body.HasBuff(GreyTalonSurvivor.OwlFlyingBuff);
-            if (_owl.Count == 0 || _owl.Exists(g => g == null))
-            {
-                if (Time.time < _nextSearch) return;
-                _nextSearch = Time.time + 0.25f; // the Deadlock model arrives a little after spawn
-                _owl.Clear();
-                Transform? model = _body != null && _body.modelLocator != null ? _body.modelLocator.modelTransform : null;
-                if (model == null) return;
-                foreach (Renderer r in model.GetComponentsInChildren<Renderer>(true))
-                    if (r.gameObject.name.StartsWith(GreyTalonData.PerchedOwlMesh + "_")) _owl.Add(r.gameObject);
-                _flying = null;
-            }
-            if (_flying == flying) return;
-            _flying = flying;
-            foreach (GameObject g in _owl) if (g != null) g.SetActive(!flying);
-        }
     }
 }

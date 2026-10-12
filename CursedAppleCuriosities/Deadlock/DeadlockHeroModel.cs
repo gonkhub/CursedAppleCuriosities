@@ -22,7 +22,8 @@ namespace CursedAppleCuriosities.Deadlock
         public string? MuzzleBone;
         public string MuzzleName = "";
 
-        /// <summary>State, Deadlock clip, loop, next state ("locomotion", "hold", a state, or "" for loops), layer ("full" / "additive").</summary>
+        /// <summary>State, Deadlock clip, loop, next state ("locomotion", "hold", a state, or "" for loops), layer ("full" / "additive" /
+        /// "delta": a full clip played as an overlay, as its motion from its first frame).</summary>
         public (string State, string Clip, bool Loop, string Next, string Layer)[] Anims = Array.Empty<(string, string, bool, string, string)>();
         /// <summary>
         /// Clips whose own travel is removed (root lock): Deadlock moves heroes with these animations, RoR2
@@ -499,7 +500,7 @@ namespace CursedAppleCuriosities.Deadlock
         public void Play(string id)
         {
             if (_clips == null || !_states.TryGetValue(id, out Row row)) return;
-            if (row.Layer == "additive") { SetLayer(_over, row); _overWeight = Mathf.Max(_overWeight, 0.01f); }
+            if (row.Layer == "additive" || row.Layer == "delta") { SetLayer(_over, row); _overWeight = Mathf.Max(_overWeight, 0.01f); }
             else Switch(id, 0.08f);
         }
 
@@ -741,7 +742,9 @@ namespace CursedAppleCuriosities.Deadlock
                     // Root-level bones carry the converter's axis turn instead of an offset, and Source 2 cloth points
                     // ($cloth_*, Abrams' coat) a reference pose: read those relative to the clip's first frame, or the
                     // pose is added on top and the coat stretches.
-                    bool cloth = tr.Bone.StartsWith("$cloth", StringComparison.Ordinal);
+                    // A "delta" overlay is a full pose clip (Grey Talon's shoot_idle has no additive version): its motion
+                    // relative to its own first frame goes on top, like the cloth.
+                    bool cloth = tr.Bone.StartsWith("$cloth", StringComparison.Ordinal) || _over.Row.Layer == "delta";
                     if (hasR && ut.SampleRot(_over.T, out Quaternion ur))
                     {
                         if (cloth || Quaternion.Angle(Quaternion.identity, ut.Rot![0]) > 45f) ur = Quaternion.Inverse(ut.Rot![0]) * ur;

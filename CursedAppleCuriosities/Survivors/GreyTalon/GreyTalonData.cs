@@ -78,7 +78,7 @@ namespace CursedAppleCuriosities.Survivors.GreyTalon
         public static float OwlCooldown = 125f;         // Deadlock's own, kept (user: very very long)
         public const float OwlCastDelay = 1.5f;         // Deadlock AbilityCastDelay
         public const float OwlFlight = 20f;             // Deadlock AbilityChannelTime
-        public const float OwlSpeed = 15f;              // Deadlock m_flBaseProjectileSpeed 590.6 hu/s
+        public static float OwlSpeed = 6f;              // slow until forward is held (user; Deadlock m_flBaseProjectileSpeed 590.6 hu/s = 15)
         public const float OwlMaxSpeed = 36f;           // Deadlock m_flMaxProjectileSpeed 1417 hu/s (hold forward)
         public const float OwlAccel = 20.3f;            // Deadlock m_flSpeedAccel 800 hu/s2
         public const float OwlDecel = 7.6f;             // Deadlock m_flSpeedDeccel 300 hu/s2
@@ -105,6 +105,7 @@ namespace CursedAppleCuriosities.Survivors.GreyTalon
             OwlBossBonus = c.Bind(Section, "Guided Owl - Boss Kill Bonus", OwlBossBonus, "Extra owl damage for each boss it has killed this run (0.2 = +20%).").Value;
             OwlRadius = c.Bind(Section, "Guided Owl - Radius", OwlRadius, "Metres.").Value;
             OwlCooldown = c.Bind(Section, "Guided Owl - Cooldown", OwlCooldown, "Seconds.").Value;
+            OwlSpeed = c.Bind(Section, "Guided Owl - Cruise Speed", OwlSpeed, "Metres per second without forward held (it speeds up to 36 while forward is held).").Value;
             OwlTurnDegPerSec = c.Bind(Section, "Guided Owl - Turn Rate", OwlTurnDegPerSec, "Degrees per second the owl turns toward where you look.").Value;
         }
 
@@ -123,7 +124,7 @@ namespace CursedAppleCuriosities.Survivors.GreyTalon
         public const string DlOwlModel = "models/heroes_staging/archer/archer_guided_arrow.vmdl_c";
         public const float ModelHeightScale = 1.08f * 1.25f; // Lash's size
         public const string MuzzleBone = "muzzle_fx";        // under weapon_hand_L: the bow follows his left hand
-        public const string PerchedOwlMesh = "owl_bodygroup"; // the owl on his arm, hidden while it flies
+        public const string PerchedOwlMesh = "owl_bodygroup"; // the owl on his arm: hidden (user)
 
         public const string IconPortrait = "panorama/images/heroes/archer_sm_psd.vtex_c";
         public const string IconCharged = "panorama/images/hud/abilities/archer/archer_charged_shot_psd.vtex_c";
@@ -165,7 +166,7 @@ namespace CursedAppleCuriosities.Survivors.GreyTalon
             ("slide_start", "slide_start", false, "slide", "full"),
             ("slide", "slide_loop", true, "", "full"),
             ("slide_getup", "slide_getup", false, "locomotion", "full"),
-            ("shoot", "shoot_idle", false, "locomotion", "additive"),
+            ("shoot", "shoot_idle", false, "locomotion", "delta"),   // a full pose clip (no additive version): played as its motion only
             ("charge_draw", "ability_charged_shot_on_ground_draw", false, "locomotion", "full"),
             ("charge_air", "ability_charged_shot_in_air", false, "hold", "full"),
             ("charge_release", "ability_charged_shot_on_ground_release", false, "locomotion", "full"),

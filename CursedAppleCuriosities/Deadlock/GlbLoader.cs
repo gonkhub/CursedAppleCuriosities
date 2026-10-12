@@ -201,7 +201,9 @@ namespace CursedAppleCuriosities.Deadlock
                 Vector3 start = root.Pos![0];
                 foreach (AnimTrack t in clip.Tracks)
                 {
-                    if (!besideRoot.Contains(t.Bone) || t.Pos == null) continue;
+                    // Cloth points are taken into root_motion's frame below (travel and all): taking the travel out here
+                    // too did it twice, and Grey Talon's skirt ran off and snapped back each loop.
+                    if (!besideRoot.Contains(t.Bone) || t.Pos == null || t.Bone.StartsWith("$cloth", StringComparison.Ordinal)) continue;
                     for (int k = 0; k < t.Pos.Length; k++)
                     {
                         root.SamplePos(t.PosTimes![k], out Vector3 rp);

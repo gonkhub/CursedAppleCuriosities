@@ -29,7 +29,7 @@ namespace CursedAppleCuriosities.Survivors.GreyTalon
         public static GameObject? BodyPrefab, DisplayPrefab, ChargedProjectile;
         public static SurvivorDef? Survivor;
         /// <summary>Charging: Charged Shot drawn (slow walk, drawn-bow locomotion). OwlChannel: casting/steering the owl (no skills).
-        /// OwlFlying: the owl is out (hides the one on his arm). OwlTrophy: bosses the owl has killed this run.</summary>
+        /// OwlFlying: the owl is out. OwlTrophy: bosses the owl has killed this run.</summary>
         public static BuffDef? ChargingBuff, OwlChannelBuff, OwlFlyingBuff, OwlTrophyBuff;
 
         // Vanilla effects reused by the states (loaded once).
@@ -124,12 +124,27 @@ namespace CursedAppleCuriosities.Survivors.GreyTalon
                 "CursedAppleGreyTalonChargedArrow", typeof(GreyTalonChargedArrow), GreyTalonData.ChargedSpeed, GreyTalonData.ChargedRange / GreyTalonData.ChargedSpeed,
                 gravity: false, triggers: true, steer: true);
             var pc = p != null ? p.GetComponent<ProjectileController>() : null;
-            if (pc != null && pc.ghostPrefab != null)
+            if (pc == null) return p;
+            // The Lynx Archer's arrow keeps its look in a separate ghost prefab (the projectile came without one: invisible).
+            GameObject? source = pc.ghostPrefab != null ? pc.ghostPrefab : TryLoad<GameObject>("RoR2/DLC4/LynxArcher/LynxArcherArrowGhost.prefab", "RoR2/DLC1/Railgunner/RailgunnerPistolProjectileGhost.prefab");
+            if (source == null) return p;
+            GameObject ghost = source.InstantiateClone("CursedAppleGreyTalonChargedArrowGhost", false);
+            ghost.transform.localScale *= 2.5f;
+            // A long bright streak behind it (user: a tracer for the arrow), in the Huntress snipe tracer's material.
+            Material? streak = TracerEffect != null && TracerEffect.GetComponentInChildren<LineRenderer>(true) is LineRenderer line ? line.sharedMaterial : null;
+            if (streak != null)
             {
-                GameObject ghost = pc.ghostPrefab.InstantiateClone("CursedAppleGreyTalonChargedArrowGhost", false);
-                ghost.transform.localScale *= 2.5f;
-                pc.ghostPrefab = ghost;
+                var trail = ghost.AddComponent<TrailRenderer>();
+                trail.sharedMaterial = streak;
+                trail.time = 0.25f;
+                trail.startWidth = 0.5f;
+                trail.endWidth = 0f;
+                trail.minVertexDistance = 0.5f;
+                trail.numCapVertices = 2;
+                trail.startColor = new Color(0.7f, 0.85f, 1f, 1f);
+                trail.endColor = new Color(0.7f, 0.85f, 1f, 0f);
             }
+            pc.ghostPrefab = ghost;
             return p;
         }
 
@@ -197,7 +212,6 @@ namespace CursedAppleCuriosities.Survivors.GreyTalon
                 skillDescriptionToken = Token + "PASSIVE_DESC",
                 icon = ItemBase.CreatePlaceholderSprite(Color),
             };
-            body.AddComponent<GreyTalonOwlLook>();
             body.AddComponent<GreyTalonTrophySync>();
             DeadlockMovement.Apply(body, GreyTalonData.Movement);
 

@@ -214,6 +214,10 @@ namespace EntityStates.CursedApple.GreyTalon
                 return;
             }
             StartAimMode(0.5f);
+            // This runs on the Body machine in place of the main state, which is what normally reads skill buttons:
+            // the bow (5 arrows now) and Charged Shot are passed through by hand.
+            if (inputBank.skill1.down) skillLocator.primary?.ExecuteIfReady();
+            if (inputBank.skill2.justPressed) skillLocator.secondary?.ExecuteIfReady();
             // Glide: slow drift with movement, and a capped fall.
             Vector3 v = characterMotor.velocity;
             Vector3 flat = new Vector3(v.x, 0f, v.z);
@@ -288,7 +292,7 @@ namespace EntityStates.CursedApple.GreyTalon
             }
             // Steering input: where he looks, and forward held to speed it up.
             Vector3 look = _owl.LookDirection(characterBody);
-            bool boost = inputBank.rawMoveData.y > 0.5f;
+            bool boost = inputBank.rawMoveData.y > 0.5f || Vector3.Dot(inputBank.moveVector, look) > 0.5f;
             _owl.Steer(look, boost);
         }
 
