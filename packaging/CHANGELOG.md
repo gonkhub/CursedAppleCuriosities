@@ -8,6 +8,7 @@
   **Shocking Reanimation**: once every 4 minutes, dying knocks you down instead, and you get back up with
   half your health and a stunning blast.
 - Each survivor has its own colour on the character select screen.
+- **Frenzy**: the bonus now lasts 5 s at its strongest after you heal back above the threshold.
 
 ## 1.4.0
 - New interactable: the **Cursed Broker**, a rare shrine (stage 3 onward, or any stage after looping).

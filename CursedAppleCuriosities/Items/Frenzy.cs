@@ -21,7 +21,7 @@ namespace CursedAppleCuriosities.Items
             $"<style=cIsDamage>+{MaxAttackSpeedBase * 100:0}% attack speed</style>, and " +
             $"<style=cIsUtility>+{MaxMoveSpeedBase * 100:0}% movement speed</style> " +
             $"<style=cStack>(+{DamagePerStack * 100:0}%, +{AttackSpeedPerStack * 100:0}%, and +{MoveSpeedPerStack * 100:0}% per stack)</style> " +
-            $"at the brink of death.";
+            $"at the brink of death. The bonus <style=cIsUtility>lasts {HoldSeconds:0.#}s</style> at its strongest after you climb back above the threshold.";
 
         public override string ItemLore =>
             "Hopefully this'll give you the edge to survive, but if it doesn't you're gonna go down swinging!";
@@ -39,6 +39,7 @@ namespace CursedAppleCuriosities.Items
         public static float MaxAttackSpeedBase;
         public const float AttackSpeedPerStack = 0.25f;
         public static float MaxMoveSpeedBase;
+        public static float HoldSeconds = 5f; // the bonus holds at its peak this long after health climbs back (user)
         public const float MoveSpeedPerStack   = 0.15f;
 
         public static BuffDef? FrenzyBuffDef;
@@ -60,6 +61,8 @@ namespace CursedAppleCuriosities.Items
                 "Maximum bonus attack speed at near-zero health (1 stack).").Value;
             MaxMoveSpeedBase = config.Bind("Red", "Frenzy - Max Move Speed At Brink", 0.25f,
                 "Maximum bonus move speed at near-zero health (1 stack).").Value;
+            HoldSeconds = config.Bind("Red", "Frenzy - Duration", HoldSeconds,
+                "Seconds the bonus stays, at the strongest it reached, after your health climbs back above the threshold.").Value;
             CreateLang();
             CreateItem();
             Hooks();
@@ -101,7 +104,9 @@ namespace CursedAppleCuriosities.Items
             int count = sender.inventory.GetItemCountEffective(ItemDef);
             if (count <= 0) return;
 
-            float frac = RampFraction(sender, count);
+            // The tracker's value: the live ramp, or the held peak for a while after climbing back above the threshold.
+            var tracker = sender.GetComponent<FrenzyTracker>();
+            float frac = tracker != null ? tracker.Fraction(count) : RampFraction(sender, count);
             if (frac <= 0f) return;
 
             float maxDamage      = MaxDamageBase      + DamagePerStack      * (count - 1);
@@ -120,6 +125,8 @@ namespace CursedAppleCuriosities.Items
         private float         _checkTimer;
         private bool          _wasActive;
         private float         _lastFrac;
+        private float         _heldFrac;    // the strongest ramp reached while below the threshold
+        private float         _heldUntil;   // until when it holds (refreshed while below)
 
         private const float CheckInterval = 0.1f;
         private const float RecalcEpsilon = 0.03f; // re-apply stats when the ramp shifts this much
@@ -131,6 +138,23 @@ namespace CursedAppleCuriosities.Items
         }
 
         private void Awake() => _body = GetComponent<CharacterBody>();
+
+        /// <summary>
+        /// The bonus strength now: the live ramp while below the threshold (its peak is remembered), and that peak for
+        /// <see cref="Frenzy.HoldSeconds"/> after health climbs back above it (user: a fixed duration).
+        /// </summary>
+        public float Fraction(int count)
+        {
+            float live = Frenzy.RampFraction(_body, count);
+            if (live > 0.001f)
+            {
+                _heldFrac = Mathf.Max(_heldFrac, live);
+                _heldUntil = Time.time + Frenzy.HoldSeconds;
+            }
+            if (Time.time < _heldUntil) return Mathf.Max(live, _heldFrac);
+            _heldFrac = 0f;
+            return live;
+        }
 
         private void OnDestroy()
         {
@@ -148,7 +172,7 @@ namespace CursedAppleCuriosities.Items
             int count = _body.inventory?.GetItemCountEffective(_itemDef) ?? 0;
             if (count <= 0) return;
 
-            float frac   = Frenzy.RampFraction(_body, count);
+            float frac   = Fraction(count);
             bool  active = frac > 0.001f;
 
             // The bonus is smooth, so re-apply stats whenever the ramp shifts meaningfully — not

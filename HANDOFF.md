@@ -105,7 +105,7 @@ read it before touching tiers, buffs, pickups, or minion interactions.
 |---|---|---|
 | Lucky Shot | On a CRIT, hyperbolic ~29% chance to strike a second crit | ✅ |
 | Siphon Bullets | On hit, steal 1% of damage dealt as bonus max HP (cap 10%×stacks of enemy max HP per enemy). Stolen HP lost when that enemy dies. | ✅ |
-| Frenzy | Smooth ramp below 50% HP (+8%/stack window): up to +40% dmg / +50% atk / +25% move at brink | ✅ |
+| Frenzy | Smooth ramp below 50% HP (+8%/stack window): up to +40% dmg / +50% atk / +25% move at brink; holds its peak 5 s after healing back above (user, 1.5.0) | ✅ |
 | Spellslinger | Non-primary skill → a stack (max 10, +10/copy): +10% atk speed and 4% shorter cooldowns each (`cooldownMultAdd`, capped at 50%); decays after 5s. Buffed 2026-10-12 (was 6 stacks, +7%, 3s). | ✅ |
 | Spellbreaker | Block 200+ dmg hit by 75%, 30s cd (-50%/stack) | ✅ |
 | Healing Tempo | Reworked 2026-10-12 (option B, "overheal → Tempo"): +25% healing received (+10%/stack, regen too). Every 10% max HP of non-regen overheal (the game's own `HealthComponent.onCharacterOverhealServer`, same figure Aegis uses) = 1 Tempo stack: +10% atk / +6% move each, max 4 (+2/stack), decays 1/s after 7s without overheal. Stats read the synced buff count (fixes the old version giving non-host players nothing). Deadlock proc/end sounds + Energized visual. Personal only, the old 30m ally aura is gone. Not playtested. | ✅ |
