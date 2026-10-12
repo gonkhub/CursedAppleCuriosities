@@ -332,7 +332,7 @@ namespace CursedAppleCuriosities.Survivors.GreyTalon
             LanguageAPI.Add(Token + "OWL_NAME", "Guided Owl");
             LanguageAPI.Add(Token + "OWL_DESC",
                 $"After {GreyTalonData.OwlCastDelay:0.#}s, launch a spirit owl that <style=cIsUtility>you steer</style>. It explodes on impact for " +
-                $"<style=cIsDamage>{D(GreyTalonData.OwlDamage)} damage</style> within {GreyTalonData.OwlRadius:0}m and <style=cIsDamage>stuns</style>. Hold forward to fly faster; jump to let it go. " +
+                $"<style=cIsDamage>{D(GreyTalonData.OwlDamage)} damage</style> within {GreyTalonData.OwlRadius:0}m and <style=cIsDamage>stuns</style>. Hold forward to fly faster, Primary to detonate it early, jump to let it go. " +
                 $"You are <style=cIsUtility>invulnerable and unseen</style> while you control it. Each boss it kills permanently gives it <style=cIsDamage>+{D(GreyTalonData.OwlBossBonus)} damage</style>.");
         }
     }

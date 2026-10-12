@@ -55,6 +55,12 @@ namespace CursedAppleCuriosities.Survivors.GreyTalon
             _boost = boost;
         }
 
+        /// <summary>Primary while steering (user): the owl bursts right where it is, in mid-air.</summary>
+        public void Detonate()
+        {
+            if (!_exploded) Explode(_pos);
+        }
+
         public void Release()
         {
             _released = true;

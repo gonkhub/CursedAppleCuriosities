@@ -289,7 +289,7 @@ namespace EntityStates.CursedApple.GreyTalon
     /// <summary>
     /// Guided Owl (Deadlock ability_guided_arrow): a 1.5 s cast, standing still, then his owl flies and he steers it for up
     /// to 20 s: it turns toward where he looks, holding forward speeds it up, it bursts on whatever it touches (12 m, 1200%,
-    /// a short stun). The camera rides behind the owl. Jump releases control (the owl flies on straight). He can't be
+    /// a short stun). Primary bursts it early, mid-air. The camera rides behind the owl. Jump releases control (the owl flies on straight). He can't be
     /// hurt or targeted from the cast until the owl is gone or released (user). Each boss the owl kills makes it stronger.
     /// </summary>
     public class GuidedOwl : BaseSkillState
@@ -325,6 +325,7 @@ namespace EntityStates.CursedApple.GreyTalon
                 return;
             }
             if (_owl == null || _owl.Done) { outer.SetNextStateToMain(); return; }
+            if (!_released && inputBank.skill1.justPressed) _owl.Detonate(); // early, in mid-air (user)
             if (!_released && inputBank.jump.justPressed)
             {
                 _released = true;
