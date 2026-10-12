@@ -153,6 +153,8 @@ namespace CursedAppleCuriosities.Deadlock
         public bool DashJumpWindow; // a ground dash's dash-jump window is open (and affordable): the HUD flashes blue
         public string DashJumpMessage = ""; // "too early" / "too late" / "not enough stamina", shown under the pips for a moment
         public float DashJumpMessageTime = -10f;
+        /// <summary>A jump press until this time was already used by an ability (Grey Talon cancelling his glide): no jump from it.</summary>
+        public float SuppressJumpUntil = -10f;
         private float _regen;
         private CharacterBody _body = null!;
 
@@ -452,6 +454,7 @@ namespace EntityStates.CursedApple.Deadlock
 
         public override void ProcessJump()
         {
+            if (jumpInputReceived && _mover != null && Time.time < _mover.SuppressJumpUntil) jumpInputReceived = false;
             if (jumpInputReceived && characterBody != null && characterMotor != null && !characterMotor.isGrounded && _mover != null)
             {
                 // Deadlock order: ground jump, else kick off a wall (free), else an air jump.

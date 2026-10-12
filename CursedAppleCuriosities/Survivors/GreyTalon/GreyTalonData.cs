@@ -62,8 +62,11 @@ namespace CursedAppleCuriosities.Survivors.GreyTalon
         // ---- utility: Rain of Arrows (user: leap up, glide with slow WASD, primary splits into 5 arrows in a fan) ----
         public static float RainCooldown = 8f;          // Deadlock 25
         public const float RainCastDelay = 0.2f;        // Deadlock AbilityCastDelay
-        public const float RainLaunchSpeed = 27.5f;     // Deadlock JumpSpeed
+        // The leap (user): much faster than Deadlock's 27.5 m/s arc, straight up its 60 deg line, and stopped dead at the glide
+        // height (about where Deadlock's arc peaked). Cancelled on the way up (jump), he keeps the launch speed: a movement tool.
+        public static float RainLaunchSpeed = 45f;
         public const float RainPitchDeg = 60f;          // Deadlock JumpPitch -60
+        public static float RainHeight = 10f;           // metres up where the leap stops and the glide begins
         public static float RainDuration = 4f;          // Deadlock AbilityDuration
         public const float RainFallSpeed = 0.64f;       // Deadlock FallSpeedMax 25 hu/s
         public const float RainAirSpeed = 6.64f;        // Deadlock AirSpeedMax 261.4 hu/s
@@ -100,6 +103,8 @@ namespace CursedAppleCuriosities.Survivors.GreyTalon
             ChargedDamage = c.Bind(Section, "Charged Shot - Damage", ChargedDamage, "Damage coefficient to every enemy it pierces.").Value;
             ChargedCooldown = c.Bind(Section, "Charged Shot - Cooldown", ChargedCooldown, "Seconds.").Value;
             RainCooldown = c.Bind(Section, "Rain of Arrows - Cooldown", RainCooldown, "Seconds.").Value;
+            RainLaunchSpeed = c.Bind(Section, "Rain of Arrows - Leap Speed", RainLaunchSpeed, "Metres per second of the leap (kept if you cancel it on the way up).").Value;
+            RainHeight = c.Bind(Section, "Rain of Arrows - Leap Height", RainHeight, "Metres up where the leap stops and the glide begins.").Value;
             RainDuration = c.Bind(Section, "Rain of Arrows - Glide", RainDuration, "Seconds of glide and split arrows.").Value;
             OwlDamage = c.Bind(Section, "Guided Owl - Damage", OwlDamage, "Damage coefficient of the owl's blast.").Value;
             OwlBossBonus = c.Bind(Section, "Guided Owl - Boss Kill Bonus", OwlBossBonus, "Extra owl damage for each boss it has killed this run (0.2 = +20%).").Value;

@@ -173,14 +173,17 @@ namespace EntityStates.CursedApple.GreyTalon
     // ================= Utility: Rain of Arrows =================
 
     /// <summary>
-    /// Rain of Arrows (Deadlock ability_power_jump): after a 0.2 s crouch, leap up and forward (27.5 m/s at 60 deg), then
-    /// glide for 4 s: falling no faster than Deadlock's FallSpeedMax and drifting slowly with movement (user). While it lasts
-    /// the bow splits into 5 arrows (FireBow reads GreyTalonRain). Jump ends the glide early (Deadlock: Mantle cancels).
+    /// Rain of Arrows (Deadlock ability_power_jump): after a 0.2 s crouch, a fast leap up Deadlock's 60 deg line that stops
+    /// dead at the glide height (user), then a 4 s glide: falling no faster than Deadlock's FallSpeedMax and drifting slowly
+    /// with movement. While it lasts the bow splits into 5 arrows (FireBow reads GreyTalonRain). Jump ends it early
+    /// (Deadlock: Mantle cancels); cancelled on the way up he keeps the leap's speed, so it doubles as a movement skill.
     /// </summary>
     public class RainOfArrows : BaseSkillState
     {
-        private bool _launched;
-        private float _glide;
+        private enum Phase { Crouch, Rise, Glide }
+        private Phase _phase;
+        private float _glide, _riseFrom, _riseAge, _glideAt;
+        private Vector3 _launch;
         private DeadlockVoice? _hum;
 
         public override void OnEnter()
@@ -190,44 +193,77 @@ namespace EntityStates.CursedApple.GreyTalon
             GreyTalonModel.Play(gameObject, "rain_leap");
             DeadlockSounds.Play("greytalon_rain_cast", transform.position, gameObject);
             DeadlockHeroVoice.Power("greytalon_vo_power2", gameObject);
-            DeadlockFallGuard.Protect(gameObject, GreyTalonData.RainCastDelay + _glide + 4f);
-            GreyTalonRain.Begin(gameObject, GreyTalonData.RainCastDelay + _glide);
+            DeadlockFallGuard.Protect(gameObject, GreyTalonData.RainCastDelay + 1f + _glide + 4f);
+            GreyTalonRain.Begin(gameObject, GreyTalonData.RainCastDelay + 1f + _glide);
         }
 
         public override void FixedUpdate()
         {
             base.FixedUpdate();
             if (!isAuthority) return;
-            if (!_launched)
+            float dt = Time.fixedDeltaTime;
+            switch (_phase)
             {
-                characterMotor.velocity = Vector3.zero;
-                if (fixedAge < GreyTalonData.RainCastDelay) return;
-                _launched = true;
-                _hum = DeadlockSounds.Loop("greytalon_rain_loop", gameObject, _glide);
-                Vector3 fwd = inputBank.aimDirection;
-                fwd.y = 0f;
-                fwd = fwd.sqrMagnitude > 1e-4f ? fwd.normalized : transform.forward;
-                float pitch = GreyTalonData.RainPitchDeg * Mathf.Deg2Rad;
-                characterMotor.Motor.ForceUnground();
-                characterMotor.disableAirControlUntilCollision = false;
-                characterMotor.velocity = fwd * (Mathf.Cos(pitch) * GreyTalonData.RainLaunchSpeed) + Vector3.up * (Mathf.Sin(pitch) * GreyTalonData.RainLaunchSpeed);
-                return;
+                case Phase.Crouch:
+                    characterMotor.velocity = Vector3.zero;
+                    if (fixedAge < GreyTalonData.RainCastDelay) return;
+                    _phase = Phase.Rise;
+                    _riseFrom = transform.position.y;
+                    _hum = DeadlockSounds.Loop("greytalon_rain_loop", gameObject, 1f + _glide);
+                    Vector3 fwd = inputBank.aimDirection;
+                    fwd.y = 0f;
+                    fwd = fwd.sqrMagnitude > 1e-4f ? fwd.normalized : transform.forward;
+                    float pitch = GreyTalonData.RainPitchDeg * Mathf.Deg2Rad;
+                    _launch = fwd * (Mathf.Cos(pitch) * GreyTalonData.RainLaunchSpeed) + Vector3.up * (Mathf.Sin(pitch) * GreyTalonData.RainLaunchSpeed);
+                    characterMotor.Motor.ForceUnground();
+                    characterMotor.disableAirControlUntilCollision = false;
+                    characterMotor.velocity = _launch;
+                    return;
+
+                case Phase.Rise:
+                    _riseAge += dt;
+                    if (Cancelled()) return; // keeps the leap's speed
+                    // Held on the leap's line at full speed (no gravity) until the glide height; a ceiling ends it early.
+                    bool high = transform.position.y - _riseFrom >= GreyTalonData.RainHeight;
+                    bool blocked = _riseAge > 0.1f && characterMotor.velocity.y < _launch.y * 0.5f;
+                    if (high || blocked || _riseAge > 1f)
+                    {
+                        _phase = Phase.Glide;
+                        _glideAt = fixedAge;
+                        characterMotor.velocity = Vector3.zero; // stopped dead at the top (user)
+                        GreyTalonRain.Begin(gameObject, _glide);
+                        return;
+                    }
+                    characterMotor.velocity = _launch;
+                    break;
+
+                case Phase.Glide:
+                    // The bow (5 arrows now) and Charged Shot: this runs on the Body machine in place of the main state,
+                    // which is what normally reads skill buttons, so they are passed through by hand.
+                    if (inputBank.skill1.down) skillLocator.primary?.ExecuteIfReady();
+                    if (inputBank.skill2.justPressed) skillLocator.secondary?.ExecuteIfReady();
+                    // Slow drift with movement, and a capped fall.
+                    Vector3 v = characterMotor.velocity;
+                    Vector3 flat = new Vector3(v.x, 0f, v.z);
+                    Vector3 wish = inputBank.moveVector;
+                    wish.y = 0f;
+                    flat = Vector3.MoveTowards(flat, Vector3.ClampMagnitude(wish, 1f) * GreyTalonData.RainAirSpeed, GreyTalonData.RainAirAccel * dt);
+                    characterMotor.velocity = new Vector3(flat.x, Mathf.Max(v.y, -GreyTalonData.RainFallSpeed), flat.z);
+                    if (Cancelled()) return;
+                    if (characterMotor.isGrounded || fixedAge - _glideAt >= _glide) outer.SetNextStateToMain();
+                    break;
             }
             StartAimMode(0.5f);
-            // This runs on the Body machine in place of the main state, which is what normally reads skill buttons:
-            // the bow (5 arrows now) and Charged Shot are passed through by hand.
-            if (inputBank.skill1.down) skillLocator.primary?.ExecuteIfReady();
-            if (inputBank.skill2.justPressed) skillLocator.secondary?.ExecuteIfReady();
-            // Glide: slow drift with movement, and a capped fall.
-            Vector3 v = characterMotor.velocity;
-            Vector3 flat = new Vector3(v.x, 0f, v.z);
-            Vector3 wish = inputBank.moveVector;
-            wish.y = 0f;
-            flat = Vector3.MoveTowards(flat, Vector3.ClampMagnitude(wish, 1f) * GreyTalonData.RainAirSpeed, GreyTalonData.RainAirAccel * Time.fixedDeltaTime);
-            characterMotor.velocity = new Vector3(flat.x, Mathf.Max(v.y, -GreyTalonData.RainFallSpeed), flat.z);
-            bool landed = fixedAge > GreyTalonData.RainCastDelay + 0.3f && characterMotor.isGrounded;
-            bool cancel = inputBank.jump.justPressed;
-            if (landed || cancel || fixedAge >= GreyTalonData.RainCastDelay + _glide) outer.SetNextStateToMain();
+        }
+
+        /// <summary>Jump ends Rain of Arrows; the press is used up, so it doesn't also air-jump (which would reset his rise).</summary>
+        private bool Cancelled()
+        {
+            if (!inputBank.jump.justPressed) return false;
+            var mover = GetComponent<DeadlockMover>();
+            if (mover != null) mover.SuppressJumpUntil = Time.time + 0.25f;
+            outer.SetNextStateToMain();
+            return true;
         }
 
         public override void OnExit()
