@@ -7,6 +7,7 @@ using CursedAppleCuriosities.Survivors.Abrams;
 using CursedAppleCuriosities.Survivors.GreyTalon;
 using CursedAppleCuriosities.Survivors.Lash;
 using CursedAppleCuriosities.Survivors.Seven;
+using CursedAppleCuriosities.Survivors.Victor;
 using CursedAppleCuriosities.Survivors.Vyper;
 using RoR2;
 using System;
@@ -156,6 +157,15 @@ namespace CursedAppleCuriosities
             catch (Exception e)
             {
                 Logger?.LogError($"  ! [Survivor] Grey Talon failed to init: {e}");
+            }
+            try
+            {
+                VictorSurvivor.Init(Config, gameObject);
+                Logger?.LogInfo("  + [Survivor] Victor");
+            }
+            catch (Exception e)
+            {
+                Logger?.LogError($"  ! [Survivor] Victor failed to init: {e}");
             }
             foreach (var eq in _equipments) // registered before the reader starts so it copies them
             {

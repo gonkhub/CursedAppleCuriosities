@@ -24,7 +24,7 @@ namespace CursedAppleCuriosities.Survivors.GreyTalon
         public const string Token = "CURSEDAPPLE_GREYTALON_";
         public const string BodyName = "CursedAppleGreyTalonBody";
         public const string MuzzleName = "GreyTalonMuzzle";
-        public static readonly Color Color = new Color(0.55f, 0.75f, 0.95f); // spirit blue (lobby / UI)
+        public static readonly Color Color = new Color(0.13f, 0.42f, 0.2f); // character select / UI: dark green (user, 2026-10-12)
         /// <summary>The owl's blast and glow are green (user).</summary>
         public const float OwlHue = 0.33f;
 

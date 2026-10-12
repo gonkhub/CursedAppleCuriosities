@@ -1,6 +1,13 @@
 # Changelog
 
 ## 1.5.0 (unreleased)
+- New survivor: **Victor**. His gun **Memento Mori** fires faster the longer you hold it.
+  **Pain Battery** charges only from damage you take, then fires a fan of shocking bolts that heal you for
+  each enemy hit. **Jumpstart** costs some health, then heals back more than it took and speeds you up.
+  **Aura of Suffering** hurts everything around you, and you, harder the longer it runs. Passive
+  **Shocking Reanimation**: once every 4 minutes, dying knocks you down instead, and you get back up with
+  half your health and a stunning blast.
+- Each survivor has its own colour on the character select screen.
 
 ## 1.4.0
 - New interactable: the **Cursed Broker**, a rare shrine (stage 3 onward, or any stage after looping).

@@ -9,7 +9,7 @@ Items, equipment and survivors adapted from Deadlock's item shop for Risk of Rai
   items, in exchange for opening chests
 - **Cursed Broker**: a rare shrine from stage 3 onward. Curse one item to make every copy of it
   about twice as strong, in exchange for a harsh penalty for the rest of the run
-- **Lash**, **Abrams**, **Seven**, **Vyper** and **Grey Talon** as playable survivors, with Deadlock-style movement (stamina,
+- **Lash**, **Abrams**, **Seven**, **Vyper**, **Grey Talon** and **Victor** as playable survivors, with Deadlock-style movement (stamina,
   air dashes, dash-jumps, slides, wall jumps)
 
 The main numbers for every item, equipment and survivor can be changed in the Risk Of Options

@@ -22,7 +22,7 @@ namespace CursedAppleCuriosities.Survivors.Vyper
         public const string Token = "CURSEDAPPLE_VYPER_";
         public const string BodyName = "CursedAppleVyperBody";
         public const string MuzzleName = "VyperMuzzle";
-        public static readonly Color Color = new Color(0.55f, 0.85f, 0.3f); // venom green
+        public static readonly Color Color = new Color(0.72f, 0.9f, 0.22f); // character select / UI: yellowish green (user, 2026-10-12)
 
         public static GameObject? BodyPrefab, DisplayPrefab, DaggerProjectile, BolaProjectile;
         public static SurvivorDef? Survivor;

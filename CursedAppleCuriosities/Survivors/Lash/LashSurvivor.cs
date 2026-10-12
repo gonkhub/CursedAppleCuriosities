@@ -25,7 +25,7 @@ namespace CursedAppleCuriosities.Survivors.Lash
         public const string Token = "CURSEDAPPLE_LASH_";
         public const string BodyName = "CursedAppleLashBody";
         public const string MuzzleName = "LashMuzzle";
-        public static readonly Color Color = new Color(0.71f, 0.55f, 1f); // violet #B48CFF
+        public static readonly Color Color = new Color(0.55f, 0.8f, 1f); // character select / UI: light blue (user, 2026-10-12)
 
         public static GameObject? BodyPrefab, DisplayPrefab;
         public static SurvivorDef? Survivor;

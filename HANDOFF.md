@@ -4,7 +4,7 @@ A BepInEx plugin for **Risk of Rain 2** (Survivors of the Void, build 912) that 
 items and equipment **adapted from Deadlock's item catalogue**. The name is homage: Deadlock's
 map is the "Cursed Apple" and items are bought from a "curiosity shop."
 
-**State:** builds clean (0 errors), **31 items + 14 equipment**, 5 survivors (Lash, Abrams, Seven, Vyper, Grey Talon). **v1.0.0** released
+**State:** builds clean (0 errors), **31 items + 14 equipment**, 6 survivors (Lash, Abrams, Seven, Vyper, Grey Talon, Victor). **v1.0.0** released
 2026-10-11; **v1.2.5** packaged 2026-10-12 for friends (tag `v1.2.5` on main); **v1.3.0** finished 2026-10-12 on branch `1.3`
 (tag `v1.3.0`, not packaged); **v1.4.0** (Cursed Broker, not yet playtested) finished 2026-10-12 on branch `1.4` (tag `v1.4.0`,
 not packaged). New work happens on branch `1.5` (version 1.5.0). The user playtests as we go.
@@ -302,7 +302,32 @@ same on a stand-in model.
   - Shared change: a held ("hold") one-shot now also asks the hero's LoopRule (his jump pose ends on landing; his set has no in-air loop).
   - Pending: ping VO, Rain of Arrows cast sound, dash pose/sound sync in multiplayer (the in-glide dash plays locally only), writing review.
 
+- `Survivors/Victor/` — **Victor** (`CursedAppleVictorBody`, Deadlock `hero_frank`, model `models/heroes_wip/frank/frank` but AnimGraph2 clips
+  in `frank/clips`, icons `frank_*`, VO `sounds/vo/frank`, movement foley under `victor`). Prototyped 2026-10-12 on branch `1.5`, **built, never
+  launched**. Kit and rules are the user's (memory `victor-design`); Vyper's file shape (Data / Model / States / Net / Survivor).
+  - M1 Memento Mori: 75% hitscan, spins up 0.198 -> 0.171 s between shots (Deadlock spin rates), layered gun sound (windup/first/main/mech/tail).
+  - M2 Pain Battery (`VictorBatterySkillDef`): ready only when full. Charge = synced buff stacks 0..100 filled by `onServerDamageDealt` on
+    Victor (damage taken only, his own Aura/Jumpstart included; 40% of max health fills it). 0.35 s wind-up, 7 bolts in a 40 deg fan (28 m,
+    sphere-cast, walls stop them), each enemy once for 500%, and each enemy hit heals 15% of missing health (Deadlock T3, built in).
+  - Utility Jumpstart: costs 15% current health (non-lethal, bypasses armor/block), heals 2x that (at least 10% max) over 4.5 s on a linearly
+    fading rate (`VictorJumpstart`), +3 m/s fading in 10 buff steps. 12 s cd.
+  - Special Aura of Suffering: own "Aura" state machine (he keeps shooting); server `VictorAura` ticks every 0.25 s for 8 s: enemies within 8 m
+    take 100% -> 450%/s (Special source, proc 0.5, crits rolled, `OnHitEnemy`/`OnHitAll`, so on-hit, lifesteal, on-kill, Ethereal Shift's special
+    bonus all apply), Victor takes 1.1% -> 5% max health/s and can die of it. Mystic Expansion widens it, Duration Extender lengthens it.
+    Special again ends it early. Radius shown by `VictorAuraFx` (user: filled grey, lowered opacity, on the terrain): Focus Crystal's
+    indicator mesh + material copied grey (sphere fallback); the log line `[Victor] aura range:` says which loaded.
+  - Passive Shocking Reanimation (`VictorRevive`): while ready, hits on Victor are NonLethal; one that leaves him at 1 health starts it:
+    slow wave (125% fading over 3 s, 18 m), 3 s HiddenInvincibility + Reanimating buff (SkillSilence; the owner's body machine enters
+    `Reanimate`), then up at 50% health with a 1000% blast + 1.5 s stun. 240 s cooldown on the master (`VictorReviveClock`), shown as a
+    cooldown buff and carried into the next stage's body.
+  - VFX green (user), recoloured with `Kit.Recoloured` at hue 0.33; UI colour grey-green. Sounds picked by me (user: no review pass needed).
+  - Not done yet: item displays (tools/itempass), lobby intro (pitch first), ping VO, Deadlock's ability upgrades beyond the T3 heal.
+
 ## Recent changes (since last handoff)
+
+- **Character select colours (user, 2026-10-12):** each survivor's `Color` (body colour + SurvivorDef primary colour): Lash light blue,
+  Abrams dark blue, Seven orange, Vyper yellowish green, Grey Talon dark green, Victor greyish green.
+- **Victor (1.5.0, prototyped 2026-10-12, NOT launched).** Sixth survivor; see Survivors above and memory `victor-design`.
 
 - **Cursed Broker (1.4.0, built 2026-10-12, NOT playtested).** `Broker/`: `CursedBroker` (Shrine of Order clone with its
   purchase stripped and a `PickupPickerController` + Command picker panel; symbol tinted purple; spawned in

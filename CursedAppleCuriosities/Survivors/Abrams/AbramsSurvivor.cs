@@ -23,7 +23,7 @@ namespace CursedAppleCuriosities.Survivors.Abrams
         public const string Token = "CURSEDAPPLE_ABRAMS_";
         public const string BodyName = "CursedAppleAbramsBody";
         public const string MuzzleName = "AbramsMuzzle";
-        public static readonly Color Color = new Color(1f, 0.35f, 0.24f); // ember #FF5A3C
+        public static readonly Color Color = new Color(0.15f, 0.27f, 0.7f); // character select / UI: dark blue (user, 2026-10-12)
 
         public static GameObject? BodyPrefab, DisplayPrefab;
         public static SurvivorDef? Survivor;

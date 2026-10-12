@@ -24,7 +24,7 @@ namespace CursedAppleCuriosities.Survivors.Seven
         public const string Token = "CURSEDAPPLE_SEVEN_";
         public const string BodyName = "CursedAppleSevenBody";
         public const string MuzzleName = "SevenMuzzle";
-        public static readonly Color Color = new Color(0.4f, 0.7f, 1f); // electric blue (lobby / UI)
+        public static readonly Color Color = new Color(1f, 0.55f, 0.15f); // character select / UI: orange (user, 2026-10-12)
         /// <summary>Seven's lightning is orange (user): his effects are recoloured to this hue.</summary>
         public const float Hue = 0.07f;
         public static readonly Color Orange = Color.HSVToRGB(Hue, 0.85f, 1f);
