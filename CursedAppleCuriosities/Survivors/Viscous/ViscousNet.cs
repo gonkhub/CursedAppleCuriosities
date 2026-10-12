@@ -369,3 +369,47 @@ namespace CursedAppleCuriosities.Survivors.Viscous
         }
     }
 }
+
+namespace CursedAppleCuriosities.Survivors.Viscous
+{
+    /// <summary>
+    /// Every machine, on Viscous: while he rolls, his main hurtbox (Commando's capsule) becomes the Goo Ball's sphere, so hits
+    /// land where the ball is drawn; it goes back when he unrolls. Follows the synced body state, like ViscousBallLook.
+    /// </summary>
+    public class ViscousBallHurtbox : MonoBehaviour
+    {
+        private CharacterBody _body = null!;
+        private CapsuleCollider? _capsule;
+        private float _radius, _height;
+        private Vector3 _center;
+        private int _direction;
+        private bool _rolling;
+
+        private void Awake() => _body = GetComponent<CharacterBody>();
+
+        private void FixedUpdate()
+        {
+            if (_capsule == null)
+            {
+                _capsule = _body.mainHurtBox != null ? _body.mainHurtBox.GetComponent<CapsuleCollider>() : null;
+                if (_capsule == null) return;
+                _radius = _capsule.radius; _height = _capsule.height; _center = _capsule.center; _direction = _capsule.direction;
+            }
+            bool rolling = _body.healthComponent != null && _body.healthComponent.alive && ViscousNet.IsBall(gameObject, castToo: false);
+            if (rolling)
+            {
+                Transform t = _capsule.transform;
+                float scale = Mathf.Max(1e-4f, t.lossyScale.x);
+                float r = ViscousData.Radius(_body);
+                _capsule.radius = r / scale;
+                _capsule.height = 2f * r / scale;
+                _capsule.center = t.InverseTransformPoint(_body.footPosition + Vector3.up * r);
+            }
+            else if (_rolling)
+            {
+                _capsule.radius = _radius; _capsule.height = _height; _capsule.center = _center; _capsule.direction = _direction;
+            }
+            _rolling = rolling;
+        }
+    }
+}

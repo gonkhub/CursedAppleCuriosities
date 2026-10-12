@@ -194,6 +194,7 @@ namespace CursedAppleCuriosities.Survivors.Viscous
             Transform model = body.GetComponent<ModelLocator>().modelTransform;
             model.gameObject.AddComponent<DeadlockModelSwap>().HeroKey = ViscousData.Hero;
             model.gameObject.AddComponent<ViscousBallLook>();
+            body.AddComponent<ViscousBallHurtbox>(); // the hurtbox becomes the ball while he rolls
             Kit.MuteStandIn(body, model.gameObject, ViscousData.Hero);
             var children = model.GetComponent<ChildLocator>();
             if (children != null && children.FindChild(MuzzleName) == null) children.AddChild(MuzzleName, model);

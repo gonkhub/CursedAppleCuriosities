@@ -27,6 +27,7 @@ namespace CursedAppleCuriosities.Testing
     /// shot name                       save a screenshot of the screen
     /// portrait name yaw [zoom] [h]    render the player's body from yaw degrees (0 = its front) to name.png; h = aim height (0..1)
     /// setskill special CursedAppleAbramsSeismic   put a skill in a slot of the live body only (the saved loadout is untouched)
+    /// probe                           log the body's foot, main hurtbox bounds and Body state
     /// log text                        write a line to the BepInEx log
     /// quit
     /// </code>
@@ -202,6 +203,13 @@ namespace CursedAppleCuriosities.Testing
                     return Screen(p[1]);
                 case "portrait": return Portrait(p[1], F(p, 2, 0f), F(p, 3, 1f), F(p, 4, 0.5f));
                 case "setskill": SetSkill(p[1], p[2]); return null;
+                case "probe":
+                {
+                    CharacterBody? b = LocalUserManager.GetFirstLocalUser()?.cachedBody;
+                    Collider? c = b != null && b.mainHurtBox != null ? b.mainHurtBox.collider : null;
+                    Log(b == null ? "probe: no body" : $"probe: foot {b.footPosition} hurtbox {(c != null ? c.bounds.center + " size " + c.bounds.size : "none")} state {EntityStateMachine.FindByCustomName(b.gameObject, "Body")?.state?.GetType().Name}");
+                    return null;
+                }
                 case "log": Log(rest); return null;
                 case "quit": Application.Quit(); return null;
                 default: Log("unknown command: " + p[0]); return null;

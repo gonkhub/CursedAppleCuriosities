@@ -381,7 +381,7 @@ same on a stand-in model.
     `ViscousBallLook` (body + display, runs after the animator) swaps body/gun/outline for it while the Body state is `GooBall`, and puts
     `inflated_center` at foot + radius, scaled to the radius (1.4 m x Mystic Expansion), rolled from the body's real motion (works for remote players).
   - Model height quirk: the loader scales by the tallest vertex, which is the ball's helmet (2.94 m) not him (2.45 m): `BallHeightFix`.
-  - Open: hurtbox stays Commando-sized while rolling. Item displays fitted 2026-10-12 (`ViscousItemDisplays.cs`; the ball and outline
+  - The hurtbox becomes the ball's sphere while he rolls (`ViscousBallHurtbox`, 2026-10-12; checked with the self-test `probe`). Item displays fitted 2026-10-12 (`ViscousItemDisplays.cs`; the ball and outline
     shell count for height only). Skin: Blue.
 
 - `Survivors/Celeste/` — **Celeste** (`CursedAppleCelesteBody`, Deadlock `hero_unicorn`, model `models/heroes_wip/unicorn/unicorn`,
