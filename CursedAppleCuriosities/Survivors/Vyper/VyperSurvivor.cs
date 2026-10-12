@@ -55,6 +55,7 @@ namespace CursedAppleCuriosities.Survivors.Vyper
             CreateSkills();
             BodyPrefab = CreateBody();
             DisplayPrefab = CreateDisplay();
+            VyperItemDisplays.Register();
             CreateSurvivor();
             AddLanguage();
             VyperNet.Register();
@@ -265,7 +266,7 @@ namespace CursedAppleCuriosities.Survivors.Vyper
 
             LanguageAPI.Add(Token + "VENOM_NAME", "Lethal Venom");
             LanguageAPI.Add(Token + "VENOM_DESC",
-                $"Inject a nearby enemy. After <style=cIsUtility>{VyperData.VenomDelay:0}s</style> the venom deals <style=cIsDamage>{D(VyperData.VenomMinDamage)}</style> damage, " +
+                $"Inject an enemy within {VyperData.VenomRange:0}m. After <style=cIsUtility>{VyperData.VenomDelay:0}s</style> the venom deals <style=cIsDamage>{D(VyperData.VenomMinDamage)}</style> damage, " +
                 $"rising to <style=cIsDamage>{D(VyperData.VenomMaxDamage)}</style> the more health the target is missing. Ignores <style=cIsUtility>Petrify</style>.");
 
             LanguageAPI.Add(Token + "BOLA_NAME", "Petrifying Bola");

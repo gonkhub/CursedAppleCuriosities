@@ -21,6 +21,7 @@ namespace CursedAppleCuriosities.Survivors.Seven
             MuzzleName = SevenSurvivor.MuzzleName,
             Anims = SevenData.Anims,
             RootLocked = SevenData.Locked,
+            ItemAnchors = SevenItemDisplays.Anchors,
             // His Storm Cloud skeleton (Deadlock's blue_illum): orange and glowing (user). Shown only while channeling: SevenStormLook.
             MaterialGlows = new System.Collections.Generic.Dictionary<string, Color> { ["blue_illum"] = SevenSurvivor.Orange },
             LoopRule = c =>

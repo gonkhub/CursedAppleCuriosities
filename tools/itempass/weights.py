@@ -53,7 +53,7 @@ for n in j["nodes"]:
 doms = []
 for n in j["nodes"]:
     if "mesh" not in n: continue
-    if j["meshes"][n["mesh"]].get("name", "").split(".")[-1] in HEROES[HERO]["hide"]: continue
+    if j["meshes"][n["mesh"]].get("name", "").split(".")[-1] in HEROES[HERO]["hide"] + list(HEROES[HERO].get("fit_hide", ())): continue
     for prim in j["meshes"][n["mesh"]]["primitives"]:
         ji = acc(prim["attributes"]["JOINTS_0"]).astype(int); wi = acc(prim["attributes"]["WEIGHTS_0"])
         doms.append(ji[np.arange(len(ji)), wi.argmax(1)])

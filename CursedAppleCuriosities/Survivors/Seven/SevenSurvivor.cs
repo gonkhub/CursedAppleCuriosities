@@ -58,6 +58,7 @@ namespace CursedAppleCuriosities.Survivors.Seven
             CreateSkills();
             BodyPrefab = CreateBody();
             DisplayPrefab = CreateDisplay();
+            SevenItemDisplays.Register();
             CreateSurvivor();
             AddLanguage();
             SevenNet.Register();
@@ -313,7 +314,7 @@ namespace CursedAppleCuriosities.Survivors.Seven
 
             LanguageAPI.Add(Token + "STATIC_NAME", "Static Charge");
             LanguageAPI.Add(Token + "STATIC_DESC",
-                $"Lock onto an enemy and charge them. After <style=cIsUtility>{SevenData.StaticDelay:0.#}s</style> it <style=cIsDamage>stuns</style> everything within {SevenData.StaticRadius:0}m of them " +
+                $"Lock onto an enemy within {SevenData.StaticRange:0}m and charge them. After <style=cIsUtility>{SevenData.StaticDelay:0.#}s</style> it <style=cIsDamage>stuns</style> everything within {SevenData.StaticRadius:0}m of them " +
                 $"for {SevenData.StaticStun:0.#}s and deals <style=cIsDamage>{D(SevenData.StaticDamage)} damage</style>.");
 
             LanguageAPI.Add(Token + "SURGE_NAME", "Power Surge");

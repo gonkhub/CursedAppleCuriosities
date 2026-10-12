@@ -254,7 +254,9 @@ same on a stand-in model.
     (not `fire/NN`), Static Charge = cast + loop only, Storm Cloud = `gigawatt_storm_cloud_*` (not `a4_storm_cloud`), never `a3_voltage_drain`
     or `seven_spark`. Vyper all approved; her gun is layered (`VyperGunAudio`: first / mid / tail + release). Vyper has no Deadlock footstep,
     dash or landing sounds: silent for now. **Rule: pitch any new Deadlock sound to the user before wiring it.**
-  - Pending: ping VO (pitch first), Static Charge detonation sound (proc not approved), item display pass (tools/itempass) for both, Petrify stone visual, camera/scale playtest,
+  - Item displays fitted 2026-10-12 (`SevenItemDisplays.cs`, `VyperItemDisplays.cs`; tools/itempass README). Abrams' 9 mirrored rules fixed; the
+    user's dev cfg had `[Abrams - Debug] Fitted Item Anchors = false` (old automatic anchors), set back to true.
+  - Pending: ping VO + Static Charge detonation sound (pitched: `sound_review/ping_review.html`), Petrify stone visual check, camera/scale playtest,
     Seven's sleeve/waist cloth bones (watch for an Abrams-style coat bug), writing review (subtitles/descriptions are drafts).
   - Seven's runs bake their travel into the pelvis (a sibling of root_motion, not a child): he ran ahead and snapped back.
     `GlbLoader.RemoveRootTravel` now takes the horizontal root travel out of root_motion's siblings when the pelvis follows it

@@ -42,7 +42,7 @@ def region_tree(path, labels, skip):
         trees[rn] = BVHTree.FromPolygons([tuple(p) for p in v], polys, epsilon=0.0)
     return trees
 T_CMD = region_tree(D + "/commando_body.obj", cmd_reg, ("gun", "Gun"))
-T_ABR = region_tree(D + f"/{HERO}_body.obj", ab_surf, ("gun_model", "book_model"))
+T_ABR = region_tree(D + f"/{HERO}_body.obj", ab_surf, HEROES[HERO]["skip"])
 
 def radial(tree, core, v, extra=0.3):
     """Signed distance of v past the outermost surface on the ray core -> v (negative: under the surface)."""
