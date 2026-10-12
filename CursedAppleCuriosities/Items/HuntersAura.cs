@@ -142,7 +142,7 @@ namespace CursedAppleCuriosities.Items
         {
             if (_body.teamComponent == null) return;
 
-            float range = HuntersAura.BaseRange;
+            float range = HuntersAura.BaseRange * MysticExpansion.RadiusMultiplier(_body);
 
             var search = new SphereSearch();
             search.origin = _body.transform.position;

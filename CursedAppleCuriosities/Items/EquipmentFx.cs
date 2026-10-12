@@ -17,16 +17,25 @@ namespace CursedAppleCuriosities.Items
     public static class EquipmentFx
     {
         private static readonly Dictionary<string, GameObject?> _prefabs = new Dictionary<string, GameObject?>();
+        private static readonly HashSet<string> _failed = new HashSet<string>();
 
         /// <summary>A vanilla prefab by Addressables key, cached (null and logged once if it can't load).</summary>
         public static GameObject? Prefab(string key)
         {
-            if (_prefabs.TryGetValue(key, out var cached)) return cached;
+            if (_prefabs.TryGetValue(key, out var cached) && cached != null) return cached;
             GameObject? prefab = null;
-            try { prefab = Addressables.LoadAssetAsync<GameObject>(key).WaitForCompletion(); }
-            catch (System.Exception e) { CursedAppleCuriositiesPlugin.Logger?.LogWarning($"[CursedApple] FX {key}: {e.Message}"); }
-            if (prefab == null) CursedAppleCuriositiesPlugin.Logger?.LogWarning($"[CursedApple] FX prefab not found: {key}");
-            _prefabs[key] = prefab;
+            string why = "";
+            try
+            {
+                var handle = Addressables.LoadAssetAsync<GameObject>(key);
+                prefab = handle.WaitForCompletion();
+                if (prefab == null) why = $" (status {handle.Status}{(handle.OperationException != null ? ": " + handle.OperationException.Message : "")})";
+            }
+            catch (System.Exception e) { why = ": " + e.Message; }
+            // A failed load isn't cached (playtest 2026-10-12: real keys came back null mid-run, and the cached null
+            // hid those effects for the rest of the session); it is retried next time, logged once per key.
+            if (prefab != null) _prefabs[key] = prefab;
+            else if (_failed.Add(key)) CursedAppleCuriositiesPlugin.Logger?.LogWarning($"[CursedApple] FX prefab not loaded: {key}{why}");
             return prefab;
         }
 

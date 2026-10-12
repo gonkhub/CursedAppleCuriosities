@@ -29,7 +29,7 @@ namespace CursedAppleCuriosities.Items
         protected override string IconFileName => "icon_tormentpulse.png";
 
         public const float PulseInterval    = 1.5f;
-        public const float BaseRange        = 20f;
+        public const float BaseRange        = 12f;
         public const float RangePerStack    = 10f;
         public static float DamageCoefficient;
         public const int   BaseTargets      = 2;
@@ -62,8 +62,63 @@ namespace CursedAppleCuriosities.Items
 
             if (count > 0 && controller == null)
                 self.gameObject.AddComponent<TormentPulseController>().Initialize(this);
+            if (count > 0 && self.GetComponent<TormentPulseRing>() == null)
+                self.gameObject.AddComponent<TormentPulseRing>().Item = ItemDef;
             else if (count <= 0 && controller != null)
                 UnityEngine.Object.Destroy(controller);
+        }
+    }
+
+    /// <summary>Client visual: a faint ring at the pulse's reach around the local player (grows with Mystic Expansion).</summary>
+    public class TormentPulseRing : MonoBehaviour
+    {
+        private const int Segments = 64;
+        private static readonly Color RingColor = new Color(0.75f, 0.15f, 0.2f, 0.2f); // torment red, faint
+
+        public ItemDef? Item;
+        private CharacterBody _body = null!;
+        private LineRenderer? _ring;
+
+        private void Awake() => _body = GetComponent<CharacterBody>();
+
+        private void LateUpdate()
+        {
+            int count = _body != null && _body.inventory != null && Item != null ? _body.inventory.GetItemCountEffective(Item) : 0;
+            if (count <= 0) { Destroy(this); return; }
+
+            bool show = _body.hasEffectiveAuthority && _body.isPlayerControlled
+                && _body.healthComponent != null && _body.healthComponent.alive && SpiritSnatch.RingMaterial != null;
+            if (!show) { if (_ring != null) _ring.enabled = false; return; }
+
+            if (_ring == null) _ring = MakeRing();
+            _ring.enabled = true;
+            float r = (TormentPulse.BaseRange + (count - 1) * TormentPulse.RangePerStack) * MysticExpansion.RadiusMultiplier(_body);
+            Vector3 c = _body.footPosition + Vector3.up * 0.25f;
+            for (int i = 0; i < Segments; i++)
+            {
+                float a = i * Mathf.PI * 2f / Segments;
+                _ring.SetPosition(i, c + new Vector3(Mathf.Cos(a) * r, 0f, Mathf.Sin(a) * r));
+            }
+        }
+
+        private static LineRenderer MakeRing()
+        {
+            var lr = new GameObject("CursedApple_TormentPulseRing").AddComponent<LineRenderer>();
+            lr.material = SpiritSnatch.RingMaterial; // the shared laser-beam material Spirit Snatch loads
+            if (lr.material.HasProperty("_TintColor")) lr.material.SetColor("_TintColor", RingColor);
+            lr.startColor = lr.endColor = RingColor;
+            lr.startWidth = lr.endWidth = 0.08f;
+            lr.positionCount = Segments;
+            lr.loop = true;
+            lr.useWorldSpace = true;
+            lr.shadowCastingMode = UnityEngine.Rendering.ShadowCastingMode.Off;
+            lr.receiveShadows = false;
+            return lr;
+        }
+
+        private void OnDestroy()
+        {
+            if (_ring != null) Destroy(_ring.gameObject);
         }
     }
 

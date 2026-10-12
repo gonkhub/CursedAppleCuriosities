@@ -105,7 +105,7 @@ namespace CursedAppleCuriosities.Items
             if (body == null) return false;
 
             var shift = body.GetComponent<EtherealShiftState>() ?? body.gameObject.AddComponent<EtherealShiftState>();
-            shift.Begin(ShiftDuration);
+            shift.Begin(ShiftDuration * DurationExtender.Current); // the user's, from the equipment scope
             SpawnEffect(body);
             EquipmentFx.Sound("etherealshift_cast", body.corePosition, body.gameObject);
             return true;
@@ -150,9 +150,12 @@ namespace CursedAppleCuriosities.Items
         {
             if (!NetworkServer.active || _body == null) return;
             _timer = duration;
-            if (EtherealShift.ShiftBuffDef != null) _body.AddTimedBuff(EtherealShift.ShiftBuffDef, duration);
-            _body.AddTimedBuff(RoR2Content.Buffs.HiddenInvincibility, duration);
-            _body.AddTimedBuff(RoR2Content.Buffs.Cloak, duration);
+            using (DurationExtender.Exact()) // already extended: buffs match the timer
+            {
+                if (EtherealShift.ShiftBuffDef != null) _body.AddTimedBuff(EtherealShift.ShiftBuffDef, duration);
+                _body.AddTimedBuff(RoR2Content.Buffs.HiddenInvincibility, duration);
+                _body.AddTimedBuff(RoR2Content.Buffs.Cloak, duration);
+            }
         }
 
         private void FixedUpdate()

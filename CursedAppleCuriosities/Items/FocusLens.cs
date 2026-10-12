@@ -79,11 +79,11 @@ namespace CursedAppleCuriosities.Items
             var body = slot != null ? slot.characterBody : null;
             if (body == null) return false;
 
-            var target = EquipmentTargeting.FindEnemy(body, Range, AimAngle, _ => true);
+            var target = EquipmentTargeting.FindEnemy(body, Range * MysticExpansion.RadiusMultiplier(body), AimAngle, _ => true);
             if (target == null) return false; // no target → no cooldown
 
             var mark = target.GetComponent<FocusLensMark>() ?? target.gameObject.AddComponent<FocusLensMark>();
-            mark.Begin(body, MarkDuration);
+            mark.Begin(body, MarkDuration * DurationExtender.Current); // the user's, from the equipment scope
             EquipmentFx.Sound("focuslens_cast", body.corePosition, body.gameObject);
             EquipmentFx.Sound("focuslens_start", target.corePosition, target.gameObject);
             EquipmentFx.Effect("RoR2/Base/Characters/Huntress/Skills/HuntressBlinkEffect.prefab", target.corePosition, target.radius * 2f);
@@ -120,7 +120,7 @@ namespace CursedAppleCuriosities.Items
             if (!NetworkServer.active || _body == null) return;
             _owner = owner;
             _timer = duration; // recasting on the same target restarts the window and keeps the tally
-            if (FocusLens.FocusedBuffDef != null) _body.AddTimedBuff(FocusLens.FocusedBuffDef, duration);
+            if (FocusLens.FocusedBuffDef != null) using (DurationExtender.Exact()) _body.AddTimedBuff(FocusLens.FocusedBuffDef, duration);
         }
 
         // Every source counts (allies, DoTs, other enemies); the enemy's own self-damage does not.

@@ -67,7 +67,7 @@ namespace CursedAppleCuriosities.Items
             if (count <= 0) return;
 
             float distance = Vector3.Distance(damageInfo.attacker.transform.position, victim.transform.position);
-            if (distance > Range) return;
+            if (distance > Range * MysticExpansion.RadiusMultiplier(attackerBody)) return;
 
             // Slow the victim.
             var victimBody = victim.GetComponent<CharacterBody>();

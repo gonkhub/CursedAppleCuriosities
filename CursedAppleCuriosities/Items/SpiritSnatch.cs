@@ -1,66 +1,67 @@
 using BepInEx.Configuration;
-using R2API;
 using RoR2;
 using UnityEngine;
+using UnityEngine.AddressableAssets;
 using UnityEngine.Networking;
 
 namespace CursedAppleCuriosities.Items
 {
+    // Focus Crystal, but barrier: close-range hits shield you. Reworked 2026-10-12 — the old armor steal
+    // was invisible in play and its close-range bonus hit overlapped Focus Crystal. Barrier shows on the
+    // health bar, so the benefit is readable, and nothing vanilla grants barrier on close hits (Loader's
+    // passive aside).
     public class SpiritSnatch : ItemBase
     {
         public override string ItemName => "Spirit Snatch";
         public override string ItemLangTokenName => "SPIRITSNATCH";
 
-        public override string ItemPickupDesc => "Hits on nearby enemies deal bonus damage and steal their armor.";
+        public override string ItemPickupDesc => "Hitting nearby enemies grants barrier.";
         public override string ItemFullDescription =>
-            $"Hitting an enemy within <style=cIsUtility>{Range}m</style> " +
-            $"deals a bonus <style=cIsDamage>{BonusDamageCoefficient * 100:0}% base damage burst</style> " +
-            $"<style=cStack>(+{BonusDamagePerStack * 100:0}% per stack)</style> and " +
-            $"<style=cIsDamage>snatches {BaseArmorShred} armor</style> " +
-            $"<style=cStack>(+{ArmorShredPerStack} per stack)</style> from them onto " +
-            $"<style=cIsHealing>yourself</style> for <style=cIsUtility>{DebuffDuration}s</style>.";
+            $"Hitting an enemy within <style=cIsUtility>{Range}m</style> grants a " +
+            $"<style=cIsHealing>temporary barrier</style> for <style=cIsHealing>{BarrierPerHit * 100:0.#}% of your maximum health</style> " +
+            $"<style=cStack>(+{BarrierPerHit * 100:0.#}% per stack)</style>. Scales with proc coefficient.";
 
         public override string ItemLore =>
             "Bought that off a Knickerbocker that was about to get his legs broken.";
 
         public override ItemTier Tier => ItemTier.Tier2;
-        public override ItemTag[] ItemTags => new[] { ItemTag.Damage, ItemTag.Utility };
+        public override ItemTag[] ItemTags => new[] { ItemTag.Utility };
         protected override string IconFileName => "icon_spiritsnatch.png";
 
-        public const float Range                  = 10f;
-        public static float BaseArmorShred;
-        public const float ArmorShredPerStack     = 15f;
-        public const float DebuffDuration         = 5f;
-        public const float BonusDamageCoefficient = 0.4f;
-        public const float BonusDamagePerStack    = 0.1f;
+        public const float Range = 13f; // Focus Crystal's
+        public static float BarrierPerHit;
+
+        public static ItemDef? StaticItemDef;
+        internal static Material? RingMaterial;
 
         public override void Init(ConfigFile config)
         {
-            BaseArmorShred = config.Bind("Green", "Spirit Snatch - Armor Snatched", 20f,
-                "Armor stripped from the enemy and granted to you at 1 stack.").Value;
+            BarrierPerHit = config.Bind("Green", "Spirit Snatch - Barrier Per Hit", 0.01f,
+                "Barrier per close-range hit, as a fraction of max health, per stack (times the hit's proc coefficient).").Value;
             CreateLang();
             CreateItem();
+            StaticItemDef = ItemDef;
+            try
+            {
+                // Shader.Find is off limits in RoR2: borrow the laser-pointer beam, as Abrams' rings do.
+                var laser = Addressables.LoadAssetAsync<Material>("RoR2/Base/Common/VFX/matLaserPointerBeam.mat").WaitForCompletion();
+                if (laser != null) RingMaterial = new Material(laser);
+            }
+            catch (System.Exception e) { CursedAppleCuriositiesPlugin.Logger?.LogWarning($"[Spirit Snatch] ring material: {e.Message}"); }
             Hooks();
         }
 
         public override void Hooks()
         {
-            On.RoR2.GlobalEventManager.OnHitEnemy  += OnHitEnemy;
-            RecalculateStatsAPI.GetStatCoefficients += GetStatCoefficients;
+            On.RoR2.GlobalEventManager.OnHitEnemy   += OnHitEnemy;
+            On.RoR2.CharacterBody.OnInventoryChanged += OnInventoryChanged;
         }
 
-        // Runs for every body during stat recalc. Enemies lose armor (the debuff); the attacker
-        // gains the same armor (the "snatch") — the defining upgrade over Spirit Strike.
-        private void GetStatCoefficients(CharacterBody sender, RecalculateStatsAPI.StatHookEventArgs args)
-        {
-            var debuff = sender.GetComponent<SpiritSnatchDebuff>();
-            if (debuff != null && debuff.IsActive)
-                args.armorAdd -= debuff.ArmorShred;
+        private static int Count(CharacterBody? body)
+            => body != null && body.inventory != null && StaticItemDef != null
+                ? body.inventory.GetItemCountEffective(StaticItemDef) : 0;
 
-            var snatch = sender.GetComponent<SpiritSnatchSelfArmor>();
-            if (snatch != null && snatch.IsActive)
-                args.armorAdd += snatch.Armor;
-        }
+        public static float RangeFor(CharacterBody body) => Range * MysticExpansion.RadiusMultiplier(body);
 
         private void OnHitEnemy(
             On.RoR2.GlobalEventManager.orig_OnHitEnemy orig,
@@ -71,102 +72,92 @@ namespace CursedAppleCuriosities.Items
             orig(self, damageInfo, victim);
 
             if (!NetworkServer.active) return;
-            if (damageInfo == null || victim == null) return;
+            if (damageInfo == null || victim == null || damageInfo.attacker == null) return;
             if (damageInfo.procCoefficient <= 0f) return;
-            if (damageInfo.attacker == null) return;
 
             var attackerBody = damageInfo.attacker.GetComponent<CharacterBody>();
-            if (attackerBody?.inventory == null) return;
-
-            int count = attackerBody.inventory.GetItemCountEffective(ItemDef);
+            int count = Count(attackerBody);
             if (count <= 0) return;
+            var hc = attackerBody!.healthComponent;
+            if (hc == null || !hc.alive) return;
 
-            float distance = Vector3.Distance(damageInfo.attacker.transform.position, victim.transform.position);
-            if (distance > Range) return;
+            // Same check as Focus Crystal: attacker's core to the hit point.
+            float range = RangeFor(attackerBody);
+            if ((attackerBody.corePosition - damageInfo.position).sqrMagnitude > range * range) return;
 
-            float shred = BaseArmorShred + ArmorShredPerStack * (count - 1);
+            hc.AddBarrier(hc.fullBarrier * BarrierPerHit * count * Mathf.Min(damageInfo.procCoefficient, 1f));
+        }
 
-            // Strip the victim's armor (refreshes duration, does not stack)...
-            var victimBody = victim.GetComponent<CharacterBody>();
-            if (victimBody != null)
-            {
-                var debuff = victimBody.GetComponent<SpiritSnatchDebuff>()
-                    ?? victimBody.gameObject.AddComponent<SpiritSnatchDebuff>();
-                debuff.Apply(shred, DebuffDuration);
-                victimBody.RecalculateStats();
-            }
-
-            // ...and snatch that armor onto the attacker for the same duration.
-            var selfArmor = attackerBody.GetComponent<SpiritSnatchSelfArmor>()
-                ?? attackerBody.gameObject.AddComponent<SpiritSnatchSelfArmor>();
-            selfArmor.Apply(shred, DebuffDuration);
-            attackerBody.RecalculateStats();
-
-            // Bonus damage burst
-            var victimHC = victim.GetComponent<HealthComponent>();
-            if (victimHC == null) return;
-
-            float damageCoeff = BonusDamageCoefficient + BonusDamagePerStack * (count - 1);
-
-            var proc = new DamageInfo();
-            proc.attacker         = damageInfo.attacker;
-            proc.inflictor        = damageInfo.attacker;
-            proc.damage           = attackerBody.damage * damageCoeff;
-            proc.crit             = false;
-            proc.position         = damageInfo.position;
-            proc.procCoefficient  = 0f;
-            proc.damageColorIndex = DamageColorIndex.Item;
-
-            victimHC.TakeDamage(proc);
+        // Inventories sync to every client, so each machine can attach the ring itself; it only draws for
+        // the local player's own body.
+        private void OnInventoryChanged(On.RoR2.CharacterBody.orig_OnInventoryChanged orig, CharacterBody self)
+        {
+            orig(self);
+            if (Count(self) > 0 && self.GetComponent<SpiritSnatchRing>() == null)
+                self.gameObject.AddComponent<SpiritSnatchRing>();
         }
     }
 
-    public class SpiritSnatchDebuff : MonoBehaviour
+    // Client visual: a flat ring at the item's range around the local player's feet.
+    public class SpiritSnatchRing : MonoBehaviour
     {
-        private float _duration;
+        private const int Segments = 64;
+        private static readonly Color RingColor = new Color(0.4f, 0.12f, 0.65f, 0.18f); // dark purple, faint (was barrier yellow at 0.35; playtest)
 
-        public float ArmorShred { get; private set; }
-        public bool  IsActive   => _duration > 0f;
+        private CharacterBody _body = null!;
+        private LineRenderer? _ring;
 
-        public void Apply(float shred, float duration)
+        private void Awake() => _body = GetComponent<CharacterBody>();
+
+        private void LateUpdate()
         {
-            ArmorShred = shred;
-            _duration  = duration;
-        }
-
-        private void Update()
-        {
-            if (_duration > 0f)
+            if (_body == null) return;
+            var inv = _body.inventory;
+            if (inv == null || SpiritSnatch.StaticItemDef == null || inv.GetItemCountEffective(SpiritSnatch.StaticItemDef) <= 0)
             {
-                _duration -= Time.deltaTime;
-                if (_duration <= 0f)
-                    GetComponent<CharacterBody>()?.RecalculateStats();
+                Destroy(this);
+                return;
+            }
+
+            bool show = _body.hasEffectiveAuthority && _body.isPlayerControlled
+                && _body.healthComponent != null && _body.healthComponent.alive && SpiritSnatch.RingMaterial != null;
+            if (!show)
+            {
+                if (_ring != null) _ring.enabled = false;
+                return;
+            }
+
+            if (_ring == null) _ring = MakeRing();
+            _ring.enabled = true;
+
+            float r = SpiritSnatch.RangeFor(_body);
+            Vector3 c = _body.footPosition + Vector3.up * 0.3f;
+            for (int i = 0; i < Segments; i++)
+            {
+                float a = i * Mathf.PI * 2f / Segments;
+                _ring.SetPosition(i, c + new Vector3(Mathf.Cos(a) * r, 0f, Mathf.Sin(a) * r));
             }
         }
-    }
 
-    // The stolen armor living on the attacker (mirror of the victim's debuff).
-    public class SpiritSnatchSelfArmor : MonoBehaviour
-    {
-        private float _duration;
-
-        public float Armor    { get; private set; }
-        public bool  IsActive => _duration > 0f;
-
-        public void Apply(float armor, float duration)
+        private static LineRenderer MakeRing()
         {
-            Armor     = armor;
-            _duration = duration;
+            var go = new GameObject("CursedApple_SpiritSnatchRing");
+            var lr = go.AddComponent<LineRenderer>();
+            lr.material = SpiritSnatch.RingMaterial;
+            if (lr.material.HasProperty("_TintColor")) lr.material.SetColor("_TintColor", RingColor);
+            lr.startColor = lr.endColor = RingColor;
+            lr.startWidth = lr.endWidth = 0.08f;
+            lr.positionCount = Segments;
+            lr.loop = true;
+            lr.useWorldSpace = true;
+            lr.shadowCastingMode = UnityEngine.Rendering.ShadowCastingMode.Off;
+            lr.receiveShadows = false;
+            return lr;
         }
 
-        private void Update()
+        private void OnDestroy()
         {
-            if (_duration > 0f)
-            {
-                _duration -= Time.deltaTime;
-                if (_duration <= 0f)
-                    GetComponent<CharacterBody>()?.RecalculateStats();
-            }
+            if (_ring != null) Destroy(_ring.gameObject);
         }
     }
 }

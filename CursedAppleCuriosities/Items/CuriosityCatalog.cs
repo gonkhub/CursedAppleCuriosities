@@ -301,12 +301,13 @@ namespace CursedAppleCuriosities.Items
 
         private static ItemTier GetEquipmentTab(EquipmentDef def)
         {
-            if (def == GoldenGooseEgg.StaticEquipmentDef) return ItemTier.Tier1;
+            if (GooseEgg.IsEgg(def))                      return ItemTier.Tier1; // every egg at white prices
             if (def == BloodTribute.StaticEquipmentDef)   return ItemTier.Tier2;
             if (def == Counterspell.StaticEquipmentDef)   return ItemTier.Tier2;
             if (def == EtherealShift.StaticEquipmentDef)  return ItemTier.Tier2;
             if (def == ArcticBlast.StaticEquipmentDef)    return ItemTier.Tier2;
             if (def == CultistSacrifice.StaticEquipmentDef) return ItemTier.Tier2;
+            if (def == MajesticLeap.StaticEquipmentDef)   return ItemTier.Tier2;
             return ItemTier.Tier3;
         }
 

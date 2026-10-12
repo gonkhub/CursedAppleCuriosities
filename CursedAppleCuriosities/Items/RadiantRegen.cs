@@ -141,7 +141,7 @@ namespace CursedAppleCuriosities.Items
         public void OnSkillHit(HealthComponent victimHC)
         {
             if (victimHC == null || _body == null || RadiantRegen.RadiantBuffDef == null) return;
-            _buffTimer = RadiantRegen.BuffDuration; // any skill hit refreshes duration
+            _buffTimer = RadiantRegen.BuffDuration * DurationExtender.Multiplier(_body); // any skill hit refreshes duration
             if (_uniqueVictims.Add(victimHC))       // new unique enemy → try to grant a stack
             {
                 int itemCount = _body.inventory?.GetItemCountEffective(RadiantRegen.StaticItemDef) ?? 0;

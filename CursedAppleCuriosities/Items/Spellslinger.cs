@@ -11,11 +11,13 @@ namespace CursedAppleCuriosities.Items
         public override string ItemName => "Spellslinger";
         public override string ItemLangTokenName => "SPELLSLINGER";
 
-        public override string ItemPickupDesc => "Using abilities builds attack speed.";
+        public override string ItemPickupDesc => "Using abilities builds attack speed and faster cooldowns.";
         public override string ItemFullDescription =>
             $"Using a <style=cIsUtility>secondary, utility, or special ability</style> grants a " +
             $"<style=cIsDamage>Spellslinger</style> stack, adding " +
-            $"<style=cIsDamage>+{AttackSpeedPerStack * 100:0}% attack speed</style> per Spellslinger stack. " +
+            $"<style=cIsDamage>+{AttackSpeedPerStack * 100:0}% attack speed</style> and " +
+            $"<style=cIsUtility>{CooldownPerStack * 100:0}% shorter skill cooldowns</style> per Spellslinger stack " +
+            $"(cooldowns at most {MaxCooldownReduction * 100:0}% shorter). " +
             $"Max <style=cIsUtility>{BaseMaxStacks} stacks</style> " +
             $"<style=cStack>(+{StacksPerItemStack} per stack)</style>. " +
             $"Stacks decay {DecayRate}/s after {DecayDelay}s without ability use.";
@@ -27,10 +29,12 @@ namespace CursedAppleCuriosities.Items
         public override ItemTag[] ItemTags => new[] { ItemTag.Damage };
         protected override string IconFileName => "icon_spellslinger.png";
 
-        public const int   BaseMaxStacks      = 6;
-        public const int   StacksPerItemStack  = 6;
+        public const int   BaseMaxStacks      = 10;  // 6 at first: weak for a red with one copy (playtest)
+        public const int   StacksPerItemStack  = 10;
         public static float AttackSpeedPerStack;
-        public const float DecayDelay          = 3f;
+        public static float CooldownPerStack;
+        public const float MaxCooldownReduction = 0.5f;
+        public const float DecayDelay          = 5f;  // 3 at first
         public const float DecayRate           = 1f;
 
         public static BuffDef? SpellslingerBuffDef;
@@ -45,8 +49,10 @@ namespace CursedAppleCuriosities.Items
             SpellslingerBuffDef.buffColor = color;
             ContentAddition.AddBuffDef(SpellslingerBuffDef);
 
-            AttackSpeedPerStack = config.Bind("Red", "Spellslinger - Attack Speed Per Stack", 0.07f,
+            AttackSpeedPerStack = config.Bind("Red", "Spellslinger - Attack Speed Per Stack", 0.10f,
                 "Attack speed per Spellslinger stack (gained on non-primary skill use).").Value;
+            CooldownPerStack = config.Bind("Red", "Spellslinger - Cooldown Reduction Per Stack", 0.04f,
+                "Share by which skill cooldowns are shortened per Spellslinger stack (capped at 50% total).").Value;
             CreateLang();
             CreateItem();
             SpellslingerBuffDef.iconSprite = ItemDef?.pickupIconSprite ?? BuffIcon(null, color);
@@ -87,10 +93,11 @@ namespace CursedAppleCuriosities.Items
             if (sender.inventory == null) return;
             if (sender.inventory.GetItemCountEffective(ItemDef) <= 0) return;
 
-            var tracker = sender.GetComponent<SpelllsingerTracker>();
-            if (tracker == null) return;
-
-            args.attackSpeedMultAdd += tracker.CurrentStacks * AttackSpeedPerStack;
+            // Synced buff count, not the server-only tracker, so the owning client gets the speed too.
+            if (SpellslingerBuffDef == null || SpellslingerBuffDef.buffIndex == BuffIndex.None) return;
+            int stacks = sender.GetBuffCount(SpellslingerBuffDef);
+            args.attackSpeedMultAdd += stacks * AttackSpeedPerStack;
+            args.cooldownMultAdd    -= Mathf.Min(stacks * CooldownPerStack, MaxCooldownReduction); // abilities feed abilities
         }
     }
 
@@ -116,7 +123,6 @@ namespace CursedAppleCuriosities.Items
 
             _stacks++;
             SyncBuff(_stacks);
-            _body?.RecalculateStats();
         }
 
         private void Update()
@@ -131,7 +137,6 @@ namespace CursedAppleCuriosities.Items
             {
                 _decayAccum -= 1f;
                 _stacks--;
-                _body?.RecalculateStats();
             }
 
             SyncBuff(_stacks);
@@ -140,6 +145,7 @@ namespace CursedAppleCuriosities.Items
                 _decayAccum = 0f;
         }
 
+        // AddBuff/RemoveBuff mark stats dirty, so no RecalculateStats call is needed here.
         private void SyncBuff(int desired)
         {
             if (!NetworkServer.active || _body == null) return;

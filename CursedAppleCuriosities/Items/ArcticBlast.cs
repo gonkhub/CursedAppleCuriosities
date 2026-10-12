@@ -34,11 +34,11 @@ namespace CursedAppleCuriosities.Items
 
         public override void Init(ConfigFile config)
         {
-            CooldownSeconds = config.Bind("Equipment", "Arctic Blast - Cooldown", 45f,
+            CooldownSeconds = config.Bind("Equipment", "Arctic Blast - Cooldown", 75f,
                 "Equipment cooldown in seconds.").Value;
             DamageCoefficient = config.Bind("Equipment", "Arctic Blast - Damage", 3f,
                 "Blast damage as a multiple of your base damage (3 = 300%).").Value;
-            Radius = config.Bind("Equipment", "Arctic Blast - Radius", 20f,
+            Radius = config.Bind("Equipment", "Arctic Blast - Radius", 12f,
                 "Blast radius in meters.").Value;
             CreateLang();
             CreateEquipment();

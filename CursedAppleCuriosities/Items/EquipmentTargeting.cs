@@ -92,7 +92,7 @@ namespace CursedAppleCuriosities.Items
             }
             if (reticle == null) reticle = self.gameObject.AddComponent<EquipmentTargetReticle>();
 
-            var target = self.stock > 0 ? FindEnemy(body, rule.Range, rule.Angle, rule.Allow) : null;
+            var target = self.stock > 0 ? FindEnemy(body, rule.Range * MysticExpansion.RadiusMultiplier(body), rule.Angle, rule.Allow) : null;
             reticle.Show(target != null ? (target.mainHurtBox != null ? target.mainHurtBox.transform : target.coreTransform) : null);
         }
 

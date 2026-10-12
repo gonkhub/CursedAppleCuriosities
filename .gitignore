@@ -20,3 +20,6 @@ vrf/
 
 # Source art for icons (Deadlock Graphical Library, Valve)
 CursedAppleCuriosities/Resources/(Gradient) MARK_Filled.png
+
+# Source2Viewer-CLI crash logs
+exceptions.txt

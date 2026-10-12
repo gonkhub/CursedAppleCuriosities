@@ -65,9 +65,11 @@ namespace CursedAppleCuriosities.Items
             if (count <= 0) return;
 
             float distance = Vector3.Distance(damageInfo.attacker.transform.position, victim.transform.position);
-            if (distance <= MinRange) return;
+            float reach = MysticExpansion.RadiusMultiplier(attackerBody); // Mystic Expansion slides the window closer
+            float min = MinRange / reach, max = MaxRange / reach;
+            if (distance <= min) return;
 
-            float rangeScalar = Mathf.Clamp01((distance - MinRange) / (MaxRange - MinRange));
+            float rangeScalar = Mathf.Clamp01((distance - min) / (max - min));
             float bonusMult   = count * (MinBonusPerStack + (MaxBonusPerStack - MinBonusPerStack) * rangeScalar);
             if (bonusMult <= 0f) return;
 

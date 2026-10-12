@@ -51,7 +51,7 @@ namespace CursedAppleCuriosities.Items
             EquipmentDef.appearsInMultiPlayer   = true;
             EquipmentDef.isLunar          = false;
             EquipmentDef.isBoss           = false;
-            EquipmentDef.pickupIconSprite = IconFileName != null ? ItemBase.LoadEmbeddedIcon(IconFileName) : null;
+            EquipmentDef.pickupIconSprite = CreateIcon();
 #pragma warning disable CS0618 // obsolete, but CreatePickupDef still reads it (see ItemBase)
             if (ModelFileName != null && EquipmentDef.pickupIconSprite != null)
                 EquipmentDef.pickupModelPrefab = PickupModels.Load(ModelFileName, EquipmentDef.pickupIconSprite.texture);
@@ -59,6 +59,9 @@ namespace CursedAppleCuriosities.Items
 
             ItemAPI.Add(new CustomEquipment(EquipmentDef, new ItemDisplayRuleDict(null)));
         }
+
+        // The equipment's icon (also textures its world card). Default: the embedded IconFileName PNG.
+        protected virtual Sprite? CreateIcon() => IconFileName != null ? ItemBase.LoadEmbeddedIcon(IconFileName) : null;
 
         // Called when the player presses the equipment button. Return true to start the cooldown.
         public abstract bool OnUse(EquipmentSlot slot);

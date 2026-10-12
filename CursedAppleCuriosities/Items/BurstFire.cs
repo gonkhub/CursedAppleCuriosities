@@ -82,8 +82,9 @@ namespace CursedAppleCuriosities.Items
 
         private void GetStatCoefficients(CharacterBody sender, RecalculateStatsAPI.StatHookEventArgs args)
         {
-            var tracker = sender.GetComponent<BurstFireTracker>();
-            if (tracker == null || !tracker.IsActive) return;
+            // Synced buff, not the server-only tracker, so the owning client gets the speed too.
+            if (BurstBuffDef == null || BurstBuffDef.buffIndex == BuffIndex.None) return;
+            if (!sender.HasBuff(BurstBuffDef)) return;
 
             int count = sender.inventory?.GetItemCountEffective(ItemDef) ?? 0;
             if (count <= 0) return;
@@ -105,23 +106,15 @@ namespace CursedAppleCuriosities.Items
         public void OnHit()
         {
             bool wasInactive = _timer <= 0f;
-            _timer = BurstFire.BuffDuration;
-            if (wasInactive)
-            {
-                AddBuff();
-                _body?.RecalculateStats();
-            }
+            _timer = BurstFire.BuffDuration * DurationExtender.Multiplier(_body);
+            if (wasInactive) AddBuff();
         }
 
         private void Update()
         {
             if (_timer <= 0f) return;
             _timer -= Time.deltaTime;
-            if (_timer <= 0f)
-            {
-                RemoveBuff();
-                _body?.RecalculateStats();
-            }
+            if (_timer <= 0f) RemoveBuff();
         }
 
         private void OnDestroy() => RemoveBuff();

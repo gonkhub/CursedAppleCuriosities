@@ -42,6 +42,8 @@
     <EmbeddedResource Include="Resources\icon_restorativeshot.png" />
     <EmbeddedResource Include="Resources\icon_counterspell.png" />
     <EmbeddedResource Include="Resources\icon_colossus.png" />
+    <EmbeddedResource Include="Resources\icon_majesticleap.png" />
+    <EmbeddedResource Include="Resources\icon_durationextender.png" />
     <EmbeddedResource Include="Resources\icon_goldengooseegg.png" />
     <EmbeddedResource Include="Resources\icon_fortitude.png" />
     <EmbeddedResource Include="Resources\icon_battlevest.png" />
@@ -65,12 +67,28 @@
       <HintPath>$(ProfilePath)\BepInEx\core\BepInEx.dll</HintPath>
       <Private>False</Private>
     </Reference>
+    <Reference Include="Mono.Cecil">
+      <HintPath>$(ProfilePath)\BepInEx\core\Mono.Cecil.dll</HintPath>
+      <Private>False</Private>
+    </Reference>
+    <Reference Include="MonoMod.Utils">
+      <HintPath>$(ProfilePath)\BepInEx\core\MonoMod.Utils.dll</HintPath>
+      <Private>False</Private>
+    </Reference>
   </ItemGroup>
 
   <!-- ───── RoR2 game assemblies ───── -->
   <ItemGroup>
     <Reference Include="RoR2">
       <HintPath>$(GameManagedPath)\RoR2.dll</HintPath>
+      <Private>False</Private>
+    </Reference>
+    <Reference Include="HGUnityUtils">
+      <HintPath>$(GameManagedPath)\HGUnityUtils.dll</HintPath>
+      <Private>False</Private>
+    </Reference>
+    <Reference Include="HGCSharpUtils">
+      <HintPath>$(GameManagedPath)\HGCSharpUtils.dll</HintPath>
       <Private>False</Private>
     </Reference>
     <Reference Include="UnityEngine">
@@ -182,6 +200,10 @@
     </Reference>
     <Reference Include="R2API.Networking">
       <HintPath>$(ProfilePath)\BepInEx\plugins\RiskofThunder-R2API_Networking\R2API.Networking\R2API.Networking.dll</HintPath>
+      <Private>False</Private>
+    </Reference>
+    <Reference Include="RiskOfOptions">
+      <HintPath>$(ProfilePath)\BepInEx\plugins\Rune580-Risk_Of_Options\RiskOfOptions\RiskOfOptions.dll</HintPath>
       <Private>False</Private>
     </Reference>
     <Reference Include="R2API.ProcType">

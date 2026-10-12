@@ -80,7 +80,7 @@ namespace CursedAppleCuriosities.Items
 
             var ward = body.GetComponent<CounterspellWard>()
                 ?? body.gameObject.AddComponent<CounterspellWard>();
-            ward.Activate(WardDuration);
+            ward.Activate(WardDuration * DurationExtender.Multiplier(body));
             SoundMessage.Everyone(CastSound, body.corePosition, body.gameObject);
             EquipmentFx.Effect("RoR2/DLC1/Items/ImmuneToDebuff/ImmuneToDebuffEffect.prefab", body.corePosition, body.radius);
             return true; // start the cooldown

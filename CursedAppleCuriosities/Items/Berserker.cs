@@ -64,10 +64,9 @@ namespace CursedAppleCuriosities.Items
             if (sender.inventory == null) return;
             if (sender.inventory.GetItemCountEffective(ItemDef) <= 0) return;
 
-            var tracker = sender.GetComponent<BerserkerTracker>();
-            if (tracker == null) return;
-
-            args.damageMultAdd += tracker.CurrentStacks * DamagePerStack;
+            // Synced buff count, not the server-only tracker: the owning client computes its own skill damage.
+            if (RageBuffDef == null || RageBuffDef.buffIndex == BuffIndex.None) return;
+            args.damageMultAdd += sender.GetBuffCount(RageBuffDef) * DamagePerStack;
         }
 
         private void HealthComponent_TakeDamage(
@@ -124,7 +123,6 @@ namespace CursedAppleCuriosities.Items
             _stacks++;
             _stackCooldown = Berserker.StackCooldown;
             SyncBuff(1);
-            _body?.RecalculateStats();
         }
 
         private void Update()
@@ -143,7 +141,6 @@ namespace CursedAppleCuriosities.Items
                 _decayAccum -= 1f;
                 _stacks--;
                 SyncBuff(-1);
-                _body?.RecalculateStats();
             }
 
             if (_stacks == 0)

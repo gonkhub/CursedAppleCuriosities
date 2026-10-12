@@ -46,6 +46,7 @@ namespace CursedAppleCuriosities.Items
             ToxicChargeBuffDef.canStack  = true;
             ToxicChargeBuffDef.isDebuff  = true;
             ToxicChargeBuffDef.buffColor = chargeColor;
+            ToxicChargeBuffDef.isHidden  = true;  // UI: only the poison itself shows
             ContentAddition.AddBuffDef(ToxicChargeBuffDef);
 
             var dotColor = new Color(0.15f, 0.7f, 0.1f);
@@ -62,6 +63,7 @@ namespace CursedAppleCuriosities.Items
             ToxicWeakenedBuffDef.canStack  = false;
             ToxicWeakenedBuffDef.isDebuff  = true;
             ToxicWeakenedBuffDef.buffColor = weakColor;
+            ToxicWeakenedBuffDef.isHidden  = true;  // UI: folded into the poison icon
             ContentAddition.AddBuffDef(ToxicWeakenedBuffDef);
 
             ChargesRequired = config.Bind("Green", "Toxic Bullets - Charges To Trigger", 10,
@@ -146,7 +148,7 @@ namespace CursedAppleCuriosities.Items
         public void Initialize(float dpsPercent)
         {
             _dpsPercent = dpsPercent;
-            _remaining  = ToxicBullets.DotDuration;
+            _remaining  = ToxicBullets.DotDuration * DurationExtender.Current; // started inside the attacker's on-hit scope
             if (ToxicBullets.ToxicDoTBuffDef != null && _body != null)
                 _body.AddBuff(ToxicBullets.ToxicDoTBuffDef);
         }
@@ -154,7 +156,7 @@ namespace CursedAppleCuriosities.Items
         public void Refresh(float dpsPercent)
         {
             _dpsPercent = Mathf.Max(_dpsPercent, dpsPercent);
-            _remaining  = ToxicBullets.DotDuration;
+            _remaining  = Mathf.Max(_remaining, ToxicBullets.DotDuration * DurationExtender.Current);
         }
 
         private void FixedUpdate()

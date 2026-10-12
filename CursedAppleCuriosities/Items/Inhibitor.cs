@@ -79,7 +79,7 @@ namespace CursedAppleCuriosities.Items
 
             var debuff = victimBody.GetComponent<InhibitorDebuff>()
                 ?? victimBody.gameObject.AddComponent<InhibitorDebuff>();
-            debuff.Apply(count, Duration);
+            debuff.Apply(count, Duration * DurationExtender.Current); // the attacker's, from the on-hit scope
         }
 
         // The inhibited enemy is the ATTACKER here: shrink what it deals.

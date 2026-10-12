@@ -94,8 +94,9 @@ namespace CursedAppleCuriosities.Items
 
         private void GetStatCoefficients(CharacterBody sender, RecalculateStatsAPI.StatHookEventArgs args)
         {
-            var tracker = sender.GetComponent<KineticDashTracker>();
-            if (tracker == null || !tracker.IsActive) return;
+            // Synced buff, not the tracker (whose timer only runs on the server), so the owning client gets it too.
+            if (DashBuffDef == null || DashBuffDef.buffIndex == BuffIndex.None) return;
+            if (!sender.HasBuff(DashBuffDef)) return;
 
             int count = sender.inventory?.GetItemCountEffective(ItemDef) ?? 0;
             if (count <= 0) return;
@@ -113,13 +114,12 @@ namespace CursedAppleCuriosities.Items
         public void OnUtilityUsed(CharacterBody body)
         {
             bool wasInactive = _timer <= 0f;
-            _timer = KineticDash.BuffDuration;
+            _timer = KineticDash.BuffDuration * DurationExtender.Multiplier(body);
 
             if (wasInactive)
             {
                 if (KineticDash.DashBuffDef != null && KineticDash.DashBuffDef.buffIndex != BuffIndex.None)
                     body.AddBuff(KineticDash.DashBuffDef.buffIndex);
-                body.RecalculateStats();
             }
         }
 
@@ -135,8 +135,6 @@ namespace CursedAppleCuriosities.Items
             if (KineticDash.DashBuffDef != null && KineticDash.DashBuffDef.buffIndex != BuffIndex.None
                 && body.HasBuff(KineticDash.DashBuffDef.buffIndex))
                 body.RemoveBuff(KineticDash.DashBuffDef.buffIndex);
-
-            body.RecalculateStats();
         }
 
         private void OnDestroy()

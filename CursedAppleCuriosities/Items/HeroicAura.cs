@@ -168,7 +168,7 @@ namespace CursedAppleCuriosities.Items
 
             var search = new SphereSearch();
             search.origin = _body.transform.position;
-            search.radius = HeroicAura.AuraRange;
+            search.radius = HeroicAura.AuraRange * MysticExpansion.RadiusMultiplier(_body);
             search.mask   = LayerIndex.entityPrecise.mask;
 
             var allyMask = TeamMask.none;

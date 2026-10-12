@@ -94,7 +94,7 @@ namespace CursedAppleCuriosities.Items
             var excluded = new List<HealthComponent> { victimHC };
             Vector3 origin = victimHC.body != null ? victimHC.body.corePosition : damageInfo.position;
             int   targets = BaseTargets + TargetsPerStack * (count - 1);
-            float range   = Range + RangePerStack * (count - 1);
+            float range   = (Range + RangePerStack * (count - 1)) * MysticExpansion.RadiusMultiplier(attackerBody);
 
             for (int i = 0; i < targets; i++)
             {

@@ -5,6 +5,8 @@ using CursedAppleCuriosities.Deadlock;
 using CursedAppleCuriosities.Items;
 using CursedAppleCuriosities.Survivors.Abrams;
 using CursedAppleCuriosities.Survivors.Lash;
+using CursedAppleCuriosities.Survivors.Seven;
+using CursedAppleCuriosities.Survivors.Vyper;
 using RoR2;
 using System;
 using System.Collections.Generic;
@@ -21,6 +23,7 @@ namespace CursedAppleCuriosities
     [BepInDependency("com.bepis.r2api.prefab", BepInDependency.DependencyFlags.HardDependency)]
     [BepInDependency("com.bepis.r2api.networking", BepInDependency.DependencyFlags.HardDependency)]
     [BepInDependency("com.bepis.r2api.proctype", BepInDependency.DependencyFlags.HardDependency)]
+    [BepInDependency(ModSettings.RiskOfOptionsGuid, BepInDependency.DependencyFlags.SoftDependency)]
     public class CursedAppleCuriositiesPlugin : BaseUnityPlugin
     {
         public static CursedAppleCuriositiesPlugin? Instance { get; private set; }
@@ -71,7 +74,7 @@ namespace CursedAppleCuriosities
                 if (equipmentDef != null)
                     foreach (var eq in _equipments)
                         if (eq.EquipmentDef == equipmentDef)
-                            return eq.OnUse(self);
+                            using (DurationExtender.From(self.characterBody)) return eq.OnUse(self);
                 return orig(self, equipmentDef);
             };
 
@@ -85,6 +88,11 @@ namespace CursedAppleCuriosities
                 if (item.ItemDef != null) ModItemDefs.Add(item.ItemDef);
             foreach (var eq in _equipments)
                 if (eq.EquipmentDef != null) ModEquipmentDefs.Add(eq.EquipmentDef);
+
+            DurationExtender.HookSources(); // last: wraps every other hook on hits and damage
+
+            try { ModSettings.TryRegister(Config, ItemBase.LoadEmbeddedIcon("icon_curiositycatalog.png")); }
+            catch (Exception e) { Logger.LogError($"  ! Settings page failed: {e}"); }
 
             Logger.LogInfo($"{PluginInfo.PLUGIN_NAME} v{PluginInfo.PLUGIN_VERSION} loaded.");
         }
@@ -114,6 +122,24 @@ namespace CursedAppleCuriosities
             catch (Exception e)
             {
                 Logger?.LogError($"  ! [Survivor] Abrams failed to init: {e}");
+            }
+            try
+            {
+                SevenSurvivor.Init(Config, gameObject);
+                Logger?.LogInfo("  + [Survivor] Seven");
+            }
+            catch (Exception e)
+            {
+                Logger?.LogError($"  ! [Survivor] Seven failed to init: {e}");
+            }
+            try
+            {
+                VyperSurvivor.Init(Config, gameObject);
+                Logger?.LogInfo("  + [Survivor] Vyper");
+            }
+            catch (Exception e)
+            {
+                Logger?.LogError($"  ! [Survivor] Vyper failed to init: {e}");
             }
             foreach (var eq in _equipments) // registered before the reader starts so it copies them
             {

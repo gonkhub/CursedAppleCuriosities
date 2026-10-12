@@ -78,7 +78,7 @@ namespace CursedAppleCuriosities.Items
             var body = slot != null ? slot.characterBody : null;
             if (body == null || body.teamComponent == null || body.inputBank == null) return false;
 
-            var victim = EquipmentTargeting.FindEnemy(body, Range, AimAngle, Sacrificable);
+            var victim = EquipmentTargeting.FindEnemy(body, Range * MysticExpansion.RadiusMultiplier(body), AimAngle, Sacrificable);
             if (victim == null) return false; // no target → no cooldown
 
             // DeathRewards pays the normal 1x on death; add the rest. goldReward already carries the elite multiplier.

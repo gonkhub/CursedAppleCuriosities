@@ -89,7 +89,7 @@ namespace CursedAppleCuriosities.Items
                 body.gameObject.AddComponent<ColossusEffect>();
 
             EquipmentFx.Sound("colossus_cast", body.corePosition, body.gameObject);
-            EquipmentFx.Effect("RoR2/Base/Characters/Parent/ParentSlamEffect.prefab", body.footPosition, SlowRadius * 0.5f);
+            EquipmentFx.Effect("RoR2/Base/Characters/Parent/ParentSlamEffect.prefab", body.footPosition, SlowRadius * 0.5f * MysticExpansion.RadiusMultiplier(body));
             return true;
         }
 
@@ -141,7 +141,7 @@ namespace CursedAppleCuriosities.Items
         {
             _body   = GetComponent<CharacterBody>();
             _stacks = 1;
-            _timer  = Colossus.Duration;
+            _timer  = Colossus.Duration * DurationExtender.Multiplier(_body);
 
             CaptureOriginalScale();
             UpdateScale();
@@ -154,7 +154,7 @@ namespace CursedAppleCuriosities.Items
         public void AddStack()
         {
             if (_stacks < Mathf.Max(1, Colossus.MaxStacks)) _stacks++;
-            _timer = Colossus.Duration;
+            _timer = Colossus.Duration * DurationExtender.Multiplier(_body);
 
             UpdateScale();
             SyncBuff();
@@ -226,7 +226,7 @@ namespace CursedAppleCuriosities.Items
 
             var search    = new SphereSearch();
             search.origin = _body.transform.position;
-            search.radius = Colossus.SlowRadius;
+            search.radius = Colossus.SlowRadius * MysticExpansion.RadiusMultiplier(_body);
             search.mask   = LayerIndex.entityPrecise.mask;
 
             var hurtBoxes = new List<HurtBox>();
