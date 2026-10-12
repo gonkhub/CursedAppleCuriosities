@@ -164,6 +164,15 @@ same on a stand-in model.
   `%LocalLow%\Hopoo Games, LLC\Risk of Rain 2\CursedApple\deadlock`), `GlbLoader` (one renderer per
   primitive so `CharacterModel` overlays work), `MiniJson` (RoR2 has no Newtonsoft), `DeadlockSounds`
   (Unity AudioSource, follows RoR2 master×SFX volume).
+- **Hero preloading (no freeze on picking a hero):** a "preloader" thread reads every `WantModel` model (`GlbLoader.Parse`:
+  plain data, no Unity objects) and its clips as soon as each is converted. The main thread builds them a few ms per frame
+  (`DeadlockInstall.Pump` from the plugin's `Update`, via `GlbLoader.Build`). `DeadlockInstall.Model(key)` never blocks.
+  It returns null until the model is read (the caller retries; stand-in meanwhile), then finishes the remaining uploads at
+  once. `HeroTextures` decodes base-colour PNGs off-thread (its own PNG decoder), mipmaps them and compresses them to
+  DXT1/DXT5. The result is cached as `<png>.cac`, so later launches only read it; this is 8× less VRAM than LoadImage's
+  RGBA32. Materials come from one recipe per model key, `DeadlockHeroes.HeroMaterial` (the def's tints and glows).
+  Background-thread rule: Parse/LoadClips may only use managed code or Unity natives marked `IsThreadSafe`
+  (Quaternion.Inverse/Slerp, Matrix4x4.Inverse are).
 - `Survivors/Lash/` — **Lash** (`CursedAppleLashBody`). Commando's rig cloned as the stand-in (hurtboxes,
   camera, item display bones); `LashModelSwap` puts the Deadlock model on top and makes its renderers the
   `CharacterModel`'s; `LashAnimator` plays his Deadlock clips (anim table in `LashData`).
@@ -178,7 +187,7 @@ same on a stand-in model.
   Lash: `Survivors/Lash/LashIntro.cs` Ground Strikes onto the pedestal from 30 m (gs_drop/gs_dive, gs_land, impact sound,
   Loader slam effect). The select VO waits for the intro to end (`DeadlockModelSwap.PlaySelectVoice` at the pedestal).
   Seven: `SevenIntro.cs` sinks from 7 m in the Storm Cloud float over 2.6 s, 5 bolts around the pedestal, storm_end on landing.
-  Vyper: `VyperIntro.cs` slides in from 10 m off the side (turned to her travel), getup turning to face the camera.
+  Vyper: `VyperIntro.cs` slides in from 10 m back and to screen right (user: behind her final facing), getup turning to face the camera.
   Seven/Vyper not playtested. **Abrams has no intro on purpose** (user: his head clipping off the top of the screen is funny).
 - **Shared Deadlock movement** (`Deadlock/DeadlockMovement.cs`) for every Deadlock hero:
   `DeadlockMovementProfile` (numbers, Deadlock defaults; sound ids `{Hero}_jump`, `_dash`, `_vo_effort`, `_slide`...;
