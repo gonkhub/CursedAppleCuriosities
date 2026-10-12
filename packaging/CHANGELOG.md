@@ -13,6 +13,7 @@
 - **Kinetic Dash**: dash-jumping (Deadlock heroes) triggers it too, as in Deadlock.
 - Fixed: Abrams' **Heavy Melee** now counts as his Special (Ethereal Shift's bonus and other Special effects apply).
 - Viscous and Celeste show items on their bodies.
+- Fixed: in multiplayer, **Siphon Bullets**' stolen max health now shows for every player, not only the host.
 - Fixed: while Viscous rolls, hits land on the whole Goo Ball (his hitbox was still his standing size).
 - New survivor: **Victor**.
   **Pain Battery** charges only from damage you take, then fires a fan of shocking bolts that heal you for
