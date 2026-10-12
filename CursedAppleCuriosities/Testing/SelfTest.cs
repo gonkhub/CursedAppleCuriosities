@@ -26,6 +26,7 @@ namespace CursedAppleCuriosities.Testing
     /// slide 1 / slide 0               hold the Deadlock slide key
     /// shot name                       save a screenshot of the screen
     /// portrait name yaw [zoom] [h]    render the player's body from yaw degrees (0 = its front) to name.png; h = aim height (0..1)
+    /// setskill special CursedAppleAbramsSeismic   put a skill in a slot of the live body only (the saved loadout is untouched)
     /// log text                        write a line to the BepInEx log
     /// quit
     /// </code>
@@ -200,6 +201,7 @@ namespace CursedAppleCuriosities.Testing
                 case "shot":
                     return Screen(p[1]);
                 case "portrait": return Portrait(p[1], F(p, 2, 0f), F(p, 3, 1f), F(p, 4, 0.5f));
+                case "setskill": SetSkill(p[1], p[2]); return null;
                 case "log": Log(rest); return null;
                 case "quit": Application.Quit(); return null;
                 default: Log("unknown command: " + p[0]); return null;
@@ -214,6 +216,24 @@ namespace CursedAppleCuriosities.Testing
             tex.Apply();
             File.WriteAllBytes(Path.Combine(_outDir, name + ".png"), tex.EncodeToPNG());
             Destroy(tex);
+        }
+
+        private static void SetSkill(string slot, string skillName)
+        {
+            CharacterBody? body = LocalUserManager.GetFirstLocalUser()?.cachedBody;
+            if (body == null || body.skillLocator == null) { Log("setskill: no body"); return; }
+            GenericSkill? gs = slot switch
+            {
+                "primary" => body.skillLocator.primary,
+                "secondary" => body.skillLocator.secondary,
+                "utility" => body.skillLocator.utility,
+                "special" => body.skillLocator.special,
+                _ => null,
+            };
+            var def = RoR2.Skills.SkillCatalog.GetSkillDef(RoR2.Skills.SkillCatalog.FindSkillIndexByName(skillName));
+            if (gs == null || def == null) { Log($"setskill: no slot {slot} or skill {skillName}"); return; }
+            gs.SetBaseSkill(def);
+            Log($"setskill: {slot} = {skillName}");
         }
 
         private static IEnumerator Wait(float s) { yield return new WaitForSeconds(s); }
