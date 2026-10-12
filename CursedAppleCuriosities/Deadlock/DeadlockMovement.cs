@@ -53,6 +53,8 @@ namespace CursedAppleCuriosities.Deadlock
         // Vyper's Slither: no flat-ground friction for the first seconds of a slide (Deadlock m_flFlatGroundFrictionGraceTime),
         // uphill slopes don't slow the slide, and a share of slide distance on top (MODIFIER_VALUE_MOVEMENT_SLIDE_DISTANCE_SCALE).
         public float SlideFrictionGrace = 0f, SlideUphillLoss = 1f, SlideDistanceBonus = 0f;
+        /// <summary>Friction while steering the slide (1 = the same as going straight; lower keeps more speed through turns).</summary>
+        public float SlideTurnFriction = 1f;
         // Wall jump
         public float WallJumpUp = 13.3f, WallJumpOutMax = 7.9f, WallJumpOutMin = 5.7f, WallJumpRecharge = 1.25f, WallJumpPowerMin = 0.2f;
         // Air: momentum is kept; input steers it at AirAccel (RoR2's own is 20 m/s2 toward a walk), speed above a run bleeds off at AirDrag.
@@ -617,7 +619,13 @@ namespace EntityStates.CursedApple.Deadlock
 
             Vector3 input = inputBank.moveVector;
             input.y = 0f;
-            if (input.sqrMagnitude > 0.01f) Dir = Vector3.RotateTowards(Dir, input.normalized, P.SlideTurnDegPerSec * Mathf.Deg2Rad * dt, 0f);
+            bool turning = false;
+            if (input.sqrMagnitude > 0.01f)
+            {
+                Vector3 was = Dir;
+                Dir = Vector3.RotateTowards(Dir, input.normalized, P.SlideTurnDegPerSec * Mathf.Deg2Rad * dt, 0f);
+                turning = Vector3.Angle(was, Dir) > 0.05f;
+            }
 
             float slopeDeg = Slope(characterMotor, out Vector3 downhill);
             float along = downhill == Vector3.zero ? 0f : Vector3.Dot(Dir, downhill);
@@ -631,7 +639,7 @@ namespace EntityStates.CursedApple.Deadlock
             }
             else if (along < 0f) Speed += Mathf.Abs(Physics.gravity.y) * Mathf.Sin(slopeDeg * Mathf.Deg2Rad) * along * P.SlideUphillLoss * dt; // uphill slows you
             if (onSlope || fixedAge >= P.SlideFrictionGrace)                                                                 // Source-style friction
-                Speed -= Speed * (onSlope ? P.SlideFrictionSlope : P.SlideFriction) / (1f + P.SlideDistanceBonus) * dt;
+                Speed -= Speed * (onSlope ? P.SlideFrictionSlope : P.SlideFriction) * (turning ? P.SlideTurnFriction : 1f) / (1f + P.SlideDistanceBonus) * dt;
             if (Speed < P.SlideSustain && !(onSlope && along > 0f)) { End(); return; }
 
             // Move by root motion along the ground (RoR2's motor would otherwise pull the speed back to a walk).
