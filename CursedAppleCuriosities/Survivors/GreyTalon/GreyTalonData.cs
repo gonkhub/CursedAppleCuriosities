@@ -187,11 +187,10 @@ namespace CursedAppleCuriosities.Survivors.GreyTalon
         { "dash_ground", "dash_air_forward", "dash_air_back", "dash_air_left", "dash_air_right", "death", "rain_leap" };
 
         /// <summary>
-        /// Deadlock sounds: picked by name from his folders, waiting for the user's ear (their rule: every Deadlock sound is
-        /// approved before it plays). Until SoundsApproved is set these are not registered, so every Play is silent.
-        /// Review page: %LocalLow%\...\CursedApple\deadlock\sound_review\greytalon_review.html.
+        /// Deadlock sounds, approved by the user by ear (2026-10-12, sound_review\greytalon_review.html). Rain of Arrows' cast
+        /// (archer_rain_of_arrows_cast) is not what plays in game (user): left out, so the cast is silent for now.
         /// </summary>
-        public const bool SoundsApproved = false;
+        public const bool SoundsApproved = true;
 
         public static readonly DeadlockSound[] Sounds =
         {
@@ -204,7 +203,6 @@ namespace CursedAppleCuriosities.Survivors.GreyTalon
             new DeadlockSound { Id = "greytalon_charge_fire", VpkPrefix = "sounds/abilities/archer/archer_charged_shot_fire", Range = 100f },
             new DeadlockSound { Id = "greytalon_charge_hit", VpkPrefix = "sounds/abilities/archer/archer_charged_shot_hit", Range = 60f, MinGap = 0.05f },
             new DeadlockSound { Id = "greytalon_charge_whizby", VpkPrefix = "sounds/abilities/archer/archer_charged_shot_whizby", Volume = 0.7f, Range = 30f },
-            new DeadlockSound { Id = "greytalon_rain_cast", VpkPrefix = "sounds/abilities/archer/archer_rain_of_arrows_cast", Range = 50f },
             new DeadlockSound { Id = "greytalon_rain_loop", VpkPrefix = "sounds/abilities/archer/archer_rain_of_arrows_flight_lp", Volume = 0.6f, Range = 30f },
             new DeadlockSound { Id = "greytalon_rain_end", VpkPrefix = "sounds/abilities/archer/archer_rain_of_arrows_flight_expire", Volume = 0.8f, Range = 30f },
             new DeadlockSound { Id = "greytalon_owl_cast", VpkPrefix = "sounds/abilities/archer/archer_guided_arrow_cast", Range = 60f },
