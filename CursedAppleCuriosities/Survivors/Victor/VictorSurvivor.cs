@@ -334,9 +334,9 @@ namespace CursedAppleCuriosities.Survivors.Victor
 
             LanguageAPI.Add(Token + "AURA_NAME", "Aura of Suffering");
             LanguageAPI.Add(Token + "AURA_DESC",
-                $"For {VictorData.AuraSeconds:0}s, deal <style=cIsDamage>{D(VictorData.AuraMinDamage)}</style> rising to <style=cIsDamage>{D(VictorData.AuraMaxDamage)} damage per second</style> " +
-                $"to enemies within {VictorData.AuraRadius:0}m, and <style=cIsHealth>{P(VictorData.AuraSelfMin)} rising to {P(VictorData.AuraSelfMax)} of your max health per second to yourself</style>. " +
-                "Press again to end it early.");
+                $"Toggle an aura that deals <style=cIsDamage>{D(VictorData.AuraMinDamage)}</style> rising to <style=cIsDamage>{D(VictorData.AuraMaxDamage)} damage per second</style> " +
+                $"over {VictorData.AuraRampSeconds:0}s to enemies within {VictorData.AuraRadius:0}m, and <style=cIsHealth>{P(VictorData.AuraSelfMin)} rising to {P(VictorData.AuraSelfMax)} of your max health per second to yourself</style>. " +
+                "Lasts until you press it again or die.");
         }
     }
 

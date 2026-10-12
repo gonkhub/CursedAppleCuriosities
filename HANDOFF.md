@@ -317,10 +317,9 @@ same on a stand-in model.
     sphere-cast, walls stop them), each enemy once for 500%, and each enemy hit heals 15% of missing health (Deadlock T3, built in).
   - Utility Jumpstart: costs 15% current health (non-lethal, bypasses armor/block), heals 2x that (at least 10% max) over 4.5 s on a linearly
     fading rate (`VictorJumpstart`), +3 m/s fading in 10 buff steps. 12 s cd.
-  - Special Aura of Suffering: own "Aura" state machine (he keeps shooting); server `VictorAura` ticks every 0.25 s for 8 s: enemies within 8 m
-    take 100% -> 450%/s (Special source, proc 0.5, crits rolled, `OnHitEnemy`/`OnHitAll`, so on-hit, lifesteal, on-kill, Ethereal Shift's special
-    bonus all apply), Victor takes 1.1% -> 5% max health/s and can die of it. Mystic Expansion widens it, Duration Extender lengthens it.
-    Special again ends it early. Radius shown by `VictorAuraFx` (user: filled grey, lowered opacity, on the terrain): Focus Crystal's
+  - Special Aura of Suffering (toggle, user): own "Aura" state machine (he keeps shooting); stays on until Special again or he dies (going down
+    to Reanimation counts); 2 s cooldown after it ends. Server `VictorAura` ticks every 0.25 s: enemies within 8 m take 100% -> 600%/s over 8 s, then holds (Special source, proc 0.5, crits rolled, `OnHitEnemy`/`OnHitAll`, so on-hit, lifesteal, on-kill, Ethereal Shift's special
+    bonus all apply), Victor takes 1.1% -> 5% max health/s (same ramp) and can die of it. Mystic Expansion widens it. Radius shown by `VictorAuraFx` (user: filled grey, lowered opacity, on the terrain): Focus Crystal's
     indicator mesh + material copied grey (sphere fallback); the log line `[Victor] aura range:` says which loaded.
   - Passive Shocking Reanimation (`VictorRevive`): while ready, hits on Victor are NonLethal; one that leaves him at 1 health starts it:
     slow wave (125% fading over 3 s, 18 m), 3 s HiddenInvincibility + Reanimating buff (SkillSilence; the owner's body machine enters

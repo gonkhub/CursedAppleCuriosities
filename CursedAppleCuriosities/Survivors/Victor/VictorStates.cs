@@ -133,17 +133,15 @@ namespace EntityStates.CursedApple.Victor
 
     /// <summary>
     /// Aura of Suffering, on its own "Aura" machine so Victor keeps moving and shooting. The server deals the damage
-    /// (VictorAura): ramping up the longer it runs, to enemies around him and to himself. Special again ends it early
-    /// (Deadlock's "End Aura"); it also ends when its time is up or when he goes down.
+    /// (VictorAura): ramping up the longer it runs, to enemies around him and to himself. It stays on until Special is
+    /// pressed again (Deadlock's "End Aura") or he dies (user); going down to Reanimation counts. The cooldown starts when
+    /// it ends, as in Deadlock.
     /// </summary>
     public class AuraOfSuffering : BaseSkillState
     {
-        private float _duration;
-
         public override void OnEnter()
         {
             base.OnEnter();
-            _duration = VictorData.AuraSeconds * DurationExtender.Multiplier(characterBody);
             VictorModel.Play(gameObject, "aura");
             DeadlockSounds.Play("victor_aura_cast", transform.position, gameObject);
             DeadlockHeroVoice.Power("victor_vo_power3", gameObject);
@@ -157,13 +155,18 @@ namespace EntityStates.CursedApple.Victor
             bool endPressed = fixedAge >= VictorData.AuraEndGrace && inputBank != null && inputBank.skill4.justPressed;
             // The server ends it on its own when he goes down (the buff disappears).
             bool serverEnded = fixedAge > 1f && VictorSurvivor.AuraBuff != null && !characterBody.HasBuff(VictorSurvivor.AuraBuff);
-            if (endPressed || serverEnded || fixedAge >= _duration) outer.SetNextStateToMain();
+            if (endPressed || serverEnded) outer.SetNextStateToMain();
         }
 
         public override void OnExit()
         {
             VictorModel.Play(gameObject, "aura_end");
-            if (isAuthority) VictorNet.ToServer(new VictorAuraMessage { Body = gameObject, On = false });
+            if (isAuthority)
+            {
+                VictorNet.ToServer(new VictorAuraMessage { Body = gameObject, On = false });
+                // The cooldown runs from now, not from the cast (it was full again while the aura ran).
+                skillLocator?.special?.RemoveAllStocks();
+            }
             base.OnExit();
         }
 

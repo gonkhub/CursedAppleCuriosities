@@ -327,13 +327,13 @@ namespace CursedAppleCuriosities.Survivors.Victor
     /// <summary>
     /// Server, on Victor: Aura of Suffering. Every 0.25 s it hits each enemy within range (Special damage with a proc
     /// coefficient, rolled crits, on-hit and on-kill like any skill hit) and Victor himself, both ramping up over its
-    /// duration. Mystic Expansion widens it; Duration Extender lengthens it.
+    /// first 8 s, then holding at max until it is toggled off or he dies. Mystic Expansion widens it.
     /// </summary>
     public class VictorAura : MonoBehaviour
     {
         private CharacterBody _body = null!;
         private bool _active;
-        private float _age, _tick, _duration;
+        private float _age, _tick;
 
         public bool Active => _active;
 
@@ -345,7 +345,6 @@ namespace CursedAppleCuriosities.Survivors.Victor
             _active = true;
             _age = 0f;
             _tick = 0f;
-            _duration = VictorData.AuraSeconds * DurationExtender.Multiplier(_body);
             if (VictorSurvivor.AuraBuff != null && !_body.HasBuff(VictorSurvivor.AuraBuff)) _body.AddBuff(VictorSurvivor.AuraBuff);
         }
 
@@ -360,13 +359,13 @@ namespace CursedAppleCuriosities.Survivors.Victor
         private void FixedUpdate()
         {
             if (!_active || !NetworkServer.active) return;
-            if (_body.healthComponent == null || !_body.healthComponent.alive || _age > _duration + 0.5f) { Stop(); return; }
+            if (_body.healthComponent == null || !_body.healthComponent.alive ) { Stop(); return; }
             _age += Time.fixedDeltaTime;
             _tick -= Time.fixedDeltaTime;
             if (_tick > 0f) return;
             _tick += VictorData.AuraTick;
 
-            float ramp = Mathf.Clamp01(_age / Mathf.Max(0.1f, VictorData.AuraSeconds)); // ramps over the base duration
+            float ramp = Mathf.Clamp01(_age / Mathf.Max(0.1f, VictorData.AuraRampSeconds)); // up to max over 8 s, then holds
             float coeff = Mathf.Lerp(VictorData.AuraMinDamage, VictorData.AuraMaxDamage, ramp) * VictorData.AuraTick;
             float radius = VictorData.AuraRadius * MysticExpansion.RadiusMultiplier(_body);
             foreach (HealthComponent hc in VictorNet.EnemiesIn(_body.corePosition, radius, _body.teamComponent.teamIndex))

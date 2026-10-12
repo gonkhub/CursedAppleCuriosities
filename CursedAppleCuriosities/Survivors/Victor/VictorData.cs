@@ -68,14 +68,14 @@ namespace CursedAppleCuriosities.Survivors.Victor
 
         // ---- special: Aura of Suffering (ramps up the longer it runs; hurts him too, and can kill him: user) ----
         public static float AuraRadius = 8f;            // Deadlock Radius
-        public static float AuraSeconds = 8f;           // Deadlock AbilityDuration (Duration Extender lengthens it)
+        public static float AuraRampSeconds = 8f;       // seconds of uptime to reach max damage, then it holds (user; Deadlock's 8 s)
         public static float AuraMinDamage = 1f;         // damage coefficient per second at the start (Deadlock MinDPS 13)
-        public static float AuraMaxDamage = 4.5f;       // per second once fully ramped (Deadlock MaxDPS 58)
+        public static float AuraMaxDamage = 6f;         // per second once fully ramped: 600% at 8 s (user; Deadlock MaxDPS 58)
         public static float AuraSelfMin = 0.011f;       // share of his max health per second at the start (Deadlock: 70% of the enemy DPS)
         public static float AuraSelfMax = 0.05f;        // ...and once ramped
         public const float AuraTick = 0.25f;            // Deadlock TickRate
         public static float AuraProc = 0.5f;            // per tick (4 ticks a second), like Torment Pulse
-        public static float AuraCooldown = 10f;         // from activation: Deadlock's 8 s aura + 2 s cooldown
+        public static float AuraCooldown = 2f;          // after it ends (Deadlock AbilityCooldown); it stays on until toggled off or he dies (user)
         public const float AuraEndGrace = 0.3f;         // special again after this ends it early (Deadlock "End Aura")
         public const float AuraRangeAlpha = 0.35f;      // the grey range indicator's opacity (user: lowered)
 
@@ -106,13 +106,13 @@ namespace CursedAppleCuriosities.Survivors.Victor
             JumpstartSpeed = c.Bind(Section, "Jumpstart - Move Speed", JumpstartSpeed, "Bonus move speed in m/s at the start, fading over 4.5 s.").Value;
             JumpstartCooldown = c.Bind(Section, "Jumpstart - Cooldown", JumpstartCooldown, "Seconds.").Value;
             AuraRadius = c.Bind(Section, "Aura of Suffering - Radius", AuraRadius, "Metres.").Value;
-            AuraSeconds = c.Bind(Section, "Aura of Suffering - Duration", AuraSeconds, "Seconds.").Value;
+            AuraRampSeconds = c.Bind(Section, "Aura of Suffering - Ramp Time", AuraRampSeconds, "Seconds of continuous uptime to reach max damage (and max self damage), which then holds.").Value;
             AuraMinDamage = c.Bind(Section, "Aura of Suffering - Min Damage", AuraMinDamage, "Damage coefficient per second at the start.").Value;
             AuraMaxDamage = c.Bind(Section, "Aura of Suffering - Max Damage", AuraMaxDamage, "Damage coefficient per second once fully ramped.").Value;
             AuraSelfMin = c.Bind(Section, "Aura of Suffering - Self Damage Min", AuraSelfMin, "Share of Victor's max health lost per second at the start.").Value;
             AuraSelfMax = c.Bind(Section, "Aura of Suffering - Self Damage Max", AuraSelfMax, "Share of Victor's max health lost per second once ramped.").Value;
             AuraProc = c.Bind(Section, "Aura of Suffering - Proc Coefficient", AuraProc, "Proc coefficient of each tick (4 ticks a second).").Value;
-            AuraCooldown = c.Bind(Section, "Aura of Suffering - Cooldown", AuraCooldown, "Seconds, from activation.").Value;
+            AuraCooldown = c.Bind(Section, "Aura of Suffering - Cooldown", AuraCooldown, "Seconds after it is toggled off.").Value;
             ReviveCooldown = c.Bind(Section, "Shocking Reanimation - Cooldown", ReviveCooldown, "Seconds (carries over between stages).").Value;
             ReviveHealth = c.Bind(Section, "Shocking Reanimation - Health", ReviveHealth, "Share of max health he comes back with.").Value;
             ReviveDamage = c.Bind(Section, "Shocking Reanimation - Damage", ReviveDamage, "Damage coefficient of the blast when he gets up.").Value;
