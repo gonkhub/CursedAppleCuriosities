@@ -56,6 +56,7 @@ namespace CursedAppleCuriosities.Survivors.GreyTalon
             CreateSkills();
             BodyPrefab = CreateBody();
             DisplayPrefab = CreateDisplay();
+            GreyTalonItemDisplays.Register();
             CreateSurvivor();
             AddLanguage();
             GreyTalonNet.Register();

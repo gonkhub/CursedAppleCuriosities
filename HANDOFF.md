@@ -278,8 +278,25 @@ same on a stand-in model.
 
 ---
 
+- `Survivors/GreyTalon/` — **Grey Talon** (`CursedAppleGreyTalonBody`, Deadlock `hero_orion`, model `models/heroes_staging/archer/archer`,
+  icons `archer_*`, VO `sounds/vo/orion`). Built 2026-10-12, **never launched**. Kit is the user's (memory `grey-talon-design`):
+  - M1 Bow: 300% hitscan, 0.6 s, 600 m reach; falloff only past 150 m (to 50% at 300 m). During Rain of Arrows: 5-arrow fan, +13% each.
+  - M2 Charged Shot: draw 0.5 s, hold with M1 or M2, zoomed over-shoulder camera, walk at Deadlock's 1.5 m/s; release = Lynx Archer arrow
+    (DLC4) x2.5, 203 m/s, pierces every enemy (`GreyTalonChargedArrow` sweeps its path), 800%, no falloff. 6 s cd.
+  - Utility Rain of Arrows: 0.2 s, launch 27.5 m/s at 60 deg, 4 s glide (fall <= 0.64 m/s, drift 6.6 m/s), jump cancels. 8 s cd.
+  - Special Guided Owl: 1.5 s cast, then the owl flies on the owner's client (`GreyTalonOwl`) steered by look (110 deg/s), 15 -> 36 m/s
+    while forward is held, bursts on touch (12 m, 1200%, 0.75 s stun); camera = `ICameraStateProvider` override that keeps the
+    player's look rotation and only moves the position behind the owl. Jump releases it. Grey Talon is HiddenInvincibility + Cloak +
+    SkillSilence while steering. Boss kills: +20% owl damage each, whole run (`GreyTalonOwlTrophies` on the master, shown as a buff).
+    125 s cd (Deadlock's, user wanted it very long). The owl model is Deadlock's `archer_guided_arrow` (converted as `greytalon_owl`)
+    inside the Engi harpoon ghost; others see a ghost from position messages. The perched owl (`owl_bodygroup`) hides while it flies.
+  - **Sounds are off** (`GreyTalonData.SoundsApproved = false`) until the user approves `sound_review/greytalon_review.html`.
+  - Shared change: a held ("hold") one-shot now also asks the hero's LoopRule (his jump pose ends on landing; his set has no in-air loop).
+  - Pending: playtest, sound approval, ping VO, lobby intro (pitch first), writing review.
+
 ## Recent changes (since last handoff)
 
+- **Abrams Shoulder Charge (2026-10-12, user):** scoop 250% -> 50%; a wall slam deals 300% (`ChargeWallDamage`) to every carried enemy.
 - **2026-10-12 balance/bug pass (built, not playtested).** Arctic Blast 75 s / 12 m; Cultist Sacrifice 120 s; Torment Pulse
   base range 12 m; Toxic Bullets UI; Lash: Flog removed, Ground Strike 300%, Grapple 6 s, Death Slam fixes (above), model
   ×1.25 (camera +0.4 m, ×1.15 distance); Abrams: Heavy Melee → special (1500%), Seismic → special alt, Charge 250%, Resilience 50% + 10 armor, model ×1.5

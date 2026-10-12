@@ -25,6 +25,7 @@ namespace CursedAppleCuriosities.Survivors.GreyTalon
             MuzzleName = GreyTalonSurvivor.MuzzleName,
             Anims = GreyTalonData.Anims,
             RootLocked = GreyTalonData.Locked,
+            ItemAnchors = GreyTalonItemDisplays.Anchors,
             // Charged Shot drawn: walks and stands with the bow up (ability_charged_shot_walk_*).
             LocoSet = body => GreyTalonSurvivor.ChargingBuff != null && body.HasBuff(GreyTalonSurvivor.ChargingBuff) ? "charged" : null,
             HoldSeconds = id => id == "jump" || id == "air_jump" || id == "wall_jump" || id == "in_air" || id == "falling" ? 30f : 3f,
