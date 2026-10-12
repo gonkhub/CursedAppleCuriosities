@@ -25,6 +25,8 @@ namespace CursedAppleCuriosities.Survivors.GreyTalon
         public const string BodyName = "CursedAppleGreyTalonBody";
         public const string MuzzleName = "GreyTalonMuzzle";
         public static readonly Color Color = new Color(0.55f, 0.75f, 0.95f); // spirit blue (lobby / UI)
+        /// <summary>The owl's blast and glow are green (user).</summary>
+        public const float OwlHue = 0.33f;
 
         public static GameObject? BodyPrefab, DisplayPrefab, ChargedProjectile;
         public static SurvivorDef? Survivor;
@@ -33,7 +35,7 @@ namespace CursedAppleCuriosities.Survivors.GreyTalon
         public static BuffDef? ChargingBuff, OwlChannelBuff, OwlFlyingBuff, OwlTrophyBuff;
 
         // Vanilla effects reused by the states (loaded once).
-        public static GameObject? TracerEffect, HitEffect, MuzzleEffect, ChargedMuzzleEffect, ChargedHitEffect, OwlBlastEffect, OwlGlow;
+        public static GameObject? TracerEffect, HitEffect, MuzzleEffect, ChargedMuzzleEffect, ChargedHitEffect, OwlBlastEffect, OwlBlastWave, OwlGlow;
 
         private static SkillDef? _bow, _charged, _rain, _owl;
 
@@ -83,12 +85,14 @@ namespace CursedAppleCuriosities.Survivors.GreyTalon
             MuzzleEffect = TryLoad<GameObject>("RoR2/Base/Common/VFX/Muzzleflash1.prefab");
             ChargedMuzzleEffect = TryLoad<GameObject>("RoR2/DLC1/Railgunner/MuzzleflashRailgun.prefab");
             ChargedHitEffect = TryLoad<GameObject>("RoR2/DLC1/Railgunner/ImpactRailgun.prefab");
-            OwlBlastEffect = TryLoad<GameObject>("RoR2/Base/Engi/EngiHarpoonExplosion.prefab");
-            GameObject? glow = TryLoad<GameObject>("RoR2/Base/Engi/EngiHarpoonGhost.prefab");
+            // The owl's blast (user: more explosive, green): Captain's airstrike impact plus a big omni burst, both made green.
+            OwlBlastEffect = Kit.Recoloured(TryLoad<GameObject>("RoR2/Base/Captain/CaptainAirstrikeImpact1.prefab", "RoR2/Base/Engi/EngiHarpoonExplosion.prefab"), "CursedAppleGreyTalonOwlBlast", OwlHue, effect: true);
+            OwlBlastWave = Kit.Recoloured(TryLoad<GameObject>("RoR2/Base/Common/VFX/OmniExplosionVFX.prefab"), "CursedAppleGreyTalonOwlBlastWave", OwlHue, effect: true);
+            GameObject? glow = Kit.Recoloured(TryLoad<GameObject>("RoR2/Base/Engi/EngiHarpoonGhost.prefab"), "CursedAppleGreyTalonOwlGlowSource", OwlHue, effect: false);
             if (glow != null)
             {
                 // A ghost without a projectile to follow: its follow script removed, kept inactive as a template.
-                OwlGlow = glow.InstantiateClone("CursedAppleGreyTalonOwlGlow", false);
+                OwlGlow = glow;
                 foreach (ProjectileGhostController g in OwlGlow.GetComponents<ProjectileGhostController>()) UnityEngine.Object.DestroyImmediate(g);
                 OwlGlow.SetActive(false);
             }
@@ -238,6 +242,7 @@ namespace CursedAppleCuriosities.Survivors.GreyTalon
                 swap.IsDisplay = true;
                 Kit.OwnSkin(cm.gameObject, "skinCursedAppleGreyTalonDISPLAY", Token + "SKIN_DEFAULT");
             }
+            display.AddComponent<GreyTalonDisplayIntro>();
             return display;
         }
 

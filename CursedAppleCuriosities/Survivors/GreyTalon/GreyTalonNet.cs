@@ -177,6 +177,7 @@ namespace CursedAppleCuriosities.Survivors.GreyTalon
             if (GreyTalonSurvivor.OwlFlyingBuff != null) body.ClearTimedBuffs(GreyTalonSurvivor.OwlFlyingBuff);
             float radius = GreyTalonData.OwlRadius * MysticExpansion.RadiusMultiplier(body);
             GreyTalonNet.Effect(GreyTalonSurvivor.OwlBlastEffect, Point, radius);
+            GreyTalonNet.Effect(GreyTalonSurvivor.OwlBlastWave, Point, radius);
             EquipmentFx.Sound("greytalon_owl_explode", Point);
             GreyTalonOwlTrophies? trophies = body.master != null ? GreyTalonOwlTrophies.On(body.master) : null;
             float damage = GreyTalonData.OwlDamage * (1f + GreyTalonData.OwlBossBonus * (trophies != null ? trophies.Kills : 0)) * body.damage;
