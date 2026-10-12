@@ -410,7 +410,7 @@ same on a stand-in model.
   `shot <name>` (screen), `portrait <name> <yaw> [zoom] [height]` (the body alone on a flat background), `log`, `quit`.
   PNGs land next to the script. Every line is logged `[SelfTest]`, plus a load clock until the title screen. Without the
   argument nothing runs.
-- Profile **Curiosities Selftest** (`C:2heimman\RiskOfRain2\profiles`): R2API, DebugToolkit, Risk Of Options and the fix mods
+- Profile **Curiosities Selftest** (`C:\r2heimman\RiskOfRain2\profiles`): R2API, DebugToolkit, Risk Of Options and the fix mods
   (MiscFixes, VFiX, WolfFixes, GildedChunkSpamFix: without them the game hangs at 33% loading). Copy the built DLL into its
   `Unknown-CursedAppleCuriosities` folder, then `steam.exe -applaunch 632360 --doorstop-enabled true --doorstop-target-assembly
   "<profile>\BepInEx\core\BepInEx.Preloader.dll" --cac-selftest <script>`.
