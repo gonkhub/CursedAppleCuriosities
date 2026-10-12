@@ -4,8 +4,9 @@ A BepInEx plugin for **Risk of Rain 2** (Survivors of the Void, build 912) that 
 items and equipment **adapted from Deadlock's item catalogue**. The name is homage: Deadlock's
 map is the "Cursed Apple" and items are bought from a "curiosity shop."
 
-**State:** builds clean (0 errors), **31 items + 14 equipment**, **v1.0.0** released 2026-10-11; the 2026-10-12 balance/bug pass
-(see "Recent changes") is built but not playtested. Last verified: 2026-10-12 (build only).
+**State:** builds clean (0 errors), **31 items + 14 equipment**, 4 survivors (Lash, Abrams, Seven, Vyper). **v1.0.0** released
+2026-10-11; **v1.2.0 in progress** (version bumped 2026-10-12, not released; CHANGELOG has an "unreleased" section). The user has
+playtested most post-1.0 work.
 
 ---
 
@@ -32,6 +33,11 @@ map is the "Cursed Apple" and items are bought from a "curiosity shop."
   ⚠️ Bump `packaging\manifest.json` `version_number` before sharing (multiplayer requires matching versions).
 
 ---
+
+- **Addressables keys are the short address, not the asset path:** `RoR2/Base/GainArmor/ElephantDefense.prefab`, not
+  `RoR2/Base/Equipment/GainArmor/...` (no `Equipment/`, `Items/`, `Characters/`, `Skills/` folders). A wrong key fails silently
+  until used. 26 such keys were fixed 2026-10-12. Check new keys against the catalog (`StreamingAssets/aa/catalog.json`,
+  `m_KeyDataString`) before wiring them.
 
 ## Architecture (one item per file, auto-discovered)
 

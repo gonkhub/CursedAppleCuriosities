@@ -1,5 +1,25 @@
 # Changelog
 
+## 1.2.0 (unreleased)
+- New survivors: **Seven** (Cold Calculus, Lightning Ball / Static Charge, Power Surge,
+  Storm Cloud) and **Vyper** (The Rattler, Screwjab Dagger, Lethal Venom, Petrifying Bola,
+  passive Slither).
+- Lash, Seven and Vyper have character-select intros.
+- New items: **Duration Extender** (white). New equipment: **Majestic Leap** and the
+  **Goose Egg** family (Grey, Green, Red, Golden, Void).
+- **Mystic Expansion** now gives +30% radius and range, and also grows many vanilla items'
+  areas (Ukulele, Tesla Coil, Razorwire, Focus Crystal, Warbanner and more).
+- **Spirit Snatch** reworked: close-range hits grant barrier.
+- **Healing Tempo** reworked: more healing received, and overhealing builds Tempo stacks.
+- **Spellslinger** buffed (10 stacks, +10% attack speed and shorter cooldowns each).
+- **Lash**: Flog removed, Ground Strike 300%, Grapple 6s cooldown, Death Slam fixes.
+- **Abrams**: Heavy Melee is the default special (Seismic Impact is the alt), Shoulder
+  Charge 250%, Infernal Resilience 50% + 10 armor.
+- Balance: Arctic Blast, Cultist Sacrifice, Torment Pulse.
+- Every option is on the Risk Of Options settings page.
+- Multiplayer: Spellslinger, Berserker, Burst Fire and Kinetic Dash now give their bonus to
+  non-host players. Hero sounds are positional.
+
 ## 1.0.0
 - New survivors: **Lash** and **Abrams** (Shotgun, Siphon Life / Heavy Melee, Shoulder Charge,
   Seismic Impact, passive Infernal Resilience).
