@@ -314,7 +314,7 @@ namespace CursedAppleCuriosities.Survivors.Abrams
             LanguageAPI.Add(Token + "CHARGE_NAME", "Shoulder Charge");
             LanguageAPI.Add(Token + "CHARGE_DESC",
                 $"<style=cIsUtility>Charge</style> where you aim, speeding up as you go. Enemies hit take <style=cIsDamage>{D(AbramsData.ChargeDamage)} damage</style> and are <style=cIsUtility>carried</style> along. " +
-                $"Slam them into a wall to <style=cIsDamage>stun</style> them for {AbramsData.ChargeWallStun:0.#}s.");
+                $"Slam them into a wall for <style=cIsDamage>{D(AbramsData.ChargeWallDamage)} damage</style> and a <style=cIsDamage>stun</style> of {AbramsData.ChargeWallStun:0.#}s.");
 
             LanguageAPI.Add(Token + "SEISMIC_NAME", "Seismic Impact");
             LanguageAPI.Add(Token + "SEISMIC_DESC",

@@ -65,7 +65,8 @@ namespace CursedAppleCuriosities.Survivors.Abrams
         public const float MeleeRecover = 0.3f;
 
         // ---- utility: Shoulder Charge ----
-        public static float ChargeDamage = 2.5f;
+        public static float ChargeDamage = 0.5f;        // the scoop (user 2026-10-12: 250% -> 50%, the wall slam does the damage)
+        public static float ChargeWallDamage = 3f;      // to every enemy carried into a wall (user)
         public static float ChargeCooldown = 8f;        // Deadlock 33
         public const float ChargeDuration = 1.4f;       // Deadlock AbilityDuration
         public static float ChargeSpeed = 18.75f;       // Deadlock SpeedInitial
@@ -116,6 +117,7 @@ namespace CursedAppleCuriosities.Survivors.Abrams
             MeleeDamage = c.Bind(Section, "Heavy Melee - Damage", MeleeDamage, "Damage coefficient.").Value;
             MeleeCooldown = c.Bind(Section, "Heavy Melee - Cooldown", MeleeCooldown, "Seconds.").Value;
             ChargeDamage = c.Bind(Section, "Shoulder Charge - Damage", ChargeDamage, "Damage coefficient to each enemy scooped up.").Value;
+            ChargeWallDamage = c.Bind(Section, "Shoulder Charge - Wall Damage", ChargeWallDamage, "Damage coefficient to each carried enemy slammed into a wall.").Value;
             ChargeSpeed = c.Bind(Section, "Shoulder Charge - Start Speed", ChargeSpeed, "Metres per second at the start of the charge.").Value;
             ChargeSpeedMax = c.Bind(Section, "Shoulder Charge - End Speed", ChargeSpeedMax, "Metres per second the charge builds up to.").Value;
             ChargeWallStun = c.Bind(Section, "Shoulder Charge - Wall Stun", ChargeWallStun, "Seconds carried enemies are stunned when slammed into a wall.").Value;
