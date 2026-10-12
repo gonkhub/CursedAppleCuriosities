@@ -445,7 +445,8 @@ namespace CursedAppleCuriosities.Survivors.Victor
     {
         private CharacterBody _body = null!;
         private EntityStateMachine? _bodyMachine;
-        private bool _down;
+        private VictorReassembly? _parts;
+        private bool _down, _shownDown;
         private float _age;
 
         private void Awake()
@@ -506,6 +507,16 @@ namespace CursedAppleCuriosities.Survivors.Victor
 
         private void Update()
         {
+            // Every client: while he's down his body parts float back together (Deadlock's reanimation model).
+            bool downNow = VictorSurvivor.ReanimatingBuff != null && _body.HasBuff(VictorSurvivor.ReanimatingBuff);
+            if (downNow && !_shownDown)
+            {
+                ModelLocator? ml = _body.modelLocator;
+                if (ml != null && ml.modelTransform != null) _parts = VictorReassembly.Spawn(ml.modelTransform.gameObject, VictorData.ReviveChannel);
+            }
+            else if (!downNow && _shownDown && _parts != null) { _parts.Finish(); _parts = null; }
+            _shownDown = downNow;
+
             // The owner's client drives the body's state machine: lie down while the server says he's down.
             if (_bodyMachine == null || VictorSurvivor.ReanimatingBuff == null || !Util.HasEffectiveAuthority(gameObject)) return;
             if (_body.HasBuff(VictorSurvivor.ReanimatingBuff) && !(_bodyMachine.state is Reanimate))

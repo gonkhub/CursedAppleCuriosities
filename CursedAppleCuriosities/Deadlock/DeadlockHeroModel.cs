@@ -114,6 +114,9 @@ namespace CursedAppleCuriosities.Deadlock
         private CharacterModel? _model;
         private CharacterBody? _body;
         private GameObject? _hero;
+
+        /// <summary>The attached Deadlock model (null until it loads, or on the stand-in).</summary>
+        public GameObject? HeroObject => _hero;
         private CharacterModel.RendererInfo[] _heroInfos = Array.Empty<CharacterModel.RendererInfo>();
         private readonly List<Renderer> _hidden = new List<Renderer>();
         private float _nextTry;

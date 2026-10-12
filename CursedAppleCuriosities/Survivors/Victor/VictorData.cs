@@ -77,6 +77,7 @@ namespace CursedAppleCuriosities.Survivors.Victor
         public static float AuraProc = 0.5f;            // per tick (4 ticks a second), like Torment Pulse
         public static float AuraCooldown = 10f;         // from activation: Deadlock's 8 s aura + 2 s cooldown
         public const float AuraEndGrace = 0.3f;         // special again after this ends it early (Deadlock "End Aura")
+        public const float AuraRangeAlpha = 0.35f;      // the grey range indicator's opacity (user: lowered)
 
         // ---- passive: Shocking Reanimation (Deadlock ultimate, here automatic: user; 240 s cooldown: user) ----
         public static float ReviveCooldown = 240f;      // Deadlock AbilityCooldown
@@ -124,6 +125,13 @@ namespace CursedAppleCuriosities.Survivors.Victor
         public const float ModelHeightScale = 1.15f * 1.25f; // a head taller than Lash (Deadlock's Victor is a big man)
         public const string MuzzleBone = "muzzle_fx";        // under weapon, off root_motion (HandIK keeps it in his hand)
 
+        // Shocking Reanimation's charge-up: Deadlock's separate "body parts" model and its two clips (user: use this, not
+        // the knockdown). _02 flies the scattered parts together (2.47 s); the first holds his stance hovering (1.5 s loop).
+        public const string FxKey = "victor_reassemble";
+        public const string DlFxModel = "models/abilities/frank_hover_death_anim_fx_model.vmdl_c";
+        public const string FxTogether = "frank_hover_death_anim_fx_anim_02";
+        public const string FxHover = "frank_hover_death_anim_fx_anim";
+
         public const string IconPortrait = "panorama/images/heroes/frank_sm_psd.vtex_c";
         public const string IconBattery = "panorama/images/hud/abilities/frank/frank_pain_battery_psd.vtex_c";
         public const string IconJumpstart = "panorama/images/hud/abilities/frank/frank_jump_start_psd.vtex_c";
@@ -146,17 +154,17 @@ namespace CursedAppleCuriosities.Survivors.Victor
             ("sprint_e", "out_of_combat_run_e", true, "", "full"), ("sprint_se", "out_of_combat_run_se", true, "", "full"),
             ("sprint_s", "out_of_combat_run_s", true, "", "full"), ("sprint_sw", "out_of_combat_run_sw", true, "", "full"),
             ("sprint_w", "out_of_combat_run_w", true, "", "full"), ("sprint_nw", "out_of_combat_run_nw", true, "", "full"),
-            ("jump", "jump_ground", false, "in_air", "full"),
-            ("air_jump", "jump_air", false, "in_air", "full"),
-            ("wall_jump", "jump_ground", false, "in_air", "full"),
+            ("jump", "jump_ground", true, "", "full"),          // 3.1 s clips covering the whole jump: VictorModel.LoopRule ends them
+            ("air_jump", "jump_air", true, "", "full"),
+            ("wall_jump", "jump_ground", true, "", "full"),
             ("in_air", "in_air_loop_apex", true, "", "full"),
             ("falling", "in_air_loop_apex", true, "", "full"),
             ("land", "landing_impact_idle", false, "locomotion", "additive"),
             ("dash_ground", "dash_ground", false, "locomotion", "full"),
-            ("dash_air_forward", "dash_air_forward", false, "in_air", "full"),
-            ("dash_air_back", "dash_air_back", false, "in_air", "full"),
-            ("dash_air_left", "dash_air_left", false, "in_air", "full"),
-            ("dash_air_right", "dash_air_right", false, "in_air", "full"),
+            ("dash_air_forward", "dash_air_forward", true, "", "full"), // 1.33 s: ended by the same rule
+            ("dash_air_back", "dash_air_back", true, "", "full"),
+            ("dash_air_left", "dash_air_left", true, "", "full"),
+            ("dash_air_right", "dash_air_right", true, "", "full"),
             ("slide_start", "slide_start", false, "slide", "full"),
             ("slide", "slide_loop", true, "", "full"),
             ("slide_getup", "slide_getup", false, "locomotion", "full"),
@@ -172,6 +180,9 @@ namespace CursedAppleCuriosities.Survivors.Victor
             ("parry_air", "parry", false, "in_air", "full"),
             ("death", "knockdown_large", false, "hold", "full"),
         };
+
+        /// <summary>Seconds his jump and air-dash poses play before the in-air loop takes over (see VictorModel.LoopRule).</summary>
+        public const float JumpPose = 0.9f, AirDashPose = 0.6f;
 
         public static readonly HashSet<string> Locked = new HashSet<string>
         { "dash_ground", "dash_air_forward", "dash_air_back", "dash_air_left", "dash_air_right", "death", "revive_down", "revive_hold", "revive_up" };
@@ -215,8 +226,9 @@ namespace CursedAppleCuriosities.Survivors.Victor
             new DeadlockSound { Id = "victor_vo_death", VpkPrefix = "sounds/vo/frank/emote/frank_pain_death", MinGap = 2f, Voice = true },
             new DeadlockSound { Id = "victor_vo_effort", VpkPrefix = "sounds/vo/frank/emote/frank_effort_dash", Volume = 0.8f, Chance = 0.5f, MinGap = 0.5f, Voice = true },
             new DeadlockSound { Id = "victor_vo_efforts", VpkPrefix = "sounds/vo/frank/emote/frank_effort_general", Volume = 0.7f, Chance = 0.4f, MinGap = 1f, Voice = true },
-            // His movement foley (Deadlock files these under "victor", not "frank").
-            new DeadlockSound { Id = "victor_dash", VpkPrefix = "sounds/player/movement/victor/victor_dash_sweetener", Volume = 0.8f, Range = 25f, MinGap = 0.1f },
+            // His movement foley (Deadlock files these under "victor", not "frank"). Dash = his movement_foley_short equivalent
+            // (victor_foley_gun_short), as every hero's dash; victor_dash_sweetener is only a layer on top (wrong alone: playtest).
+            new DeadlockSound { Id = "victor_dash", VpkPrefix = "sounds/player/movement/victor/victor_foley_gun_short", Volume = 0.8f, Range = 25f, MinGap = 0.1f },
             new DeadlockSound { Id = "victor_land", VpkPrefix = "sounds/player/footsteps/victor/victor_footstep_jumpland", Volume = 0.7f, Range = 25f, MinGap = 0.2f },
             new DeadlockSound { Id = "victor_footstep", VpkPrefix = "sounds/player/footsteps/victor/victor_footstep_sprint", Volume = 0.3f, Range = 20f, MinGap = 0.12f },
             new DeadlockSound { Id = "victor_slide", VpkPrefix = "sounds/gameplay/slide/enter", Volume = 0.8f, Range = 20f, MinGap = 0.2f },

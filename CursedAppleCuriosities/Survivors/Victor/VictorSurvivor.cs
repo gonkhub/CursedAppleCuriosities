@@ -46,6 +46,8 @@ namespace CursedAppleCuriosities.Survivors.Victor
                 DeadlockInstall.WantIcon(icon);
             DeadlockHeroes.Register(VictorModel.Def);
             DeadlockInstall.WantModel(VictorModel.Def.ModelRequest());
+            DeadlockInstall.WantModel(new DeadlockInstall.ModelRequest
+            { Hero = VictorData.FxKey, DlModel = VictorData.DlFxModel, Clips = new[] { VictorData.FxTogether, VictorData.FxHover } });
 
             LoadAssets();
             CreateBuffs();
@@ -95,15 +97,20 @@ namespace CursedAppleCuriosities.Survivors.Victor
             if (baseMat == null) return;
             RangeMaterial = new Material(baseMat) { name = "matCursedAppleVictorAuraRange" };
             var grey = new Color(0.62f, 0.62f, 0.62f);
+            // A fixed alpha: vanilla's indicator material starts at alpha 0 and is faded in by its prefab (a scaled copy
+            // of that stayed invisible, playtest 2026-10-12).
+            string before = "";
             foreach (string p in new[] { "_TintColor", "_Color" })
                 if (RangeMaterial.HasProperty(p))
                 {
-                    Color old = RangeMaterial.GetColor(p);
-                    RangeMaterial.SetColor(p, new Color(grey.r, grey.g, grey.b, old.a * 0.45f)); // lowered opacity (user)
+                    before += $" {p}={RangeMaterial.GetColor(p)}";
+                    RangeMaterial.SetColor(p, new Color(grey.r, grey.g, grey.b, VictorData.AuraRangeAlpha)); // lowered opacity (user)
                 }
+            foreach (string p in new[] { "_Boost", "_AlphaBoost" })
+                if (RangeMaterial.HasProperty(p)) { before += $" {p}={RangeMaterial.GetFloat(p)}"; if (RangeMaterial.GetFloat(p) < 1f) RangeMaterial.SetFloat(p, 1f); }
             if (RangeMaterial.HasProperty("_RemapTex")) RangeMaterial.SetTexture("_RemapTex", GreyRamp());
             CursedAppleCuriositiesPlugin.Logger?.LogInfo($"[Victor] aura range: {(RangeMesh != null ? "Focus Crystal indicator" : "sphere fallback")}, " +
-                $"shader {RangeMaterial.shader?.name}, mesh {(RangeMesh != null ? RangeMesh.bounds.extents.x.ToString("0.##") : "-")}");
+                $"shader {RangeMaterial.shader?.name}, mesh {(RangeMesh != null ? RangeMesh.bounds.extents.x.ToString("0.##") : "-")}, was{before}");
         }
 
         /// <summary>A grey remap ramp: brightness and alpha both rise along it, so the fill stays faint and the edge reads.</summary>
