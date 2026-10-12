@@ -190,7 +190,8 @@ namespace CursedAppleCuriosities.Survivors.Victor
 
         /// <summary>
         /// Deadlock sounds, picked from his own folders (user 2026-10-12: pick them without a review pass). His gun is layered
-        /// as in Deadlock: windup + fire_first on the first shot, fire_main + mech after, tail on letting go. VO by ability:
+        /// as in Deadlock: windup + fire_first on the first shot, fire_main + mech after. No tail on letting go: its reverb
+        /// sounded wrong on the last shot (user). VO by ability:
         /// 1 Pain Battery, 2 Jumpstart, 3 Aura of Suffering, 4 Shocking Reanimation (checked against Deadlock's captions).
         /// </summary>
         public static readonly DeadlockSound[] Sounds =
@@ -199,7 +200,6 @@ namespace CursedAppleCuriosities.Survivors.Victor
             new DeadlockSound { Id = "victor_gun_first", VpkPrefix = "sounds/weapons/frank/frank_weapon_fire_first", Volume = 0.6f, Range = 60f, MinGap = 0.05f, PitchJitter = 0.03f, Fallback = "Play_commando_M1" },
             new DeadlockSound { Id = "victor_gun_main", VpkPrefix = "sounds/weapons/frank/frank_weapon_fire_main", Volume = 0.55f, Range = 60f, MinGap = 0.05f, PitchJitter = 0.05f, VolumeJitter = 0.1f, Fallback = "Play_commando_M1" },
             new DeadlockSound { Id = "victor_gun_mech", VpkPrefix = "sounds/weapons/frank/frank_weapon_fire_mech", Volume = 0.35f, Range = 25f, MinGap = 0.05f, PitchJitter = 0.05f },
-            new DeadlockSound { Id = "victor_gun_tail", VpkPrefix = "sounds/weapons/frank/frank_weapon_fire_tail", Volume = 0.6f, Range = 60f, MinGap = 0.15f },
             new DeadlockSound { Id = "victor_battery_cast", VpkPrefix = "sounds/abilities/frank/frank_pain_battery_cast", Volume = 0.9f, Range = 50f },
             new DeadlockSound { Id = "victor_battery_hit", VpkPrefix = "sounds/abilities/frank/frank_pain_battery_hit", Volume = 0.8f, Range = 40f, MinGap = 0.04f },
             new DeadlockSound { Id = "victor_jumpstart_cast", VpkPrefix = "sounds/abilities/frank/frank_jumpstart_cast", Volume = 0.9f, Range = 40f },

@@ -534,7 +534,7 @@ namespace CursedAppleCuriosities.Survivors.Victor
 
     /// <summary>
     /// Every client, on Victor: Memento Mori's spin-up and layered sound (Deadlock: windup + first shot, then main + mech
-    /// shots while held, the tail when the trigger lets go).
+    /// shots while held; no tail on release, user).
     /// </summary>
     public class VictorGun : MonoBehaviour
     {
@@ -560,9 +560,7 @@ namespace CursedAppleCuriosities.Survivors.Victor
         private void Update()
         {
             if (Time.time - _last > VictorData.GunCycleSlow * 1.5f) _spin = Mathf.Max(0f, _spin - VictorData.GunSpinDecay * Time.deltaTime);
-            if (!_firing || Time.time - _last < VictorData.GunCycleSlow * 2.5f) return;
-            _firing = false;
-            DeadlockSounds.Play("victor_gun_tail", transform.position, gameObject);
+            if (_firing && Time.time - _last >= VictorData.GunCycleSlow * 2.5f) _firing = false; // the next shot is a "first" again (no tail sound: user)
         }
     }
 }

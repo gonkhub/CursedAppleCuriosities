@@ -311,7 +311,7 @@ same on a stand-in model.
 - `Survivors/Victor/` — **Victor** (`CursedAppleVictorBody`, Deadlock `hero_frank`, model `models/heroes_wip/frank/frank` but AnimGraph2 clips
   in `frank/clips`, icons `frank_*`, VO `sounds/vo/frank`, movement foley under `victor`). Prototyped 2026-10-12 on branch `1.5`, **built, never
   launched**. Kit and rules are the user's (memory `victor-design`); Vyper's file shape (Data / Model / States / Net / Survivor).
-  - M1 Memento Mori: 75% hitscan, spins up 0.198 -> 0.171 s between shots (Deadlock spin rates), layered gun sound (windup/first/main/mech/tail).
+  - M1 Memento Mori: 75% hitscan, spins up 0.198 -> 0.171 s between shots (Deadlock spin rates), layered gun sound (windup/first/main/mech; no tail, user).
   - M2 Pain Battery (`VictorBatterySkillDef`): ready only when full. Charge = synced buff stacks 0..100 filled by `onServerDamageDealt` on
     Victor (damage taken only, his own Aura/Jumpstart included; 40% of max health fills it). 0.35 s wind-up, 7 bolts in a 40 deg fan (28 m,
     sphere-cast, walls stop them), each enemy once for 500%, and each enemy hit heals 15% of missing health (Deadlock T3, built in).
