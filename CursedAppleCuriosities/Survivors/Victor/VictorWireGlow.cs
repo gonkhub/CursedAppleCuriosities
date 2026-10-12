@@ -79,7 +79,7 @@ namespace CursedAppleCuriosities.Survivors.Victor
             bool full = VictorSurvivor.BatteryBuff != null && _body.GetBuffCount(VictorSurvivor.BatteryBuff) >= VictorData.BatteryFull
                 && _body.healthComponent != null && _body.healthComponent.alive;
             if (full && _strands.Count == 0 && Time.unscaledTime >= _nextTry) { _nextTry = Time.unscaledTime + 2f; Build(); }
-            bool show = full && _hero != null && _hero.activeInHierarchy; // hidden with his model (Reanimation's parts, cloak)
+            bool show = full && _hero != null && _hero.activeInHierarchy && !VictorReassembly.IsHidden(_hero); // hidden with his model (Reanimation's parts, cloak)
             foreach (var s in _strands)
             {
                 if (s.Line.enabled != show) s.Line.enabled = show;
