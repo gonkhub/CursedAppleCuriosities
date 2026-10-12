@@ -59,6 +59,7 @@ namespace CursedAppleCuriosities.Survivors.Celeste
             CreateSkills();
             BodyPrefab = CreateBody();
             DisplayPrefab = CreateDisplay();
+            CelesteItemDisplays.Register();
             CreateSurvivor();
             AddLanguage();
             CelesteNet.Register();

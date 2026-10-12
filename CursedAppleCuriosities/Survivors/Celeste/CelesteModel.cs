@@ -5,7 +5,7 @@ namespace CursedAppleCuriosities.Survivors.Celeste
 {
     /// <summary>
     /// Celeste on the shared Deadlock model layer: her model and animation table. Her blades are thrown from the right
-    /// hand (no held gun to keep in place). Item displays: not fitted yet, items sit on the bones the shared layer picks.
+    /// hand (no held gun to keep in place). Item displays fitted by tools/itempass (CelesteItemDisplays).
     /// </summary>
     public static class CelesteModel
     {
@@ -20,6 +20,7 @@ namespace CursedAppleCuriosities.Survivors.Celeste
             MuzzleName = CelesteSurvivor.MuzzleName,
             Anims = CelesteData.Anims,
             RootLocked = CelesteData.Locked,
+            ItemAnchors = CelesteItemDisplays.Anchors,
             // AnimGraph2 jump and air-dash clips span the whole time in the air (Victor's rule): they loop here and end on
             // landing, or hand over to the in-air loop once the rise is over.
             LoopRule = c =>

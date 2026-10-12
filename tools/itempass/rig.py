@@ -17,7 +17,12 @@ HEROES = {"abrams": {"scale": 1.2, "hide": [], "skip": ("gun_model", "book_model
                         "skip": (".archer_bow_model_", ".archer_clip_inbow_model_"), "glb": "archer", "head_floor": 0.05, "name": "GreyTalon"},  # braids hang to his chest
           "vyper": {"scale": 1.08, "hide": [], "skip": (".gun_",), "glb": "viper"},
           # Victor (hero_frank): items skip his gun (a separate "weapon" mesh off root_motion).
-          "victor": {"scale": 1.15, "hide": [], "skip": (".weapon_",), "glb": "frank"}}
+          "victor": {"scale": 1.15, "hide": [], "skip": (".weapon_",), "glb": "frank"},
+          # Viscous: his Goo Ball ("inflated", hidden unless rolling) still sizes him in the game (BallHeightFix), so it counts
+          # for height only; the outline shell isn't fitted to; items skip his gun.
+          "viscous": {"scale": 1.2 * 2.94 / 2.45, "hide": [], "fit_hide": ["inflated", "bodyoutline"], "skip": (".gun_",)},
+          # Celeste (hero_unicorn): items skip her baton; the horn glow is a see-through shell over the horn.
+          "celeste": {"scale": 1.08, "hide": [], "fit_hide": ["unicorn_hornglow"], "skip": (".unicorn_baton_a_",), "glb": "unicorn"}}
 GLB = os.environ.get("HERO_GLB") or os.path.join(os.environ["USERPROFILE"], "AppData", "LocalLow", "Hopoo Games, LLC", "Risk of Rain 2", "CursedApple", "deadlock", "models", HEROES[HERO].get("dir", HERO), HEROES[HERO].get("glb", HERO) + ".glb")
 BLENDER = r"C:\Program Files\Blender Foundation\Blender 5.1\blender.exe"
 

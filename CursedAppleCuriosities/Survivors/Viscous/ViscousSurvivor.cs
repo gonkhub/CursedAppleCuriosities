@@ -57,6 +57,7 @@ namespace CursedAppleCuriosities.Survivors.Viscous
             CreateSkills();
             BodyPrefab = CreateBody();
             DisplayPrefab = CreateDisplay();
+            ViscousItemDisplays.Register();
             CreateSurvivor();
             AddLanguage();
             ViscousNet.Register();
