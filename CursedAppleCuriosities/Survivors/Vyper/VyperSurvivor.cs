@@ -26,6 +26,8 @@ namespace CursedAppleCuriosities.Survivors.Vyper
         /// <summary>Skin icon in the hero's own palette (lime scales, black, gold, white), not the stand-in's.</summary>
         private static Sprite DefaultSkinIcon => _defaultSkinIcon ??= Kit.SkinIcon(new Color(0.55f, 0.75f, 0.2f), new Color(0.1f, 0.1f, 0.1f), new Color(0.86f, 0.78f, 0.24f), new Color(0.88f, 0.88f, 0.84f));
         private static Sprite? _defaultSkinIcon;
+        private static Sprite CoralSkinIcon => _coralSkinIcon ??= Kit.SkinIcon(new Color(0.85f, 0.38f, 0.28f), new Color(0.1f, 0.1f, 0.1f), new Color(0.86f, 0.78f, 0.24f), new Color(0.88f, 0.88f, 0.84f));
+        private static Sprite? _coralSkinIcon;
 
         public static GameObject? BodyPrefab, DisplayPrefab, DaggerProjectile, BolaProjectile;
         public static SurvivorDef? Survivor;
@@ -167,7 +169,7 @@ namespace CursedAppleCuriosities.Survivors.Vyper
             Kit.MuteStandIn(body, model.gameObject, VyperData.Hero);
             var children = model.GetComponent<ChildLocator>();
             if (children != null && children.FindChild(MuzzleName) == null) children.AddChild(MuzzleName, model);
-            Kit.OwnSkin(model.gameObject, "skinCursedAppleVyperDEFAULT", Token + "SKIN_DEFAULT", DefaultSkinIcon);
+            Kit.OwnSkin(model.gameObject, "skinCursedAppleVyperDEFAULT", Token + "SKIN_DEFAULT", DefaultSkinIcon, ("skinCursedAppleVyperCORAL", Token + "SKIN_CORAL", CoralSkinIcon));
 
             ContentAddition.AddBody(body);
             return body;
@@ -183,7 +185,7 @@ namespace CursedAppleCuriosities.Survivors.Vyper
                 var swap = cm.gameObject.AddComponent<DeadlockModelSwap>();
                 swap.HeroKey = VyperData.Hero;
                 swap.IsDisplay = true;
-                Kit.OwnSkin(cm.gameObject, "skinCursedAppleVyperDISPLAY", Token + "SKIN_DEFAULT", DefaultSkinIcon);
+                Kit.OwnSkin(cm.gameObject, "skinCursedAppleVyperDISPLAY", Token + "SKIN_DEFAULT", DefaultSkinIcon, ("skinCursedAppleVyperDISPLAYCORAL", Token + "SKIN_CORAL", CoralSkinIcon));
             }
             display.AddComponent<VyperDisplayIntro>();
             return display;
@@ -242,6 +244,7 @@ namespace CursedAppleCuriosities.Survivors.Vyper
             LanguageAPI.Add(Token + "NAME", "Vyper");
             LanguageAPI.Add(Token + "SUBTITLE", "The Escape Artist");
             LanguageAPI.Add(Token + "SKIN_DEFAULT", "Default");
+            LanguageAPI.Add(Token + "SKIN_CORAL", "Coral");
             LanguageAPI.Add(Token + "DESCRIPTION",
                 "Vyper has broken out of every prison in the tri-state area. This one's just bigger.<color=#CCD3E0>\n\n" +
                 "< ! > Stack Screwjab Daggers on one target: each dagger hits and slows harder than the last.\n\n" +

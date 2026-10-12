@@ -20,6 +20,8 @@ namespace CursedAppleCuriosities.Survivors.Vyper
             MuzzleName = VyperSurvivor.MuzzleName,
             Anims = VyperData.Anims,
             RootLocked = VyperData.Locked,
+            // Coral Vyper (skin 1): her green scales turned coral red; the gold armour and white belly stay.
+            Skins = new[] { new DeadlockSkin { Id = "coral1", Recolor = DeadlockSkin.HueShift(82f, 150f, -80f) } },
             ItemAnchors = VyperItemDisplays.Anchors,
             // Her gun's material (borrowed from Deadlock's "tengu") is white x g_vColorTint1: dark gunmetal.
             MaterialTints = new System.Collections.Generic.Dictionary<string, Color> { ["tengu_gun"] = new Color(0.317647f, 0.290196f, 0.290196f) },

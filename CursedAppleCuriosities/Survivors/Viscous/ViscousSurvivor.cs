@@ -29,6 +29,8 @@ namespace CursedAppleCuriosities.Survivors.Viscous
         /// <summary>Skin icon in the hero's own palette (goo greens and his dark outline), not the stand-in's.</summary>
         private static Sprite DefaultSkinIcon => _defaultSkinIcon ??= Kit.SkinIcon(new Color(0.38f, 0.75f, 0.4f), new Color(0.43f, 0.94f, 0.43f), new Color(0.14f, 0.16f, 0.15f), new Color(0.17f, 0.55f, 0.2f));
         private static Sprite? _defaultSkinIcon;
+        private static Sprite BlueSkinIcon => _blueSkinIcon ??= Kit.SkinIcon(new Color(0.3f, 0.45f, 0.75f), new Color(0.35f, 0.55f, 0.95f), new Color(0.14f, 0.16f, 0.16f), new Color(0.3f, 0.45f, 0.75f));
+        private static Sprite? _blueSkinIcon;
         public const float Hue = 0.33f;
 
         public static GameObject? BodyPrefab, DisplayPrefab;
@@ -195,7 +197,7 @@ namespace CursedAppleCuriosities.Survivors.Viscous
             Kit.MuteStandIn(body, model.gameObject, ViscousData.Hero);
             var children = model.GetComponent<ChildLocator>();
             if (children != null && children.FindChild(MuzzleName) == null) children.AddChild(MuzzleName, model);
-            Kit.OwnSkin(model.gameObject, "skinCursedAppleViscousDEFAULT", Token + "SKIN_DEFAULT", DefaultSkinIcon);
+            Kit.OwnSkin(model.gameObject, "skinCursedAppleViscousDEFAULT", Token + "SKIN_DEFAULT", DefaultSkinIcon, ("skinCursedAppleViscousBLUE", Token + "SKIN_BLUE", BlueSkinIcon));
 
             ContentAddition.AddBody(body);
             return body;
@@ -212,7 +214,7 @@ namespace CursedAppleCuriosities.Survivors.Viscous
                 swap.HeroKey = ViscousData.Hero;
                 swap.IsDisplay = true;
                 cm.gameObject.AddComponent<ViscousBallLook>(); // keeps the ball hidden on the pedestal
-                Kit.OwnSkin(cm.gameObject, "skinCursedAppleViscousDISPLAY", Token + "SKIN_DEFAULT", DefaultSkinIcon);
+                Kit.OwnSkin(cm.gameObject, "skinCursedAppleViscousDISPLAY", Token + "SKIN_DEFAULT", DefaultSkinIcon, ("skinCursedAppleViscousDISPLAYBLUE", Token + "SKIN_BLUE", BlueSkinIcon));
             }
             display.AddComponent<ViscousDisplayIntro>();
             return display;
@@ -272,6 +274,7 @@ namespace CursedAppleCuriosities.Survivors.Viscous
             LanguageAPI.Add(Token + "NAME", "Viscous");
             LanguageAPI.Add(Token + "SUBTITLE", "The Goo");
             LanguageAPI.Add(Token + "SKIN_DEFAULT", "Default");
+            LanguageAPI.Add(Token + "SKIN_BLUE", "Blue");
             LanguageAPI.Add(Token + "DESCRIPTION",
                 "Viscous is a living blob of goo in a diving suit, here to help, mostly.<color=#CCD3E0>\n\n" +
                 "< ! > Goo Ball rolls where you look, or where WASD points. Hold Primary to go fast, Jump to jump (and once more in the air).\n\n" +

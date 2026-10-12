@@ -22,6 +22,8 @@ namespace CursedAppleCuriosities.Survivors.Viscous
             MuzzleName = ViscousSurvivor.MuzzleName,
             Anims = ViscousData.Anims,
             RootLocked = ViscousData.Locked,
+            // Blue Viscous (skin 1): his green goo turned blue.
+            Skins = new[] { new DeadlockSkin { Id = "blue1", Recolor = DeadlockSkin.HueShift(70f, 170f, 95f) } },
             ItemAnchors = ViscousItemDisplays.Anchors,
         };
 

@@ -29,6 +29,8 @@ namespace CursedAppleCuriosities.Survivors.Celeste
         /// <summary>Skin icon in the hero's own palette (pink hair, brown leather jacket, plum skirt, pale skin), not the stand-in's.</summary>
         private static Sprite DefaultSkinIcon => _defaultSkinIcon ??= Kit.SkinIcon(new Color(0.93f, 0.6f, 0.85f), new Color(0.27f, 0.19f, 0.15f), new Color(0.58f, 0.24f, 0.4f), new Color(0.86f, 0.72f, 0.64f));
         private static Sprite? _defaultSkinIcon;
+        private static Sprite MintSkinIcon => _mintSkinIcon ??= Kit.SkinIcon(new Color(0.6f, 0.93f, 0.82f), new Color(0.27f, 0.19f, 0.15f), new Color(0.24f, 0.55f, 0.5f), new Color(0.86f, 0.72f, 0.64f));
+        private static Sprite? _mintSkinIcon;
         public const float Hue = 0.9f;       // her light is pink, as her hair
 
         public static GameObject? BodyPrefab, DisplayPrefab, DaggerProjectile, OrbProjectile;
@@ -218,7 +220,7 @@ namespace CursedAppleCuriosities.Survivors.Celeste
             Kit.MuteStandIn(body, model.gameObject, CelesteData.Hero);
             var children = model.GetComponent<ChildLocator>();
             if (children != null && children.FindChild(MuzzleName) == null) children.AddChild(MuzzleName, model);
-            Kit.OwnSkin(model.gameObject, "skinCursedAppleCelesteDEFAULT", Token + "SKIN_DEFAULT", DefaultSkinIcon);
+            Kit.OwnSkin(model.gameObject, "skinCursedAppleCelesteDEFAULT", Token + "SKIN_DEFAULT", DefaultSkinIcon, ("skinCursedAppleCelesteMINT", Token + "SKIN_MINT", MintSkinIcon));
 
             ContentAddition.AddBody(body);
             return body;
@@ -234,7 +236,7 @@ namespace CursedAppleCuriosities.Survivors.Celeste
                 var swap = cm.gameObject.AddComponent<DeadlockModelSwap>();
                 swap.HeroKey = CelesteData.Hero;
                 swap.IsDisplay = true;
-                Kit.OwnSkin(cm.gameObject, "skinCursedAppleCelesteDISPLAY", Token + "SKIN_DEFAULT", DefaultSkinIcon);
+                Kit.OwnSkin(cm.gameObject, "skinCursedAppleCelesteDISPLAY", Token + "SKIN_DEFAULT", DefaultSkinIcon, ("skinCursedAppleCelesteDISPLAYMINT", Token + "SKIN_MINT", MintSkinIcon));
             }
             display.AddComponent<CelesteDisplayIntro>();
             return display;
@@ -296,6 +298,7 @@ namespace CursedAppleCuriosities.Survivors.Celeste
             LanguageAPI.Add(Token + "NAME", "Celeste");
             LanguageAPI.Add(Token + "SUBTITLE", "The Carny");
             LanguageAPI.Add(Token + "SKIN_DEFAULT", "Default");
+            LanguageAPI.Add(Token + "SKIN_MINT", "Mint");
             LanguageAPI.Add(Token + "DESCRIPTION",
                 "Celeste ran away with the carnival and never stopped performing. The show goes on, wherever the tent lands.<color=#CCD3E0>\n\n" +
                 "< ! > Carny Life's blades curve onto enemies near your aim and bounce once off walls. Aim close, not exact.\n\n" +
