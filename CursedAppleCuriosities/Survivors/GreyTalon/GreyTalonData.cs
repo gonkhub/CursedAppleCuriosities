@@ -30,7 +30,6 @@ namespace CursedAppleCuriosities.Survivors.GreyTalon
             Anim = GreyTalonModel.Play,
             StaminaPips = 4,                   // Deadlock EStamina
             OutOfCombatSpeed = 1.6f / 6.3f,    // Deadlock ESprintSpeed over his run
-            SlideFriction = 1.2f,              // Deadlock 0.8 felt slippery (playtest); the heroes' playtested value
             // Lash's playtested controls, kept for every hero
             WallJumpUp = 22f,
             WallJumpPowerMin = 0.6f,

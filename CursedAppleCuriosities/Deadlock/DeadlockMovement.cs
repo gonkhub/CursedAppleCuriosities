@@ -47,7 +47,8 @@ namespace CursedAppleCuriosities.Deadlock
         public KeyCode SlideKey = KeyCode.LeftControl;  // Deadlock's crouch
         public ConfigEntry<KeyboardShortcut>? SlideKeyEntry; // live: rebinding in the settings menu applies at once
         public float SlideDashSpeed = 16.5f, SlideActivation = 8.89f, SlideSustain = 4.32f, SlideMaxStart = 16.5f;
-        public float SlideFriction = 0.8f, SlideFrictionSlope = 0.15f, SlideSlopeMinDeg = 8f, SlideSlopeFacingDeg = 75f;
+        // Slide friction: Deadlock 0.8 felt slippery; 1.2 is the heroes' playtested value and the default (user). Vyper overrides it.
+        public float SlideFriction = 1.2f, SlideFrictionSlope = 0.15f, SlideSlopeMinDeg = 8f, SlideSlopeFacingDeg = 75f;
         public float SlideAccMinSlopeDeg = 5f, SlideAccMaxSlopeDeg = 45f, SlideAccMin = 12.7f, SlideAccMax = 21.59f;
         public float SlideMaxSpeedMin = 30.48f, SlideMaxSpeed = 38.1f, SlideTurnDegPerSec = 90f;
         // Vyper's Slither: no flat-ground friction for the first seconds of a slide (Deadlock m_flFlatGroundFrictionGraceTime),

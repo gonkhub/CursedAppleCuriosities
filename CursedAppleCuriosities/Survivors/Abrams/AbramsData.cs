@@ -33,7 +33,6 @@ namespace CursedAppleCuriosities.Survivors.Abrams
             AirDashSeconds = 0.51f,            // Deadlock EAirDashDuration
             OutOfCombatSpeed = 0.45f,          // Deadlock ESprintSpeed over his run was +25%; +45% (Lash's 9.3 m/s) by playtest
             // Lash's playtested controls, kept for every hero
-            SlideFriction = 1.2f,
             WallJumpUp = 22f,
             WallJumpPowerMin = 0.6f,
         };

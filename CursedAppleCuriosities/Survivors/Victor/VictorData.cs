@@ -29,7 +29,6 @@ namespace CursedAppleCuriosities.Survivors.Victor
             Anim = VictorModel.Play,
             StaminaPips = 3,                   // Deadlock EStamina
             OutOfCombatSpeed = 1.1f / 6.3f,    // Deadlock ESprintSpeed over his run
-            SlideFriction = 1.2f,              // the heroes' playtested value
             // Lash's playtested controls, kept for every hero
             WallJumpUp = 22f,
             WallJumpPowerMin = 0.6f,
