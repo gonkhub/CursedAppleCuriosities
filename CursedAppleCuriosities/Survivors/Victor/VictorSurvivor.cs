@@ -267,7 +267,7 @@ namespace CursedAppleCuriosities.Survivors.Victor
             LanguageAPI.Add(Token + "PASSIVE_DESC",
                 "When you would die, you go down instead: nearby enemies are <style=cIsUtility>slowed</style> and you are <style=cIsUtility>invulnerable</style> for " +
                 $"{VictorData.ReviveChannel:0}s, then get back up with <style=cIsHealing>{P(VictorData.ReviveHealth)} health</style>, dealing <style=cIsDamage>{D(VictorData.ReviveDamage)} damage</style> " +
-                $"and <style=cIsUtility>stunning</style> enemies within {VictorData.ReviveRadius:0}m. Recharges in <style=cIsUtility>{VictorData.ReviveCooldown:0}s</style>. " +
+                $"and <style=cIsUtility>stunning</style> enemies within {VictorData.ReviveRadius:0}m. Recharges in <style=cIsUtility>{VictorData.ReviveCooldown:0}s</style> or on a new stage. " +
                 $"Victor has <style=cIsUtility>{VictorData.Movement.StaminaPips} stamina</style>, <style=cIsUtility>sprints automatically</style> out of combat, and can <style=cIsUtility>dash</style> and <style=cIsUtility>air jump</style>.");
 
             LanguageAPI.Add(Token + "GUN_NAME", "Memento Mori");

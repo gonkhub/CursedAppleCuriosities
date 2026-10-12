@@ -5,7 +5,7 @@
   **Pain Battery** charges only from damage you take, then fires a fan of shocking bolts that heal you for
   each enemy hit. **Jumpstart** costs some health, then heals back more than it took and speeds you up.
   **Aura of Suffering** hurts everything around you, and you, harder the longer it runs. Passive
-  **Shocking Reanimation**: once every 4 minutes, dying knocks you down instead, and you get back up with
+  **Shocking Reanimation**: once every 90 seconds (and again each new stage), dying knocks you down instead, and you get back up with
   half your health and a stunning blast.
 - Each survivor has its own colour on the character select screen.
 - **Frenzy**: the bonus now lasts 5 s at its strongest after you heal back above the threshold.

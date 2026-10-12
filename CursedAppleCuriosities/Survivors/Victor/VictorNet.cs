@@ -60,7 +60,8 @@ namespace CursedAppleCuriosities.Survivors.Victor
                 }
             };
 
-            // Reanimation's cooldown belongs to the player, not the body: a new stage's body picks up what's left of it.
+            // Reanimation's cooldown belongs to the player, not the body: a body respawned on the same stage (Dio's, Larva) picks up
+            // what's left of it. A new stage resets it (VictorReviveClock.Remaining).
             CharacterBody.onBodyStartGlobal += body =>
             {
                 if (!NetworkServer.active || body == null || body.master == null || body.GetComponent<VictorRevive>() == null) return;
@@ -430,12 +431,22 @@ namespace CursedAppleCuriosities.Survivors.Victor
 
     // ================= Shocking Reanimation =================
 
-    /// <summary>Server, on Victor's master: when Reanimation is ready again (it outlives the body: user, 240 s).</summary>
+    /// <summary>
+    /// Server, on Victor's master: when Reanimation is ready again (user: 90 s, or a new stage). It outlives the body, so a
+    /// respawn on the same stage doesn't reset it; a cooldown started on an earlier stage is over.
+    /// </summary>
     public class VictorReviveClock : MonoBehaviour
     {
         public float ReadyAt;
+        public int Stage = -1; // Run.stageClearCount when the cooldown started
 
-        public float Remaining => Run.instance != null ? Mathf.Max(0f, ReadyAt - Run.instance.fixedTime) : 0f;
+        public float Remaining => Run.instance != null && Run.instance.stageClearCount == Stage ? Mathf.Max(0f, ReadyAt - Run.instance.fixedTime) : 0f;
+
+        public void Begin(float seconds)
+        {
+            ReadyAt = Run.instance.fixedTime + seconds;
+            Stage = Run.instance.stageClearCount;
+        }
 
         public static VictorReviveClock On(CharacterMaster master) =>
             master.GetComponent<VictorReviveClock>() ?? master.gameObject.AddComponent<VictorReviveClock>();
@@ -504,7 +515,7 @@ namespace CursedAppleCuriosities.Survivors.Victor
             using (DurationExtender.From(_body))
                 foreach (HealthComponent e in caught) if (e.alive) SetStateOnHurt.SetStunOnObject(e.gameObject, VictorData.ReviveStun);
 
-            if (_body.master != null) VictorReviveClock.On(_body.master).ReadyAt = Run.instance.fixedTime + VictorData.ReviveCooldown;
+            if (_body.master != null) VictorReviveClock.On(_body.master).Begin(VictorData.ReviveCooldown);
             if (VictorSurvivor.ReviveCooldownBuff != null) _body.AddTimedBuff(VictorSurvivor.ReviveCooldownBuff, VictorData.ReviveCooldown);
             CursedAppleCuriositiesPlugin.Logger?.LogInfo($"[Victor] Shocking Reanimation: up, {caught.Count} enemies in the blast");
         }

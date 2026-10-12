@@ -80,7 +80,7 @@ namespace CursedAppleCuriosities.Survivors.Victor
         public const float AuraEndGrace = 0.3f;         // special again after this ends it early (Deadlock "End Aura")
 
         // ---- passive: Shocking Reanimation (Deadlock ultimate, here automatic: user; 240 s cooldown: user) ----
-        public static float ReviveCooldown = 240f;      // Deadlock AbilityCooldown
+        public static float ReviveCooldown = 90f;       // user (Deadlock 240); also ready again on every new stage
         public const float ReviveChannel = 3f;          // Deadlock AbilityChannelTime
         public const float RevivePost = 0.66f;          // Deadlock AbilityPostCastDuration
         public static float ReviveHealth = 0.5f;        // Deadlock RespawnHealthPercent
@@ -113,7 +113,7 @@ namespace CursedAppleCuriosities.Survivors.Victor
             AuraSelfMax = c.Bind(Section, "Aura of Suffering - Self Damage Max", AuraSelfMax, "Share of Victor's max health lost per second once ramped.").Value;
             AuraProc = c.Bind(Section, "Aura of Suffering - Proc Coefficient", AuraProc, "Proc coefficient of each tick (4 ticks a second).").Value;
             AuraCooldown = c.Bind(Section, "Aura of Suffering - Cooldown", AuraCooldown, "Seconds after it is toggled off.").Value;
-            ReviveCooldown = c.Bind(Section, "Shocking Reanimation - Cooldown", ReviveCooldown, "Seconds (carries over between stages).").Value;
+            ReviveCooldown = c.Bind(Section, "Shocking Reanimation - Cooldown", ReviveCooldown, "Seconds. It is also ready again whenever a new stage starts.").Value;
             ReviveHealth = c.Bind(Section, "Shocking Reanimation - Health", ReviveHealth, "Share of max health he comes back with.").Value;
             ReviveDamage = c.Bind(Section, "Shocking Reanimation - Damage", ReviveDamage, "Damage coefficient of the blast when he gets up.").Value;
             ReviveRadius = c.Bind(Section, "Shocking Reanimation - Radius", ReviveRadius, "Metres.").Value;

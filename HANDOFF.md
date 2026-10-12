@@ -335,8 +335,8 @@ same on a stand-in model.
     Focus Crystal terrain indicator never rendered): grey, terrain-hugging, Mystic Expansion radius.
   - Passive Shocking Reanimation (`VictorRevive`): while ready, hits on Victor are NonLethal; one that leaves him at 1 health starts it:
     slow wave (125% fading over 3 s, 36 m: user doubled Deadlock's 18), 3 s HiddenInvincibility + Reanimating buff (SkillSilence; the owner's body machine enters
-    `Reanimate`), then up at 50% health with a 1000% blast + 1.5 s stun. 240 s cooldown on the master (`VictorReviveClock`), shown as a
-    cooldown buff and carried into the next stage's body.
+    `Reanimate`), then up at 50% health with a 1000% blast + 1.5 s stun. 90 s cooldown on the master (`VictorReviveClock`, user), shown as a
+    cooldown buff; a respawn on the same stage keeps it, a new stage resets it (user).
   - VFX green (user), recoloured with `Kit.Recoloured` at hue 0.33; UI colour grey-green. Sounds picked by me (user: no review pass needed).
   - Lobby intro `VictorIntro.cs` (user: Shocking Reanimation): his parts reassemble on the pedestal (3 s), he gets up; no lightning strikes (user).
   - Item displays fitted 2026-10-12 (`VictorItemDisplays.cs`, `HERO=victor`; items skip his `weapon` mesh). Chance Doll sits in his hip.
