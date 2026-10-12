@@ -174,7 +174,7 @@ namespace CursedAppleCuriosities.Deadlock
         /// <summary>0-1 progress of the next pip refilling.</summary>
         public float RegenProgress => Pips < Max ? Mathf.Clamp01(_regen / Profile.StaminaRegenSeconds) : 0f;
 
-        public bool SlideHeld => Input.GetKey(Profile.SlideKeyEntry != null ? Profile.SlideKeyEntry.Value.MainKey : Profile.SlideKey);
+        public bool SlideHeld => Input.GetKey(Profile.SlideKeyEntry != null ? Profile.SlideKeyEntry.Value.MainKey : Profile.SlideKey) || Testing.SelfTest.SlideHeld;
 
         private void Awake() => _body = GetComponent<CharacterBody>();
 
@@ -820,6 +820,7 @@ namespace EntityStates.CursedApple.Deadlock
                     for (int i = 0; i < P.DashJumpCost; i++) _mover!.TrySpend();
                     Launch(Dir * P.DashJumpSpeed + Vector3.up * P.DashJumpUp);
                     DeadlockSounds.Play(P.Sound("dash"), transform.position, gameObject);
+                    CursedAppleCuriosities.Items.KineticDash.OnDashJump(characterBody); // Deadlock's Kinetic Dash is a dash-jump item
                     return;
                 }
                 _lockedOut = true;

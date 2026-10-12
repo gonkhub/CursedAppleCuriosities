@@ -111,7 +111,8 @@ namespace CursedAppleCuriosities.Survivors.Abrams
             if (!NetworkServer.active || Attacker == null) return;
             var body = Attacker.GetComponent<CharacterBody>();
             if (body == null) return;
-            DamageTypeCombo type = Kind == AbramsHitKind.Melee ? DamageSource.Secondary : Kind == AbramsHitKind.Charge ? DamageSource.Utility : DamageSource.Special;
+            // Heavy Melee and Seismic Impact are both Special skills now; only Shoulder Charge is Utility.
+            DamageTypeCombo type = Kind == AbramsHitKind.Charge ? DamageSource.Utility : DamageSource.Special;
             float dealt = 0f;
             for (int i = 0; i < Targets.Length; i++)
             {
