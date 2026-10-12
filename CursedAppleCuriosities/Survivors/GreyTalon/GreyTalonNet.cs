@@ -112,10 +112,16 @@ namespace CursedAppleCuriosities.Survivors.GreyTalon
                     if (GreyTalonSurvivor.OwlFlyingBuff != null) using (DurationExtender.Exact()) body.AddTimedBuff(GreyTalonSurvivor.OwlFlyingBuff, GreyTalonData.OwlFlight * DurationExtender.Multiplier(body) + 1f);
                     break;
                 case GreyTalonBuffKind.OwlStop:
-                    // He has control again. These were his own channel's (timed to it): cleared, not left to run out.
+                    // He has control again. These were his own channel's (timed to it): cleared, not left to run out. Then a
+                    // short grace (user): still invulnerable and unseen, so he can get away from whatever closed in on him.
                     if (GreyTalonSurvivor.OwlChannelBuff != null) body.ClearTimedBuffs(GreyTalonSurvivor.OwlChannelBuff);
                     body.ClearTimedBuffs(RoR2Content.Buffs.HiddenInvincibility);
                     body.ClearTimedBuffs(RoR2Content.Buffs.Cloak);
+                    using (DurationExtender.Exact())
+                    {
+                        body.AddTimedBuff(RoR2Content.Buffs.HiddenInvincibility, GreyTalonData.OwlExitGrace);
+                        body.AddTimedBuff(RoR2Content.Buffs.Cloak, GreyTalonData.OwlExitGrace);
+                    }
                     break;
             }
         }

@@ -90,6 +90,7 @@ namespace CursedAppleCuriosities.Survivors.GreyTalon
         public const float OwlHitRadius = 0.76f;        // Deadlock m_flTriggerRadius 30 hu
         public static float OwlRadius = 12f;            // Deadlock ExplosionRadius
         public const float OwlStun = 0.75f;             // Deadlock StunDuration
+        public static float OwlExitGrace = 2f;          // seconds still invulnerable and cloaked once he has control back (user)
         public const float OwlCameraHold = 0.8f;        // Deadlock m_flCameraHoldAtExplosion
         public const float OwlCameraBack = 4f, OwlCameraUp = 1f;
 
@@ -114,6 +115,7 @@ namespace CursedAppleCuriosities.Survivors.GreyTalon
             OwlRadius = c.Bind(Section, "Guided Owl - Radius", OwlRadius, "Metres.").Value;
             OwlCooldown = c.Bind(Section, "Guided Owl - Cooldown", OwlCooldown, "Seconds.").Value;
             OwlSpeed = c.Bind(Section, "Guided Owl - Cruise Speed", OwlSpeed, "Metres per second without forward held (it speeds up to 36 while forward is held).").Value;
+            OwlExitGrace = c.Bind(Section, "Guided Owl - Exit Grace", OwlExitGrace, "Seconds Grey Talon stays invulnerable and unseen after the owl ends or is released.").Value;
             OwlTurnDegPerSec = c.Bind(Section, "Guided Owl - Turn Rate", OwlTurnDegPerSec, "Degrees per second the owl turns toward where you look.").Value;
         }
 
