@@ -1,6 +1,18 @@
 # Changelog
 
 ## 1.5.0 (unreleased)
+- New survivor: **Viscous**. His **Goo Ball** rolls him up into a bowling ball that bowls through enemies. **Splatter**
+  bounces a ball of goo that bursts three times; alt **Puddle Punch** launches everything off any surface, him included.
+  **The Cube** encases an ally (tap) or himself (hold): invulnerable, then faster with quicker stamina.
+- New survivor: **Celeste**. **Carny Life** throws blades of light that curve onto enemies, bounce off walls and
+  ricochet. **Light Eater** marks enemies: your blades hit them harder and heal you. Alt **Radiant Daggers** calls down a
+  beam of light that strengthens you for every enemy it hits. **Dazzling Trick** raises a barrier prism that bursts and
+  silences enemies if it breaks. **Shining Wonder**: hold, then release an orb that bounces between enemies, elites
+  and bosses first.
+- New skins: **Mint** Celeste, **Coral** Vyper, **Blue** Viscous.
+- **Kinetic Dash**: dash-jumping (Deadlock heroes) triggers it too, as in Deadlock.
+- Fixed: Abrams' **Heavy Melee** now counts as his Special (Ethereal Shift's bonus and other Special effects apply).
+- Viscous and Celeste show items on their bodies.
 - New survivor: **Victor**.
   **Pain Battery** charges only from damage you take, then fires a fan of shocking bolts that heal you for
   each enemy hit. **Jumpstart** costs some health, then heals back more than it took and speeds you up.

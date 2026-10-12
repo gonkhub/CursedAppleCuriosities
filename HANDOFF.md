@@ -4,7 +4,7 @@ A BepInEx plugin for **Risk of Rain 2** (Survivors of the Void, build 912) that 
 items and equipment **adapted from Deadlock's item catalogue**. The name is homage: Deadlock's
 map is the "Cursed Apple" and items are bought from a "curiosity shop."
 
-**State:** builds clean (0 errors), **31 items + 14 equipment**, 6 survivors (Lash, Abrams, Seven, Vyper, Grey Talon, Victor). **v1.0.0** released
+**State:** builds clean (0 errors), **31 items + 14 equipment**, 8 survivors (Lash, Abrams, Seven, Vyper, Grey Talon, Victor, Viscous, Celeste). **v1.0.0** released
 2026-10-11; **v1.2.5** packaged 2026-10-12 for friends (tag `v1.2.5` on main); **v1.3.0** finished 2026-10-12 on branch `1.3`
 (tag `v1.3.0`, not packaged); **v1.4.0** (Cursed Broker, not yet playtested) finished 2026-10-12 on branch `1.4` (tag `v1.4.0`,
 not packaged). New work happens on branch `1.5` (version 1.5.0). The user playtests as we go.
@@ -381,10 +381,51 @@ same on a stand-in model.
     `ViscousBallLook` (body + display, runs after the animator) swaps body/gun/outline for it while the Body state is `GooBall`, and puts
     `inflated_center` at foot + radius, scaled to the radius (1.4 m x Mystic Expansion), rolled from the body's real motion (works for remote players).
   - Model height quirk: the loader scales by the tallest vertex, which is the ball's helmet (2.94 m) not him (2.45 m): `BallHeightFix`.
-  - Open: hurtbox stays Commando-sized while rolling. No item anchors.
+  - Open: hurtbox stays Commando-sized while rolling. Item displays fitted 2026-10-12 (`ViscousItemDisplays.cs`; the ball and outline
+    shell count for height only). Skin: Blue.
+
+- `Survivors/Celeste/` — **Celeste** (`CursedAppleCelesteBody`, Deadlock `hero_unicorn`, model `models/heroes_wip/unicorn/unicorn`,
+  AnimGraph2 clips in `unicorn/clips`, icons `unicorn_*`, VO `sounds/vo/unicorn`). Built 2026-10-12 while the user was away:
+  **kit, numbers, sounds and writing are my picks, pending the user's review** (memory `celeste-design`). Self-tested in game.
+  - M1 Carny Life: a blade every 0.58 s, 220%, 50 m/s shallow arc, homes onto an enemy within 22.5 deg of its flight, one bounce
+    off the world, 60% ricochet to an enemy within 10 m (`CelesteDagger` on a Bandit shiv clone).
+  - M2 Light Eater: 0.3 s (she hangs in the air), 70 deg cone 10 m, 400%, marks 8 s (Merc's expose marker): +150% per blade hit on
+    marked enemies and 18% of all her damage to them heals her. Alt Radiant Daggers: beam onto the aimed spot (30 m), pink warning
+    ring + beam (`CelesteBeamWarning`, an effect so every client sees it), 1.4 s, 600% in 8 m (a tall cylinder), +7% damage per
+    enemy hit (Radiance, max 6, 30 s).
+  - Utility Dazzling Trick: 20% max HP barrier, 4 s window (Lunar Golem shell visual); the hit that takes the barrier to 0 bursts
+    it: 500% in 14 m + 1.75 s silence (`SkillSilence`).
+  - Special Shining Wonder: hold to aim (slow fall), release: orb (Artifact shell's seeking flare, given SolarFlareGhost) at
+    50.8 m/s, homes in a 25 deg cone, 800% + 32% slow per hit, 8 bounces within 15.5 m (elites/bosses first, never the same enemy
+    twice running), lingers 3.25 s for a target.
+  - Every radius takes Mystic Expansion; mark/slow/prism durations take Duration Extender. VFX pink (Hue 0.9, her hair).
+  - Her model exports no `shoot_idle`/`ability_luminous_flux`: `shoot_idle_start` and `ability_radiant_daggers_stand_idle` stand in.
+  - Lobby intro: Deadlock's `ui_hero_select` flourish. Item displays fitted (`CelesteItemDisplays.cs`). Skin: Mint.
+
+## Self-test (playtesting without the user, 2026-10-12)
+
+- `Testing/SelfTest.cs`: launch with `--cac-selftest <script.txt>` and the game plays a script: `run <Body>` (title -> lobby ->
+  run, leaves the drop pod), `wait`, `cmd <console command>` (DebugToolkit's too), `hold/tap/press/release <button>`, `move x y [s]`,
+  `aim enemy|yaw pitch|off`, `slide 1|0`, `setskill <slot> <SkillDef name>` (live body only, the saved loadout is untouched),
+  `shot <name>` (screen), `portrait <name> <yaw> [zoom] [height]` (the body alone on a flat background), `log`, `quit`.
+  PNGs land next to the script. Every line is logged `[SelfTest]`, plus a load clock until the title screen. Without the
+  argument nothing runs.
+- Profile **Curiosities Selftest** (`C:2heimman\RiskOfRain2\profiles`): R2API, DebugToolkit, Risk Of Options and the fix mods
+  (MiscFixes, VFiX, WolfFixes, GildedChunkSpamFix: without them the game hangs at 33% loading). Copy the built DLL into its
+  `Unknown-CursedAppleCuriosities` folder, then `steam.exe -applaunch 632360 --doorstop-enabled true --doorstop-target-assembly
+  "<profile>\BepInEx\core\BepInEx.Preloader.dll" --cac-selftest <script>`.
+- Load time measured: ~150 s launch to title on that profile, 148 s with the mod removed. The mod costs ~4 s (plugin Awake 3.7 s:
+  items 1.0 s, equipment 0.2 s, survivors ~0.2 s each, Risk Of Options page ~0.9 s). The rest is the game and VFiX's dither pass (37 s).
+  Icons are now decoded once per file and the pickup card GLB parsed once.
+- `spawn_ai Lemurian` matches the allied Devoted Lemurian: use `LemurianMaster`.
 
 ## Recent changes (since last handoff)
 
+- **Autonomous session (2026-10-12, user away):** self-test harness (above); Celeste; item displays for Viscous and Celeste
+  (`tools/itempass`, `HERO=viscous|celeste`, plus `allview.py`); skins Mint Celeste / Coral Vyper / Blue Viscous; Kinetic Dash
+  triggers on dash-jumps (Deadlock's own trigger; `KineticDashJumpMessage` from the dashing client); Abrams' Heavy Melee hits are
+  Special-source (were still Secondary from before it moved to the special slot). All eight heroes, every alt skill, all mod items
+  at once and all 10 equipment ran in the self-test with no exceptions from the mod.
 - **Character select colours (user, 2026-10-12):** each survivor's `Color` (body colour + SurvivorDef primary colour): Lash light blue,
   Abrams dark blue, Seven orange, Vyper yellowish green, Grey Talon dark green, Victor greyish green.
 - **Victor (1.5.0, prototyped 2026-10-12, NOT launched).** Sixth survivor; see Survivors above and memory `victor-design`.
