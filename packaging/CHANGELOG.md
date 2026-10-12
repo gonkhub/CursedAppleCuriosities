@@ -1,5 +1,7 @@
 # Changelog
 
+## 1.4.0 (unreleased)
+
 ## 1.3.0
 - New survivor: **Grey Talon**. His bow fires slow, very long range arrows (full damage out to
   150m). **Charged Shot**: draw and hold a zoomed shot, then loose a large arrow that pierces
