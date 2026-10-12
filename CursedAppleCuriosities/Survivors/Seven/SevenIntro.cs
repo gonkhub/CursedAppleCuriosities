@@ -59,8 +59,8 @@ namespace CursedAppleCuriosities.Survivors.Seven
             Play("storm_end");
             DeadlockSounds.Play("seven_storm_end", Home);
             for (float t = 0f; t < Settle; t += Time.deltaTime) { HipsToCamera(); yield return null; }
-            float from = _face;
-            for (float t = 0f; t < Ease; t += Time.deltaTime) { _face = Mathf.SmoothStep(from, 0f, t / Ease); Face(_face); yield return null; }
+            float from = _face; // already within +-180: the short way back (the long way was a whole extra spin, playtest)
+            for (float t = 0f; t < Ease; t += Time.deltaTime) { _face = Mathf.LerpAngle(from, 0f, Mathf.SmoothStep(0f, 1f, t / Ease)); Face(_face); yield return null; }
             Face(0f);
         }
 
@@ -82,7 +82,9 @@ namespace CursedAppleCuriosities.Survivors.Seven
             right.y = 0f;
             if (right.sqrMagnitude < 1e-6f) return;
             float error = Vector3.SignedAngle(right, HomeRotation * Vector3.right, Vector3.up);
-            _face += error * 0.5f; // half the error a frame: steady, no jitter from the one-frame-old pose
+            // Half the error a frame (steady, no jitter from the one-frame-old pose), kept within +-180: his float turns
+            // one way for ~200 deg, and an unwrapped total eased back the long way round (playtest).
+            _face = Mathf.DeltaAngle(0f, _face + error * 0.5f);
             Face(_face);
         }
 
