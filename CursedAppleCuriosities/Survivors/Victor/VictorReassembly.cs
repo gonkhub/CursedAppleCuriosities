@@ -48,7 +48,7 @@ namespace CursedAppleCuriosities.Survivors.Victor
             var swap = modelRoot.GetComponentInChildren<DeadlockModelSwap>(true);
             GameObject? hero = swap != null ? swap.HeroObject : null;
             if (swap == null || hero == null) return null;
-            GlbModel? model = DeadlockInstall.Model(VictorData.FxKey, (name, tex) => DeadlockHeroes.MakeMaterial(VictorData.FxKey, name, tex));
+            GlbModel? model = DeadlockInstall.Model(VictorData.FxKey);
             Dictionary<string, AnimClip>? clips = DeadlockInstall.Clips(VictorData.FxKey);
             if (model == null || clips == null || !clips.TryGetValue(VictorData.FxTogether, out AnimClip together)) return null;
             clips.TryGetValue(VictorData.FxHover, out AnimClip hover);

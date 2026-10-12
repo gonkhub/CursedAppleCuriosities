@@ -5,6 +5,7 @@ Items, equipment and survivors adapted from Deadlock's item shop for Risk of Rai
 - **31 items** across white, green, red, void and lunar tiers
 - **9 equipment**
 - **Artifact of the Curio**: only this mod's items drop
+- **Artifact of the Goose**: every player starts the run with a random Goose Egg
 - **Curiosity Catalog** (lunar): clearing the teleporter drops a shop selling this mod's
   items, in exchange for opening chests
 - **Cursed Broker**: a rare shrine from stage 3 onward. Curse one item to make every copy of it

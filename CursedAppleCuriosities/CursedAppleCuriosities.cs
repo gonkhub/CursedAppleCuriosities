@@ -8,6 +8,7 @@ using CursedAppleCuriosities.Survivors.GreyTalon;
 using CursedAppleCuriosities.Survivors.Lash;
 using CursedAppleCuriosities.Survivors.Seven;
 using CursedAppleCuriosities.Survivors.Victor;
+using CursedAppleCuriosities.Survivors.Viscous;
 using CursedAppleCuriosities.Survivors.Vyper;
 using RoR2;
 using System;
@@ -42,6 +43,9 @@ namespace CursedAppleCuriosities
         private readonly List<ItemBase>      _items      = new List<ItemBase>();
         private readonly List<EquipmentBase> _equipments = new List<EquipmentBase>();
         private readonly List<ArtifactBase>  _artifacts  = new List<ArtifactBase>();
+
+        // Preloaded hero models become Unity objects a few milliseconds per frame.
+        private void Update() => DeadlockInstall.Pump();
 
         private void Awake()
         {
@@ -166,6 +170,15 @@ namespace CursedAppleCuriosities
             catch (Exception e)
             {
                 Logger?.LogError($"  ! [Survivor] Victor failed to init: {e}");
+            }
+            try
+            {
+                ViscousSurvivor.Init(Config, gameObject);
+                Logger?.LogInfo("  + [Survivor] Viscous (Goo Ball prototype)");
+            }
+            catch (Exception e)
+            {
+                Logger?.LogError($"  ! [Survivor] Viscous failed to init: {e}");
             }
             foreach (var eq in _equipments) // registered before the reader starts so it copies them
             {

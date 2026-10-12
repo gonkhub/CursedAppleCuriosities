@@ -25,6 +25,9 @@ namespace CursedAppleCuriosities.Survivors.GreyTalon
         public const string BodyName = "CursedAppleGreyTalonBody";
         public const string MuzzleName = "GreyTalonMuzzle";
         public static readonly Color Color = new Color(0.13f, 0.42f, 0.2f); // character select / UI: dark green (user, 2026-10-12)
+        /// <summary>Skin icon in the hero's own palette (green coat, orange scarf, teal, leather), not the stand-in's.</summary>
+        private static Sprite DefaultSkinIcon => _defaultSkinIcon ??= Kit.SkinIcon(new Color(0.2f, 0.42f, 0.25f), new Color(0.85f, 0.36f, 0.15f), new Color(0.3f, 0.7f, 0.55f), new Color(0.58f, 0.38f, 0.22f));
+        private static Sprite? _defaultSkinIcon;
         /// <summary>The owl's blast and glow are green (user).</summary>
         public const float OwlHue = 0.33f;
 
@@ -224,7 +227,7 @@ namespace CursedAppleCuriosities.Survivors.GreyTalon
             Kit.MuteStandIn(body, model.gameObject, GreyTalonData.Hero);
             var children = model.GetComponent<ChildLocator>();
             if (children != null && children.FindChild(MuzzleName) == null) children.AddChild(MuzzleName, model);
-            Kit.OwnSkin(model.gameObject, "skinCursedAppleGreyTalonDEFAULT", Token + "SKIN_DEFAULT");
+            Kit.OwnSkin(model.gameObject, "skinCursedAppleGreyTalonDEFAULT", Token + "SKIN_DEFAULT", DefaultSkinIcon);
 
             ContentAddition.AddBody(body);
             return body;
@@ -240,7 +243,7 @@ namespace CursedAppleCuriosities.Survivors.GreyTalon
                 var swap = cm.gameObject.AddComponent<DeadlockModelSwap>();
                 swap.HeroKey = GreyTalonData.Hero;
                 swap.IsDisplay = true;
-                Kit.OwnSkin(cm.gameObject, "skinCursedAppleGreyTalonDISPLAY", Token + "SKIN_DEFAULT");
+                Kit.OwnSkin(cm.gameObject, "skinCursedAppleGreyTalonDISPLAY", Token + "SKIN_DEFAULT", DefaultSkinIcon);
             }
             display.AddComponent<GreyTalonDisplayIntro>();
             return display;

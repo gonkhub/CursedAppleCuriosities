@@ -24,6 +24,9 @@ namespace CursedAppleCuriosities.Survivors.Victor
         public const string BodyName = "CursedAppleVictorBody";
         public const string MuzzleName = "VictorMuzzle";
         public static readonly Color Color = new Color(0.55f, 0.66f, 0.55f); // character select / UI: greyish green (user, 2026-10-12)
+        /// <summary>Skin icon in the hero's own palette (bone-white skin, iron, dried red, blue trousers), not the stand-in's.</summary>
+        private static Sprite DefaultSkinIcon => _defaultSkinIcon ??= Kit.SkinIcon(new Color(0.78f, 0.76f, 0.7f), new Color(0.22f, 0.22f, 0.23f), new Color(0.58f, 0.16f, 0.16f), new Color(0.24f, 0.31f, 0.55f));
+        private static Sprite? _defaultSkinIcon;
         public const float Hue = 0.33f;      // his VFX are green, the aura range grey (user)
 
         public static GameObject? BodyPrefab, DisplayPrefab;
@@ -179,7 +182,7 @@ namespace CursedAppleCuriosities.Survivors.Victor
             Kit.MuteStandIn(body, model.gameObject, VictorData.Hero);
             var children = model.GetComponent<ChildLocator>();
             if (children != null && children.FindChild(MuzzleName) == null) children.AddChild(MuzzleName, model);
-            Kit.OwnSkin(model.gameObject, "skinCursedAppleVictorDEFAULT", Token + "SKIN_DEFAULT");
+            Kit.OwnSkin(model.gameObject, "skinCursedAppleVictorDEFAULT", Token + "SKIN_DEFAULT", DefaultSkinIcon);
 
             ContentAddition.AddBody(body);
             return body;
@@ -195,7 +198,7 @@ namespace CursedAppleCuriosities.Survivors.Victor
                 var swap = cm.gameObject.AddComponent<DeadlockModelSwap>();
                 swap.HeroKey = VictorData.Hero;
                 swap.IsDisplay = true;
-                Kit.OwnSkin(cm.gameObject, "skinCursedAppleVictorDISPLAY", Token + "SKIN_DEFAULT");
+                Kit.OwnSkin(cm.gameObject, "skinCursedAppleVictorDISPLAY", Token + "SKIN_DEFAULT", DefaultSkinIcon);
             }
             display.AddComponent<VictorDisplayIntro>();
             return display;

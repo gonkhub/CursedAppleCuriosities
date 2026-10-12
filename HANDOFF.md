@@ -348,8 +348,28 @@ same on a stand-in model.
   - Not done yet: ping VO, Deadlock's ability upgrades beyond the T3 heal.
 
 - `Survivors/Viscous/` — **Viscous** (`CursedAppleViscousBody`, Deadlock `hero_viscous`, model `models/heroes_staging/viscous/viscous`, Kelvin's
-  skeleton, AnimGraph1 clip names like Abrams). **Goo Ball prototype** (user 2026-10-12: get the ball right before the rest of him), built,
-  **never launched**. Only M1 (placeholder gun, 0.21 s) and Special **Goo Ball**; no secondary/utility slot yet.
+  skeleton, AnimGraph1 clip names like Abrams; in the air and his ability overlays use Kelvin's AnimGraph2 clips by path,
+  `models/heroes_staging/kelvin_v2/clip/...`, which his own model exports: Deadlock's live Viscous runs hero_*+kelvin graphs). Goo Ball
+  playtested OK 2026-10-12 (user); full kit added the same day, **not launched yet**:
+  - M1 Goo Gun (0.21 s) / alt **Goo Glob** (Deadlock alt fire: 38 m/s, 0.2 gravity, 350% burst 3.56 m, 1.26 s). M2 **Splatter** (user: 3 bursts,
+    500% each, 5 m) / alt **Puddle Punch** (user: 700%, 40 m aim, 4 m, launches enemies, allies (landing guarded) and Viscous himself, who
+    gets x3 air control for 2.5 s via `DeadlockMover.BoostAirControl`). Utility **The Cube** (own "Cube" machine: tap = ally under the
+    crosshair with Tricorn reticle, nobody = refund; hold 0.3 s = self; 3 s x Duration Extender, invulnerable, held in place (UpdateVelocity
+    hook + rootMotion zeroed), SkillSilence, 5%/s heal, jump breaks out after 1 s; then `PostCubeBuff` 8 s: +2.5 m/s and stamina x1/0.7 via
+    `DeadlockMover.RegenMultipliers`). Cube drawn by `ViscousCubeHost` with Deadlock's `viscous_cube` model (green box until converted).
+  - Globs = `ViscousGlob` on a CrocoSpit clone; bursts are BlastAttacks so Mystic Expansion's hook widens them (effect spawned at base radius
+    so the hook grows it); ghost scaled by Mystic Expansion. Punch radius/range, cube range, ball size all take Mystic Expansion (user).
+  - Splatter/Punch/Cube castable while rolling (Deadlock CastWhileRolling). Ball steers with WASD relative to the camera, else the crosshair (user).
+  - Lobby intro (user): he stands in the cube for its 3 s, it pops, then his select line.
+  - Playtest 2 (user, 2026-10-12): Kelvin clip names must be SHORT in the anim table (`GlbLoader` keys clips by the last path part;
+    the converter matches short names too); full paths silently fell back to the run in the air. Goo Glob: no gravity, splats at
+    Deadlock range 25.4 m, Splatter's burst effect (Beetle spit burst had a stray ring). Splatter ignores enemies (IgnoreCollision on
+    contact), bounces x2 (restitution 1.3, min 12 m/s). Puddle Punch: hold to aim (ring + arrow preview, local LineRenderers), release
+    to punch. It goes on any surface the crosshair hits (floor, slope, wall, ceiling; the ring lies flat on it) and throws
+    everything straight out of it, along the normal (user); the area is a cylinder standing out of the surface. Cube: slippery (keeps momentum, 0.15/s
+    friction, slides downhill, hits shove it). Cube cast cleanses (Util.CleanseBody: debuffs, DoTs, stun); inside, hits deal 0 damage
+    but are NOT rejected, so on-hit debuffs land and DoTs tick normally (user); no fall damage in the cube or the Goo Ball
+    (OnCharacterHitGroundServer hooks), and the next landing is guarded if either ends mid-air. Goo Ball jump 22 m/s, cooldown 20 s (user's cfg hand-edited, backup `.bak-viscous`).
   - Goo Ball = Deadlock `viscous_goo_bowling_ball`: 0.55 s curl (`rolling_goo`), then 11 s rolling (own `GooBall` Body state, owner moves it via
     rootMotion): 11.4 m/s, Primary held = 20.3 m/s (accel 15.2, decel 1.27 m/s2), steers to the crosshair 110/50 deg/s, walls bounce it
     (sphere cast 0.45 m smaller than the 1.4 m ball, so curbs roll over; 65% speed kept, 0.1 s no steering), jump + 1 double jump (12.7 m/s),
@@ -359,7 +379,7 @@ same on a stand-in model.
     the synced `BallBuff`. Special again ends it; cooldown 40 s starts when it ends. Camera pulled back x1.5 and up 1.2 m.
   - The ball is his own model's hidden mesh group `inflated` (renderers `inflated_N`, skinned to `inflated_center`, radius 1.51 model units).
     `ViscousBallLook` (body + display, runs after the animator) swaps body/gun/outline for it while the Body state is `GooBall`, and puts
-    `inflated_center` at foot + 1.4 m, scaled to 1.4 m, rolled from the body's real motion (works for remote players).
+    `inflated_center` at foot + radius, scaled to the radius (1.4 m x Mystic Expansion), rolled from the body's real motion (works for remote players).
   - Model height quirk: the loader scales by the tallest vertex, which is the ball's helmet (2.94 m) not him (2.45 m): `BallHeightFix`.
   - Open: hurtbox stays Commando-sized while rolling. No item anchors.
 

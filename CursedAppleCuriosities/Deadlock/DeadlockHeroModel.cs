@@ -54,6 +54,8 @@ namespace CursedAppleCuriosities.Deadlock
         public Dictionary<string, Color>? MaterialTints;
         /// <summary>Self-lit materials by glTF material name: flat colour that glows (e.g. Seven's Storm Cloud skeleton, blue_illum, made orange).</summary>
         public Dictionary<string, Color>? MaterialGlows;
+        /// <summary>Extra skins, in skin order after the default (skin index 1, 2...): recolours of the hero's textures.</summary>
+        public DeadlockSkin[] Skins = Array.Empty<DeadlockSkin>();
 
         public string Sound(string key) => Hero + "_" + key;
         public bool IsRootLocked(string state) => RootLocked.Contains(state) || state.StartsWith("sprint_") || state.Contains(".sprint_");
@@ -67,6 +69,55 @@ namespace CursedAppleCuriosities.Deadlock
 
         public DeadlockInstall.ModelRequest ModelRequest() =>
             new DeadlockInstall.ModelRequest { Hero = Hero, DlModel = DlModel, Clips = ClipNames(), HideMeshes = HideMeshes };
+    }
+
+    /// <summary>
+    /// A hero skin made by recolouring the base-colour textures (Deadlock ships no alternate colours to load). Recolor
+    /// edits RGBA pixels in place and says whether it changed any; it runs once per texture on the preloader thread and
+    /// the result is cached under Id, so bump Id when the recolour changes.
+    /// </summary>
+    public class DeadlockSkin
+    {
+        public string Id = "";
+        public Func<byte[], bool> Recolor = _ => false;
+
+        /// <summary>
+        /// Turns hues between fromLo and fromHi degrees by shift degrees (feathered over 15 degrees at each end),
+        /// leaving greys (saturation under minSat) alone. Rotated about the grey axis, so brightness is kept.
+        /// </summary>
+        public static Func<byte[], bool> HueShift(float fromLo, float fromHi, float shift, float minSat = 0.12f) => px =>
+        {
+            const float Feather = 15f;
+            bool changed = false;
+            var mats = new Dictionary<int, (float, float, float)>(); // rotation by whole-degree amount
+            for (int i = 0; i < px.Length; i += 4)
+            {
+                int r = px[i], g = px[i + 1], b = px[i + 2];
+                int max = Math.Max(r, Math.Max(g, b)), min = Math.Min(r, Math.Min(g, b));
+                if (max == 0 || max - min < minSat * max) continue;
+                float d = max - min, h;
+                if (max == r) h = 60f * ((g - b) / d);
+                else if (max == g) h = 60f * ((b - r) / d + 2f);
+                else h = 60f * ((r - g) / d + 4f);
+                if (h < 0f) h += 360f;
+                float w = Mathf.Clamp01((h - (fromLo - Feather)) / Feather) * Mathf.Clamp01(((fromHi + Feather) - h) / Feather);
+                if (w <= 0f) continue;
+                int deg = Mathf.RoundToInt(shift * w);
+                if (deg == 0) continue;
+                if (!mats.TryGetValue(deg, out var m))
+                {
+                    float c = Mathf.Cos(deg * Mathf.Deg2Rad), sn = Mathf.Sin(deg * Mathf.Deg2Rad);
+                    m = (c + (1f - c) / 3f, (1f - c) / 3f - Mathf.Sqrt(1f / 3f) * sn, (1f - c) / 3f + Mathf.Sqrt(1f / 3f) * sn);
+                    mats[deg] = m;
+                }
+                (float a0, float a1, float a2) = m; // rotation about (1,1,1): rows are cyclic shifts of (a0, a1, a2)
+                px[i] = (byte)Mathf.Clamp(Mathf.RoundToInt(a0 * r + a1 * g + a2 * b), 0, 255);
+                px[i + 1] = (byte)Mathf.Clamp(Mathf.RoundToInt(a2 * r + a0 * g + a1 * b), 0, 255);
+                px[i + 2] = (byte)Mathf.Clamp(Mathf.RoundToInt(a1 * r + a2 * g + a0 * b), 0, 255);
+                changed = true;
+            }
+            return changed;
+        };
     }
 
     public static class DeadlockHeroes
@@ -97,6 +148,26 @@ namespace CursedAppleCuriosities.Deadlock
             m.DisableKeyword("FORCE_SPEC");
             return m;
         }
+
+        /// <summary>
+        /// The material for one of a model's glTF materials: the registered hero's tints and glows applied (a model key
+        /// with no hero registered, e.g. Grey Talon's owl, gets the plain material). One recipe per model key, so the
+        /// model loads the same whoever asks for it first.
+        /// </summary>
+        public static Material HeroMaterial(string key, string name, Texture2D? tex)
+        {
+            DeadlockHeroDef? def = Get(key);
+            Material m = MakeMaterial(def != null ? def.DisplayName : key, name, tex);
+            if (def?.MaterialTints != null && def.MaterialTints.TryGetValue(name, out Color tint)) m.color = tint;
+            if (def?.MaterialGlows != null && def.MaterialGlows.TryGetValue(name, out Color glow))
+            {
+                m.mainTexture = null; // the colour comes from the glow, not the original (blue) texture
+                m.color = glow;
+                if (m.HasProperty("_EmColor")) m.SetColor("_EmColor", glow);
+                if (m.HasProperty("_EmPower")) m.SetFloat("_EmPower", 6f);
+            }
+            return m;
+        }
     }
 
     /// <summary>
@@ -111,6 +182,9 @@ namespace CursedAppleCuriosities.Deadlock
         public bool IsDisplay;
 
         private DeadlockHeroDef? _def;
+        private GlbModel? _template;
+        private Material[] _baseMaterials = Array.Empty<Material>();
+        private int _skin;
         private CharacterModel? _model;
         private CharacterBody? _body;
         private GameObject? _hero;
@@ -130,7 +204,7 @@ namespace CursedAppleCuriosities.Deadlock
         {
             _model = GetComponent<CharacterModel>();
             var skins = GetComponent<ModelSkinController>();
-            if (skins != null) skins.onSkinApplied += _ => Reassert();
+            if (skins != null) skins.onSkinApplied += i => { _skin = i; ApplySkinMaterials(); Reassert(); };
         }
 
         private void Start()
@@ -151,8 +225,8 @@ namespace CursedAppleCuriosities.Deadlock
 
         private void Update()
         {
-            // First launch: the model may still be converting. Keep trying for a few minutes, then give up.
-            if (_hero == null && _tries < 200 && Time.unscaledTime >= _nextTry) { _nextTry = Time.unscaledTime + 1f; TryAttach(); }
+            // The model may still be converting (first launch) or preloading. Keep trying for a few minutes, then give up.
+            if (_hero == null && _tries < 3000 && Time.unscaledTime >= _nextTry) { _nextTry = Time.unscaledTime + 0.1f; TryAttach(); }
         }
 
         private void TryAttach()
@@ -160,19 +234,7 @@ namespace CursedAppleCuriosities.Deadlock
             if (_def == null) return;
             _tries++;
             DeadlockHeroDef def = _def;
-            GlbModel? template = DeadlockInstall.Model(def.Hero, (name, tex) =>
-            {
-                Material m = DeadlockHeroes.MakeMaterial(def.DisplayName, name, tex);
-                if (def.MaterialTints != null && def.MaterialTints.TryGetValue(name, out Color tint)) m.color = tint;
-                if (def.MaterialGlows != null && def.MaterialGlows.TryGetValue(name, out Color glow))
-                {
-                    m.mainTexture = null; // the colour comes from the glow, not the original (blue) texture
-                    m.color = glow;
-                    if (m.HasProperty("_EmColor")) m.SetColor("_EmColor", glow);
-                    if (m.HasProperty("_EmPower")) m.SetFloat("_EmPower", 6f);
-                }
-                return m;
-            });
+            GlbModel? template = DeadlockInstall.Model(def.Hero);
             if (template == null)
             {
                 // Say why the hero is the stand-in, to their own player only (or in the lobby).
@@ -223,6 +285,12 @@ namespace CursedAppleCuriosities.Deadlock
                 });
             }
             _heroInfos = infos.ToArray();
+            _template = template;
+            _baseMaterials = new Material[_heroInfos.Length];
+            for (int i = 0; i < _heroInfos.Length; i++) _baseMaterials[i] = _heroInfos[i].defaultMaterial;
+            var msc = GetComponent<ModelSkinController>();
+            if (msc != null) _skin = msc.currentSkinIndex;
+            ApplySkinMaterials();
 
             // The muzzle on the hero's gun, findable by the gun state. ChildLocators are locked after load (AddChild
             // throws): the body reserves the slot at build time and it is pointed at the bone here.
@@ -243,6 +311,21 @@ namespace CursedAppleCuriosities.Deadlock
             try { Reassert(); }
             catch (Exception e) { CursedAppleCuriositiesPlugin.Logger?.LogWarning($"{Tag} renderers: " + e); }
             CursedAppleCuriositiesPlugin.Logger?.LogInfo($"{Tag} Deadlock model attached ({(IsDisplay ? "display" : "body")}, {_heroInfos.Length} renderers, scale {scale:0.00})");
+        }
+
+        /// <summary>The hero's materials for the current skin (the default skin, or an unknown index, gets the base ones).</summary>
+        private void ApplySkinMaterials()
+        {
+            if (_hero == null || _template == null) return;
+            Dictionary<Material, Material>? swap = _skin >= 1 && _skin - 1 < _template.SkinMaterials.Count ? _template.SkinMaterials[_skin - 1] : null;
+            for (int i = 0; i < _heroInfos.Length; i++)
+            {
+                Material m = _baseMaterials[i];
+                if (swap != null && swap.TryGetValue(m, out Material sm)) m = sm;
+                _heroInfos[i].defaultMaterial = m;
+                if (_heroInfos[i].renderer != null) _heroInfos[i].renderer.sharedMaterial = m;
+            }
+            if (_model != null) _model.forceUpdate = true;
         }
 
         /// <summary>After any skin is applied (it sets the stand-in's renderers), make the hero's renderers the model's again.</summary>
@@ -642,7 +725,7 @@ namespace CursedAppleCuriosities.Deadlock
             if (dt <= 0f) return;
             if (_clips == null)
             {
-                if (Time.unscaledTime >= _nextClipTry) { _nextClipTry = Time.unscaledTime + 2f; TryClips(); }
+                if (Time.unscaledTime >= _nextClipTry) { _nextClipTry = Time.unscaledTime + 0.1f; TryClips(); }
                 if (_clips == null) return;
             }
             // Velocity from how the model actually moved: right for remote players too.

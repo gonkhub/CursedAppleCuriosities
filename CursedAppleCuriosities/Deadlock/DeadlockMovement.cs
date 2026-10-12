@@ -60,6 +60,10 @@ namespace CursedAppleCuriosities.Deadlock
         public float WallJumpUp = 13.3f, WallJumpOutMax = 7.9f, WallJumpOutMin = 5.7f, WallJumpRecharge = 1.25f, WallJumpPowerMin = 0.2f;
         // Air: momentum is kept; input steers it at AirAccel (RoR2's own is 20 m/s2 toward a walk), speed above a run bleeds off at AirDrag.
         public float AirAccel = 50f, AirDrag = 3f;
+        /// <summary>After any stamina move in the air (air jump, air dash, down-dash...), air control is this many times stronger until landing (user).</summary>
+        public float AirControlBoost = 1.35f;
+        // Down-dash (Deadlock): double-tap the slide key in the air for a quick push down. Half a stamina pip (user).
+        public float DownDashCost = 0.5f, DownDashSpeed = 10f, DownDashDoubleTap = 0.3f;
         // Sprint: out of combat and moving, a real RoR2 sprint (sprint items work) building up to Deadlock's ESprintSpeed.
         public float OutOfCombatSpeed = 2.1f / 7.2f, SprintRampSeconds = 2f;
         /// <summary>
@@ -89,6 +93,8 @@ namespace CursedAppleCuriosities.Deadlock
             SlideKey = SlideKeyEntry.Value.MainKey;
             SlideFriction = c.Bind(section, "Slide - Friction", SlideFriction, "Share of slide speed lost per second on flat ground.").Value;
             AirAccel = c.Bind(section, "Air Control", AirAccel, "How hard you steer in the air (m/s2). Momentum is kept either way.").Value;
+            AirControlBoost = c.Bind(section, "Air Control - Boost After Air Moves", AirControlBoost, "Air control multiplier after any move in the air that costs stamina, until you land (1 = none).").Value;
+            DownDashSpeed = c.Bind(section, "Down Dash - Speed", DownDashSpeed, "Downward speed added by a down-dash (double-tap the slide key in the air), m/s.").Value;
             WallJumpUp = c.Bind(section, "Wall Jump - Up Speed", WallJumpUp, $"Upward launch speed off a wall (m/s). Chained wall jumps within {WallJumpRecharge} s start at {WallJumpPowerMin * 100f:0}% of it.").Value;
         }
     }
@@ -149,7 +155,11 @@ namespace CursedAppleCuriosities.Deadlock
         public DeadlockMovementProfile Profile => DeadlockMovement.ProfileFor(HeroKey);
         public int Max;
         private bool _warded;
-        public int Pips = -1;
+        /// <summary>Stamina left. Whole pips, except a down-dash spends half of one; a refill always adds a whole pip.</summary>
+        public float Pips = -1f;
+        /// <summary>A stamina move was made in the air: stronger air control (profile AirControlBoost) until landing.</summary>
+        public bool AirBoost;
+        private float _lastSlideTap = -10f, _downDashAt = -10f;
         public int AirDashes;
         public float LastWallJump = -10f;
         public float SprintRamp;    // 0-1: how far the out-of-combat sprint has built up
@@ -173,13 +183,52 @@ namespace CursedAppleCuriosities.Deadlock
             ParryOnCounterspell();
             // Extra jumps from items (Hopoo Feather...) become stamina pips instead (playtest).
             Max = Profile.StaminaPips + Mathf.Max(0, _body.maxJumpCount - _body.baseJumpCount);
-            if (Pips < 0 || Pips > Max) Pips = Max;
-            if (_body.characterMotor != null && _body.characterMotor.isGrounded) AirDashes = 0;
+            if (Pips < 0f || Pips > Max) Pips = Max;
+            if (_body.characterMotor != null && _body.characterMotor.isGrounded) { AirDashes = 0; AirBoost = false; }
             if (Pips >= Max) { _regen = 0f; return; }
             int quail = _body.inventory != null ? _body.inventory.GetItemCountEffective(RoR2Content.Items.JumpBoost) : 0;
-            _regen += Time.fixedDeltaTime * (1f + Profile.QuailStaminaRegen * quail); // Wax Quail: faster stamina
-            if (_regen >= Profile.StaminaRegenSeconds) { Pips++; _regen = 0f; }
+            float rate = 1f + Profile.QuailStaminaRegen * quail; // Wax Quail: faster stamina
+            foreach (Func<CharacterBody, float> m in RegenMultipliers) rate *= m(_body);
+            _regen += Time.fixedDeltaTime * rate;
+            if (_regen >= Profile.StaminaRegenSeconds) { Pips = Mathf.Min(Max, Pips + 1f); _regen = 0f; }
         }
+
+        /// <summary>
+        /// Down-dash input: the slide key tapped twice within DownDashDoubleTap, the second tap in the air. Read from
+        /// this machine's keyboard, so only for the body this player controls.
+        /// </summary>
+        private void Update()
+        {
+            if (!_body.hasEffectiveAuthority || !_body.isPlayerControlled) return;
+            KeyCode key = Profile.SlideKeyEntry != null ? Profile.SlideKeyEntry.Value.MainKey : Profile.SlideKey;
+            if (!Input.GetKeyDown(key)) return;
+            bool air = _body.characterMotor != null && !_body.characterMotor.isGrounded;
+            if (air && Time.time - _lastSlideTap <= Profile.DownDashDoubleTap) { _downDashAt = Time.time; _lastSlideTap = -10f; }
+            else _lastSlideTap = Time.time;
+        }
+
+        /// <summary>A down-dash was just asked for (the owning state performs it). Asks older than a moment are dropped.</summary>
+        public bool ConsumeDownDash()
+        {
+            bool fresh = Time.time - _downDashAt <= 0.15f;
+            _downDashAt = -10f;
+            return fresh;
+        }
+
+        private float _timedAirMult = 1f, _timedAirUntil = -10f;
+
+        /// <summary>Air control multiplier right now (stronger after a stamina move in the air, or an ability's timed boost).</summary>
+        public float AirControlMult => Mathf.Max(AirBoost ? Profile.AirControlBoost : 1f, Time.time < _timedAirUntil ? _timedAirMult : 1f);
+
+        /// <summary>An ability's air control boost for a while (Viscous punching himself into the air). Owner only.</summary>
+        public void BoostAirControl(float mult, float seconds)
+        {
+            _timedAirMult = mult;
+            _timedAirUntil = Time.time + seconds;
+        }
+
+        /// <summary>Faster stamina refill from abilities (multipliers, e.g. Viscous' post-cube buff); read from synced buffs.</summary>
+        public static readonly System.Collections.Generic.List<Func<CharacterBody, float>> RegenMultipliers = new System.Collections.Generic.List<Func<CharacterBody, float>>();
 
         /// <summary>
         /// Counterspell (any Deadlock hero): the hero's parry when the ward goes up. Read from the synced buff, so
@@ -194,15 +243,32 @@ namespace CursedAppleCuriosities.Deadlock
             _warded = warded;
         }
 
-        public bool TrySpend()
+        /// <summary>Spend stamina (one pip unless said). Spent in the air, it also boosts air control until landing.</summary>
+        public bool TrySpend(float cost = 1f)
         {
-            if (Pips <= 0) return false;
-            Pips--;
+            if (Pips < cost - 0.001f) return false;
+            Pips = Mathf.Max(0f, Pips - cost);
+            if (_body.characterMotor != null && !_body.characterMotor.isGrounded) AirBoost = true;
             DeadlockSounds.Play(Profile.Sound("vo_effort"), transform.position, gameObject);
             return true;
         }
 
         public void Refund(int pips) => Pips = Mathf.Min(Max, Pips + pips);
+
+        /// <summary>
+        /// The down-dash (any Deadlock hero, any state that offers it): half a stamina pip for a push down, keeping
+        /// horizontal momentum. Owner only. False when it wasn't asked for or can't be paid.
+        /// </summary>
+        public bool TryDownDash(CharacterMotor motor)
+        {
+            if (!ConsumeDownDash() || motor.isGrounded || !TrySpend(Profile.DownDashCost)) return false;
+            Vector3 v = motor.velocity;
+            motor.velocity = new Vector3(v.x, Mathf.Min(v.y, 0f) - Profile.DownDashSpeed, v.z);
+            motor.disableAirControlUntilCollision = false;
+            DeadlockSounds.Play(Profile.Sound("dash"), transform.position, gameObject);
+            EntityStates.CursedApple.Deadlock.DeadlockJump.Dust(_body);
+            return true;
+        }
     }
 
     /// <summary>Stamina pips under the crosshair (a row of small bars), for any Deadlock hero.</summary>
@@ -281,11 +347,12 @@ namespace CursedAppleCuriosities.Deadlock
             _root!.gameObject.SetActive(true);
             for (int i = 0; i < _fills.Length; i++)
             {
-                float fill = i < s.Pips ? 1f : i == s.Pips ? s.RegenProgress : 0f;
+                // Stamina plus the refill in progress, so a half pip (after a down-dash) shows as half a bar.
+                float fill = Mathf.Clamp01(s.Pips + s.RegenProgress - i);
                 _fills[i].rectTransform.sizeDelta = new Vector2(W * fill, H);
                 // Deadlock: the pips a dash-jump would spend flash blue while its window is open.
-                bool flash = s.DashJumpWindow && i >= s.Pips - s.Profile.DashJumpCost && i < s.Pips;
-                _fills[i].color = flash ? new Color(0.35f, 0.75f, 1f, 1f) : i < s.Pips ? new Color(1f, 1f, 1f, 0.9f) : new Color(1f, 1f, 1f, 0.35f);
+                bool flash = s.DashJumpWindow && i + 1 > s.Pips - s.Profile.DashJumpCost && i < s.Pips;
+                _fills[i].color = flash ? new Color(0.35f, 0.75f, 1f, 1f) : i + 0.5f <= s.Pips ? new Color(1f, 1f, 1f, 0.9f) : new Color(1f, 1f, 1f, 0.35f);
             }
             if (_message != null)
             {
@@ -310,10 +377,15 @@ namespace EntityStates.CursedApple.Deadlock
 
         public static void Fired(CharacterBody body, CharacterMotor motor)
         {
-            if (LandEffect == null) LandEffect = UnityEngine.AddressableAssets.Addressables.LoadAssetAsync<GameObject>("RoR2/Base/Common/VFX/CharacterLandImpact.prefab").WaitForCompletion();
-            if (!motor.isGrounded && LandEffect != null)
-                EffectManager.SpawnEffect(LandEffect, new EffectData { origin = body.footPosition, scale = body.radius }, true);
+            if (!motor.isGrounded) Dust(body);
             body.TriggerJumpEventGlobally();
+        }
+
+        /// <summary>The puff under an air jump (also the down-dash's).</summary>
+        public static void Dust(CharacterBody body)
+        {
+            if (LandEffect == null) LandEffect = UnityEngine.AddressableAssets.Addressables.LoadAssetAsync<GameObject>("RoR2/Base/Common/VFX/CharacterLandImpact.prefab").WaitForCompletion();
+            if (LandEffect != null) EffectManager.SpawnEffect(LandEffect, new EffectData { origin = body.footPosition, scale = body.radius }, true);
         }
     }
 
@@ -342,6 +414,7 @@ namespace EntityStates.CursedApple.Deadlock
             if (isAuthority && _mover != null && inputBank != null && characterMotor != null)
             {
                 if (SprintKeyPressed() && TryDash()) return;
+                _mover.TryDownDash(characterMotor);
                 bool grounded = characterMotor.isGrounded;
                 Vector3 v = characterMotor.velocity;
                 Vector3 flat = new Vector3(v.x, 0f, v.z);
@@ -363,12 +436,15 @@ namespace EntityStates.CursedApple.Deadlock
         /// <summary>
         /// Deadlock-style air movement (the body has RoR2 air control off): momentum is kept, the movement input
         /// steers it toward its direction without slowing you below what you had, and speed above a run sheds slowly.
-        /// A launch with disableAirControlUntilCollision flies untouched until you jump or dash.
+        /// A launch with disableAirControlUntilCollision flies untouched until you jump or dash. After a stamina move in
+        /// the air, steering is stronger until landing (DeadlockMover.AirBoost).
         /// </summary>
         public static void AirSteer(CharacterBody characterBody, CharacterMotor characterMotor, Vector3 wish, DeadlockMovementProfile p)
         {
             if (characterMotor.disableAirControlUntilCollision) return;
             float dt = Time.fixedDeltaTime;
+            var mover = characterBody.GetComponent<DeadlockMover>();
+            float accel = p.AirAccel * (mover != null ? mover.AirControlMult : 1f);
             Vector3 v = characterMotor.velocity;
             Vector3 flat = new Vector3(v.x, 0f, v.z);
             wish.y = 0f;
@@ -376,7 +452,7 @@ namespace EntityStates.CursedApple.Deadlock
             if (wish.sqrMagnitude > 0.01f)
             {
                 Vector3 target = wish.normalized * Mathf.Max(run * Mathf.Min(1f, wish.magnitude), flat.magnitude);
-                flat = Vector3.MoveTowards(flat, target, p.AirAccel * dt);
+                flat = Vector3.MoveTowards(flat, target, accel * dt);
             }
             if (flat.magnitude > run) flat = flat.normalized * Mathf.Max(run, flat.magnitude - p.AirDrag * dt);
             characterMotor.velocity = new Vector3(flat.x, v.y, flat.z);

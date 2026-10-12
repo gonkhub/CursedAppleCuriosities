@@ -99,7 +99,7 @@ namespace CursedAppleCuriosities.Survivors.Victor
             var swap = GetComponentInChildren<DeadlockModelSwap>(true);
             _hero = swap != null ? swap.HeroObject : null;
             List<(Vector3, string)>? points = Points();
-            GlbModel? template = DeadlockInstall.Model(VictorData.Hero, (name, tex) => DeadlockHeroes.MakeMaterial(VictorModel.Def.DisplayName, name, tex));
+            GlbModel? template = DeadlockInstall.Model(VictorData.Hero);
             Material? mat = Mat();
             if (_hero == null || points == null || template == null || mat == null) return;
 

@@ -25,6 +25,9 @@ namespace CursedAppleCuriosities.Survivors.Seven
         public const string BodyName = "CursedAppleSevenBody";
         public const string MuzzleName = "SevenMuzzle";
         public static readonly Color Color = new Color(1f, 0.55f, 0.15f); // character select / UI: orange (user, 2026-10-12)
+        /// <summary>Skin icon in the hero's own palette (prison orange, dark grey, canvas, his electric blue), not the stand-in's.</summary>
+        private static Sprite DefaultSkinIcon => _defaultSkinIcon ??= Kit.SkinIcon(new Color(0.85f, 0.45f, 0.15f), new Color(0.24f, 0.24f, 0.24f), new Color(0.75f, 0.67f, 0.5f), new Color(0.2f, 0.3f, 0.85f));
+        private static Sprite? _defaultSkinIcon;
         /// <summary>Seven's lightning is orange (user): his effects are recoloured to this hue.</summary>
         public const float Hue = 0.07f;
         public static readonly Color Orange = Color.HSVToRGB(Hue, 0.85f, 1f);
@@ -212,7 +215,7 @@ namespace CursedAppleCuriosities.Survivors.Seven
             Kit.MuteStandIn(body, model.gameObject, SevenData.Hero);
             var children = model.GetComponent<ChildLocator>();
             if (children != null && children.FindChild(MuzzleName) == null) children.AddChild(MuzzleName, model);
-            Kit.OwnSkin(model.gameObject, "skinCursedAppleSevenDEFAULT", Token + "SKIN_DEFAULT");
+            Kit.OwnSkin(model.gameObject, "skinCursedAppleSevenDEFAULT", Token + "SKIN_DEFAULT", DefaultSkinIcon);
 
             ContentAddition.AddBody(body);
             return body;
@@ -229,7 +232,7 @@ namespace CursedAppleCuriosities.Survivors.Seven
                 swap.HeroKey = SevenData.Hero;
                 swap.IsDisplay = true;
                 cm.gameObject.AddComponent<SevenStormLook>(); // keeps the Storm Cloud skeleton hidden in the lobby
-                Kit.OwnSkin(cm.gameObject, "skinCursedAppleSevenDISPLAY", Token + "SKIN_DEFAULT");
+                Kit.OwnSkin(cm.gameObject, "skinCursedAppleSevenDISPLAY", Token + "SKIN_DEFAULT", DefaultSkinIcon);
             }
             display.AddComponent<SevenDisplayIntro>();
             return display;

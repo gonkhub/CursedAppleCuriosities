@@ -23,6 +23,9 @@ namespace CursedAppleCuriosities.Survivors.Vyper
         public const string BodyName = "CursedAppleVyperBody";
         public const string MuzzleName = "VyperMuzzle";
         public static readonly Color Color = new Color(0.72f, 0.9f, 0.22f); // character select / UI: yellowish green (user, 2026-10-12)
+        /// <summary>Skin icon in the hero's own palette (lime scales, black, gold, white), not the stand-in's.</summary>
+        private static Sprite DefaultSkinIcon => _defaultSkinIcon ??= Kit.SkinIcon(new Color(0.55f, 0.75f, 0.2f), new Color(0.1f, 0.1f, 0.1f), new Color(0.86f, 0.78f, 0.24f), new Color(0.88f, 0.88f, 0.84f));
+        private static Sprite? _defaultSkinIcon;
 
         public static GameObject? BodyPrefab, DisplayPrefab, DaggerProjectile, BolaProjectile;
         public static SurvivorDef? Survivor;
@@ -164,7 +167,7 @@ namespace CursedAppleCuriosities.Survivors.Vyper
             Kit.MuteStandIn(body, model.gameObject, VyperData.Hero);
             var children = model.GetComponent<ChildLocator>();
             if (children != null && children.FindChild(MuzzleName) == null) children.AddChild(MuzzleName, model);
-            Kit.OwnSkin(model.gameObject, "skinCursedAppleVyperDEFAULT", Token + "SKIN_DEFAULT");
+            Kit.OwnSkin(model.gameObject, "skinCursedAppleVyperDEFAULT", Token + "SKIN_DEFAULT", DefaultSkinIcon);
 
             ContentAddition.AddBody(body);
             return body;
@@ -180,7 +183,7 @@ namespace CursedAppleCuriosities.Survivors.Vyper
                 var swap = cm.gameObject.AddComponent<DeadlockModelSwap>();
                 swap.HeroKey = VyperData.Hero;
                 swap.IsDisplay = true;
-                Kit.OwnSkin(cm.gameObject, "skinCursedAppleVyperDISPLAY", Token + "SKIN_DEFAULT");
+                Kit.OwnSkin(cm.gameObject, "skinCursedAppleVyperDISPLAY", Token + "SKIN_DEFAULT", DefaultSkinIcon);
             }
             display.AddComponent<VyperDisplayIntro>();
             return display;

@@ -217,7 +217,7 @@ namespace CursedAppleCuriosities.Survivors.GreyTalon
                 glow.transform.localRotation = Quaternion.identity;
                 glow.SetActive(true);
             }
-            GlbModel? model = DeadlockInstall.Model(GreyTalonData.OwlKey, (name, tex) => DeadlockHeroes.MakeMaterial(GreyTalonData.OwlKey, name, tex));
+            GlbModel? model = DeadlockInstall.Model(GreyTalonData.OwlKey);
             if (model == null) return;
             GameObject owl = Object.Instantiate(model.Root, parent, false);
             owl.name = "GreyTalonOwlModel";
