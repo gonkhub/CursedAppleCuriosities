@@ -41,7 +41,7 @@ namespace CursedAppleCuriosities.Items
             ActiveBuffDef.isDebuff  = false;
             ActiveBuffDef.buffColor = color;
             ContentAddition.AddBuffDef(ActiveBuffDef);
-            EquipmentFx.RegisterBuffFx(ActiveBuffDef, "RoR2/Base/Equipment/Tonic/TonicBuffEffect.prefab", "bloodtribute_loop"); // Spinel Tonic aura while active
+            EquipmentFx.RegisterBuffFx(ActiveBuffDef, "RoR2/Base/Tonic/TonicBuffEffect.prefab", "bloodtribute_loop"); // Spinel Tonic aura while active
 
             HpDrainPercent = config.Bind("Equipment", "Blood Tribute - HP Drain Per Second", 0.05f,
                 "Max HP drained per second while active.").Value;
@@ -107,7 +107,7 @@ namespace CursedAppleCuriosities.Items
             {
                 body.AddBuff(ActiveBuffDef);
                 EquipmentFx.Sound("bloodtribute_on", body.corePosition, body.gameObject);
-                EquipmentFx.Effect("RoR2/Base/Items/BleedOnHitAndExplode/BleedOnHitAndExplode_Explosion.prefab", body.corePosition, body.radius);
+                EquipmentFx.Effect("RoR2/Base/BleedOnHitAndExplode/BleedOnHitAndExplode_Explosion.prefab", body.corePosition, body.radius);
             }
 
             return true;

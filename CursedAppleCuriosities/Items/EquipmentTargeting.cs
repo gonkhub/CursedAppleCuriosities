@@ -100,7 +100,7 @@ namespace CursedAppleCuriosities.Items
         {
             get
             {
-                if (_indicatorPrefab == null) _indicatorPrefab = EquipmentFx.Prefab("RoR2/DLC1/Equipment/BossHunter/BossHunterIndicator.prefab"); // Trophy Hunter's Tricorn reticle
+                if (_indicatorPrefab == null) _indicatorPrefab = EquipmentFx.Prefab("RoR2/DLC1/BossHunter/BossHunterIndicator.prefab"); // Trophy Hunter's Tricorn reticle
                 return _indicatorPrefab;
             }
         }

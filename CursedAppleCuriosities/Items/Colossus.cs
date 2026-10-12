@@ -57,7 +57,7 @@ namespace CursedAppleCuriosities.Items
             ColossusBuffDef.buffColor = color;
             ColossusBuffDef.iconSprite = ItemBase.CreatePlaceholderSprite(color);
             ContentAddition.AddBuffDef(ColossusBuffDef);
-            EquipmentFx.RegisterBuffFx(ColossusBuffDef, "RoR2/Base/Equipment/GainArmor/ElephantDefense.prefab", "colossus_loop"); // Jade Elephant shell
+            EquipmentFx.RegisterBuffFx(ColossusBuffDef, "RoR2/Base/GainArmor/ElephantDefense.prefab", "colossus_loop"); // Jade Elephant shell
 
             CreateLang();
             CreateEquipment();
@@ -89,7 +89,7 @@ namespace CursedAppleCuriosities.Items
                 body.gameObject.AddComponent<ColossusEffect>();
 
             EquipmentFx.Sound("colossus_cast", body.corePosition, body.gameObject);
-            EquipmentFx.Effect("RoR2/Base/Characters/Parent/ParentSlamEffect.prefab", body.footPosition, SlowRadius * 0.5f * MysticExpansion.RadiusMultiplier(body));
+            EquipmentFx.Effect("RoR2/Base/Parent/ParentSlamEffect.prefab", body.footPosition, SlowRadius * 0.5f * MysticExpansion.RadiusMultiplier(body));
             return true;
         }
 

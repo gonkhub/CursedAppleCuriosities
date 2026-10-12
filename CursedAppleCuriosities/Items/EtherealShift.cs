@@ -66,8 +66,8 @@ namespace CursedAppleCuriosities.Items
             ContentAddition.AddBuffDef(EmpowerBuffDef);
 
             SkillSilence.Register(ShiftBuffDef);
-            EquipmentFx.RegisterBuffFx(ShiftBuffDef, "RoR2/Base/Common/Void/VoidFogMildEffect.prefab", "etherealshift_loop");
-            EquipmentFx.RegisterBuffFx(EmpowerBuffDef, "RoR2/Base/Items/EnergizedOnEquipmentUse/EnergizedEffect.prefab");
+            EquipmentFx.RegisterBuffFx(ShiftBuffDef, "RoR2/Base/Common/VoidFogMildEffect.prefab", "etherealshift_loop");
+            EquipmentFx.RegisterBuffFx(EmpowerBuffDef, "RoR2/Base/EnergizedOnEquipmentUse/EnergizedEffect.prefab");
 
             CreateLang();
             CreateEquipment();
@@ -113,7 +113,7 @@ namespace CursedAppleCuriosities.Items
 
         internal static void SpawnEffect(CharacterBody body)
         {
-            _shiftEffect ??= Addressables.LoadAssetAsync<GameObject>("RoR2/DLC1/Characters/VoidSurvivor/Skills/Utility/Base/VoidBlinkMuzzleflash.prefab").WaitForCompletion();
+            _shiftEffect ??= Addressables.LoadAssetAsync<GameObject>("RoR2/DLC1/VoidSurvivor/VoidBlinkMuzzleflash.prefab").WaitForCompletion();
             if (_shiftEffect != null)
                 EffectManager.SpawnEffect(_shiftEffect, new EffectData { origin = body.corePosition, scale = body.radius * 2f }, true);
         }

@@ -71,7 +71,7 @@ namespace CursedAppleCuriosities.Items
 
             EquipmentFx.RegisterSound("healingtempo_proc", "sounds/mods/armor/healing_tempo/healing_tempo_proc", volume: 0.6f, range: 30f, minGap: 0.4f);
             EquipmentFx.RegisterSound("healingtempo_end", "sounds/mods/armor/healing_tempo/healing_tempo_end", volume: 0.5f, range: 30f);
-            EquipmentFx.RegisterBuffFx(TempoBuffDef, "RoR2/Base/Items/EnergizedOnEquipmentUse/EnergizedEffect.prefab");
+            EquipmentFx.RegisterBuffFx(TempoBuffDef, "RoR2/Base/EnergizedOnEquipmentUse/EnergizedEffect.prefab");
 
             CreateLang();
             CreateItem();

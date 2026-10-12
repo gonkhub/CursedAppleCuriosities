@@ -88,8 +88,8 @@ namespace CursedAppleCuriosities.Items
             }
 
             float shown = Radius * MysticExpansion.RadiusMultiplier(body);
-            EquipmentFx.Effect("RoR2/Base/Elites/EliteIce/AffixWhiteExplosion.prefab", body.corePosition, shown);
-            EquipmentFx.Effect("RoR2/Base/Characters/Mage/Skills/MageIceExplosion.prefab", body.corePosition, shown);
+            EquipmentFx.Effect("RoR2/Base/EliteIce/AffixWhiteExplosion.prefab", body.corePosition, shown);
+            EquipmentFx.Effect("RoR2/Base/Mage/MageIceExplosion.prefab", body.corePosition, shown);
             EquipmentFx.Sound("arcticblast_cast", body.corePosition, body.gameObject);
             return true;
         }

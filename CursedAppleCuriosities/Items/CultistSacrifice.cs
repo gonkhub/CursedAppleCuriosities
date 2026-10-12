@@ -85,8 +85,8 @@ namespace CursedAppleCuriosities.Items
             var rewards = victim.GetComponent<DeathRewards>();
             uint bonus = rewards != null ? (uint)(rewards.goldReward * Mathf.Max(0f, GoldMultiplier - 1f)) : 0u;
 
-            EquipmentFx.Effect("RoR2/Base/Characters/Imp/ImpBlinkEffect.prefab", victim.corePosition, victim.radius * 2f);
-            EquipmentFx.Effect("RoR2/Base/Items/BleedOnHitAndExplode/BleedOnHitAndExplode_Explosion.prefab", victim.corePosition, victim.radius * 2f);
+            EquipmentFx.Effect("RoR2/Base/Imp/ImpBlinkEffect.prefab", victim.corePosition, victim.radius * 2f);
+            EquipmentFx.Effect("RoR2/Base/BleedOnHitAndExplode/BleedOnHitAndExplode_Explosion.prefab", victim.corePosition, victim.radius * 2f);
             EquipmentFx.Sound("cultist_cast", victim.corePosition);
 
             victim.healthComponent.Suicide(body.gameObject, body.gameObject);

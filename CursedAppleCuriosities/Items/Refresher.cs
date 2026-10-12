@@ -43,8 +43,8 @@ namespace CursedAppleCuriosities.Items
             // ResetSkills forwards itself to the owning client (player skills are client-authoritative).
             body.skillLocator.ResetSkills();
 
-            EquipmentFx.Effect("RoR2/Base/Equipment/Cleanse/CleanseEffect.prefab", body.corePosition, body.radius);
-            EquipmentFx.Effect("RoR2/Base/Common/VFX/LevelUp/LevelUpEffect.prefab", body.corePosition, body.radius);
+            EquipmentFx.Effect("RoR2/Base/Cleanse/CleanseEffect.prefab", body.corePosition, body.radius);
+            EquipmentFx.Effect("RoR2/Base/Common/VFX/LevelUpEffect.prefab", body.corePosition, body.radius);
             EquipmentFx.Sound("refresher_cast", body.corePosition, body.gameObject);
             return true;
         }

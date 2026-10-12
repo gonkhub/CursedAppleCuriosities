@@ -52,7 +52,7 @@ namespace CursedAppleCuriosities.Items
             ContentAddition.AddBuffDef(FocusedBuffDef);
 
             SkillSilence.Register(FocusedBuffDef);
-            EquipmentFx.RegisterBuffFx(FocusedBuffDef, "RoR2/Base/Items/DeathMark/DeathMarkEffect.prefab", "focuslens_loop");
+            EquipmentFx.RegisterBuffFx(FocusedBuffDef, "RoR2/Base/DeathMark/DeathMarkEffect.prefab", "focuslens_loop");
 
             CreateLang();
             CreateEquipment();
@@ -86,7 +86,7 @@ namespace CursedAppleCuriosities.Items
             mark.Begin(body, MarkDuration * DurationExtender.Current); // the user's, from the equipment scope
             EquipmentFx.Sound("focuslens_cast", body.corePosition, body.gameObject);
             EquipmentFx.Sound("focuslens_start", target.corePosition, target.gameObject);
-            EquipmentFx.Effect("RoR2/Base/Characters/Huntress/Skills/HuntressBlinkEffect.prefab", target.corePosition, target.radius * 2f);
+            EquipmentFx.Effect("RoR2/Base/Huntress/HuntressBlinkEffect.prefab", target.corePosition, target.radius * 2f);
             return true;
         }
 
@@ -154,7 +154,7 @@ namespace CursedAppleCuriosities.Items
             });
             _echoing = false;
             EquipmentFx.Sound("focuslens_explode", _body.corePosition, _body.gameObject);
-            EquipmentFx.Effect("RoR2/DLC1/Items/CritGlassesVoid/CritGlassesVoidExecuteEffect.prefab", _body.corePosition, _body.radius * 2f);
+            EquipmentFx.Effect("RoR2/DLC1/CritGlassesVoid/CritGlassesVoidExecuteEffect.prefab", _body.corePosition, _body.radius * 2f);
         }
     }
 }

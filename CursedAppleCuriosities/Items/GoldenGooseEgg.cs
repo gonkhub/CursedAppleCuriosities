@@ -135,8 +135,8 @@ namespace CursedAppleCuriosities.Items
 
             SpawnItems(body, stacks * PerStack);
             EquipmentFx.Sound("gooseegg_hatch", body.corePosition, body.gameObject);
-            EquipmentFx.Effect("RoR2/Base/Items/BonusGoldPackOnKill/MoneyPackPickupEffect.prefab", body.corePosition, body.radius * 2f);
-            EquipmentFx.Effect("RoR2/Base/Common/VFX/LevelUp/LevelUpEffect.prefab", body.corePosition, body.radius);
+            EquipmentFx.Effect("RoR2/Base/BonusGoldPackOnKill/MoneyPackPickupEffect.prefab", body.corePosition, body.radius * 2f);
+            EquipmentFx.Effect("RoR2/Base/Common/VFX/LevelUpEffect.prefab", body.corePosition, body.radius);
 
             body.inventory.SetEquipmentIndex(EquipmentIndex.None);
             Accumulated = 0f;
@@ -182,7 +182,7 @@ namespace CursedAppleCuriosities.Items
             if (!_voidTableLoaded)
             {
                 _voidTableLoaded = true;
-                try { _voidTable = Addressables.LoadAssetAsync<PickupDropTable>("RoR2/DLC1/VoidChest/dtVoidChest.asset").WaitForCompletion(); }
+                try { _voidTable = Addressables.LoadAssetAsync<PickupDropTable>("RoR2/Base/Common/dtVoidChest.asset").WaitForCompletion(); }
                 catch (System.Exception e) { CursedAppleCuriositiesPlugin.Logger?.LogWarning("[GooseEgg] dtVoidChest: " + e.Message); }
                 CursedAppleCuriositiesPlugin.Logger?.LogInfo($"[GooseEgg] void yield from {(_voidTable != null ? "Void Cradle's drop table" : "fallback weights")}");
             }
@@ -255,7 +255,7 @@ namespace CursedAppleCuriosities.Items
                 if (eq != null && eq != Void.EquipmentDef && IsEgg(eq))
                 {
                     Void.Accumulated += SecondsPerStack;
-                    EquipmentFx.Effect("RoR2/Base/Common/VFX/LevelUp/LevelUpEffect.prefab", body.corePosition, body.radius);
+                    EquipmentFx.Effect("RoR2/Base/Common/VFX/LevelUpEffect.prefab", body.corePosition, body.radius);
                     UnityEngine.Object.Destroy(self.gameObject);
                     return;
                 }

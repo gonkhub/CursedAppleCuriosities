@@ -60,7 +60,7 @@ namespace CursedAppleCuriosities.Items
             WardBuffDef.buffColor   = color;
             WardBuffDef.iconSprite  = ItemBase.CreatePlaceholderSprite(color);
             ContentAddition.AddBuffDef(WardBuffDef);
-            EquipmentFx.RegisterBuffFx(WardBuffDef, "RoR2/DLC1/Items/BearVoid/BearVoidEffect.prefab"); // Safer Spaces bubble while warded
+            EquipmentFx.RegisterBuffFx(WardBuffDef, "RoR2/DLC1/BearVoid/BearVoidEffect.prefab"); // Safer Spaces bubble while warded
 
             CreateLang();
             CreateEquipment();
@@ -82,7 +82,7 @@ namespace CursedAppleCuriosities.Items
                 ?? body.gameObject.AddComponent<CounterspellWard>();
             ward.Activate(WardDuration * DurationExtender.Multiplier(body));
             SoundMessage.Everyone(CastSound, body.corePosition, body.gameObject);
-            EquipmentFx.Effect("RoR2/DLC1/Items/ImmuneToDebuff/ImmuneToDebuffEffect.prefab", body.corePosition, body.radius);
+            EquipmentFx.Effect("RoR2/DLC1/ImmuneToDebuff/ImmuneToDebuffEffect.prefab", body.corePosition, body.radius);
             return true; // start the cooldown
         }
 
@@ -103,7 +103,7 @@ namespace CursedAppleCuriosities.Items
                 {
                     ward.Consume();
                     SoundMessage.Everyone(BlockSound, self.body.corePosition, self.body.gameObject);
-                    EquipmentFx.Effect("RoR2/Base/Items/Bear/BearProc.prefab", self.body.corePosition, self.body.radius);
+                    EquipmentFx.Effect("RoR2/Base/Bear/BearProc.prefab", self.body.corePosition, self.body.radius);
 
                     if (HealFraction > 0f)
                         self.body.healthComponent?.Heal(self.body.maxHealth * HealFraction, default(ProcChainMask));
