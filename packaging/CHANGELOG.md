@@ -1,7 +1,7 @@
 # Changelog
 
 ## 1.5.0 (unreleased)
-- New survivor: **Victor**. His gun **Memento Mori** fires faster the longer you hold it.
+- New survivor: **Victor**.
   **Pain Battery** charges only from damage you take, then fires a fan of shocking bolts that heal you for
   each enemy hit. **Jumpstart** costs some health, then heals back more than it took and speeds you up.
   **Aura of Suffering** hurts everything around you, and you, harder the longer it runs. Passive
