@@ -303,6 +303,17 @@ same on a stand-in model.
 
 ## Recent changes (since last handoff)
 
+- **Cursed Broker (1.4.0, built 2026-10-12, NOT playtested).** `Broker/`: `CursedBroker` (Shrine of Order clone with its
+  purchase stripped and a `PickupPickerController` + Command picker panel; symbol tinted purple; spawned in
+  `SceneDirector.onPostPopulateSceneServer`, 20% per stage from stage 3 or after a loop, config `[Cursed Broker]`),
+  `CurseRules` (per-item Mult/Add on the effective stack count + improvement text; full table in
+  `docs/CursedBrokerAudit.md`, regenerate with `tools/gen_curse_audit.py`; any non-lunar tier incl. white),
+  `CursePenalties` (26 narrow penalties, rolled per item when a player first opens a broker, cached per broker+player), `CurseLedger` (per-master curse list, server-owned, mirrored by `CurseLedgerMessage`; IL hook on
+  `Inventory.UpdateEffectiveItemStacks`; HUD shows real copy counts, purple glow, curse tooltip; Dio's/Larva revive twice).
+  Range/Duration penalties feed `MysticExpansion.RadiusMultiplier` / `DurationExtender.Multiplier`.
+  Debug: `cac_broker_stage3 [scene]` (skip to a stage 3 with a guaranteed broker), `cac_broker_spawn` (one next to you);
+  registered through `[assembly: HG.Reflection.SearchableAttribute.OptIn]`. Config `Debug - Spawn Every Stage`.
+
 - **Abrams Shoulder Charge (2026-10-12, user):** scoop 250% -> 50%; a wall slam deals 300% (`ChargeWallDamage`) to every carried enemy.
 - **2026-10-12 balance/bug pass (built, not playtested).** Arctic Blast 75 s / 12 m; Cultist Sacrifice 120 s; Torment Pulse
   base range 12 m; Toxic Bullets UI; Lash: Flog removed, Ground Strike 300%, Grapple 6 s, Death Slam fixes (above), model

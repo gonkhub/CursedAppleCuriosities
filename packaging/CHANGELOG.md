@@ -1,6 +1,11 @@
 # Changelog
 
 ## 1.4.0 (unreleased)
+- New interactable: the **Cursed Broker**, a rare shrine (stage 3 onward, or any stage after looping).
+  Curse one non-lunar item (whites included): it and every copy you hold or find later become roughly twice as strong, but you
+  take a harsh penalty to one specific thing (a skill's damage, a cooldown, gravity, healing...)
+  for the rest of the run. Each player may curse once per broker; hover an item in its menu, or a
+  cursed item in your inventory, to see exactly what is improved and what it costs.
 
 ## 1.3.0
 - New survivor: **Grey Talon**. His bow fires slow, very long range arrows (full damage out to

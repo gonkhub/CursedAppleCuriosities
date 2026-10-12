@@ -2,7 +2,7 @@
   "name": "CursedAppleCuriosities",
   "version_number": "1.4.0",
   "website_url": "",
-  "description": "Items, equipment and two survivors adapted from Deadlock: 31 items, 9 equipment, an artifact, and Lash and Abrams as playable survivors.",
+  "description": "Items, equipment, an artifact, a cursed shrine and five survivors adapted from Deadlock: Lash, Abrams, Seven, Vyper and Grey Talon.",
   "dependencies": [
     "RiskofThunder-RoR2BepInExPack-1.43.0",
     "RiskofThunder-R2API_Core-5.3.0",

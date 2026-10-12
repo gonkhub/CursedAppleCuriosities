@@ -48,9 +48,10 @@ namespace CursedAppleCuriosities.Items
         /// <summary>Duration multiplier for effects this body causes (1 without the item).</summary>
         public static float Multiplier(CharacterBody? body)
         {
-            if (_def == null || body == null || body.inventory == null) return 1f;
+            float curse = Broker.CursePenalties.DurationFactor(body); // a Cursed Broker duration penalty shortens it
+            if (_def == null || body == null || body.inventory == null) return curse;
             int count = body.inventory.GetItemCountEffective(_def);
-            return count > 0 ? 1f + DurationPerStack * count : 1f;
+            return (count > 0 ? 1f + DurationPerStack * count : 1f) * curse;
         }
 
         public static float Multiplier(GameObject? owner) => owner != null ? Multiplier(owner.GetComponent<CharacterBody>()) : 1f;

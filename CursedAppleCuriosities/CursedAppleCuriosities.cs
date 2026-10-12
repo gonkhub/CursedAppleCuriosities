@@ -14,6 +14,9 @@ using System.Collections.Generic;
 using System.Linq;
 using System.Reflection;
 
+// Lets the game's console find this assembly's [ConCommand]s (the Cursed Broker debug commands).
+[assembly: HG.Reflection.SearchableAttribute.OptIn]
+
 namespace CursedAppleCuriosities
 {
     [BepInPlugin(PluginInfo.PLUGIN_GUID, PluginInfo.PLUGIN_NAME, PluginInfo.PLUGIN_VERSION)]
@@ -83,6 +86,9 @@ namespace CursedAppleCuriosities
             InitEquipments();
             InitArtifacts();
             InitSurvivors();
+
+            try { Broker.CursedBroker.Init(Config); Logger.LogInfo("  + [Interactable] Cursed Broker"); }
+            catch (Exception e) { Logger.LogError($"  ! [Interactable] Cursed Broker failed to init: {e}"); }
 
             // Populate the sets used by CuriosityShop to filter drop tables.
             foreach (var item in _items)

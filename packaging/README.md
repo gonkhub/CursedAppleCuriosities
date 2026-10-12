@@ -7,6 +7,8 @@ Items, equipment and survivors adapted from Deadlock's item shop for Risk of Rai
 - **Artifact of the Curio**: only this mod's items drop
 - **Curiosity Catalog** (lunar): clearing the teleporter drops a shop selling this mod's
   items, in exchange for opening chests
+- **Cursed Broker**: a rare shrine from stage 3 onward. Curse one item to make every copy of it
+  about twice as strong, in exchange for a harsh penalty for the rest of the run
 - **Lash**, **Abrams**, **Seven**, **Vyper** and **Grey Talon** as playable survivors, with Deadlock-style movement (stamina,
   air dashes, dash-jumps, slides, wall jumps)
 
