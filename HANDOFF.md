@@ -255,6 +255,12 @@ same on a stand-in model.
     (not `fire/NN`), Static Charge = cast + loop only, Storm Cloud = `gigawatt_storm_cloud_*` (not `a4_storm_cloud`), never `a3_voltage_drain`
     or `seven_spark`. Vyper all approved; her gun is layered (`VyperGunAudio`: first / mid / tail + release). Vyper has no Deadlock footstep,
     dash or landing sounds: silent for now. **Rule: pitch any new Deadlock sound to the user before wiring it.**
+  - Pain Battery ready glow (user): `VictorWireGlow` draws the left-arm barbed wire green while the battery is full. Deadlock: ability
+    m_FullyChargedParticle `frank_shock_target_ready_buff` -> `_trace` child -> snapshot `barbed_wire_l_fx_model.vsnap` (76 points, each on one
+    arm/hand bone, rope colour 157,203,114). The snapshot is dumped once as text by the converter (`DeadlockInstall.WantDump`/`Dump`, cache
+    `dumps/`), points mapped Deadlock (x,y,z) in -> (-y, z, x) * 0.0254 m in GlbLoader's root space, bound by `RestInRoot`.
+  - Reanimation charge-up + intro: `VictorReassembly` plays Deadlock's `frank_hover_death_anim_fx_model` (clip _02 = parts fly together,
+    then its hover hold) in place of his model while he's down; `ability_reanimation` is only the get-up.
   - Item displays fitted 2026-10-12 (`SevenItemDisplays.cs`, `VyperItemDisplays.cs`; tools/itempass README). Abrams' 9 mirrored rules fixed; the
     user's dev cfg had `[Abrams - Debug] Fitted Item Anchors = false` (old automatic anchors), set back to true.
   - Pending: ping VO + Static Charge detonation sound (pitched: `sound_review/ping_review.html`), Petrify stone visual check, camera/scale playtest,

@@ -70,6 +70,11 @@ namespace CursedAppleCuriosities.Deadlock
         public static void WantSound(string vpkPrefix) { if (!WantedSounds.Contains(vpkPrefix)) WantedSounds.Add(vpkPrefix); }
         public static void WantIcon(string vtexPath) { if (!WantedIcons.Contains(vtexPath)) WantedIcons.Add(vtexPath); }
         public static void WantModel(ModelRequest m) => WantedModels.Add(m);
+        /// <summary>A resource the converter should print as text, once (e.g. a particle snapshot's points), read with <see cref="Dump"/>.</summary>
+        public static void WantDump(string vpkPath) { if (!WantedDumps.Contains(vpkPath)) WantedDumps.Add(vpkPath); }
+
+        private static readonly List<string> WantedDumps = new List<string>();
+        private static readonly Dictionary<string, string> ReadyDumps = new Dictionary<string, string>(); // vpk path -> cached text file
 
         /// <summary>One background thread: copy sounds and icons, then convert any model not cached yet.</summary>
         public static void Start()
@@ -84,6 +89,11 @@ namespace CursedAppleCuriosities.Deadlock
                 {
                     try { ConvertModel(m, converter); }
                     catch (Exception e) { lock (FailedModels) FailedModels.Add(m.Hero); Note(m.Hero, "couldn't be converted from Deadlock (see LogOutput.log)"); Warn($"model {m.Hero}: {e.Message}"); }
+                }
+                foreach (string d in WantedDumps)
+                {
+                    try { DumpResource(d, converter); }
+                    catch (Exception e) { Warn($"dump {d}: {e.Message}"); }
                 }
             }) { IsBackground = true, Name = "CursedApple Deadlock reader" }.Start();
         }
@@ -414,6 +424,48 @@ namespace CursedAppleCuriosities.Deadlock
                 }
                 else Warn($"{m.Hero}: animation conversion produced nothing (model stays in its bind pose)");
             }
+        }
+
+        /// <summary>
+        /// The converter's text dump of one resource (all blocks), cached as a .txt next to the models. Read-only on Deadlock,
+        /// never while it runs, like the model conversion.
+        /// </summary>
+        private static void DumpResource(string vpkPath, string converter)
+        {
+            string file = Path.Combine(CacheDir, "dumps", vpkPath.Replace('/', '_') + ".txt");
+            if (File.Exists(file)) { lock (ReadyDumps) ReadyDumps[vpkPath] = file; return; }
+            string? citadel = CitadelDir();
+            if (citadel == null || DeadlockRunning() || !File.Exists(converter)) return;
+            Directory.CreateDirectory(Path.GetDirectoryName(file));
+            var psi = new ProcessStartInfo(converter, $"-i \"{Path.Combine(citadel, "pak01_dir.vpk")}\" -f \"{vpkPath}\" -a")
+            { UseShellExecute = false, CreateNoWindow = true, RedirectStandardOutput = true, RedirectStandardError = true };
+            string text;
+            using (Process p = Process.Start(psi))
+            {
+                p.ErrorDataReceived += (o, e) => { };
+                p.BeginErrorReadLine();
+                text = p.StandardOutput.ReadToEnd();
+                p.WaitForExit(60 * 1000);
+            }
+            if (text.Length < 100) { Warn($"dump {vpkPath}: nothing printed"); return; }
+            File.WriteAllText(file + ".part", text);
+            if (File.Exists(file)) File.Delete(file);
+            File.Move(file + ".part", file);
+            lock (ReadyDumps) ReadyDumps[vpkPath] = file;
+            Log($"dumped {vpkPath}");
+        }
+
+        /// <summary>The cached text dump of a resource asked for with <see cref="WantDump"/> (null until it exists).</summary>
+        public static string? Dump(string vpkPath)
+        {
+            string? file;
+            lock (ReadyDumps) ReadyDumps.TryGetValue(vpkPath, out file);
+            if (file == null && CacheDir.Length > 0)
+            {
+                string guess = Path.Combine(CacheDir, "dumps", vpkPath.Replace('/', '_') + ".txt");
+                if (File.Exists(guess)) file = guess;
+            }
+            return file != null ? File.ReadAllText(file) : null;
         }
 
         /// <summary>Run the converter into a temporary file, renamed when complete (a cut-short run never looks cached).</summary>

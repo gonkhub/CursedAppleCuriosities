@@ -46,6 +46,7 @@ namespace CursedAppleCuriosities.Survivors.Victor
                 DeadlockInstall.WantIcon(icon);
             DeadlockHeroes.Register(VictorModel.Def);
             DeadlockInstall.WantModel(VictorModel.Def.ModelRequest());
+            DeadlockInstall.WantDump(VictorWireGlow.Snapshot);
             DeadlockInstall.WantModel(new DeadlockInstall.ModelRequest
             { Hero = VictorData.FxKey, DlModel = VictorData.DlFxModel, Clips = new[] { VictorData.FxTogether, VictorData.FxHover } });
 
@@ -218,6 +219,7 @@ namespace CursedAppleCuriosities.Survivors.Victor
             body.AddComponent<VictorAura>();
             body.AddComponent<VictorAuraFx>();
             body.AddComponent<VictorRevive>();
+            body.AddComponent<VictorWireGlow>(); // left-arm barbed wire glows while Pain Battery is full
 
             Transform model = body.GetComponent<ModelLocator>().modelTransform;
             model.gameObject.AddComponent<DeadlockModelSwap>().HeroKey = VictorData.Hero;
