@@ -15,7 +15,9 @@ HEROES = {"abrams": {"scale": 1.2, "hide": [], "skip": ("gun_model", "book_model
           # Grey Talon: items skip his bow and the owl on his arm; reload props are hidden as in the game.
           "greytalon": {"scale": 1.08, "hide": ["archer_clip_inhand_model", "archer_quiverclips_anim_model"], "fit_hide": ["owl_bodygroup"],
                         "skip": (".archer_bow_model_", ".archer_clip_inbow_model_"), "glb": "archer", "head_floor": 0.05, "name": "GreyTalon"},  # braids hang to his chest
-          "vyper": {"scale": 1.08, "hide": [], "skip": (".gun_",), "glb": "viper"}}
+          "vyper": {"scale": 1.08, "hide": [], "skip": (".gun_",), "glb": "viper"},
+          # Victor (hero_frank): items skip his gun (a separate "weapon" mesh off root_motion).
+          "victor": {"scale": 1.15, "hide": [], "skip": (".weapon_",), "glb": "frank"}}
 GLB = os.environ.get("HERO_GLB") or os.path.join(os.environ["USERPROFILE"], "AppData", "LocalLow", "Hopoo Games, LLC", "Risk of Rain 2", "CursedApple", "deadlock", "models", HEROES[HERO].get("dir", HERO), HEROES[HERO].get("glb", HERO) + ".glb")
 BLENDER = r"C:\Program Files\Blender Foundation\Blender 5.1\blender.exe"
 

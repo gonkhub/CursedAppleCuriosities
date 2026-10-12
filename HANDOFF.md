@@ -322,7 +322,8 @@ same on a stand-in model.
     cooldown buff and carried into the next stage's body.
   - VFX green (user), recoloured with `Kit.Recoloured` at hue 0.33; UI colour grey-green. Sounds picked by me (user: no review pass needed).
   - Lobby intro `VictorIntro.cs` (user: Shocking Reanimation): lies on the pedestal 1.4 s with green zaps, gets up in the blast.
-  - Not done yet: item displays (tools/itempass), ping VO, Deadlock's ability upgrades beyond the T3 heal.
+  - Item displays fitted 2026-10-12 (`VictorItemDisplays.cs`, `HERO=victor`; items skip his `weapon` mesh). Chance Doll sits in his hip.
+  - Not done yet: ping VO, Deadlock's ability upgrades beyond the T3 heal.
 
 ## Recent changes (since last handoff)
 

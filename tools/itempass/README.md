@@ -9,7 +9,7 @@ Run from this folder, in order (Python needs `UnityPy`, `numpy`, `Pillow`; Blend
 1. `python catalog.py` - Addressables GUID -> asset path (`guid.json`)
 2. `python extract.py` - Commando's rest skeleton/body, `idrsCommando` rules, every display prefab mesh (~2 min)
 3. `python weights.py` - per-vertex dominant bones, for body regions
-Steps 3-7 take the hero from `HERO=<abrams|lash|seven|vyper>` (configs in `rig.py`: scale, hidden meshes, gun to skip, GLB name).
+Steps 3-7 take the hero from `HERO=<abrams|lash|seven|vyper|greytalon|victor>` (configs in `rig.py`: scale, hidden meshes, gun to skip, GLB name).
 
 4. `python hero.py` - the hero (cached GLB) placed exactly as `DeadlockModelSwap.TryAttach` places him
 5. `blender -b --factory-startup -P gen.py` - anchors + fitted rules -> `data/abrams_fit.json`

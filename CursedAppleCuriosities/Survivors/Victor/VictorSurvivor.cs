@@ -55,6 +55,7 @@ namespace CursedAppleCuriosities.Survivors.Victor
             CreateSkills();
             BodyPrefab = CreateBody();
             DisplayPrefab = CreateDisplay();
+            VictorItemDisplays.Register();
             CreateSurvivor();
             AddLanguage();
             VictorNet.Register();

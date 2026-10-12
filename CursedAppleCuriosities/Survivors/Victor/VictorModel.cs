@@ -6,7 +6,7 @@ namespace CursedAppleCuriosities.Survivors.Victor
     /// <summary>
     /// Victor on the shared Deadlock model layer: his model and animation table. His gun hangs off root_motion
     /// (weaponPivot/weapon) like Abrams' shotgun; the clips pose it in his hands and HandIK keeps it on hand_R through
-    /// the aim bend. No item displays fitted yet: items use the automatic anchors until tools/itempass runs on him.
+    /// the aim bend. Item displays fitted by tools/itempass (VictorItemDisplays).
     /// </summary>
     public static class VictorModel
     {
@@ -22,6 +22,7 @@ namespace CursedAppleCuriosities.Survivors.Victor
             HandIK = ("weapon", "hand_R"),
             Anims = VictorData.Anims,
             RootLocked = VictorData.Locked,
+            ItemAnchors = VictorItemDisplays.Anchors,
             // His Deadlock jump clips (3.1 s / 2.9 s) and air dashes (1.33 s) span the whole time in the air, so as one-shots
             // they ran on after he landed (playtest 2026-10-12). They loop here and end by this rule: on landing, back to
             // moving; still airborne once the rise is over, the in-air loop.
