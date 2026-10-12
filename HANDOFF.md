@@ -6,7 +6,8 @@ map is the "Cursed Apple" and items are bought from a "curiosity shop."
 
 **State:** builds clean (0 errors), **31 items + 14 equipment**, 5 survivors (Lash, Abrams, Seven, Vyper, Grey Talon). **v1.0.0** released
 2026-10-11; **v1.2.5** packaged 2026-10-12 for friends (tag `v1.2.5` on main); **v1.3.0** finished 2026-10-12 on branch `1.3`
-(tag `v1.3.0`, not packaged). New work happens on branch `1.4` (version 1.4.0). The user playtests as we go.
+(tag `v1.3.0`, not packaged); **v1.4.0** (Cursed Broker, not yet playtested) finished 2026-10-12 on branch `1.4` (tag `v1.4.0`,
+not packaged). New work happens on branch `1.5` (version 1.5.0). The user playtests as we go.
 
 ---
 

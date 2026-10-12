@@ -1,6 +1,6 @@
 # Changelog
 
-## 1.4.0 (unreleased)
+## 1.4.0
 - New interactable: the **Cursed Broker**, a rare shrine (stage 3 onward, or any stage after looping).
   Curse one non-lunar item (whites included): it and every copy you hold or find later become roughly twice as strong, but you
   take a harsh penalty to one specific thing (a skill's damage, a cooldown, gravity, healing...)
