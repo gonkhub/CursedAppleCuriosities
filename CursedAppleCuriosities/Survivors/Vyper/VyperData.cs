@@ -36,7 +36,7 @@ namespace CursedAppleCuriosities.Survivors.Vyper
             SlideUphillLoss = 0f,
             SlideDistanceBonus = 0.15f,        // SlideScale 15
             // Slippery (playtest): slight inclines barely slow her.
-            SlideFriction = 1.0f,              // heroes 1.2; the user played her at 1.2 (cfg) and asked for a little lower
+            SlideFriction = 0.8f,              // heroes 1.2; the user played her at 1.2 (cfg), then picked 0.8
             SlideTurnFriction = 0.5f,          // half the friction while she steers: carving keeps her speed (playtest)
             SlideFrictionSlope = 0.1f,         // Deadlock 0.15
             // Lash's playtested controls, kept for every hero
