@@ -272,7 +272,7 @@ namespace CursedAppleCuriosities.Survivors.Victor
 
             LanguageAPI.Add(Token + "GUN_NAME", "Memento Mori");
             LanguageAPI.Add(Token + "GUN_DESC",
-                $"Fire for <style=cIsDamage>{D(VictorData.GunDamage)} damage</style>. Fires faster the longer you hold it.");
+                $"Fire for <style=cIsDamage>{D(VictorData.GunDamage)} damage</style>.");
 
             LanguageAPI.Add(Token + "BATTERY_NAME", "Pain Battery");
             LanguageAPI.Add(Token + "BATTERY_DESC",
