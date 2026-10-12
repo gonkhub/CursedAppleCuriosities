@@ -1,6 +1,6 @@
 # Changelog
 
-## 1.2.0 (unreleased)
+## 1.2.5
 - New survivors: **Seven** (Cold Calculus, Lightning Ball / Static Charge, Power Surge,
   Storm Cloud) and **Vyper** (The Rattler, Screwjab Dagger, Lethal Venom, Petrifying Bola,
   passive Slither).
@@ -19,6 +19,9 @@
 - Every option is on the Risk Of Options settings page.
 - Multiplayer: Spellslinger, Berserker, Burst Fire and Kinetic Dash now give their bonus to
   non-host players. Hero sounds are positional.
+- Fixed equipment visual effects that never appeared (Colossus, Counterspell, Focus Lens,
+  Ethereal Shift, Arctic Blast, Refresher and others) and the targeting reticle. Void Goose
+  Eggs now roll from Void Cradle's drop table.
 
 ## 1.0.0
 - New survivors: **Lash** and **Abrams** (Shotgun, Siphon Life / Heavy Melee, Shoulder Charge,

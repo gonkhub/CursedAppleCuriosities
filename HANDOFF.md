@@ -5,7 +5,7 @@ items and equipment **adapted from Deadlock's item catalogue**. The name is homa
 map is the "Cursed Apple" and items are bought from a "curiosity shop."
 
 **State:** builds clean (0 errors), **31 items + 14 equipment**, 4 survivors (Lash, Abrams, Seven, Vyper). **v1.0.0** released
-2026-10-11; **v1.2.0 in progress** (version bumped 2026-10-12, not released; CHANGELOG has an "unreleased" section). The user has
+2026-10-11; **v1.2.5** packaged 2026-10-12 for friends (local import; tag `v1.2.5` on main). New work happens on branch `1.3` (version 1.3.0). The user has
 playtested most post-1.0 work.
 
 ---
