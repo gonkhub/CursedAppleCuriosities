@@ -324,7 +324,8 @@ same on a stand-in model.
   launched**. Kit and rules are the user's (memory `victor-design`); Vyper's file shape (Data / Model / States / Net / Survivor).
   - M1 Memento Mori: 75% hitscan, spins up 0.198 -> 0.171 s between shots (Deadlock spin rates), layered gun sound (windup/first/main/mech; no tail, user).
   - M2 Pain Battery (`VictorBatterySkillDef`): ready only when full. Charge = synced buff stacks 0..100 filled by `onServerDamageDealt` on
-    Victor (damage taken only, his own Aura/Jumpstart included; 40% of max health fills it). 0.35 s wind-up, 7 bolts in a 40 deg fan (28 m,
+    Victor (damage taken to health, shield or barrier, measured in his TakeDamage hook; his own Aura/Jumpstart included;
+    20% of max health fills it, user). 0.35 s wind-up, 7 bolts in a 40 deg fan (28 m,
     sphere-cast, walls stop them), each enemy once for 500%, and each enemy hit heals 15% of missing health (Deadlock T3, built in).
   - Utility Jumpstart: costs 15% current health (non-lethal, bypasses armor/block), heals 2x that (at least 10% max) over 4.5 s on a linearly
     fading rate (`VictorJumpstart`), +3 m/s fading in 10 buff steps. 2 charges (user), 12 s each.
@@ -333,7 +334,7 @@ same on a stand-in model.
     bonus all apply), Victor takes 1.1% -> 5% max health/s (same ramp) and can die of it. Mystic Expansion widens it. Radius shown by `VictorAuraFx` as Abrams' Siphon Life ring (user, after the
     Focus Crystal terrain indicator never rendered): grey, terrain-hugging, Mystic Expansion radius.
   - Passive Shocking Reanimation (`VictorRevive`): while ready, hits on Victor are NonLethal; one that leaves him at 1 health starts it:
-    slow wave (125% fading over 3 s, 18 m), 3 s HiddenInvincibility + Reanimating buff (SkillSilence; the owner's body machine enters
+    slow wave (125% fading over 3 s, 36 m: user doubled Deadlock's 18), 3 s HiddenInvincibility + Reanimating buff (SkillSilence; the owner's body machine enters
     `Reanimate`), then up at 50% health with a 1000% blast + 1.5 s stun. 240 s cooldown on the master (`VictorReviveClock`), shown as a
     cooldown buff and carried into the next stage's body.
   - VFX green (user), recoloured with `Kit.Recoloured` at hue 0.33; UI colour grey-green. Sounds picked by me (user: no review pass needed).

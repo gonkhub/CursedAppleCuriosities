@@ -32,20 +32,18 @@ namespace CursedAppleCuriosities.Survivors.Victor
 
             // Shocking Reanimation: while it's ready, every hit on Victor is non-lethal; a hit that leaves him at 1 health is
             // the one that would have killed him, and starts the revive instead.
+            // Pain Battery fills only from damage Victor actually takes (user), his own Aura and Jumpstart included, and damage
+            // to his barrier and shield counts too (user): measured as the drop in health + shield + barrier across the hit.
             On.RoR2.HealthComponent.TakeDamage += (orig, self, info) =>
             {
                 VictorRevive? revive = NetworkServer.active && !_paying && info != null ? self.GetComponent<VictorRevive>() : null;
                 bool armed = revive != null && revive.Ready && self.alive;
                 if (armed) info!.damageType.damageType |= DamageType.NonLethal;
+                VictorBattery? battery = NetworkServer.active ? self.GetComponent<VictorBattery>() : null;
+                float before = self.combinedHealth;
                 orig(self, info);
+                if (battery != null && before > self.combinedHealth) battery.Add(before - self.combinedHealth);
                 if (armed && !info!.rejected && self.alive && self.combinedHealth <= 1f) revive!.Begin();
-            };
-
-            // Pain Battery fills only from damage Victor actually takes (user), his own Aura and Jumpstart included.
-            GlobalEventManager.onServerDamageDealt += report =>
-            {
-                if (report?.victimBody == null || report.damageDealt <= 0f) return;
-                report.victimBody.GetComponent<VictorBattery>()?.Add(report.damageDealt);
             };
 
             RecalculateStatsAPI.GetStatCoefficients += (body, args) =>
@@ -171,7 +169,7 @@ namespace CursedAppleCuriosities.Survivors.Victor
         public override bool IsReady(GenericSkill skillSlot) => base.IsReady(skillSlot) && Full(skillSlot);
     }
 
-    /// <summary>Server, on Victor: damage taken charges the battery (shown as 0..100 stacks of its buff).</summary>
+    /// <summary>Server, on Victor: damage taken (health, shield or barrier) charges the battery (shown as 0..100 stacks of its buff).</summary>
     public class VictorBattery : MonoBehaviour
     {
         private CharacterBody _body = null!;
@@ -184,7 +182,7 @@ namespace CursedAppleCuriosities.Survivors.Victor
         public void Add(float damage)
         {
             if (!NetworkServer.active || VictorSurvivor.BatteryBuff == null || _body.healthComponent == null) return;
-            float full = Mathf.Max(1f, _body.healthComponent.fullCombinedHealth * VictorData.BatteryFillFraction);
+            float full = Mathf.Max(1f, _body.healthComponent.fullHealth * VictorData.BatteryFillFraction);
             _stored = Mathf.Min(full, _stored + damage);
             int stacks = Mathf.Clamp(Mathf.FloorToInt(_stored / full * VictorData.BatteryFull), 0, VictorData.BatteryFull);
             if (stacks != _body.GetBuffCount(VictorSurvivor.BatteryBuff)) _body.SetBuffCount(VictorSurvivor.BatteryBuff.buffIndex, stacks);

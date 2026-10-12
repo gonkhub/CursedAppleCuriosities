@@ -46,7 +46,7 @@ namespace CursedAppleCuriosities.Survivors.Victor
 
         // ---- secondary: Pain Battery (user: charges ONLY from damage taken; Deadlock's T3 missing-health heal built in) ----
         public static float BatteryDamage = 5f;         // per target, once (Deadlock Damage 100)
-        public static float BatteryFillFraction = 0.4f; // damage taken to fill it, as a share of max health (StoredDamageHealthPercentRequired)
+        public static float BatteryFillFraction = 0.2f; // damage taken to fill it, as a share of max health (user; Deadlock StoredDamageHealthPercentRequired 40)
         public static float BatteryHealMissing = 0.15f; // per enemy hit: heal this share of missing health (T3 MissingHealthPercentHeal)
         public const int BatteryBolts = 7;              // Deadlock BoltCount
         public const float BatterySpreadDeg = 40f;      // Deadlock SpreadAngle (whole fan)
@@ -85,7 +85,7 @@ namespace CursedAppleCuriosities.Survivors.Victor
         public const float RevivePost = 0.66f;          // Deadlock AbilityPostCastDuration
         public static float ReviveHealth = 0.5f;        // Deadlock RespawnHealthPercent
         public static float ReviveDamage = 10f;         // Deadlock Damage 200
-        public static float ReviveRadius = 18f;         // Deadlock Radius
+        public static float ReviveRadius = 36f;         // the wave and the blast (user: double Deadlock's 18 m Radius)
         public const float ReviveStun = 1.5f;           // Deadlock StunDuration
         public const float ReviveSlowSeconds = 3f;      // Deadlock SlowDuration: the wave when he goes down
         public const float ReviveSlowPerStep = 0.25f;   // 5 steps = 125% slow at first, fading (Deadlock SlowPercent 120, diminishing)
@@ -97,7 +97,7 @@ namespace CursedAppleCuriosities.Survivors.Victor
             BaseHealth = c.Bind(Section, "Base Health", BaseHealth, "Victor max health at level 1 (+36 per level).").Value;
             GunDamage = c.Bind(Section, "Gun - Damage", GunDamage, "Damage coefficient per bullet.").Value;
             BatteryDamage = c.Bind(Section, "Pain Battery - Damage", BatteryDamage, "Damage coefficient to each enemy the bolts hit (once per enemy).").Value;
-            BatteryFillFraction = c.Bind(Section, "Pain Battery - Damage To Fill", BatteryFillFraction, "Damage Victor must take to fill the battery, as a share of his max health.").Value;
+            BatteryFillFraction = c.Bind(Section, "Pain Battery - Damage To Fill", BatteryFillFraction, "Damage Victor must take (to health, shield or barrier) to fill the battery, as a share of his max health.").Value;
             BatteryHealMissing = c.Bind(Section, "Pain Battery - Heal Per Hit", BatteryHealMissing, "Share of missing health healed for each enemy hit.").Value;
             BatteryRange = c.Bind(Section, "Pain Battery - Range", BatteryRange, "Metres.").Value;
             JumpstartCost = c.Bind(Section, "Jumpstart - Health Cost", JumpstartCost, "Share of current health Jumpstart costs.").Value;
