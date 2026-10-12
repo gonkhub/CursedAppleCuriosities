@@ -62,7 +62,8 @@ namespace CursedAppleCuriosities.Survivors.Victor
         public static float JumpstartMinHeal = 0.1f;    // ...and at least this share of max health
         public static float JumpstartSpeed = 3f;        // m/s at the start, decaying (Deadlock BonusMoveSpeed)
         public const float JumpstartSeconds = 4.5f;     // Deadlock AbilityDuration
-        public static float JumpstartCooldown = 12f;    // Deadlock 30
+        public static float JumpstartCooldown = 12f;    // per charge (Deadlock 30)
+        public const int JumpstartCharges = 2;          // user: starts with 2 (Deadlock 1, +1 at T3)
         public const float JumpstartCast = 0.35f;       // Deadlock AbilityChannelTime
         public const int JumpstartSpeedSteps = 10;      // the speed fades in steps (buff stacks)
 

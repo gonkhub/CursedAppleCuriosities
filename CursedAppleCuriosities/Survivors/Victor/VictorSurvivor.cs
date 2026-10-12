@@ -175,6 +175,8 @@ namespace CursedAppleCuriosities.Survivors.Victor
 
             _jumpstart = Skill<SkillDef>("Jumpstart", typeof(Jumpstart), "Weapon", VictorData.JumpstartCooldown, InterruptPriority.Skill);
             _jumpstart.mustKeyPress = true;
+            _jumpstart.baseMaxStock = VictorData.JumpstartCharges;
+            _jumpstart.rechargeStock = 1;
             _jumpstart.cancelSprintingOnActivation = false;
 
             _aura = Skill<SkillDef>("Aura", typeof(AuraOfSuffering), "Aura", VictorData.AuraCooldown, InterruptPriority.Skill);
@@ -330,7 +332,8 @@ namespace CursedAppleCuriosities.Survivors.Victor
             LanguageAPI.Add(Token + "JUMPSTART_NAME", "Jumpstart");
             LanguageAPI.Add(Token + "JUMPSTART_DESC",
                 $"Shock yourself for <style=cIsHealth>{P(VictorData.JumpstartCost)} of your current health</style>, then <style=cIsHealing>heal {VictorData.JumpstartHealRatio:0.#}x that</style> " +
-                $"(at least {P(VictorData.JumpstartMinHeal)} of max health) and gain <style=cIsUtility>+{VictorData.JumpstartSpeed:0} m/s move speed</style>, both fading over {VictorData.JumpstartSeconds:0.#}s.");
+                $"(at least {P(VictorData.JumpstartMinHeal)} of max health) and gain <style=cIsUtility>+{VictorData.JumpstartSpeed:0} m/s move speed</style>, both fading over {VictorData.JumpstartSeconds:0.#}s. " +
+                $"Holds <style=cIsUtility>{VictorData.JumpstartCharges} charges</style>.");
 
             LanguageAPI.Add(Token + "AURA_NAME", "Aura of Suffering");
             LanguageAPI.Add(Token + "AURA_DESC",

@@ -316,7 +316,7 @@ same on a stand-in model.
     Victor (damage taken only, his own Aura/Jumpstart included; 40% of max health fills it). 0.35 s wind-up, 7 bolts in a 40 deg fan (28 m,
     sphere-cast, walls stop them), each enemy once for 500%, and each enemy hit heals 15% of missing health (Deadlock T3, built in).
   - Utility Jumpstart: costs 15% current health (non-lethal, bypasses armor/block), heals 2x that (at least 10% max) over 4.5 s on a linearly
-    fading rate (`VictorJumpstart`), +3 m/s fading in 10 buff steps. 12 s cd.
+    fading rate (`VictorJumpstart`), +3 m/s fading in 10 buff steps. 2 charges (user), 12 s each.
   - Special Aura of Suffering (toggle, user): own "Aura" state machine (he keeps shooting); stays on until Special again or he dies (going down
     to Reanimation counts); 2 s cooldown after it ends. Server `VictorAura` ticks every 0.25 s: enemies within 8 m take 100% -> 600%/s over 8 s, then holds (Special source, proc 0.5, crits rolled, `OnHitEnemy`/`OnHitAll`, so on-hit, lifesteal, on-kill, Ethereal Shift's special
     bonus all apply), Victor takes 1.1% -> 5% max health/s (same ramp) and can die of it. Mystic Expansion widens it. Radius shown by `VictorAuraFx` (user: filled grey, lowered opacity, on the terrain): Focus Crystal's
