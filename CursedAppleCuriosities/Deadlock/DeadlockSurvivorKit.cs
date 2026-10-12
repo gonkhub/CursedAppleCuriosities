@@ -303,6 +303,19 @@ namespace CursedAppleCuriosities.Deadlock
         /// </summary>
         /// <param name="steer">Keep pushing it along its facing every tick (lets the behaviour change its speed, as Lightning Ball's
         /// crawl does). Off: launched once and left to fly (Vyper's bola).</param>
+        /// <summary>Another component on the object still [RequireComponent]s this one: remove it on a later pass (Unity logs an error otherwise).</summary>
+        private static bool Required(GameObject go, Component c)
+        {
+            foreach (Component other in go.GetComponents<Component>())
+            {
+                if (other == null || other == c) continue;
+                foreach (RequireComponent rc in other.GetType().GetCustomAttributes(typeof(RequireComponent), true))
+                    if (rc.m_Type0 != null && rc.m_Type0.IsInstanceOfType(c) || rc.m_Type1 != null && rc.m_Type1.IsInstanceOfType(c) || rc.m_Type2 != null && rc.m_Type2.IsInstanceOfType(c))
+                        return true;
+            }
+            return false;
+        }
+
         public static GameObject? CloneProjectile(GameObject? source, string name, Type behaviour, float speed, float lifetime, bool gravity, bool triggers, bool steer = true)
         {
             if (source == null) return null;
@@ -315,7 +328,7 @@ namespace CursedAppleCuriosities.Deadlock
                     // ApplyTorqueOnStart (Commando's grenade) spins it on launch: with the facing steering the velocity, it corkscrewed.
                     bool keep = b is RoR2.Projectile.ProjectileController || b is RoR2.Projectile.ProjectileSimple || b is RoR2.Projectile.ProjectileDamage ||
                                 b is RoR2.Projectile.ProjectileNetworkTransform || b.GetType().Namespace != "RoR2.Projectile" && b.GetType().Name != "ApplyTorqueOnStart";
-                    if (!keep) UnityEngine.Object.DestroyImmediate(b);
+                    if (!keep && !Required(p, b)) UnityEngine.Object.DestroyImmediate(b);
                 }
             var simple = p.GetComponent<RoR2.Projectile.ProjectileSimple>() ?? p.AddComponent<RoR2.Projectile.ProjectileSimple>();
             simple.desiredForwardSpeed = speed;
