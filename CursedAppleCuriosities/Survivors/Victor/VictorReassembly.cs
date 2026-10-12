@@ -16,6 +16,15 @@ namespace CursedAppleCuriosities.Survivors.Victor
         private AnimClip? _together, _hover;
         private float _age, _holdUntil;
         private GameObject? _hero;
+        private Transform? _follow;
+
+        /// <summary>Sit exactly where his (hidden) model is: the body may still move or turn while he's down.</summary>
+        private void Follow()
+        {
+            if (_follow == null) return;
+            transform.SetPositionAndRotation(_follow.position, _follow.rotation);
+            transform.localScale = _follow.lossyScale;
+        }
 
         /// <summary>
         /// Start the reassembly where the hero model stands, ending (parts together, then a short hover) after
@@ -31,18 +40,24 @@ namespace CursedAppleCuriosities.Survivors.Victor
             if (model == null || clips == null || !clips.TryGetValue(VictorData.FxTogether, out AnimClip together)) return null;
             clips.TryGetValue(VictorData.FxHover, out AnimClip hover);
 
-            // The parts model is Victor's own mesh cut up: placed and scaled exactly as his model is.
-            GameObject fx = Instantiate(model.Root, hero.transform.parent, false);
+            // The parts model is Victor's own mesh cut up: placed and scaled exactly as his model is. Not under his model
+            // transform: DeadlockModelSwap switches off every renderer there that isn't his model (the stand-in's), which
+            // hid it (playtest). It follows his model from the scene root instead, on his layer.
+            GameObject fx = Instantiate(model.Root);
             fx.name = "VictorReassembly";
-            fx.transform.localPosition = hero.transform.localPosition;
-            fx.transform.localRotation = hero.transform.localRotation;
-            fx.transform.localScale = hero.transform.localScale;
+            foreach (Renderer rend in fx.GetComponentsInChildren<Renderer>(true))
+            {
+                rend.gameObject.layer = hero.layer;
+                rend.enabled = true;
+            }
             var r = fx.AddComponent<VictorReassembly>();
             foreach (Transform t in fx.GetComponentsInChildren<Transform>(true)) if (!r._bones.ContainsKey(t.name)) r._bones[t.name] = t;
             r._together = together;
             r._hover = hover;
             r._holdUntil = Mathf.Max(together.Length, seconds);
             r._hero = hero;
+            r._follow = hero.transform;
+            r.Follow();
             hero.SetActive(false);
             fx.SetActive(true);
             r.Pose(together, 0f);
@@ -51,6 +66,8 @@ namespace CursedAppleCuriosities.Survivors.Victor
 
         private void Update()
         {
+            if (_follow == null) { Destroy(gameObject); return; } // his body is gone
+            Follow();
             _age += Time.deltaTime;
             if (_together == null) return;
             if (_age < _together.Length) Pose(_together, _age);
