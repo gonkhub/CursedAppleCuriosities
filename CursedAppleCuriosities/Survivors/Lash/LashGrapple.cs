@@ -68,7 +68,7 @@ namespace CursedAppleCuriosities.Survivors.Lash
             _search.searchOrigin = aim.origin;
             _search.searchDirection = aim.direction;
             _search.sortMode = BullseyeSearch.SortMode.Angle;
-            _search.maxDistanceFilter = LashData.GrappleRange;
+            _search.maxDistanceFilter = LashData.GrappleRange * CursedAppleCuriosities.Items.MysticExpansion.RadiusMultiplier(_body);
             _search.maxAngleFilter = LashData.GrappleConeDeg * 0.5f;
             _search.RefreshCandidates();
             _search.FilterOutGameObject(gameObject);

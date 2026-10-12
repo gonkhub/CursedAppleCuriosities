@@ -17,7 +17,6 @@ namespace CursedAppleCuriosities.Survivors.Lash
     {
         public static void Register()
         {
-            NetworkingAPI.RegisterMessageType<FlogMessage>();
             NetworkingAPI.RegisterMessageType<SlamMessage>();
             NetworkingAPI.RegisterMessageType<SoundMessage>();
             DeadlockFallGuard.Hook();
@@ -61,51 +60,6 @@ namespace CursedAppleCuriosities.Survivors.Lash
                 .RefreshCandidates().FilterCandidatesByHurtBoxTeam(mask).FilterCandidatesByDistinctHurtBoxEntities().GetHurtBoxes();
             foreach (HurtBox h in boxes) if (h.healthComponent != null && !list.Contains(h.healthComponent)) list.Add(h.healthComponent);
             return list;
-        }
-    }
-
-    /// <summary>Flog: whip every target, heal Lash for a share of what it took.</summary>
-    public class FlogMessage : INetMessage
-    {
-        public GameObject? Attacker;
-        public GameObject[] Targets = System.Array.Empty<GameObject>();
-        public float Damage, HealFraction;
-        public bool Crit;
-
-        public void Serialize(NetworkWriter w)
-        {
-            w.Write(Attacker);
-            w.Write(Damage);
-            w.Write(HealFraction);
-            w.Write(Crit);
-            w.Write(Targets.Length);
-            foreach (GameObject t in Targets) w.Write(t);
-        }
-
-        public void Deserialize(NetworkReader r)
-        {
-            Attacker = r.ReadGameObject();
-            Damage = r.ReadSingle();
-            HealFraction = r.ReadSingle();
-            Crit = r.ReadBoolean();
-            Targets = new GameObject[r.ReadInt32()];
-            for (int i = 0; i < Targets.Length; i++) Targets[i] = r.ReadGameObject();
-        }
-
-        public void OnReceived()
-        {
-            if (!NetworkServer.active || Attacker == null) return;
-            var body = Attacker.GetComponent<CharacterBody>();
-            if (body == null || body.healthComponent == null || !body.healthComponent.alive) return;
-            float dealt = 0f;
-            foreach (GameObject t in Targets)
-            {
-                var hc = t != null ? t.GetComponent<HealthComponent>() : null;
-                if (hc == null) continue;
-                Vector3 push = (t!.transform.position - Attacker.transform.position).normalized * -400f; // pulled toward Lash
-                dealt += LashNet.Hit(body, hc, Damage, Crit, push, DamageSource.Utility);
-            }
-            if (dealt > 0f && HealFraction > 0f) body.healthComponent.Heal(dealt * HealFraction, default(ProcChainMask));
         }
     }
 
@@ -183,8 +137,11 @@ namespace CursedAppleCuriosities.Survivors.Lash
     }
 
     /// <summary>
-    /// Server only: moves one enemy for Death Slam. Lift pulls it up beside Lash and holds it; Throw flings it at
-    /// the landing point, where it (and everyone nearby not yet hit by this throw) takes the impact once.
+    /// Server only: moves one enemy for Death Slam. Lift pulls it up beside Lash and holds it; Throw flings it along
+    /// the line to the landing point and keeps it on that line until it actually hits terrain (playtest: stopping at
+    /// the aim point left enemies standing on an invisible floor). There it (and everyone nearby not yet hit by this
+    /// throw) takes the impact once. Carried enemies take no fall damage (playtest: bosses lost huge chunks of health
+    /// to it); one thrown off the map is killed, credited to Lash.
     /// </summary>
     public class LashSlamCarry : MonoBehaviour
     {
@@ -202,7 +159,7 @@ namespace CursedAppleCuriosities.Survivors.Lash
         private CharacterBody? _lash;
         private int _slot;
         private float _started, _limit;
-        private Vector3 _land;
+        private Vector3 _dir;
         private ThrowGroup? _group;
         private CharacterBody? _body;
         private CharacterMotor? _motor;
@@ -223,6 +180,7 @@ namespace CursedAppleCuriosities.Survivors.Lash
             _started = Time.time;
             _limit = LashData.DeathSlamPull + LashData.DeathSlamHang + 2f; // safety: a throw normally follows
             SetStateOnHurt.SetStunOnObject(gameObject, _limit);
+            DeadlockFallGuard.Protect(gameObject, _limit);
         }
 
         public void Throw(ThrowGroup group, Vector3 land)
@@ -230,19 +188,27 @@ namespace CursedAppleCuriosities.Survivors.Lash
             _phase = Phase.Throw;
             _group = group;
             _lash = group.Attacker;
-            _land = land;
             _started = Time.time;
-            _limit = Vector3.Distance(transform.position, land) / LashData.DeathSlamSpeed + 0.6f;
+            Vector3 to = land - Feet();
+            _dir = to.sqrMagnitude > 0.01f ? to.normalized : Vector3.down;
+            _limit = LashData.DeathSlamFlightMax;
+            DeadlockFallGuard.Protect(gameObject, _limit + 1.5f);
         }
+
+        private Vector3 Feet() => _body != null ? _body.footPosition : transform.position;
 
         private Vector3 HoldSpot()
         {
             Transform l = _lash!.transform;
-            Vector3 up = l.position + Vector3.up * 3.5f;
             Vector3 fwd = _lash.inputBank != null ? _lash.inputBank.aimDirection : l.forward;
             fwd.y = 0f;
             fwd = fwd.sqrMagnitude > 0.01f ? fwd.normalized : Vector3.forward;
-            return _slot == 0 ? up + fwd * 1.5f : up + Quaternion.Euler(0f, _slot * 60f, 0f) * fwd * 2f;
+            Vector3 side = _slot == 0 ? fwd * 1.5f : Quaternion.Euler(0f, _slot * 60f, 0f) * fwd * 2f;
+            // 3.5 m over Lash, lower under a ceiling: a big body held up there would be pushed through it.
+            float rise = 3.5f, height = _body != null ? Mathf.Max(1f, _body.radius * 2f) : 2f;
+            if (Physics.Raycast(l.position + side, Vector3.up, out RaycastHit ceiling, rise + height + 1f, LayerIndex.world.mask, QueryTriggerInteraction.Ignore))
+                rise = Mathf.Max(0f, ceiling.distance - height - 1f);
+            return l.position + side + Vector3.up * rise;
         }
 
         private void FixedUpdate()
@@ -253,13 +219,30 @@ namespace CursedAppleCuriosities.Survivors.Lash
             {
                 Vector3 to = HoldSpot() - _body.transform.position;
                 float speed = Mathf.Max(4f, to.magnitude / Mathf.Max(0.05f, LashData.DeathSlamPull - t));
-                Move(to, speed);
+                Move(to, Mathf.Min(speed, LashData.DeathSlamLiftMaxSpeed));
                 if (t > _limit) Destroy(this);
                 return;
             }
-            Vector3 toLand = _land - _body.footPosition;
-            if (toLand.magnitude < 1.2f || t > _limit || (_motor != null && _motor.isGrounded && t > 0.25f)) { Impact(); return; }
-            Move(toLand, LashData.DeathSlamSpeed);
+            // Throw: straight along the line until terrain is in the way (cast ahead, so nothing tunnels through).
+            float step = LashData.DeathSlamSpeed * Time.fixedDeltaTime;
+            Vector3 from = Feet() + Vector3.up * 0.5f;
+            bool blocked = Physics.SphereCast(from, 0.3f, _dir, out RaycastHit hit, step + 0.5f, LayerIndex.world.mask, QueryTriggerInteraction.Ignore);
+            if (blocked || (t > 0.2f && _motor != null && _motor.isGrounded)) { Impact(blocked ? hit.point : Feet()); return; }
+            if (t > _limit) { if (OverVoid()) KillInVoid(); else Impact(Feet()); return; }
+            Move(_dir * step, LashData.DeathSlamSpeed);
+        }
+
+        /// <summary>No terrain anywhere below: off the map, or under its floor.</summary>
+        private bool OverVoid() => !Physics.Raycast(Feet() + Vector3.up, Vector3.down, 4000f, LayerIndex.world.mask, QueryTriggerInteraction.Ignore);
+
+        private void KillInVoid()
+        {
+            HealthComponent hc = _body!.healthComponent;
+            GameObject? killer = _group?.Attacker != null ? _group.Attacker.gameObject : null;
+            var oob = new DamageTypeCombo(DamageType.OutOfBounds, DamageTypeExtended.OutOfBounds, DamageSource.Special);
+            if (_body.master != null) _body.master.TrueKill(killer, killer, oob);
+            else hc.Suicide(killer, killer, oob);
+            Destroy(this);
         }
 
         private void Move(Vector3 to, float maxSpeed)
@@ -277,20 +260,21 @@ namespace CursedAppleCuriosities.Survivors.Lash
             else transform.position += v * dt;
         }
 
-        private void Impact()
+        private void Impact(Vector3 at)
         {
             ThrowGroup g = _group!;
-            Vector3 at = _body!.footPosition;
             if (_motor != null) _motor.velocity = Vector3.zero;
             else if (_rb != null && !_rb.isKinematic) _rb.velocity = Vector3.zero;
+            DeadlockFallGuard.Protect(gameObject, 1.5f, landed: true);
             float radius = LashData.DeathSlamRadius * MysticExpansion.RadiusMultiplier(g.Attacker);
             if (LashSurvivor.SlamEffect != null)
                 EffectManager.SpawnEffect(LashSurvivor.SlamEffect, new EffectData { origin = at, scale = radius }, transmit: true);
             SoundMessage.Everyone("lash_ds_impact", at);
+            using var extend = DurationExtender.From(g.Attacker); // Duration Extender: Lash's, for the slow and stun
             if (g.Attacker != null)
             {
                 var victims = LashNet.EnemiesIn(at, radius, g.Attacker.teamComponent.teamIndex);
-                if (_body.healthComponent != null && !victims.Contains(_body.healthComponent)) victims.Insert(0, _body.healthComponent);
+                if (_body!.healthComponent != null && !victims.Contains(_body.healthComponent)) victims.Insert(0, _body.healthComponent);
                 foreach (HealthComponent hc in victims)
                 {
                     if (hc != _body.healthComponent && g.Thrown.Contains(hc.gameObject)) continue; // takes it where it lands

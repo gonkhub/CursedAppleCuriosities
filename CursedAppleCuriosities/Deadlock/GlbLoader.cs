@@ -99,7 +99,16 @@ namespace CursedAppleCuriosities.Deadlock
             if (anims == null) return clips;
             // Which bones hang off root_motion (Abrams' pelvis does; Lash's hangs off the model root), and its rest turn.
             var underRoot = new HashSet<string>();
+            var besideRoot = new HashSet<string>(); // root_motion's siblings (Lash's, Seven's pelvis)
             Quaternion rootRest = Quaternion.identity;
+            foreach (object n in nodes)
+                if (MiniJson.Arr(n, "children") is List<object> kids &&
+                    kids.Exists(c => MiniJson.Str(nodes[Convert.ToInt32(c)], "name") == "root_motion"))
+                    foreach (object c in kids)
+                    {
+                        string sib = MiniJson.Str(nodes[Convert.ToInt32(c)], "name") ?? "";
+                        if (sib != "root_motion") besideRoot.Add(sib);
+                    }
             foreach (object n in nodes)
             {
                 if (MiniJson.Str(n, "name") != "root_motion") continue;
@@ -145,7 +154,7 @@ namespace CursedAppleCuriosities.Deadlock
                     }
                     if (times.Length > 0 && track != root) clip.Length = Mathf.Max(clip.Length, times[times.Length - 1]);
                 }
-                RemoveRootTravel(clip, root, rootRest, underRoot);
+                RemoveRootTravel(clip, root, rootRest, underRoot, besideRoot);
                 clips[name] = clip;
             }
             return clips;
@@ -160,9 +169,13 @@ namespace CursedAppleCuriosities.Deadlock
         /// <item>Its resting turn is kept. Most clips leave it at the skeleton's rest, but newer AnimGraph2 clips
         /// (Abrams' dash_ground) bake an axis turn into it, with the bones under it (his pelvis) in that turned frame.
         /// Left out, the hero lies on his side: the turn goes into those bones instead.</item>
+        /// <item>Some heroes' clips (Seven's, AnimGraph2 heroes_staging) also bake the travel into the bones beside
+        /// root_motion: his pelvis moves 4.35 m a run loop along with it. Those clips get the travel taken out of every
+        /// sibling bone, like the cloth. Lash's pelvis sits beside root_motion too but stays put: only clips whose
+        /// pelvis really follows root_motion are touched.</item>
         /// </list>
         /// </summary>
-        private static void RemoveRootTravel(AnimClip clip, AnimTrack root, Quaternion rootRest, HashSet<string> underRoot)
+        private static void RemoveRootTravel(AnimClip clip, AnimTrack root, Quaternion rootRest, HashSet<string> underRoot, HashSet<string> besideRoot)
         {
             if ((root.Pos == null || root.Pos.Length == 0) && (root.Rot == null || root.Rot.Length == 0)) return;
             // Additive clips (the shot, landings, Abrams' wall impact) have no travel and a converter axis turn on
@@ -180,6 +193,23 @@ namespace CursedAppleCuriosities.Deadlock
                     if (t.Pos != null) for (int k = 0; k < t.Pos.Length; k++) t.Pos[k] = toRest * t.Pos[k];
                     if (t.Rot != null) for (int k = 0; k < t.Rot.Length; k++) t.Rot[k] = toRest * t.Rot[k];
                 }
+
+            // Travel baked into a sibling (Seven's runs): only its horizontal travel comes out, nothing else, which is what
+            // the animator's root lock already did for the clips it pins (Lash's sprints, dash, wall jump: unchanged).
+            if (PelvisFollowsRoot(pelvis, root, besideRoot))
+            {
+                Vector3 start = root.Pos![0];
+                foreach (AnimTrack t in clip.Tracks)
+                {
+                    if (!besideRoot.Contains(t.Bone) || t.Pos == null) continue;
+                    for (int k = 0; k < t.Pos.Length; k++)
+                    {
+                        root.SamplePos(t.PosTimes![k], out Vector3 rp);
+                        Vector3 travel = rp - start;
+                        t.Pos[k] -= new Vector3(travel.x, 0f, travel.z);
+                    }
+                }
+            }
 
             foreach (AnimTrack t in clip.Tracks)
             {
@@ -200,6 +230,20 @@ namespace CursedAppleCuriosities.Deadlock
                         t.Rot[k] = turn0 * Quaternion.Inverse(rr) * t.Rot[k];
                     }
             }
+        }
+
+        /// <summary>
+        /// A pelvis beside root_motion that travels with it: root_motion moves over half a metre in the clip and the
+        /// pelvis covers at least half of that the same way.
+        /// </summary>
+        private static bool PelvisFollowsRoot(AnimTrack? pelvis, AnimTrack root, HashSet<string> besideRoot)
+        {
+            if (pelvis == null || !besideRoot.Contains("pelvis") || pelvis.Pos == null || pelvis.Pos.Length < 2 || root.Pos == null || root.Pos.Length < 2) return false;
+            Vector3 rootMove = root.Pos[root.Pos.Length - 1] - root.Pos[0];
+            Vector3 pelvisMove = pelvis.Pos[pelvis.Pos.Length - 1] - pelvis.Pos[0];
+            rootMove.y = 0f;
+            pelvisMove.y = 0f;
+            return rootMove.magnitude > 0.5f && Vector3.Dot(pelvisMove, rootMove.normalized) > rootMove.magnitude * 0.5f;
         }
 
         /// <summary>

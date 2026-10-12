@@ -26,13 +26,13 @@ namespace CursedAppleCuriosities.Survivors.Abrams
         {
             Hero = Hero,
             Anim = AbramsModel.Play,
-            GroundDashMetres = 14f,            // farther than Lash's 10 m (Deadlock 10), by playtest
-            GroundDashSeconds = 1.2f,          // but slower: ~11.7 m/s against Lash's 33 (playtest: 0.6, then 0.85 s were still too fast)
-            GroundDashTotalSeconds = 1.3f,     // a short ease to a run after the burst
+            GroundDashMetres = 21f,            // farther than Lash's 10 m (Deadlock 10): 14 m, then 1.5x for his bigger model (playtest)
+            GroundDashSeconds = 1.4f,          // but slower: 15 m/s against Lash's 33 (playtest: 0.6, then 0.85 s were too fast; 1.2 s at 14 m)
+            GroundDashTotalSeconds = 1.5f,     // a short ease to a run after the burst
+            AirDashMetres = 11f,               // heroes 8 m; longer for his size (playtest)
             AirDashSeconds = 0.51f,            // Deadlock EAirDashDuration
-            OutOfCombatSpeed = 1.6f / 6.4f,    // Deadlock ESprintSpeed over his run
+            OutOfCombatSpeed = 0.45f,          // Deadlock ESprintSpeed over his run was +25%; +45% (Lash's 9.3 m/s) by playtest
             // Lash's playtested controls, kept for every hero
-            SlideKey = UnityEngine.KeyCode.Mouse3,
             SlideFriction = 1.2f,
             WallJumpUp = 22f,
             WallJumpPowerMin = 0.6f,
@@ -52,8 +52,8 @@ namespace CursedAppleCuriosities.Survivors.Abrams
         public static float SiphonRadius = 8f;          // Deadlock Radius 8m
         public const float SiphonTick = 0.25f;          // Deadlock TickRate
 
-        // ---- secondary alt: Heavy Melee (Abrams' Deadlock melee: 116 heavy, 5 m, 30 deg half-angle) ----
-        public static float MeleeDamage = 6f;
+        // ---- special: Heavy Melee (Abrams' Deadlock melee: 116 heavy, 5 m, 30 deg half-angle) ----
+        public static float MeleeDamage = 15f;      // 600% as a secondary alt; big buff on moving to special (playtest)
         public static float MeleeCooldown = 3f;
         public const float MeleeWindup = 0.4f;          // heavy wind-up
         public const float MeleeRange = 5f;             // Deadlock MeleeAttackLength, measured to the enemy's surface
@@ -65,7 +65,7 @@ namespace CursedAppleCuriosities.Survivors.Abrams
         public const float MeleeRecover = 0.3f;
 
         // ---- utility: Shoulder Charge ----
-        public static float ChargeDamage = 4f;
+        public static float ChargeDamage = 2.5f;
         public static float ChargeCooldown = 8f;        // Deadlock 33
         public const float ChargeDuration = 1.4f;       // Deadlock AbilityDuration
         public static float ChargeSpeed = 18.75f;       // Deadlock SpeedInitial
@@ -78,15 +78,16 @@ namespace CursedAppleCuriosities.Survivors.Abrams
         public const float ChargeWallLookAhead = 2.5f;  // Deadlock m_flWallStunLookAheadDist 100 hu, plus Abrams' own radius
 
         // ---- passive: Infernal Resilience ----
-        public static float ResilienceFraction = 0.25f; // Deadlock 13% (22% fully upgraded); RoR2 hits much harder
+        public static float ResilienceFraction = 0.5f;  // Deadlock 13% (22% fully upgraded); RoR2 hits much harder (25%, then 50% by playtest)
+        public static float ResilienceArmor = 10f;      // on top of BaseArmor: the passive's inherent toughness (playtest)
         public const float ResilienceSeconds = 20f;     // Deadlock RegenIncomingDamageDuration
         public const float ResilienceInterval = 1f;     // Deadlock RegenDamageInterval
         public static float MeleeLifesteal = 0.18f;     // Deadlock's Infernal Resilience upgrade MeleeLifesteal 18%, given free: melee hits heal
 
-        // ---- special: Seismic Impact ----
-        public static float SlamDamage = 12f;
-        public static float SlamCooldown = 28f;         // Deadlock 215
-        public const float SlamUp = 21.59f;             // Deadlock m_flUpBoostSpeed 850 hu/s
+        // ---- special alt: Seismic Impact ----
+        public static float SlamDamage = 22f;            // 1200% at first; buffed by playtest
+        public static float SlamCooldown = 33f;         // Deadlock 215; 28, then +5 s with the damage buff (playtest)
+        public const float SlamUp = 30.5f;              // Deadlock m_flUpBoostSpeed 850 hu/s (21.6 m/s); x1.41 = twice the height (playtest)
         public const float SlamForward = 15.88f;        // Deadlock m_flForwardBoostSpeed 625 hu/s
         public const float SlamBoostTime = 1.5f;        // Deadlock m_flBoostTime (rising at most this long)
         public const float SlamHover = 3f;              // Deadlock m_flHoverTime
@@ -95,7 +96,8 @@ namespace CursedAppleCuriosities.Survivors.Abrams
         public const float SlamCrashBuffer = 0.5f;      // Deadlock m_flCrashDownInputBuffer: no crash before this
         public const float SlamMinAimDeg = 30f;         // Deadlock m_flMinAimAngle: the crash aims at least this far below flat
         public static float SlamCrashSpeed = 100f;      // Deadlock 6000 hu/s (152 m/s); Lash's 90 m/s dive was right in playtest
-        public const float SlamCollide = 4f;            // Deadlock m_flCollideRadius 160 hu: enemies touched on the way down ride along
+        public const float SlamCollide = 10f;           // Deadlock m_flCollideRadius 160 hu (4 m); much wider by playtest: enemies on the way down ride along
+        public static float SlamPullRadius = 15f;       // enemies this near Abrams when the crash starts are dragged down with him (playtest)
         public static float SlamRadius = 9f;            // Deadlock ImpactRadius
         public const float SlamHeight = 6f;             // Deadlock ImpactHeight
         public static float SlamStun = 1.6f;            // Deadlock StunDuration
@@ -119,18 +121,25 @@ namespace CursedAppleCuriosities.Survivors.Abrams
             ChargeWallStun = c.Bind(Section, "Shoulder Charge - Wall Stun", ChargeWallStun, "Seconds carried enemies are stunned when slammed into a wall.").Value;
             ChargeCooldown = c.Bind(Section, "Shoulder Charge - Cooldown", ChargeCooldown, "Seconds.").Value;
             ResilienceFraction = c.Bind(Section, "Infernal Resilience - Regen Fraction", ResilienceFraction, $"Share of damage taken that heals back over {ResilienceSeconds:0} s.").Value;
-            MeleeLifesteal = c.Bind(Section, "Infernal Resilience - Melee Lifesteal", MeleeLifesteal, "Share of Heavy Melee damage dealt healed back.").Value;
+            ResilienceArmor = c.Bind(Section, "Infernal Resilience - Armor", ResilienceArmor, "Bonus armor from the passive.").Value;
+            MeleeLifesteal = c.Bind(Section, "Heavy Melee - Lifesteal", MeleeLifesteal, "Share of Heavy Melee damage dealt healed back.").Value;
             SlamDamage = c.Bind(Section, "Seismic Impact - Damage", SlamDamage, "Damage coefficient around the landing.").Value;
             SlamRadius = c.Bind(Section, "Seismic Impact - Radius", SlamRadius, "Metres.").Value;
             SlamStun = c.Bind(Section, "Seismic Impact - Stun", SlamStun, "Seconds enemies hit are stunned.").Value;
             SlamCrashSpeed = c.Bind(Section, "Seismic Impact - Crash Speed", SlamCrashSpeed, "Metres per second on the way down.").Value;
             SlamCooldown = c.Bind(Section, "Seismic Impact - Cooldown", SlamCooldown, "Seconds.").Value;
+            SlamPullRadius = c.Bind(Section, "Seismic Impact - Pull Radius", SlamPullRadius, "Enemies within this many metres when the crash starts are dragged down to the landing.").Value;
+            CameraHeight = c.Bind(Section, "Camera - Height", CameraHeight, "Metres the camera is raised above the default survivor camera.").Value;
+            CameraDistance = c.Bind(Section, "Camera - Distance", CameraDistance, "Camera distance behind Abrams, as a multiple of the default survivor camera.").Value;
         }
 
         // ---- Deadlock assets (read from the player's own install, never shipped) ----
 
         public const string DlModel = "models/heroes_wip/abrams/abrams.vmdl_c";
-        public const float ModelHeightScale = 1.2f;      // Deadlock 2.3 m tall
+        // Camera: his model is 1.5x, so the stand-in's camera put the crosshair behind his head (playtest).
+        public static float CameraHeight = 1.4f;        // metres the camera pivot is raised over Commando's
+        public static float CameraDistance = 1.45f;     // times Commando's camera distance
+        public const float ModelHeightScale = 1.2f * 1.5f; // Deadlock 2.3 m tall, then 1.5x by playtest (visual only: hitbox unchanged)
         public const string MuzzleBone = "muzzle_fx";
 
         // Deadlock's internal name for Abrams is "bull" (hero_atlas).
@@ -217,9 +226,14 @@ namespace CursedAppleCuriosities.Survivors.Abrams
             new DeadlockSound { Id = "abrams_slam_impact", VpkPrefix = "sounds/abilities/abrams/a4_leap/abrams_a4_slam_impact", Range = 60f, MinGap = 0.05f },
             new DeadlockSound { Id = "abrams_melee_swing", VpkPrefix = "sounds/player/melee/shared/swing_charged", Volume = 0.9f, Range = 30f },
             new DeadlockSound { Id = "abrams_melee_impact", VpkPrefix = "sounds/player/melee/shared/melee_impact_default", Range = 30f, MinGap = 0.05f },
+            // Deadlock numbers his VO by an older ability order: use_power1 is Shoulder Charge, use_power2 Siphon Life (playtest).
             new DeadlockSound { Id = "abrams_vo_power1", VpkPrefix = "sounds/vo/atlas/atlas_use_power1", Chance = 0.6f, MinGap = 4f, Voice = true },
             new DeadlockSound { Id = "abrams_vo_power2", VpkPrefix = "sounds/vo/atlas/atlas_use_power2", Chance = 0.6f, MinGap = 4f, Voice = true },
             new DeadlockSound { Id = "abrams_vo_power4", VpkPrefix = "sounds/vo/atlas/atlas_use_power4", Range = 50f, MinGap = 4f, Voice = true },
+            // Desperation: the same abilities cast below a quarter health (DeadlockHeroVoice.Power picks them).
+            new DeadlockSound { Id = "abrams_vo_desperation_power1", VpkPrefix = "sounds/vo/atlas/atlas_desperation_power1", Chance = 0.8f, MinGap = 4f, Voice = true },
+            new DeadlockSound { Id = "abrams_vo_desperation_power2", VpkPrefix = "sounds/vo/atlas/atlas_desperation_power2", Chance = 0.8f, MinGap = 4f, Voice = true },
+            new DeadlockSound { Id = "abrams_vo_desperation_power4", VpkPrefix = "sounds/vo/atlas/atlas_desperation_power4", Range = 50f, MinGap = 4f, Voice = true },
             new DeadlockSound { Id = "abrams_vo_melee", VpkPrefix = "sounds/vo/atlas/emote/atlas_effort_melee_big", Volume = 0.9f, Chance = 0.7f, MinGap = 1f, Voice = true },
             new DeadlockSound { Id = "abrams_vo_select", VpkPrefix = "sounds/vo/atlas/atlas_select", MinGap = 2f, Voice = true },
             new DeadlockSound { Id = "abrams_vo_kill", VpkPrefix = "sounds/vo/atlas/atlas_kill_anyhero", Chance = 0.15f, MinGap = 8f, Voice = true },
@@ -237,7 +251,7 @@ namespace CursedAppleCuriosities.Survivors.Abrams
             new DeadlockSound { Id = "abrams_slide", VpkPrefix = "sounds/gameplay/slide/enter", Volume = 0.8f, Range = 20f, MinGap = 0.2f },
             new DeadlockSound { Id = "abrams_slide_loop", VpkPrefix = "sounds/gameplay/slide/lp2_texture", Volume = 0.6f, Range = 20f },
             new DeadlockSound { Id = "abrams_slide_exit", VpkPrefix = "sounds/gameplay/slide/exit", Volume = 0.7f, Range = 20f, MinGap = 0.2f },
-            new DeadlockSound { Id = "abrams_footstep", VpkPrefix = "sounds/player/footsteps/abrams/abrams_footstep", Volume = 0.5f, Range = 20f, MinGap = 0.12f },
+            new DeadlockSound { Id = "abrams_footstep", VpkPrefix = "sounds/player/footsteps/abrams/abrams_footstep", Volume = 0.3f, Range = 20f, MinGap = 0.12f },
         };
     }
 }

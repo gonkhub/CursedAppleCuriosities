@@ -45,16 +45,25 @@ namespace CursedAppleCuriosities.Deadlock
         public int DashJumpCost = 1;                    // extra pips on top of the dash's one
         // Slide
         public KeyCode SlideKey = KeyCode.LeftControl;  // Deadlock's crouch
+        public ConfigEntry<KeyboardShortcut>? SlideKeyEntry; // live: rebinding in the settings menu applies at once
         public float SlideDashSpeed = 16.5f, SlideActivation = 8.89f, SlideSustain = 4.32f, SlideMaxStart = 16.5f;
         public float SlideFriction = 0.8f, SlideFrictionSlope = 0.15f, SlideSlopeMinDeg = 8f, SlideSlopeFacingDeg = 75f;
         public float SlideAccMinSlopeDeg = 5f, SlideAccMaxSlopeDeg = 45f, SlideAccMin = 12.7f, SlideAccMax = 21.59f;
         public float SlideMaxSpeedMin = 30.48f, SlideMaxSpeed = 38.1f, SlideTurnDegPerSec = 90f;
+        // Vyper's Slither: no flat-ground friction for the first seconds of a slide (Deadlock m_flFlatGroundFrictionGraceTime),
+        // uphill slopes don't slow the slide, and a share of slide distance on top (MODIFIER_VALUE_MOVEMENT_SLIDE_DISTANCE_SCALE).
+        public float SlideFrictionGrace = 0f, SlideUphillLoss = 1f, SlideDistanceBonus = 0f;
         // Wall jump
         public float WallJumpUp = 13.3f, WallJumpOutMax = 7.9f, WallJumpOutMin = 5.7f, WallJumpRecharge = 1.25f, WallJumpPowerMin = 0.2f;
         // Air: momentum is kept; input steers it at AirAccel (RoR2's own is 20 m/s2 toward a walk), speed above a run bleeds off at AirDrag.
         public float AirAccel = 50f, AirDrag = 3f;
         // Sprint: out of combat and moving, a real RoR2 sprint (sprint items work) building up to Deadlock's ESprintSpeed.
         public float OutOfCombatSpeed = 2.1f / 7.2f, SprintRampSeconds = 2f;
+        /// <summary>
+        /// While this is true the hero keeps sprinting in combat (shooting, dealing damage) and only taking damage stops it
+        /// (RoR2's outOfDanger instead of outOfCombat). Seven's Power Surge ("Electric Current").
+        /// </summary>
+        public Func<CharacterBody, bool>? SprintInCombat;
 
         public int JumpCount => 1 + AirJumps;
         public string Sound(string key) => Hero + "_" + key;
@@ -73,7 +82,8 @@ namespace CursedAppleCuriosities.Deadlock
             DashJumpWindowLength = c.Bind(section, "Dash Jump - Window Length", DashJumpWindowLength, "Seconds the dash-jump window stays open (Deadlock 0.25). Jumping after it, still dashing: too late.").Value;
             SprintRampSeconds = c.Bind(section, "Sprint - Build Up Time", SprintRampSeconds, "Seconds for the out-of-combat sprint to build up to full speed.").Value;
             QuailStaminaRegen = c.Bind(section, "Wax Quail - Stamina Regen", QuailStaminaRegen, "Faster stamina refill per Wax Quail (0.25 = +25% per stack).").Value;
-            SlideKey = c.Bind(section, "Slide Key", SlideKey, "Hold on the ground while fast (sprint, dash) or on a downhill slope to slide; hold in the air to slide on landing. Deadlock's crouch.").Value;
+            SlideKeyEntry = c.Bind(section, "Slide Key", new KeyboardShortcut(SlideKey), "Hold on the ground while fast (sprint, dash) or on a downhill slope to slide; hold in the air to slide on landing. Deadlock's crouch.");
+            SlideKey = SlideKeyEntry.Value.MainKey;
             SlideFriction = c.Bind(section, "Slide - Friction", SlideFriction, "Share of slide speed lost per second on flat ground.").Value;
             AirAccel = c.Bind(section, "Air Control", AirAccel, "How hard you steer in the air (m/s2). Momentum is kept either way.").Value;
             WallJumpUp = c.Bind(section, "Wall Jump - Up Speed", WallJumpUp, $"Upward launch speed off a wall (m/s). Chained wall jumps within {WallJumpRecharge} s start at {WallJumpPowerMin * 100f:0}% of it.").Value;
@@ -149,7 +159,7 @@ namespace CursedAppleCuriosities.Deadlock
         /// <summary>0-1 progress of the next pip refilling.</summary>
         public float RegenProgress => Pips < Max ? Mathf.Clamp01(_regen / Profile.StaminaRegenSeconds) : 0f;
 
-        public bool SlideHeld => Input.GetKey(Profile.SlideKey);
+        public bool SlideHeld => Input.GetKey(Profile.SlideKeyEntry != null ? Profile.SlideKeyEntry.Value.MainKey : Profile.SlideKey);
 
         private void Awake() => _body = GetComponent<CharacterBody>();
 
@@ -394,7 +404,8 @@ namespace EntityStates.CursedApple.Deadlock
         /// </summary>
         private void DeadlockSprint()
         {
-            bool want = characterBody.outOfCombat && inputBank.moveVector.sqrMagnitude > 0.01f;
+            bool calm = characterBody.outOfCombat || P.SprintInCombat != null && P.SprintInCombat(characterBody) && characterBody.outOfDanger;
+            bool want = calm && inputBank.moveVector.sqrMagnitude > 0.01f;
             float ramp = want ? Mathf.Min(1f, _mover!.SprintRamp + Time.fixedDeltaTime / Mathf.Max(0.01f, P.SprintRampSeconds)) : 0f;
             _mover!.SprintRamp = ramp;
             characterBody.isSprinting = want;
@@ -612,8 +623,9 @@ namespace EntityStates.CursedApple.Deadlock
                 float cap = Mathf.Lerp(P.SlideMaxSpeedMin, P.SlideMaxSpeed, t);
                 if (Speed < cap) Speed = Mathf.Min(cap, Speed + Mathf.Lerp(P.SlideAccMin, P.SlideAccMax, t) * along * dt);
             }
-            else if (along < 0f) Speed += Mathf.Abs(Physics.gravity.y) * Mathf.Sin(slopeDeg * Mathf.Deg2Rad) * along * dt; // uphill slows you
-            Speed -= Speed * (onSlope ? P.SlideFrictionSlope : P.SlideFriction) * dt;                                       // Source-style friction
+            else if (along < 0f) Speed += Mathf.Abs(Physics.gravity.y) * Mathf.Sin(slopeDeg * Mathf.Deg2Rad) * along * P.SlideUphillLoss * dt; // uphill slows you
+            if (onSlope || fixedAge >= P.SlideFrictionGrace)                                                                 // Source-style friction
+                Speed -= Speed * (onSlope ? P.SlideFrictionSlope : P.SlideFriction) / (1f + P.SlideDistanceBonus) * dt;
             if (Speed < P.SlideSustain && !(onSlope && along > 0f)) { End(); return; }
 
             // Move by root motion along the ground (RoR2's motor would otherwise pull the speed back to a walk).

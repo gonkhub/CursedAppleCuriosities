@@ -21,6 +21,7 @@ namespace CursedAppleCuriosities.Deadlock
         public volatile float GainL, GainR;
         public volatile bool Stopped;   // set by anyone: the mixer drops it
         public volatile bool Finished;  // set by the mixer when a one-shot reaches its end
+        public double Pitch = 1.0;      // playback rate (1 = as recorded)
         internal double Pos;
     }
 
@@ -132,7 +133,7 @@ namespace CursedAppleCuriosities.Deadlock
                     DeadlockVoice voice = Voices[v];
                     short[] s = voice.Clip.Samples;
                     if (voice.Stopped || s.Length == 0) { Voices.RemoveAt(v); continue; }
-                    double step = voice.Clip.Rate / (double)Rate;
+                    double step = voice.Clip.Rate / (double)Rate * voice.Pitch;
                     float l = voice.GainL, r = voice.GainR;
                     for (int f = 0; f < Frames; f++)
                     {

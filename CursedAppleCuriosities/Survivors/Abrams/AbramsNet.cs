@@ -121,7 +121,7 @@ namespace CursedAppleCuriosities.Survivors.Abrams
                 Vector3 force = Kind == AbramsHitKind.SlamImpact ? Vector3.up * 1200f : Dir * 1500f;
                 dealt += AbramsNet.Hit(body, hc, Damage, Crit, force, type);
                 if (!hc.alive) continue;
-                if (Stun > 0f) SetStateOnHurt.SetStunOnObject(t, Stun);
+                if (Stun > 0f) using (DurationExtender.From(body)) SetStateOnHurt.SetStunOnObject(t, Stun);
                 if (Kind == AbramsHitKind.Charge || Kind == AbramsHitKind.SlamGrab)
                 {
                     if (AbramsNet.TooBigToMove(hc.body)) continue;
@@ -215,6 +215,7 @@ namespace CursedAppleCuriosities.Survivors.Abrams
             if (dir.sqrMagnitude > 0.01f) _dir = dir.normalized;
             _lastByPos = by.transform.position;
             _until = Time.time + (slam ? 5f : AbramsData.ChargeDuration + 1.5f); // safety: a release normally follows
+            DeadlockFallGuard.Protect(gameObject, _until - Time.time + 1.5f); // being carried is never a fall
             Stun();
         }
 
@@ -226,7 +227,8 @@ namespace CursedAppleCuriosities.Survivors.Abrams
 
         public void Release(float stun, Vector3 fling)
         {
-            if (stun > 0f) SetStateOnHurt.SetStunOnObject(gameObject, stun);
+            if (stun > 0f) using (DurationExtender.From(By)) SetStateOnHurt.SetStunOnObject(gameObject, stun);
+            DeadlockFallGuard.Protect(gameObject, 1.5f, landed: true);
             if (_motor != null) { _motor.velocity = fling; _motor.disableAirControlUntilCollision = fling.sqrMagnitude > 1f; }
             else if (_rb != null && !_rb.isKinematic) _rb.velocity = fling;
             Destroy(this);
@@ -239,7 +241,8 @@ namespace CursedAppleCuriosities.Survivors.Abrams
             float radius = _body != null ? _body.radius : 1f;
             Vector3 side = Vector3.Cross(Vector3.up, _dir);
             float offset = _slot == 0 ? 0f : (_slot % 2 == 1 ? 1f : -1f) * ((_slot + 1) / 2) * 1.2f;
-            if (_slam) return by.footPosition + _dir * (1f + radius) + side * offset - Vector3.up * 0.5f;
+            // Down with Abrams: a ring around his feet (a line of riders would trail out of the impact).
+            if (_slam) return by.footPosition + Quaternion.Euler(0f, _slot * 47f, 0f) * _dir * (1.5f + radius + 0.4f * (_slot / 8)) - Vector3.up * 0.5f;
             return by.footPosition + _dir * (AbramsData.ChargeCarryAhead + radius) + side * offset + Vector3.up * 0.3f;
         }
 

@@ -36,7 +36,7 @@ namespace CursedAppleCuriosities.Survivors.Lash
         public static Material IndicatorMaterial = null!;
         private static Material? _baseMaterial;
 
-        private static SkillDef? _gun, _groundStrike, _flog, _grapple, _deathSlam;
+        private static SkillDef? _gun, _groundStrike, _grapple, _deathSlam;
 
         private static T Load<T>(string key) where T : UnityEngine.Object => Addressables.LoadAssetAsync<T>(key).WaitForCompletion();
 
@@ -46,7 +46,7 @@ namespace CursedAppleCuriosities.Survivors.Lash
 
             foreach (DeadlockSound s in LashData.Sounds) DeadlockSounds.Register(s);
             DeadlockPingVoice.Track(BodyName, LashData.Hero, "lash");
-            foreach (string icon in new[] { LashData.IconPortrait, LashData.IconGroundStrike, LashData.IconGrapple, LashData.IconFlog, LashData.IconDeathSlam })
+            foreach (string icon in new[] { LashData.IconPortrait, LashData.IconGroundStrike, LashData.IconGrapple, LashData.IconDeathSlam })
                 DeadlockInstall.WantIcon(icon);
             DeadlockHeroes.Register(LashModelSwap.Def);
             DeadlockInstall.WantModel(LashModelSwap.Def.ModelRequest());
@@ -96,7 +96,7 @@ namespace CursedAppleCuriosities.Survivors.Lash
 
         private static void RegisterStates()
         {
-            foreach (Type t in new[] { typeof(FireBurst), typeof(GroundStrike), typeof(GroundStrikeDive), typeof(GroundStrikeLand), typeof(Flog),
+            foreach (Type t in new[] { typeof(FireBurst), typeof(GroundStrike), typeof(GroundStrikeDive), typeof(GroundStrikeLand),
                          typeof(Grapple), typeof(DeathSlamChannel), typeof(DeathSlamHold), typeof(DeathSlamThrow) })
                 ContentAddition.AddEntityState(t, out _);
         }
@@ -126,9 +126,6 @@ namespace CursedAppleCuriosities.Survivors.Lash
             _groundStrike = Skill<SkillDef>("GroundStrike", typeof(GroundStrike), "Body", LashData.GroundStrikeCooldown, InterruptPriority.PrioritySkill); // cuts into Grapple / Death Slam
             _groundStrike.cancelSprintingOnActivation = false;
             _groundStrike.mustKeyPress = true;
-
-            _flog = Skill<SkillDef>("Flog", typeof(Flog), "Weapon", LashData.FlogCooldown, InterruptPriority.Skill);
-            _flog.mustKeyPress = true;
 
             _grapple = Skill<LashGrappleSkillDef>("Grapple", typeof(Grapple), "Body", LashData.GrappleCooldown, InterruptPriority.PrioritySkill);
             _grapple.cancelSprintingOnActivation = false;
@@ -179,7 +176,7 @@ namespace CursedAppleCuriosities.Survivors.Lash
             var locator = body.GetComponent<SkillLocator>();
             locator.primary = Slot(body, "Primary", _gun!);
             locator.secondary = Slot(body, "Secondary", _grapple!);
-            locator.utility = Slot(body, "Utility", _groundStrike!, _flog!);
+            locator.utility = Slot(body, "Utility", _groundStrike!);
             locator.special = Slot(body, "Special", _deathSlam!);
             locator.passiveSkill = new SkillLocator.PassiveSkill
             {
@@ -200,8 +197,22 @@ namespace CursedAppleCuriosities.Survivors.Lash
             if (locatorChildren != null && locatorChildren.FindChild(MuzzleName) == null) locatorChildren.AddChild(MuzzleName, model);
             OwnSkin(model.gameObject, "DEFAULT");
 
+            BiggerCamera(body);
             ContentAddition.AddBody(body);
             return body;
+        }
+
+        /// <summary>Lash's own copy of the stand-in's camera, lifted and pulled back for his bigger model.</summary>
+        private static void BiggerCamera(GameObject body)
+        {
+            var target = body.GetComponent<CameraTargetParams>();
+            if (target == null || target.cameraParams == null) return;
+            CharacterCameraParams cam = ScriptableObject.Instantiate(target.cameraParams);
+            cam.name = "ccpCursedAppleLash";
+            cam.data.pivotVerticalOffset.value += LashData.CameraHeight;
+            Vector3 pos = cam.data.idealLocalCameraPos.value;
+            cam.data.idealLocalCameraPos.value = new Vector3(pos.x, pos.y, pos.z * LashData.CameraDistance);
+            target.cameraParams = cam;
         }
 
         private static GameObject CreateDisplay()
@@ -216,6 +227,7 @@ namespace CursedAppleCuriosities.Survivors.Lash
                 swap.IsDisplay = true;
                 OwnSkin(cm.gameObject, "DISPLAY");
             }
+            display.AddComponent<LashDisplayIntro>();
             return display;
         }
 
@@ -258,7 +270,6 @@ namespace CursedAppleCuriosities.Survivors.Lash
             }
             Set(_groundStrike, LashData.IconGroundStrike);
             Set(_grapple, LashData.IconGrapple);
-            Set(_flog, LashData.IconFlog);
             Set(_deathSlam, LashData.IconDeathSlam);
             if (portrait != null && BodyPrefab != null)
             {
@@ -275,7 +286,7 @@ namespace CursedAppleCuriosities.Survivors.Lash
 
         /// <summary>
         /// Commando's own Wwise jump, landing, death and footstep sounds would play under Lash's: blank them. The
-        /// stand-in's footstep animation events stay (with their dust) and also drive Lash's footsteps.
+        /// stand-in's footstep animation events stay (with their dust); Lash's own feet drive the footsteps.
         /// </summary>
         private static void MuteStandIn(GameObject body, GameObject model)
         {
@@ -344,8 +355,7 @@ namespace CursedAppleCuriosities.Survivors.Lash
                 "Jacob Lash is an Asshole<color=#CCD3E0>\n\n" +
                 "< ! > Ground Strike hits harder the further you fall. Grapple up, then strike back down.\n\n" +
                 "< ! > Grapple only needs a target: it locks onto enemies and allies, and gives your air jumps and dashes back.\n\n" +
-                "< ! > Death Slam reaches far above and below you: keep your crosshair on enemies to lock on. Once one is locked, press primary (or special again) to release early.\n\n" +
-                "< ! > Flog heals you for part of the damage, so whip whole crowds.</color>\n");
+                "< ! > Death Slam reaches far above and below you: keep your crosshair on enemies to lock on. Once one is locked, press primary (or special again) to release early.</color>\n");
             LanguageAPI.Add(Token + "OUTRO", "..and so he left, still waiting for an audience worth the show.");
             LanguageAPI.Add(Token + "FAILURE", "..and so he vanished, the crowd finally silent.");
             LanguageAPI.Add(Token + "LORE", "A showman from the Cursed Apple, lost to the stars and looking for a bigger stage.");
@@ -362,11 +372,6 @@ namespace CursedAppleCuriosities.Survivors.Lash
             LanguageAPI.Add(Token + "GROUNDSTRIKE_DESC",
                 $"<style=cIsUtility>Dive</style> where you aim. Land for <style=cIsDamage>{D(LashData.GroundStrikeDamage)} damage</style> " +
                 $"<style=cIsDamage>+{D(LashData.GroundStrikeDamagePerMetre)} per metre fallen</style> in a wave in front of you.");
-
-            LanguageAPI.Add(Token + "FLOG_NAME", "Flog");
-            LanguageAPI.Add(Token + "FLOG_DESC",
-                $"Whip every enemy in front of you for <style=cIsDamage>{D(LashData.FlogDamage)} damage</style>. " +
-                $"<style=cIsHealing>Heal for {D(LashData.FlogHealFraction)} of the damage dealt</style>.");
 
             LanguageAPI.Add(Token + "GRAPPLE_NAME", "Grapple");
             LanguageAPI.Add(Token + "GRAPPLE_DESC",

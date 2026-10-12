@@ -27,9 +27,9 @@ namespace CursedAppleCuriosities.Survivors.Lash
             StaminaPips = 4,              // heroes have 3; Lash is unique in having more (nerfed to 4)
             AirJumps = 2,                 // heroes have 1
             AirDashesPerAir = 2,          // heroes have 1
+            AirDashMetres = 16f,          // heroes 8 m; doubled by playtest
             GroundDashSeconds = 0.3f,     // the 10 m burst (Deadlock 0.68): quick enough to dodge projectiles, by playtest;
                                           // then it eases to a run until 0.68 s, keeping Deadlock's 0.3-0.55 s dash-jump window
-            SlideKey = UnityEngine.KeyCode.Mouse3, // Mouse 4 (back side button), by playtest
             SlideFriction = 1.2f,         // Deadlock 0.8; more by playtest
             WallJumpUp = 22f,             // Deadlock 13.3; much stronger by playtest
             WallJumpPowerMin = 0.6f,      // a chained wall jump within 1.25 s (Deadlock 0.2)
@@ -44,7 +44,7 @@ namespace CursedAppleCuriosities.Survivors.Lash
         public const float GunBloomPerShot = 0.1f;
 
         // ---- utility: Ground Strike ----
-        public static float GroundStrikeDamage = 5f;
+        public static float GroundStrikeDamage = 3f;
         public static float GroundStrikeDamagePerMetre = 0.5f;
         public const float GroundStrikeDamagePerMetreBeyond = 0.35f;
         public const float FallPrimaryM = 25f;          // Deadlock
@@ -54,15 +54,8 @@ namespace CursedAppleCuriosities.Survivors.Lash
         public const float GroundStrikeMinAimDeg = 60f; // dive at most this far from straight down
         public static float GroundStrikeSpeed = 90f;  // Deadlock StrikeVelocity 50; faster by playtest
 
-        // ---- utility alt: Flog ----
-        public static float FlogDamage = 6f;
-        public static float FlogHealFraction = 0.25f;
-        public static float FlogCooldown = 8f;
-        public const float FlogRange = 25f;
-        public const float FlogConeDeg = 40f;           // Deadlock TargetingConeAngle
-
         // ---- secondary: Grapple ----
-        public static float GrappleCooldown = 5f;
+        public static float GrappleCooldown = 6f;
         public static float GrappleRange = 75f;         // Deadlock: 30 m; much longer by playtest
         public const float GrappleConeDeg = 25f;
         public static float GrappleLaunchSpeed = 35f;   // m/s, launched toward the target
@@ -75,13 +68,15 @@ namespace CursedAppleCuriosities.Survivors.Lash
         // when the crosshair stays near it (DeathSlamAimDeg from the camera's aim) for DeathSlamLockOn seconds.
         public static float DeathSlamRange = 30f;       // cylinder radius (Deadlock AbilityCastRange 20)
         public const float DeathSlamHeight = 60f;       // above Lash; below him it is uncapped (playtest: grappling high lost targets underneath)
-        public static float DeathSlamAimDeg = 12f;
+        public static float DeathSlamAimDeg = 25f;   // 12 at first; widened by playtest
         public const float DeathSlamChannel = 2.76f;
         public static float DeathSlamChannelMaxSpeed = 6f; // horizontal drift cap while channeling (playtest: grapple speed carried him too far)
         public static float DeathSlamLockOn = 0.25f;    // Deadlock 0.7; faster by playtest
         public static int DeathSlamMaxTargets = 6;
-        public const float DeathSlamPull = 1f;          // Deadlock BoostTime
-        public const float DeathSlamHang = 0.6f;
+        public const float DeathSlamPull = 0.6f;        // Deadlock BoostTime 1 s; faster by playtest
+        public const float DeathSlamHang = 0.3f;        // 0.6 at first; faster by playtest
+        public const float DeathSlamLiftMaxSpeed = 35f; // m/s cap on the pull up (uncapped, it shot big fliers through ceilings)
+        public const float DeathSlamFlightMax = 8f;     // s: a throw that never hits terrain by then is checked for the void
         public static float DeathSlamThrow = 28f;       // max throw distance, m (Deadlock 14; doubled by playtest)
         public const float DeathSlamSpeed = 40.6f;
         public const float DeathSlamRadius = 6f;        // Deadlock ImpactRadius
@@ -98,9 +93,6 @@ namespace CursedAppleCuriosities.Survivors.Lash
             GroundStrikeDamagePerMetre = c.Bind(Section, "Ground Strike - Damage Per Metre", GroundStrikeDamagePerMetre, "Extra damage coefficient per metre fallen (first 25 m).").Value;
             GroundStrikeSpeed = c.Bind(Section, "Ground Strike - Dive Speed", GroundStrikeSpeed, "Metres per second.").Value;
             GroundStrikeCooldown = c.Bind(Section, "Ground Strike - Cooldown", GroundStrikeCooldown, "Seconds.").Value;
-            FlogDamage = c.Bind(Section, "Flog - Damage", FlogDamage, "Damage coefficient to every enemy in the cone.").Value;
-            FlogHealFraction = c.Bind(Section, "Flog - Heal Fraction", FlogHealFraction, "Share of Flog damage dealt healed back.").Value;
-            FlogCooldown = c.Bind(Section, "Flog - Cooldown", FlogCooldown, "Seconds.").Value;
             GrappleLaunchSpeed = c.Bind(Section, "Grapple - Launch Speed", GrappleLaunchSpeed, "Metres per second, launched up toward the target.").Value;
             GrappleLaunchAngle = c.Bind(Section, "Grapple - Launch Angle", GrappleLaunchAngle, "Degrees above flat Lash is launched at toward the target (90 = straight up).").Value;
             DeathSlamThrow = c.Bind(Section, "Death Slam - Throw Distance", DeathSlamThrow, "Farthest (metres, flat) Death Slam can throw enemies toward your crosshair.").Value;
@@ -111,6 +103,8 @@ namespace CursedAppleCuriosities.Survivors.Lash
             DeathSlamAimDeg = c.Bind(Section, "Death Slam - Aim Angle", DeathSlamAimDeg, "How close (degrees) the crosshair must be to an enemy to lock onto it.").Value;
             GrappleCooldown = c.Bind(Section, "Grapple - Cooldown", GrappleCooldown, "Seconds (only spent when there is a target).").Value;
             DeathSlamDamage = c.Bind(Section, "Death Slam - Damage", DeathSlamDamage, "Damage coefficient where thrown enemies land.").Value;
+            CameraHeight = c.Bind(Section, "Camera - Height", CameraHeight, "Metres the camera is raised above the default survivor camera.").Value;
+            CameraDistance = c.Bind(Section, "Camera - Distance", CameraDistance, "Camera distance behind Lash, as a multiple of the default survivor camera.").Value;
             DeathSlamCooldown = c.Bind(Section, "Death Slam - Cooldown", DeathSlamCooldown, "Seconds.").Value;
             DeathSlamMaxTargets = c.Bind(Section, "Death Slam - Max Targets", DeathSlamMaxTargets, "Most enemies one Death Slam can lift.").Value;
         }
@@ -118,14 +112,16 @@ namespace CursedAppleCuriosities.Survivors.Lash
         // ---- Deadlock assets (read from the player's own install, never shipped) ----
 
         public const string DlModel = "models/heroes_wip/lash/lash.vmdl_c";
-        public const float ModelHeightScale = 1.08f;      // Lash stands a little taller than the stand-in's capsule
+        public const float ModelHeightScale = 1.08f * 1.25f; // a little taller than the stand-in's capsule, then x1.25 (playtest: x1.1 still too small)
+        // Camera: lifted and pulled back a little for the bigger model (Abrams' needed it at x1.5).
+        public static float CameraHeight = 0.4f;        // metres the camera pivot is raised over Commando's
+        public static float CameraDistance = 1.15f;     // times Commando's camera distance
         public const string MuzzleBone = "muzzle_fx";     // Lash's gun is his glove
 
         public const string IconPortrait = "panorama/images/heroes/lash_sm_psd.vtex_c";
         // Deadlock's own file names are swapped for Lash's first ability.
         public const string IconGroundStrike = "panorama/images/hud/abilities/lash/lash_death_slam_psd.vtex_c";
         public const string IconGrapple = "panorama/images/hud/abilities/lash/lash_lash_psd.vtex_c";
-        public const string IconFlog = "panorama/images/hud/abilities/lash/lash_flog_psd.vtex_c";
         public const string IconDeathSlam = "panorama/images/hud/abilities/lash/lash_counter_lash_psd.vtex_c";
 
         /// <summary>State, Deadlock clip, loop, next state ("locomotion", "hold", a state, or "" for loops), overlay kind.</summary>
@@ -162,7 +158,6 @@ namespace CursedAppleCuriosities.Survivors.Lash
             ("grapple_start", "ability_grapple_start", false, "grapple_air", "full"),
             ("grapple_air", "ability_grapple_in_air_loop", true, "", "full"),
             ("grapple_land", "ability_grapple_land", false, "locomotion", "full"),
-            ("flog", "ability_flog", false, "locomotion", "full"),
             // Death Slam's own targeting pose (cast_channeling_* is the generic item channel every hero shares).
             // Death Slam, as Lash's Deadlock ability graph (lash_abilitymask) has it: the lift IS the channel (he
             // raises them while locking on, then holds the pose), then the throw. Ground and in-air variants.
@@ -193,8 +188,6 @@ namespace CursedAppleCuriosities.Survivors.Lash
             new DeadlockSound { Id = "lash_gs_impact", VpkPrefix = "sounds/abilities/lash/a1_ground_strike/lash_ground_strike_impact", Range = 50f },
             new DeadlockSound { Id = "lash_grapple_cast", VpkPrefix = "sounds/abilities/lash/a2_grapple/lash_a2_grapple_cast", Volume = 0.9f },
             new DeadlockSound { Id = "lash_grapple_target", VpkPrefix = "sounds/abilities/lash/a2_grapple/lash_a2_grapple_target", Volume = 0.8f },
-            new DeadlockSound { Id = "lash_flog_cast", VpkPrefix = "sounds/abilities/lash/a3_flog/lash_a3_flog_cast", Volume = 0.9f },
-            new DeadlockSound { Id = "lash_flog_impact", VpkPrefix = "sounds/abilities/lash/a3_flog/lash_a3_flog_impact", Volume = 0.9f, MinGap = 0.05f },
             new DeadlockSound { Id = "lash_ds_cast", VpkPrefix = "sounds/abilities/lash/a4_death_slam/lash_death_slam_cast", Range = 50f },
             new DeadlockSound { Id = "lash_ds_lockon", VpkPrefix = "sounds/abilities/lash/a4_death_slam/lash_death_slam_lockon", MinGap = 0.05f },
             new DeadlockSound { Id = "lash_ds_launch", VpkPrefix = "sounds/abilities/lash/a4_death_slam/lash_death_slam_launch", Range = 50f },
@@ -204,6 +197,11 @@ namespace CursedAppleCuriosities.Survivors.Lash
             new DeadlockSound { Id = "lash_vo_power2", VpkPrefix = "sounds/vo/lash/lash_use_power2", Chance = 0.6f, MinGap = 4f, Voice = true },
             new DeadlockSound { Id = "lash_vo_power3", VpkPrefix = "sounds/vo/lash/lash_use_power3", Chance = 0.6f, MinGap = 4f, Voice = true },
             new DeadlockSound { Id = "lash_vo_power4", VpkPrefix = "sounds/vo/lash/lash_use_power4", MinGap = 4f, Voice = true },
+            // Desperation: the same abilities cast below a quarter health (DeadlockHeroVoice.Power picks them).
+            new DeadlockSound { Id = "lash_vo_desperation_power1", VpkPrefix = "sounds/vo/lash/lash_desperation_power1", Chance = 0.8f, MinGap = 4f, Voice = true },
+            new DeadlockSound { Id = "lash_vo_desperation_power2", VpkPrefix = "sounds/vo/lash/lash_desperation_power2", Chance = 0.8f, MinGap = 4f, Voice = true },
+            new DeadlockSound { Id = "lash_vo_desperation_power3", VpkPrefix = "sounds/vo/lash/lash_desperation_power3", Chance = 0.8f, MinGap = 4f, Voice = true },
+            new DeadlockSound { Id = "lash_vo_desperation_power4", VpkPrefix = "sounds/vo/lash/lash_desperation_power4", MinGap = 4f, Voice = true },
             new DeadlockSound { Id = "lash_vo_select", VpkPrefix = "sounds/vo/lash/lash_select", MinGap = 2f, Voice = true },
             new DeadlockSound { Id = "lash_vo_kill", VpkPrefix = "sounds/vo/lash/lash_kill_anyhero", Chance = 0.15f, MinGap = 8f, Voice = true },
             new DeadlockSound { Id = "lash_vo_pain", VpkPrefix = "sounds/vo/lash/emote/lash_pain_big", Volume = 0.9f, Chance = 0.35f, MinGap = 3f, Voice = true },
@@ -222,7 +220,7 @@ namespace CursedAppleCuriosities.Survivors.Lash
             new DeadlockSound { Id = "lash_ds_miss", VpkPrefix = "sounds/abilities/lash/a4_death_slam/lash_death_slam_miss" },
             new DeadlockSound { Id = "lash_slide_loop", VpkPrefix = "sounds/gameplay/slide/lp2_texture", Volume = 0.6f, Range = 20f },
             new DeadlockSound { Id = "lash_slide_exit", VpkPrefix = "sounds/gameplay/slide/exit", Volume = 0.7f, Range = 20f, MinGap = 0.2f },
-            new DeadlockSound { Id = "lash_footstep", VpkPrefix = "sounds/player/footsteps/lash/lash_footstep", Volume = 0.45f, Range = 20f, MinGap = 0.12f },
+            new DeadlockSound { Id = "lash_footstep", VpkPrefix = "sounds/player/footsteps/lash/lash_footstep", Volume = 0.27f, Range = 20f, MinGap = 0.12f },
             new DeadlockSound { Id = "lash_vo_pain_small", VpkPrefix = "sounds/vo/lash/emote/lash_pain_small", Volume = 0.8f, Chance = 0.25f, MinGap = 2f, Voice = true },
             new DeadlockSound { Id = "lash_vo_efforts", VpkPrefix = "sounds/vo/lash/emote/lash_efforts", Volume = 0.7f, Chance = 0.4f, MinGap = 1f, Voice = true },
             new DeadlockSound { Id = "lash_vo_low_health", VpkPrefix = "sounds/vo/lash/lash_low_health_warning", MinGap = 20f, Voice = true },

@@ -46,6 +46,13 @@ namespace CursedAppleCuriosities.Deadlock
         /// Points not listed sit on the bone HeroBoneFor picks, turned like the stand-in's point at attach time.
         /// </summary>
         public Dictionary<string, (string Bone, Vector3 Pos, Vector3 Angles, Vector3 Scale)>? ItemAnchors;
+        /// <summary>
+        /// Material colour tints by glTF material name. Some Deadlock materials are a blank white texture coloured by a
+        /// tint parameter (g_vColorTint1), which the converter drops: e.g. Vyper's gun (tengu_gun) came out white.
+        /// </summary>
+        public Dictionary<string, Color>? MaterialTints;
+        /// <summary>Self-lit materials by glTF material name: flat colour that glows (e.g. Seven's Storm Cloud skeleton, blue_illum, made orange).</summary>
+        public Dictionary<string, Color>? MaterialGlows;
 
         public string Sound(string key) => Hero + "_" + key;
         public bool IsRootLocked(string state) => RootLocked.Contains(state) || state.StartsWith("sprint_") || state.Contains(".sprint_");
@@ -128,7 +135,14 @@ namespace CursedAppleCuriosities.Deadlock
             _body = _model != null ? _model.body : null;
             if (_def == null) { CursedAppleCuriositiesPlugin.Logger?.LogWarning($"[Deadlock] no hero registered as '{HeroKey}'"); enabled = false; return; }
             TryAttach();
-            if (IsDisplay) DeadlockSounds.Play(_def.Sound("vo_select"), transform.position);
+            // A lobby intro says the line itself once the hero is on the pedestal (from the start position it was too far to hear).
+            if (IsDisplay && GetComponentInParent<DeadlockDisplayIntro>() == null) PlaySelectVoice(transform.position);
+        }
+
+        /// <summary>The hero's character-select line.</summary>
+        public void PlaySelectVoice(Vector3 at)
+        {
+            if (_def != null) DeadlockSounds.Play(_def.Sound("vo_select"), at);
         }
 
         private void Update()
@@ -142,7 +156,19 @@ namespace CursedAppleCuriosities.Deadlock
             if (_def == null) return;
             _tries++;
             DeadlockHeroDef def = _def;
-            GlbModel? template = DeadlockInstall.Model(def.Hero, (name, tex) => DeadlockHeroes.MakeMaterial(def.DisplayName, name, tex));
+            GlbModel? template = DeadlockInstall.Model(def.Hero, (name, tex) =>
+            {
+                Material m = DeadlockHeroes.MakeMaterial(def.DisplayName, name, tex);
+                if (def.MaterialTints != null && def.MaterialTints.TryGetValue(name, out Color tint)) m.color = tint;
+                if (def.MaterialGlows != null && def.MaterialGlows.TryGetValue(name, out Color glow))
+                {
+                    m.mainTexture = null; // the colour comes from the glow, not the original (blue) texture
+                    m.color = glow;
+                    if (m.HasProperty("_EmColor")) m.SetColor("_EmColor", glow);
+                    if (m.HasProperty("_EmPower")) m.SetFloat("_EmPower", 6f);
+                }
+                return m;
+            });
             if (template == null)
             {
                 // Say why the hero is the stand-in, to their own player only (or in the lobby).
@@ -364,13 +390,16 @@ namespace CursedAppleCuriosities.Deadlock
     }
 
     /// <summary>
-    /// The hero's Deadlock footsteps, on the stand-in skeleton's footstep animation events (the same events RoR2's
-    /// FootstepHandler uses for dust; its own Wwise footstep is blanked). Sound id "{hero}_footstep".
+    /// Fallback footsteps for a hero without an animated Deadlock model: the stand-in skeleton's footstep animation
+    /// events (the same events RoR2's FootstepHandler uses for dust; its own Wwise footstep is blanked). With the
+    /// model, DeadlockAnimator steps on the hero's own feet instead (the stand-in runs on Commando's stride, which
+    /// never matched). Sound id "{hero}_footstep".
     /// </summary>
     public class DeadlockFootsteps : MonoBehaviour
     {
         public string HeroKey = "";
         private CharacterModel? _model;
+        private DeadlockModelSwap? _swap;
         private EntityStateMachine? _machine;
 
         private void Awake() => _model = GetComponent<CharacterModel>();
@@ -379,6 +408,8 @@ namespace CursedAppleCuriosities.Deadlock
 
         private void Step()
         {
+            if (_swap == null) _swap = GetComponent<DeadlockModelSwap>();
+            if (_swap != null && _swap.Animator != null && _swap.Animator.Ready) return; // the hero's feet step instead
             CharacterBody? body = _model != null ? _model.body : null;
             if (body == null || body.characterMotor == null || !body.characterMotor.isGrounded) return;
             // The stand-in's animator keeps "running" under a slide, dash or ability: only real walking steps.
@@ -423,6 +454,9 @@ namespace CursedAppleCuriosities.Deadlock
         private Transform? _ikWeapon, _ikHand;
         private Quaternion _ikRot;
         private Vector3 _ikPos;
+        private class Foot { public Transform Bone = null!; public float Lo, Hi; public bool Up, Tracking; }
+        private Foot[] _feet = Array.Empty<Foot>();
+        private float _legLength;
 
         public bool Ready => _clips != null && _cur.Valid;
         public string Current => _cur.Valid ? _cur.Row.State : "";
@@ -440,6 +474,14 @@ namespace CursedAppleCuriosities.Deadlock
             _bones.TryGetValue("spine_3", out _spine3);
             if (def.HandIK is var (weapon, hand) && _bones.TryGetValue(weapon, out Transform w) && _bones.TryGetValue(hand, out Transform h))
                 (_ikWeapon, _ikHand) = (w, h);
+            var feet = new List<Foot>();
+            foreach (string side in new[] { "_L", "_R" })
+                if (_bones.TryGetValue("ankle" + side, out Transform ankle))
+                {
+                    feet.Add(new Foot { Bone = ankle });
+                    if (_bones.TryGetValue("leg_upper" + side, out Transform hip)) _legLength = Mathf.Max(_legLength, Vector3.Distance(hip.position, ankle.position));
+                }
+            _feet = feet.ToArray();
             _lastPos = transform.position;
             TryClips();
         }
@@ -575,6 +617,15 @@ namespace CursedAppleCuriosities.Deadlock
 
         private float _lastAir, _lastFallSpeed;
 
+        /// <summary>Lobby display (no body): a one-shot an intro plays runs on to its next state, and back to idle.</summary>
+        private float DisplayStep()
+        {
+            if (_cur.Row.Loop || _cur.T < _cur.Clip.Length) return 1f;
+            string next = _cur.Row.Next;
+            if (next == "" || next == "hold" || next == "locomotion" || !Switch(next, 0.15f)) Switch("idle", 0.2f);
+            return 1f;
+        }
+
         private void LateUpdate()
         {
             float dt = Time.deltaTime;
@@ -591,7 +642,7 @@ namespace CursedAppleCuriosities.Deadlock
             if (!Grounded) { _lastAir = _airTime + dt; _lastFallSpeed = Mathf.Min(_lastFallSpeed, _vel.y); }
             else if (_groundedFor > 0.2f) _lastFallSpeed = 0f;
 
-            float scale = _display ? 1f : Decide(dt);
+            float scale = _display ? DisplayStep() : Decide(dt);
             Advance(_cur, dt * scale);
             if (_prev.Valid) Advance(_prev, dt);
             _fade = Mathf.Min(1f, _fade + dt / _fadeTime);
@@ -606,6 +657,36 @@ namespace CursedAppleCuriosities.Deadlock
             GripCapture();
             AimPitch();
             HandIK();
+            if (!_display) Footsteps(dt);
+        }
+
+        /// <summary>
+        /// Footsteps on the hero's own feet: a step when an ankle comes back down to the bottom of its stride, so the
+        /// sound lands with the visible foot at any clip speed. Each foot's stride range is learned as it runs
+        /// (any hero size or gait); a foot must lift past 60% of it, then a plant is under 30%.
+        /// </summary>
+        private void Footsteps(float dt)
+        {
+            if (_body == null || _feet.Length == 0) return;
+            string id = _cur.Row.State;
+            bool walking = Grounded && !Dead && IsLocomotion(id) && !id.EndsWith("idle");
+            float minRange = Mathf.Max(0.02f, _legLength * 0.08f);
+            float relax = 1f - Mathf.Exp(-dt * 0.5f); // the range forgets slowly, for a gait change
+            foreach (Foot f in _feet)
+            {
+                float h = f.Bone.position.y - transform.position.y;
+                if (!walking || !f.Tracking) { f.Lo = f.Hi = h; f.Up = false; f.Tracking = walking; continue; }
+                f.Lo = Mathf.Min(h, Mathf.Lerp(f.Lo, h, relax));
+                f.Hi = Mathf.Max(h, Mathf.Lerp(f.Hi, h, relax));
+                float range = f.Hi - f.Lo;
+                if (range < minRange) continue;
+                if (!f.Up) { if (h > f.Lo + range * 0.6f) f.Up = true; }
+                else if (h < f.Lo + range * 0.3f)
+                {
+                    f.Up = false;
+                    DeadlockSounds.Play(_def.Sound("footstep"), f.Bone.position, _body.gameObject);
+                }
+            }
         }
 
         /// <summary>The weapon in the hand's space as the clips posed it (before the aim bend moves the hand).</summary>

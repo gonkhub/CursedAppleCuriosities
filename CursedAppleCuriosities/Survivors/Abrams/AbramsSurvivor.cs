@@ -66,6 +66,17 @@ namespace CursedAppleCuriosities.Survivors.Abrams
             DeadlockPingVoice.Track(BodyName, AbramsData.Hero, "atlas");
 
             host.AddComponent<AbramsIcons>();
+            CharacterBody.onBodyStartGlobal += GiveStarterItems;
+        }
+
+        /// <summary>Server: a player's Abrams starts each run with one Ghor's Tome (once per run, kept if dropped or spent).</summary>
+        private static void GiveStarterItems(CharacterBody body)
+        {
+            if (!UnityEngine.Networking.NetworkServer.active || body == null || body.master == null || body.inventory == null) return;
+            if (body.bodyIndex != BodyCatalog.FindBodyIndex(BodyName) || body.master.playerCharacterMasterController == null) return;
+            if (body.master.GetComponent<AbramsStarterGiven>() != null) return; // the master lives for the whole run
+            body.master.gameObject.AddComponent<AbramsStarterGiven>();
+            body.inventory.GiveItem(RoR2Content.Items.BonusGoldPackOnKill, 1);
         }
 
         // ---------------- assets ----------------
@@ -150,7 +161,7 @@ namespace CursedAppleCuriosities.Survivors.Abrams
             cb.bodyColor = Color;
             cb.baseMaxHealth = AbramsData.BaseHealth;
             cb.levelMaxHealth = AbramsData.HealthPerLevel;
-            cb.baseArmor = AbramsData.BaseArmor;
+            cb.baseArmor = AbramsData.BaseArmor + AbramsData.ResilienceArmor; // Infernal Resilience adds its armor
             cb.baseDamage = AbramsData.BaseDamage;
             cb.levelDamage = AbramsData.DamagePerLevel;
             cb.baseMoveSpeed = AbramsData.BaseSpeed;
@@ -160,9 +171,9 @@ namespace CursedAppleCuriosities.Survivors.Abrams
             Kit.AddMachine(body, "Siphon");
             var locator = body.GetComponent<SkillLocator>();
             locator.primary = Kit.Slot(body, BodyName, "Primary", _shotgun!);
-            locator.secondary = Kit.Slot(body, BodyName, "Secondary", _siphon!, _melee!);
+            locator.secondary = Kit.Slot(body, BodyName, "Secondary", _siphon!);
             locator.utility = Kit.Slot(body, BodyName, "Utility", _charge!);
-            locator.special = Kit.Slot(body, BodyName, "Special", _slam!);
+            locator.special = Kit.Slot(body, BodyName, "Special", _melee!, _slam!);
             locator.passiveSkill = new SkillLocator.PassiveSkill
             {
                 enabled = true,
@@ -183,8 +194,23 @@ namespace CursedAppleCuriosities.Survivors.Abrams
             if (children != null && children.FindChild(MuzzleName) == null) children.AddChild(MuzzleName, model);
             Kit.OwnSkin(model.gameObject, "skinCursedAppleAbramsDEFAULT", Token + "SKIN_DEFAULT");
 
+            BigCamera(body);
             ContentAddition.AddBody(body);
             return body;
+        }
+
+        /// <summary>Abrams' own copy of the stand-in's camera: pivot raised, pulled back, so the crosshair clears his head.</summary>
+        private static void BigCamera(GameObject body)
+        {
+            var target = body.GetComponent<CameraTargetParams>();
+            if (target == null || target.cameraParams == null) return;
+            CharacterCameraParams cam = ScriptableObject.Instantiate(target.cameraParams);
+            cam.name = "ccpCursedAppleAbrams";
+            cam.data.pivotVerticalOffset.value += AbramsData.CameraHeight;
+            Vector3 pos = cam.data.idealLocalCameraPos.value;
+            cam.data.idealLocalCameraPos.value = new Vector3(pos.x, pos.y, pos.z * AbramsData.CameraDistance);
+            target.cameraParams = cam;
+            CursedAppleCuriositiesPlugin.Logger?.LogInfo($"[Abrams] camera: pivot +{AbramsData.CameraHeight} m, {pos} -> {cam.data.idealLocalCameraPos.value}");
         }
 
         private static GameObject CreateDisplay()
@@ -268,7 +294,7 @@ namespace CursedAppleCuriosities.Survivors.Abrams
             LanguageAPI.Add(Token + "PASSIVE_NAME", "Infernal Resilience");
             LanguageAPI.Add(Token + "PASSIVE_DESC",
                 $"<style=cIsHealing>Regenerate {D(AbramsData.ResilienceFraction)}</style> of all damage taken over <style=cIsUtility>{AbramsData.ResilienceSeconds:0}s</style>. " +
-                $"Melee hits <style=cIsHealing>heal for {D(AbramsData.MeleeLifesteal)}</style> of the damage dealt. " +
+                $"Gain <style=cIsHealing>+{AbramsData.ResilienceArmor:0} armor</style>. " +
                 "Abrams <style=cIsUtility>sprints automatically</style> out of combat, and can <style=cIsUtility>slide</style>, <style=cIsUtility>dash</style> and <style=cIsUtility>air jump</style>.");
 
             LanguageAPI.Add(Token + "SHOTGUN_NAME", "Abrams' Shotgun");
@@ -282,7 +308,8 @@ namespace CursedAppleCuriosities.Survivors.Abrams
 
             LanguageAPI.Add(Token + "HEAVYMELEE_NAME", "Heavy Melee");
             LanguageAPI.Add(Token + "HEAVYMELEE_DESC",
-                $"Wind up and lunge, then punch everything in front of you for <style=cIsDamage>{D(AbramsData.MeleeDamage)} damage</style>.");
+                $"Wind up and lunge, then punch everything in front of you for <style=cIsDamage>{D(AbramsData.MeleeDamage)} damage</style>. " +
+                $"<style=cIsHealing>Heal for {D(AbramsData.MeleeLifesteal)}</style> of the damage dealt.");
 
             LanguageAPI.Add(Token + "CHARGE_NAME", "Shoulder Charge");
             LanguageAPI.Add(Token + "CHARGE_DESC",
@@ -296,6 +323,9 @@ namespace CursedAppleCuriosities.Survivors.Abrams
                 "Enemies in your way are dragged down with you.");
         }
     }
+
+    /// <summary>Marks a player's master that already got Abrams' starting items this run.</summary>
+    public class AbramsStarterGiven : MonoBehaviour { }
 
     /// <summary>Waits for the Deadlock reader, then swaps placeholder icons for Abrams' own.</summary>
     public class AbramsIcons : MonoBehaviour

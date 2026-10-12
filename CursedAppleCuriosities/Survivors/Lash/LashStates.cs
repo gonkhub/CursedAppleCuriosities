@@ -141,7 +141,7 @@ namespace EntityStates.CursedApple.Lash
             base.OnEnter();
             DeadlockFallGuard.Protect(gameObject, 2f);
             DeadlockSounds.Play("lash_gs_whoosh", transform.position, gameObject);
-            DeadlockSounds.Play("lash_vo_power2", transform.position, gameObject);
+            DeadlockHeroVoice.Power("lash_vo_power2", gameObject);
             if (!isAuthority) return;
             if (characterMotor.isGrounded)
             {
@@ -269,58 +269,6 @@ namespace EntityStates.CursedApple.Lash
         public override InterruptPriority GetMinimumInterruptPriority() => InterruptPriority.PrioritySkill;
     }
 
-    // ================= Utility (alt): Flog =================
-
-    /// <summary>Flog: whip every enemy in a cone in front of Lash and heal for part of the damage.</summary>
-    public class Flog : BaseSkillState
-    {
-        public override void OnEnter()
-        {
-            base.OnEnter();
-            Ray aim = GetAimRay();
-            StartAimMode(aim, 1f);
-            LashModelSwap.Play(gameObject, "flog");
-            DeadlockSounds.Play("lash_flog_cast", transform.position, gameObject);
-            DeadlockSounds.Play("lash_vo_power3", transform.position, gameObject);
-
-            // Every client finds the same targets for the whips; only the owner deals damage.
-            var search = new BullseyeSearch
-            {
-                teamMaskFilter = TeamMask.GetEnemyTeams(GetTeam()),
-                filterByLoS = true,
-                filterByDistinctEntity = true,
-                searchOrigin = aim.origin,
-                searchDirection = aim.direction,
-                sortMode = BullseyeSearch.SortMode.Distance,
-                maxDistanceFilter = LashData.FlogRange,
-                maxAngleFilter = LashData.FlogConeDeg * 0.5f,
-            };
-            search.RefreshCandidates();
-            search.FilterOutGameObject(gameObject);
-            var targets = new List<GameObject>();
-            Transform? hand = FindModelChild(LashSurvivor.MuzzleName);
-            Vector3 from = hand != null && hand.name == LashData.MuzzleBone ? hand.position : characterBody.corePosition;
-            foreach (HurtBox h in search.GetResults())
-            {
-                if (h.healthComponent == null) continue;
-                targets.Add(h.healthComponent.gameObject);
-                Fx.Line(from, h.transform.position, Fx.Whip, 0.08f, 0.2f);
-                if (LashSurvivor.SlashEffect != null) EffectManager.SimpleImpactEffect(LashSurvivor.SlashEffect, h.transform.position, -aim.direction, false);
-                DeadlockSounds.Play("lash_flog_impact", h.transform.position);
-            }
-            if (isAuthority && targets.Count > 0)
-                LashNet.ToServer(new FlogMessage { Attacker = gameObject, Targets = targets.ToArray(), Damage = LashData.FlogDamage * damageStat, Crit = RollCrit(), HealFraction = LashData.FlogHealFraction });
-        }
-
-        public override void FixedUpdate()
-        {
-            base.FixedUpdate();
-            if (isAuthority && fixedAge >= 0.45f) outer.SetNextStateToMain();
-        }
-
-        public override InterruptPriority GetMinimumInterruptPriority() => InterruptPriority.PrioritySkill;
-    }
-
     // ================= Secondary: Grapple =================
 
     /// <summary>
@@ -336,7 +284,7 @@ namespace EntityStates.CursedApple.Lash
             base.OnEnter();
             LashModelSwap.Play(gameObject, "grapple_start");
             DeadlockSounds.Play("lash_grapple_cast", transform.position, gameObject);
-            DeadlockSounds.Play("lash_vo_power1", transform.position, gameObject);
+            DeadlockHeroVoice.Power("lash_vo_power1", gameObject);
             var tracker = GetComponent<LashGrappleTracker>();
             _target = tracker != null ? tracker.Target : null;
             if (_target != null)
@@ -389,8 +337,8 @@ namespace EntityStates.CursedApple.Lash
             base.OnEnter();
             LashModelSwap.Play(gameObject, characterMotor != null && characterMotor.isGrounded ? "ds_channel_ground" : "ds_channel");
             DeadlockSounds.Play("lash_ds_cast", transform.position, gameObject);
-            DeadlockSounds.Play("lash_vo_power4", transform.position, gameObject);
-            _loop = DeadlockSounds.Loop("lash_ds_channel", gameObject, LashData.DeathSlamChannel + 0.2f);
+            DeadlockHeroVoice.Power("lash_vo_power4", gameObject);
+            _loop = DeadlockSounds.Loop("lash_ds_channel", gameObject, LashData.DeathSlamChannel * DurationExtender.Multiplier(characterBody) + 0.2f);
             if (isAuthority)
             {
                 _ring = Fx.Outline("CursedApple_DeathSlamArea");
@@ -407,12 +355,12 @@ namespace EntityStates.CursedApple.Lash
             base.Update();
             if (_ring == null || characterBody == null) return;
             Vector3 me = characterBody.footPosition;
-            Fx.Ring(_ring, me, LashData.DeathSlamRange);
+            Fx.Ring(_ring, me, LashData.DeathSlamRange * MysticExpansion.RadiusMultiplier(characterBody));
             bool ground = Physics.Raycast(me + Vector3.up * 0.5f, Vector3.down, out RaycastHit hit, 2000f, LayerIndex.world.mask, QueryTriggerInteraction.Ignore) && hit.distance > 2f;
             if (_groundRing != null)
             {
                 _groundRing.enabled = ground;
-                if (ground) Fx.Ring(_groundRing, hit.point, LashData.DeathSlamRange);
+                if (ground) Fx.Ring(_groundRing, hit.point, LashData.DeathSlamRange * MysticExpansion.RadiusMultiplier(characterBody));
             }
         }
 
@@ -431,6 +379,7 @@ namespace EntityStates.CursedApple.Lash
             Ray aim = GetAimRay();
             Vector3 me = characterBody.footPosition;
             var inRange = new HashSet<CharacterBody>();
+            float reach = LashData.DeathSlamRange * MysticExpansion.RadiusMultiplier(characterBody);
             TeamMask enemies = TeamMask.GetEnemyTeams(GetTeam());
             for (TeamIndex t = 0; t < TeamIndex.Count; t++)
             {
@@ -440,7 +389,7 @@ namespace EntityStates.CursedApple.Lash
                     CharacterBody b = tc.body;
                     if (b == null || b.healthComponent == null || !b.healthComponent.alive) continue; // bosses too (playtest)
                     Vector3 d = b.corePosition - me;
-                    if (d.y <= LashData.DeathSlamHeight && new Vector2(d.x, d.z).magnitude <= LashData.DeathSlamRange) inRange.Add(b);
+                    if (d.y <= LashData.DeathSlamHeight && new Vector2(d.x, d.z).magnitude <= reach) inRange.Add(b);
                 }
             }
             foreach (CharacterBody b in inRange)
@@ -460,7 +409,7 @@ namespace EntityStates.CursedApple.Lash
             // Release early with primary (Deadlock: left mouse) or special again, once something is locked (playtest:
             // a reflex click with nothing locked cancelled it). The gun doesn't fire: only the main state reads it.
             bool early = fixedAge > 0.2f && _locked.Count > 0 && (inputBank.skill1.justPressed || inputBank.skill4.justPressed);
-            if (fixedAge < LashData.DeathSlamChannel && !early) return;
+            if (fixedAge < LashData.DeathSlamChannel * DurationExtender.Multiplier(characterBody) && !early) return;
             if (_locked.Count == 0) { DeadlockSounds.Play("lash_ds_miss", transform.position, gameObject); outer.SetNextStateToMain(); return; }
             // Every locked enemy is thrown (playtest: a line-of-sight check here silently cancelled throws whenever
             // terrain was between Lash and his targets; the lock itself already needed them under the crosshair).
@@ -556,11 +505,12 @@ namespace EntityStates.CursedApple.Lash
         {
             Ray aim = GetAimRay();
             Vector3 me = characterBody.footPosition;
-            Vector3 target = Physics.Raycast(aim, out RaycastHit hit, LashData.DeathSlamThrow + 20f, LayerIndex.world.mask, QueryTriggerInteraction.Ignore)
-                ? hit.point : aim.origin + aim.direction * (LashData.DeathSlamThrow + 6f);
+            float far = LashData.DeathSlamThrow * MysticExpansion.RadiusMultiplier(characterBody);
+            Vector3 target = Physics.Raycast(aim, out RaycastHit hit, far + 20f, LayerIndex.world.mask, QueryTriggerInteraction.Ignore)
+                ? hit.point : aim.origin + aim.direction * (far + 6f);
             Vector3 flat = target - me;
             flat.y = 0f;
-            if (flat.magnitude > LashData.DeathSlamThrow) target = me + flat.normalized * LashData.DeathSlamThrow + Vector3.up * (target.y - me.y);
+            if (flat.magnitude > far) target = me + flat.normalized * far + Vector3.up * (target.y - me.y);
             if (Physics.Raycast(target + Vector3.up * 20f, Vector3.down, out RaycastHit ground, 80f, LayerIndex.world.mask, QueryTriggerInteraction.Ignore))
                 target = ground.point;
             return target;

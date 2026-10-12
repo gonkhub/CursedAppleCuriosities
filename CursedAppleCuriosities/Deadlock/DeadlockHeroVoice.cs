@@ -6,7 +6,7 @@ namespace CursedAppleCuriosities.Deadlock
 {
     /// <summary>
     /// A Deadlock hero's combat voice, by sound id "{hero}_vo_*": grunts when hit (big hits more often), a warning when
-    /// health runs low, kill lines (a killstreak line for twelve kills within 10 s) and a death cry.
+    /// health runs low, desperate ability lines while it stays low, kill lines (a killstreak line for twelve kills within 10 s) and a death cry.
     /// </summary>
     public static class DeadlockHeroVoice
     {
@@ -15,6 +15,9 @@ namespace CursedAppleCuriosities.Deadlock
         private static readonly Dictionary<string, List<float>> RecentKills = new Dictionary<string, List<float>>();
         private static bool _hooked;
 
+        /// <summary>Below this share of health the hero warns once and casts with desperation lines.</summary>
+        public const float LowHealth = 0.25f;
+
         public static void Track(string bodyName, string hero)
         {
             BodyToHero[bodyName] = hero;
@@ -22,6 +25,19 @@ namespace CursedAppleCuriosities.Deadlock
             _hooked = true;
             GlobalEventManager.onCharacterDeathGlobal += OnDeath;
             GlobalEventManager.onClientDamageNotified += OnDamaged;
+        }
+
+        /// <summary>
+        /// An ability line, "{hero}_vo_powerN", or Deadlock's desperate take on it ("{hero}_vo_desperation_powerN")
+        /// while the caster is below <see cref="LowHealth"/> and the hero has one.
+        /// </summary>
+        public static void Power(string id, GameObject speaker)
+        {
+            var hc = speaker.GetComponent<HealthComponent>();
+            string desperate = id.Replace("_vo_power", "_vo_desperation_power");
+            if (hc != null && hc.alive && hc.combinedHealth < hc.fullCombinedHealth * LowHealth && DeadlockSounds.Has(desperate))
+                id = desperate;
+            DeadlockSounds.Play(id, speaker.transform.position, speaker);
         }
 
         private static string? HeroOf(CharacterBody? body)
@@ -44,7 +60,7 @@ namespace CursedAppleCuriosities.Deadlock
             float frac = hc.combinedHealth / max;
             float before = LastHealth.TryGetValue(msg.victim, out float b) ? b : 1f;
             LastHealth[msg.victim] = frac;
-            if (frac < 0.25f && before >= 0.25f) DeadlockSounds.Play(hero + "_vo_low_health", at, msg.victim);
+            if (frac < LowHealth && before >= LowHealth) DeadlockSounds.Play(hero + "_vo_low_health", at, msg.victim);
         }
 
         private static void OnDeath(DamageReport report)

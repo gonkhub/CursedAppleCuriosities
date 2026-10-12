@@ -89,7 +89,7 @@ namespace CursedAppleCuriosities.Deadlock
 
         /// <summary>
         /// The stand-in's own Wwise jump, landing, death and footstep sounds would play under the hero's: blank them.
-        /// The stand-in's footstep animation events stay (with their dust) and drive the hero's footsteps.
+        /// The stand-in's footstep animation events stay (with their dust); the hero's own feet drive its footsteps.
         /// </summary>
         public static void MuteStandIn(GameObject body, GameObject model, string hero)
         {
@@ -144,5 +144,147 @@ namespace CursedAppleCuriosities.Deadlock
         }
 
         public static Sprite Sprite(Texture2D t) => UnityEngine.Sprite.Create(t, new Rect(0, 0, t.width, t.height), new Vector2(0.5f, 0.5f));
+
+        private static readonly System.Collections.Generic.Dictionary<float, Texture2D> Ramps = new System.Collections.Generic.Dictionary<float, Texture2D>();
+
+        /// <summary>
+        /// A vanilla effect recoloured (a copy: the original is untouched). Most RoR2 VFX take their colour from a remap
+        /// ramp texture (_RemapTex), so a tint alone wouldn't do: ramps are replaced by one in the new hue, and tints,
+        /// particle colours, trails and lights are hue-shifted (brightness and alpha kept).
+        /// </summary>
+        public static GameObject? Recoloured(GameObject? source, string name, float hue, bool effect)
+        {
+            if (source == null) return null;
+            GameObject copy = source.InstantiateClone(name, false);
+            Recolour(copy, hue);
+            if (effect)
+            {
+                // Cloned effects never get an effect pool: pooled-effect leftovers made every tracer log
+                // "Tracer: No owning pool set" (2289 times in one Seven run, playtest 2026-10-12). Spawn them unpooled.
+                var vfx = copy.GetComponent<VFXAttributes>() ?? copy.AddComponent<VFXAttributes>();
+                vfx.DoNotPool = true;
+                foreach (EffectManagerHelper helper in copy.GetComponentsInChildren<EffectManagerHelper>(true)) UnityEngine.Object.DestroyImmediate(helper);
+                ContentAddition.AddEffect(copy);
+            }
+            return copy;
+        }
+
+        public static void Recolour(GameObject root, float hue)
+        {
+            Color Shift(Color c)
+            {
+                Color.RGBToHSV(c, out _, out float s, out float v);
+                Color o = Color.HSVToRGB(hue, Mathf.Max(s, 0.6f), v);
+                o.a = c.a;
+                return o;
+            }
+            Gradient ShiftG(Gradient g)
+            {
+                var keys = g.colorKeys;
+                for (int i = 0; i < keys.Length; i++) keys[i].color = Shift(keys[i].color);
+                var n = new Gradient();
+                n.SetKeys(keys, g.alphaKeys);
+                n.mode = g.mode;
+                return n;
+            }
+            ParticleSystem.MinMaxGradient ShiftMM(ParticleSystem.MinMaxGradient m)
+            {
+                switch (m.mode)
+                {
+                    case ParticleSystemGradientMode.Color: return new ParticleSystem.MinMaxGradient(Shift(m.color));
+                    case ParticleSystemGradientMode.TwoColors: return new ParticleSystem.MinMaxGradient(Shift(m.colorMin), Shift(m.colorMax));
+                    case ParticleSystemGradientMode.Gradient: return new ParticleSystem.MinMaxGradient(ShiftG(m.gradient));
+                    case ParticleSystemGradientMode.TwoGradients: return new ParticleSystem.MinMaxGradient(ShiftG(m.gradientMin), ShiftG(m.gradientMax));
+                    default: return m;
+                }
+            }
+            if (!Ramps.TryGetValue(hue, out Texture2D ramp))
+            {
+                // Dark to the hue to near-white, like RoR2's own ramps.
+                ramp = new Texture2D(256, 1, TextureFormat.RGBA32, false) { wrapMode = TextureWrapMode.Clamp, name = "texRampCursedApple" + hue };
+                for (int x = 0; x < 256; x++)
+                {
+                    float t = x / 255f;
+                    Color c = t < 0.6f ? Color.Lerp(Color.black, Color.HSVToRGB(hue, 0.9f, 1f), t / 0.6f) : Color.Lerp(Color.HSVToRGB(hue, 0.9f, 1f), new Color(1f, 0.95f, 0.8f), (t - 0.6f) / 0.4f);
+                    c.a = t;
+                    ramp.SetPixel(x, 0, c);
+                }
+                ramp.Apply();
+                Ramps[hue] = ramp;
+            }
+            foreach (Renderer r in root.GetComponentsInChildren<Renderer>(true))
+            {
+                var mats = r.sharedMaterials;
+                for (int i = 0; i < mats.Length; i++)
+                {
+                    if (mats[i] == null) continue;
+                    var m = new Material(mats[i]);
+                    if (m.HasProperty("_RemapTex") && m.GetTexture("_RemapTex") != null) m.SetTexture("_RemapTex", ramp);
+                    foreach (string p in new[] { "_TintColor", "_Color", "_EmColor", "_EmissionColor" })
+                        if (m.HasProperty(p)) m.SetColor(p, Shift(m.GetColor(p)));
+                    mats[i] = m;
+                }
+                r.sharedMaterials = mats;
+                if (r is TrailRenderer tr) tr.colorGradient = ShiftG(tr.colorGradient);
+                if (r is LineRenderer lr) lr.colorGradient = ShiftG(lr.colorGradient);
+            }
+            foreach (ParticleSystem ps in root.GetComponentsInChildren<ParticleSystem>(true))
+            {
+                var main = ps.main;
+                main.startColor = ShiftMM(main.startColor);
+                var col = ps.colorOverLifetime;
+                if (col.enabled) col.color = ShiftMM(col.color);
+            }
+            foreach (Light l in root.GetComponentsInChildren<Light>(true)) l.color = Shift(l.color);
+        }
+
+        /// <summary>The first of several Addressables keys that loads (a missing asset costs its effect, never the hero).</summary>
+        public static T? TryLoad<T>(string tag, params string[] keys) where T : UnityEngine.Object
+        {
+            foreach (string key in keys)
+            {
+                try
+                {
+                    T asset = UnityEngine.AddressableAssets.Addressables.LoadAssetAsync<T>(key).WaitForCompletion();
+                    if (asset != null) return asset;
+                }
+                catch (Exception) { }
+            }
+            CursedAppleCuriositiesPlugin.Logger?.LogWarning($"[{tag}] asset not found: {string.Join(" | ", keys)}");
+            return null;
+        }
+
+        /// <summary>
+        /// A hero projectile from a vanilla one: its model (ghost), flight and networking are kept; every other
+        /// RoR2.Projectile behaviour (impact, explosion, beams, sticking) is stripped so the hero's own component
+        /// decides what a hit does. Triggers pass through enemies (the behaviour looks for walls itself).
+        /// </summary>
+        /// <param name="steer">Keep pushing it along its facing every tick (lets the behaviour change its speed, as Lightning Ball's
+        /// crawl does). Off: launched once and left to fly (Vyper's bola).</param>
+        public static GameObject? CloneProjectile(GameObject? source, string name, Type behaviour, float speed, float lifetime, bool gravity, bool triggers, bool steer = true)
+        {
+            if (source == null) return null;
+            GameObject p = source.InstantiateClone(name, true);
+            // Strip dependants before what they depend on: a few passes.
+            for (int pass = 0; pass < 3; pass++)
+                foreach (MonoBehaviour b in p.GetComponents<MonoBehaviour>())
+                {
+                    if (b == null) continue;
+                    // ApplyTorqueOnStart (Commando's grenade) spins it on launch: with the facing steering the velocity, it corkscrewed.
+                    bool keep = b is RoR2.Projectile.ProjectileController || b is RoR2.Projectile.ProjectileSimple || b is RoR2.Projectile.ProjectileDamage ||
+                                b is RoR2.Projectile.ProjectileNetworkTransform || b.GetType().Namespace != "RoR2.Projectile" && b.GetType().Name != "ApplyTorqueOnStart";
+                    if (!keep) UnityEngine.Object.DestroyImmediate(b);
+                }
+            var simple = p.GetComponent<RoR2.Projectile.ProjectileSimple>() ?? p.AddComponent<RoR2.Projectile.ProjectileSimple>();
+            simple.desiredForwardSpeed = speed;
+            simple.lifetime = lifetime;
+            simple.updateAfterFiring = steer;
+            var rb = p.GetComponent<Rigidbody>();
+            if (rb != null) { rb.useGravity = gravity; rb.angularVelocity = Vector3.zero; }
+            if (triggers) foreach (Collider c in p.GetComponentsInChildren<Collider>()) c.isTrigger = true;
+            p.AddComponent(behaviour);
+            ContentAddition.AddProjectile(p);
+            return p;
+        }
     }
 }

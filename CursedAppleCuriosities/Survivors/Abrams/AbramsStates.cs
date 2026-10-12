@@ -115,7 +115,7 @@ namespace EntityStates.CursedApple.Abrams
         {
             base.OnEnter();
             DeadlockSounds.Play("abrams_siphon_cast", transform.position, gameObject);
-            DeadlockSounds.Play("abrams_vo_power1", transform.position, gameObject);
+            DeadlockHeroVoice.Power("abrams_vo_power2", gameObject);
             if (isAuthority)
             {
                 AbramsNet.ToServer(new AbramsSiphonMessage { Attacker = gameObject });
@@ -214,7 +214,7 @@ namespace EntityStates.CursedApple.Abrams
             if (fixedAge > AbramsData.MeleeLungeTime + 0.05f) return;
             Vector3 origin = characterBody.corePosition;
             Vector3 aim = GetAimRay().direction;
-            float reach = AbramsData.MeleeRange + characterBody.radius;
+            float reach = AbramsData.MeleeRange * MysticExpansion.RadiusMultiplier(characterBody) + characterBody.radius;
             var fresh = new List<HurtBox>();
             foreach (HurtBox h in Shared.Enemies(origin, reach, GetTeam()))
             {
@@ -272,7 +272,7 @@ namespace EntityStates.CursedApple.Abrams
             base.OnEnter();
             AbramsModel.Play(gameObject, "charge_start");
             DeadlockSounds.Play("abrams_charge_cast", transform.position, gameObject);
-            DeadlockSounds.Play("abrams_vo_power2", transform.position, gameObject);
+            DeadlockHeroVoice.Power("abrams_vo_power1", gameObject);
             _dir = Shared.FlatAim(GetAimRay(), characterDirection.forward);
             _speed = AbramsData.ChargeSpeed;
             _lastPos = transform.position;
@@ -290,7 +290,7 @@ namespace EntityStates.CursedApple.Abrams
             _dir = Vector3.RotateTowards(_dir, Shared.FlatAim(GetAimRay(), _dir), AbramsData.ChargeTurnDegPerSec * Mathf.Deg2Rad * dt, 0f);
             _dir.y = 0f;
             _dir.Normalize();
-            _speed = Mathf.Lerp(AbramsData.ChargeSpeed, AbramsData.ChargeSpeedMax, Mathf.Clamp01(fixedAge / AbramsData.ChargeDuration));
+            _speed = Mathf.Lerp(AbramsData.ChargeSpeed, AbramsData.ChargeSpeedMax, Mathf.Clamp01(fixedAge / (AbramsData.ChargeDuration * DurationExtender.Multiplier(characterBody))));
             characterDirection.forward = _dir;
             characterDirection.moveVector = _dir;
             characterMotor.moveDirection = Vector3.zero;
@@ -300,7 +300,7 @@ namespace EntityStates.CursedApple.Abrams
 
             Contact();
             if (!_ended && HitWall(dt)) End(wall: true);
-            if (!_ended && fixedAge >= AbramsData.ChargeDuration) End(wall: false);
+            if (!_ended && fixedAge >= AbramsData.ChargeDuration * DurationExtender.Multiplier(characterBody)) End(wall: false);
             // No shooting mid-charge (playtest); Siphon Life and cutting into Seismic Impact still work.
             if (inputBank.skill2.justPressed && skillLocator.secondary != null) skillLocator.secondary.ExecuteIfReady();
             if (inputBank.skill4.justPressed && skillLocator.special != null) skillLocator.special.ExecuteIfReady();
@@ -311,7 +311,7 @@ namespace EntityStates.CursedApple.Abrams
         {
             var fresh = new List<HurtBox>();
             bool bounced = false;
-            foreach (HurtBox h in Shared.Enemies(characterBody.corePosition + _dir * 0.8f, AbramsData.ChargeRadius, GetTeam()))
+            foreach (HurtBox h in Shared.Enemies(characterBody.corePosition + _dir * 0.8f, AbramsData.ChargeRadius * MysticExpansion.RadiusMultiplier(characterBody), GetTeam()))
             {
                 if (h.healthComponent == null || !_hit.Add(h.healthComponent)) continue;
                 fresh.Add(h);
@@ -424,7 +424,7 @@ namespace EntityStates.CursedApple.Abrams
             DeadlockFallGuard.Protect(gameObject, AbramsData.SlamHover + 6f); // the whole leap + hover + crash
             AbramsModel.Play(gameObject, "leap_launch");
             DeadlockSounds.Play("abrams_slam_cast", transform.position, gameObject);
-            DeadlockSounds.Play("abrams_vo_power4", transform.position, gameObject);
+            DeadlockHeroVoice.Power("abrams_vo_power4", gameObject);
             if (!isAuthority) return;
             characterMotor.Motor.ForceUnground();
             characterMotor.disableAirControlUntilCollision = false;
@@ -440,7 +440,7 @@ namespace EntityStates.CursedApple.Abrams
             {
                 _hovering = true;
                 _hoverStart = fixedAge;
-                _float = DeadlockSounds.Loop("abrams_slam_float", gameObject, AbramsData.SlamHover + 0.3f);
+                _float = DeadlockSounds.Loop("abrams_slam_float", gameObject, AbramsData.SlamHover * DurationExtender.Multiplier(characterBody) + 0.3f);
             }
             if (!isAuthority) return;
             StartAimMode(0.5f);
@@ -458,7 +458,7 @@ namespace EntityStates.CursedApple.Abrams
             }
             if (inputBank.skill2.justPressed && skillLocator.secondary != null) skillLocator.secondary.ExecuteIfReady(); // Siphon Life mid-air (its own machine)
             bool crash = fixedAge >= AbramsData.SlamCrashBuffer && (inputBank.skill4.justPressed || inputBank.skill1.justPressed);
-            if (crash || _hovering && fixedAge - _hoverStart >= AbramsData.SlamHover || characterMotor.isGrounded && fixedAge > 0.4f)
+            if (crash || _hovering && fixedAge - _hoverStart >= AbramsData.SlamHover * DurationExtender.Multiplier(characterBody) || characterMotor.isGrounded && fixedAge > 0.4f)
                 outer.SetNextState(new SeismicCrash { Dir = CrashDir() });
         }
 
@@ -523,6 +523,27 @@ namespace EntityStates.CursedApple.Abrams
             _startY = characterBody.footPosition.y;
             _lastPos = transform.position;
             characterMotor.Motor.ForceUnground();
+            // Everything near him when he dives comes down with him (playtest), and takes the crash.
+            Grab(characterBody.corePosition, AbramsData.SlamPullRadius * MysticExpansion.RadiusMultiplier(characterBody), out _);
+        }
+
+        /// <summary>Grab (server-side carry) every movable enemy in reach not grabbed yet; reports a boss in contact.</summary>
+        private void Grab(Vector3 center, float reach, out bool onBoss)
+        {
+            onBoss = false;
+            var grab = new List<HurtBox>();
+            foreach (HurtBox h in Shared.Enemies(center, reach, GetTeam()))
+            {
+                if (h.healthComponent == null) continue;
+                if (AbramsNet.TooBigToMove(h.healthComponent.body))
+                {
+                    // Landing on something huge ends the crash on contact instead of glancing off it.
+                    if ((h.transform.position - characterBody.corePosition).magnitude < 2.4f + h.healthComponent.body.radius) onBoss = true;
+                    continue;
+                }
+                if (_grabbed.Add(h.healthComponent)) grab.Add(h);
+            }
+            if (grab.Count > 0) AbramsNet.ToServer(new AbramsHitMessage { Kind = AbramsHitKind.SlamGrab, Attacker = gameObject, Targets = Shared.Objects(grab), Dir = Dir });
         }
 
         public override void FixedUpdate()
@@ -536,20 +557,7 @@ namespace EntityStates.CursedApple.Abrams
             _lastPos = transform.position;
             bool stuck = fixedAge > 0.15f && moved < AbramsData.SlamCrashSpeed * dt * 0.2f; // a wall or roof
 
-            bool onBoss = false;
-            var grab = new List<HurtBox>();
-            foreach (HurtBox h in Shared.Enemies(characterBody.corePosition + Dir * 0.5f, AbramsData.SlamCollide, GetTeam()))
-            {
-                if (h.healthComponent == null) continue;
-                if (AbramsNet.TooBigToMove(h.healthComponent.body))
-                {
-                    // Landing on something huge ends the crash on contact instead of glancing off it.
-                    if ((h.transform.position - characterBody.corePosition).magnitude < AbramsData.SlamCollide * 0.6f + h.healthComponent.body.radius) onBoss = true;
-                    continue;
-                }
-                if (_grabbed.Add(h.healthComponent)) grab.Add(h);
-            }
-            if (grab.Count > 0) AbramsNet.ToServer(new AbramsHitMessage { Kind = AbramsHitKind.SlamGrab, Attacker = gameObject, Targets = Shared.Objects(grab), Dir = Dir });
+            Grab(characterBody.corePosition + Dir * 0.5f, AbramsData.SlamCollide * MysticExpansion.RadiusMultiplier(characterBody), out bool onBoss);
 
             if (characterMotor.isGrounded && fixedAge > 0.05f || onBoss || stuck || fixedAge > 4f)
                 outer.SetNextState(new SeismicLand());
