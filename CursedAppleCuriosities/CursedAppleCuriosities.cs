@@ -4,6 +4,7 @@ using CursedAppleCuriosities.Artifacts;
 using CursedAppleCuriosities.Deadlock;
 using CursedAppleCuriosities.Items;
 using CursedAppleCuriosities.Survivors.Abrams;
+using CursedAppleCuriosities.Survivors.Celeste;
 using CursedAppleCuriosities.Survivors.GreyTalon;
 using CursedAppleCuriosities.Survivors.Lash;
 using CursedAppleCuriosities.Survivors.Seven;
@@ -131,6 +132,7 @@ namespace CursedAppleCuriosities
                 ("Grey Talon", GreyTalonSurvivor.Init),
                 ("Victor", VictorSurvivor.Init),
                 ("Viscous", ViscousSurvivor.Init),
+                ("Celeste", CelesteSurvivor.Init),
             };
             foreach (var hero in heroes)
             {

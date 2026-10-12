@@ -22,8 +22,23 @@ namespace CursedAppleCuriosities.Items
         private static Material? _baseMaterial;
         private static GameObject? _holder;
 
+        // One parsed model per file; later items get a copy (shared mesh) with their own material.
+        private static readonly System.Collections.Generic.Dictionary<string, GameObject> Templates = new System.Collections.Generic.Dictionary<string, GameObject>();
+
         public static GameObject? Load(string fileName, Texture2D? texture)
         {
+            if (Templates.TryGetValue(fileName, out GameObject template) && template != null && _holder != null)
+            {
+                GameObject copy = UnityEngine.Object.Instantiate(template, _holder.transform, false);
+                copy.name = template.name;
+                foreach (Renderer r in copy.GetComponentsInChildren<Renderer>(true))
+                {
+                    var mats = r.sharedMaterials;
+                    for (int i = 0; i < mats.Length; i++) mats[i] = MakeMaterial(mats[i] != null ? mats[i].name.Replace("matCursedApple_", "") : r.name, texture);
+                    r.sharedMaterials = mats;
+                }
+                return copy;
+            }
             try
             {
                 byte[]? bytes = ReadResource(fileName);
@@ -53,6 +68,7 @@ namespace CursedAppleCuriosities.Items
                 }
                 model.Root.transform.SetParent(_holder.transform, false);
                 model.Root.SetActive(true);
+                Templates[fileName] = model.Root;
                 return model.Root;
             }
             catch (Exception e)

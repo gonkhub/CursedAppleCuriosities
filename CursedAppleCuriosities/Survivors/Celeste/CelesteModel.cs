@@ -1,0 +1,33 @@
+using CursedAppleCuriosities.Deadlock;
+using UnityEngine;
+
+namespace CursedAppleCuriosities.Survivors.Celeste
+{
+    /// <summary>
+    /// Celeste on the shared Deadlock model layer: her model and animation table. Her blades are thrown from the right
+    /// hand (no held gun to keep in place). Item displays: not fitted yet, items sit on the bones the shared layer picks.
+    /// </summary>
+    public static class CelesteModel
+    {
+        public static readonly DeadlockHeroDef Def = new DeadlockHeroDef
+        {
+            Hero = CelesteData.Hero,
+            DisplayName = "Celeste",
+            DlModel = CelesteData.DlModel,
+            ModelHeightScale = CelesteData.ModelHeightScale,
+            BaseSpeed = CelesteData.BaseSpeed,
+            MuzzleBone = CelesteData.MuzzleBone,
+            MuzzleName = CelesteSurvivor.MuzzleName,
+            Anims = CelesteData.Anims,
+            RootLocked = CelesteData.Locked,
+            // AnimGraph2 jump and air-dash clips span the whole time in the air (Victor's rule): they loop here and end on
+            // landing, or hand over to the in-air loop once the rise is over.
+            LoopRule = c =>
+                !(c.State.StartsWith("dash_air_") || c.State == "jump" || c.State == "air_jump" || c.State == "wall_jump") ? null :
+                c.Grounded && c.GroundedFor > 0.05f ? c.Loco :
+                c.StateTime > (c.State.StartsWith("dash_air_") ? CelesteData.AirDashPose : CelesteData.JumpPose) ? "in_air" : null,
+        };
+
+        public static void Play(GameObject bodyObject, string state) => DeadlockModelSwap.Play(bodyObject, state);
+    }
+}

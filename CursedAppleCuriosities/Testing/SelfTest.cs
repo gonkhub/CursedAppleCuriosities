@@ -123,6 +123,18 @@ namespace CursedAppleCuriosities.Testing
 
         internal static void Log(string s) => CursedAppleCuriositiesPlugin.Logger?.LogInfo("[SelfTest] " + s);
 
+        private float _nextTick;
+        private bool _atTitle;
+
+        /// <summary>Load clock: the time every 2 s and every frame that stalls, until the title screen (for load-time work).</summary>
+        private void Update()
+        {
+            if (_atTitle) return;
+            float now = Time.realtimeSinceStartup;
+            if (Time.unscaledDeltaTime > 0.3f) Log($"[clock] {now:0.0}s: a {Time.unscaledDeltaTime:0.00}s frame");
+            if (now >= _nextTick) { _nextTick = now + 2f; Log($"[clock] {now:0.0}s"); }
+        }
+
         private IEnumerator Start()
         {
             string[] lines;
@@ -131,6 +143,7 @@ namespace CursedAppleCuriosities.Testing
 
             // The title screen is the starting point for every script.
             while (SceneManager.GetActiveScene().name != "title" || RoR2.Console.instance == null) yield return null;
+            _atTitle = true;
             Log($"title screen after {Time.realtimeSinceStartup - _launchClock:0.0}s since plugin load ({Time.realtimeSinceStartup:0.0}s since launch)");
             yield return new WaitForSeconds(1f);
 
