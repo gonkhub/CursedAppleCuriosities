@@ -71,7 +71,7 @@ namespace EntityStates.CursedApple.Celeste
         {
             base.OnEnter();
             StartAimMode(1f);
-            CelesteModel.Play(gameObject, "flare");
+            CelesteModel.Play(gameObject, characterMotor != null && !characterMotor.isGrounded ? "flare_air" : "flare");
             DeadlockSounds.Play("celeste_flare_cast", transform.position, gameObject);
             DeadlockHeroVoice.Power("celeste_vo_power1", gameObject);
         }

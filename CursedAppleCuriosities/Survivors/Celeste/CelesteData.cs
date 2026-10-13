@@ -169,6 +169,8 @@ namespace CursedAppleCuriosities.Survivors.Celeste
             ("slide_getup", "slide_getup", false, "locomotion", "full"),
             ("shoot", "shoot_idle_start", false, "locomotion", "delta"), // her model exports no shoot_idle
             ("flare", "ability_unicorn_radiant_blast", false, "locomotion", "full"),
+            // In the air: the flare's motion over her in-air pose, legs left in the jump (Deadlock masks it to the upper body; user).
+            ("flare_air", "ability_unicorn_radiant_blast", false, "in_air", "delta"),
             ("prism", "ability_unicorn_prismaticguard", false, "locomotion", "delta"),
             ("beam", "ability_radiant_daggers_stand_idle", false, "locomotion", "delta"), // ability_luminous_flux isn't in her model
             ("orb_start", "ability_unicorn_dazzlingorb_start", false, "orb_loop", "full"),
