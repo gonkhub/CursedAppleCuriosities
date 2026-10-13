@@ -85,7 +85,7 @@ namespace CursedAppleCuriosities.Survivors.Celeste
         public static int OrbBounces = 8;                // Deadlock MaxBounces (hits after the first)
         public static float OrbBounceRange = 15.5f;      // Deadlock BounceRadius
         public static float OrbCooldown = 40f;           // Deadlock 160
-        public const float OrbSpeed = 50.8f;             // Deadlock m_flBulletSpeed 2000 hu/s
+        public const float OrbSpeed = 18f;               // much slower than Deadlock's 50.8 m/s (user): a floating ball of light
         public const float OrbRadius = 1.65f;            // Deadlock m_flBulletRadius 65 hu
         public const float OrbSlow = 0.32f;              // Deadlock SlowPercent
         public const float OrbSlowSeconds = 1.5f;        // Deadlock SlowDuration

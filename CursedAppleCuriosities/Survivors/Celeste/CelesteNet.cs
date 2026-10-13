@@ -476,7 +476,7 @@ namespace CursedAppleCuriosities.Survivors.Celeste
                 Vector3 to = CelesteNet.Core(_target) - transform.position;
                 float reach = CelesteData.OrbRadius + (_target.body != null ? _target.body.radius : 0.5f);
                 if (to.magnitude <= reach + CelesteData.OrbSpeed * dt) { Strike(owner, _target); return; }
-                _rb.velocity = to.normalized * CelesteData.OrbSpeed;
+                _rb.velocity = to.normalized * CelesteData.OrbSpeed; // committed: it flies through walls to its target (user)
             }
             if (_rb.velocity.sqrMagnitude > 0.01f) transform.rotation = Quaternion.LookRotation(_rb.velocity);
         }
