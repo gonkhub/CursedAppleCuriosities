@@ -73,7 +73,7 @@ namespace CursedAppleCuriosities.Survivors.Celeste
         public const float BeamDelay = 1.4f;             // Deadlock PreExplosionDuration
         public static float BeamCooldown = 10f;          // Deadlock 33
         public static float RadianceDamage = 0.07f;      // per stack (Deadlock MagicIncreasePerStack 7%)
-        public const float RadianceSeconds = 30f;        // Deadlock BuffDuration
+        public const float RadianceSeconds = 10f;        // Deadlock BuffDuration 30; 10 (user, 2.0). Duration Extender lengthens it
 
         // ---- utility: Dazzling Trick (Deadlock: a 100 barrier for 4 s; broken = 14 m burst, half the barrier as damage, a 1.75 s silence: a stun here, user) ----
         public static float PrismBarrier = 0.3f;         // share of max health (Deadlock CombatBarrier 100 of 690 health; 20% until 2.0, user)
@@ -115,7 +115,7 @@ namespace CursedAppleCuriosities.Survivors.Celeste
             BeamRange = c.Bind(Section, "Radiant Daggers - Range", BeamRange, "Metres to the aimed spot.").Value;
             BeamRadius = c.Bind(Section, "Radiant Daggers - Radius", BeamRadius, "Metres.").Value;
             BeamCooldown = c.Bind(Section, "Radiant Daggers - Cooldown", BeamCooldown, "Seconds.").Value;
-            RadianceDamage = c.Bind(Section, "Radiant Daggers - Damage Per Stack", RadianceDamage, "Damage bonus per Radiance stack (one per enemy hit, no cap, all lasting 30 s from the latest hit).").Value;
+            RadianceDamage = c.Bind(Section, "Radiant Daggers - Damage Per Stack", RadianceDamage, "Damage bonus per Radiance stack (one per enemy hit, no cap, all lasting " + RadianceSeconds + " s from the latest hit).").Value;
             PrismBarrier = c.Bind(Section, "Dazzling Trick - Barrier", PrismBarrier, "Barrier as a share of max health.").Value;
             PrismDamage = c.Bind(Section, "Dazzling Trick - Damage", PrismDamage, "Damage coefficient of the burst when the barrier breaks.").Value;
             PrismRadius = c.Bind(Section, "Dazzling Trick - Radius", PrismRadius, "Metres.").Value;

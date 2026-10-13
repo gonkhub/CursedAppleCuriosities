@@ -96,7 +96,7 @@ namespace CursedAppleCuriosities.Survivors.Celeste
 
         /// <summary>
         /// Server: Radiant Daggers hit this many enemies: that many more Radiance stacks, uncapped (user: it's taken in place of
-        /// Light Eater, her only healing), and the whole pile's 30 s timer starts over (CelesteRadiance).
+        /// Light Eater, her only healing), and the whole pile's RadianceSeconds timer (Duration Extender lengthens it) starts over (CelesteRadiance).
         /// </summary>
         public static void AddRadiance(CharacterBody celeste, int stacks)
         {
