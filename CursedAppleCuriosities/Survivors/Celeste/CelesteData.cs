@@ -41,7 +41,7 @@ namespace CursedAppleCuriosities.Survivors.Celeste
         };
 
         // ---- primary: Carny Life (Deadlock: a bouncing, homing thrown blade every 0.58 s, 18 damage, gravity 0.2) ----
-        public static float DaggerDamage = 2.2f;
+        public static float DaggerDamage = 1.2f;        // a light poke (user): her damage is Shining Wonder and blades on marked enemies
         public const float DaggerCycle = 0.58f;          // Deadlock m_flCycleTime
         public const float DaggerSpeed = 50f;            // Deadlock m_flBulletSpeed 1968.5 hu/s
         public const float DaggerDrop = 9f;              // m/s2, homing or not: a shallow arc (user; Deadlock gravity scale 0.2)
@@ -58,7 +58,7 @@ namespace CursedAppleCuriosities.Survivors.Celeste
         public const float FlareDelay = 0.3f;            // Deadlock AbilityCastDelay
         public static float FlareCooldown = 7f;          // Deadlock 20
         public static float MarkSeconds = 8f;            // Deadlock AbilityDuration
-        public static float MarkDaggerBonus = 1.5f;      // extra damage coefficient on each Carny Life hit on a marked enemy (Deadlock Damage 15)
+        public static float MarkDaggerBonus = 1.8f;      // extra damage coefficient on each Carny Life hit on a marked enemy (Deadlock Damage 15)
         public static float MarkLifesteal = 0.18f;       // share of her damage to marked enemies she heals (Deadlock AbilityLifestealPercentHero)
         public const float FlareHangFall = 1f;           // m/s: she hangs in the air while casting (Deadlock m_flJumpFallSpeedMax)
 
@@ -81,7 +81,7 @@ namespace CursedAppleCuriosities.Survivors.Celeste
         public static float PrismCooldown = 12f;         // Deadlock 38
 
         // ---- special: Shining Wonder (Deadlock: hold to aim, release; 140 damage, 32% slow 1.5 s, 8 bounces within 15.5 m) ----
-        public static float OrbDamage = 8f;
+        public static float OrbDamage = 10f;
         public static int OrbBounces = 8;                // Deadlock MaxBounces (hits after the first)
         public static float OrbBounceRange = 15.5f;      // Deadlock BounceRadius
         public static float OrbCooldown = 40f;           // Deadlock 160
