@@ -1,6 +1,11 @@
 # Changelog
 
 ## Unreleased (2.0)
+- New **Artifact of the Catalog**, replacing the Curiosity Catalog item and the Artifact of the Curio. Gold is shown as
+  **souls**, at a rate fixed each stage so a basic chest always costs 800. As each stage starts, its item chests and
+  multishops are re-rolled: 40% white chests (800 souls), 40% large chests (3200) and 20% legendary chests (6400).
+  Only this mod's items and equipment drop, and the Bazaar Between Time has a shop selling all of them by tier. With the
+  Artifact of Command, chests offer a pick of their tier as usual.
 - **Goose Eggs**: each stack now hatches more than the last. Grey yields 4 whites at 1 stack, 10 at 2, 18 at 3; Green 2/5/9;
   Red 1/2/4; Golden 1/3/6; Void 2/5/9. New config keys (**First Stack Items**, **Extra Items Per Stack**) replace
   **Items Per Stack**.

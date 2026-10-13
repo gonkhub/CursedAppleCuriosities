@@ -2,12 +2,11 @@
 
 Items, equipment and survivors adapted from Deadlock's item shop for Risk of Rain 2.
 
-- **33 items** across white, green, red, void and lunar tiers, including **Lightning Scroll** (new in 1.8)
+- **32 items** across white, green, red, void and lunar tiers
 - **14 equipment**
-- **Artifact of the Curio**: only this mod's items drop
+- **Artifact of the Catalog**: gold becomes souls, and a basic chest always costs 800. Every stage's chests are
+  re-rolled 40% white (800), 40% green (3200) and 20% red (6400); only this mod's items drop, and the Bazaar sells them
 - **Artifact of the Goose**: every player starts the run with a random Goose Egg
-- **Curiosity Catalog** (lunar): clearing the teleporter drops a shop selling this mod's
-  items, in exchange for opening chests
 - **Cursed Broker**: a rare shrine (10% on any stage, 50% on stage 3 of each loop, and in the Bazaar Between
   Time). Curse one item to make every copy of it about twice as strong, in exchange for a harsh penalty for the
   rest of the run

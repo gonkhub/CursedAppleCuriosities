@@ -37,7 +37,7 @@ namespace CursedAppleCuriosities
         internal static new ManualLogSource? Logger { get; private set; }
 
         // All ItemDefs and EquipmentDefs registered by this mod — populated after init.
-        // Used by CuriosityShop to filter drop tables to mod-only items.
+        // Used by the Artifact of the Catalog to keep drops to mod-only items.
         public static HashSet<ItemDef>      ModItemDefs      { get; } = new HashSet<ItemDef>();
         public static HashSet<EquipmentDef> ModEquipmentDefs { get; } = new HashSet<EquipmentDef>();
 
@@ -107,7 +107,7 @@ namespace CursedAppleCuriosities
             try { if (Interactables.SoulUrn.Enabled) Interactables.SoulUrnVoice.Init(gameObject); }
             catch (Exception e) { Logger.LogError($"  ! [Interactable] Soul Urn voice failed to init: {e}"); }
 
-            // Populate the sets used by CuriosityShop to filter drop tables.
+            // Populate the sets the Artifact of the Catalog keeps drops to.
             foreach (var item in _items)
                 if (item.ItemDef != null) ModItemDefs.Add(item.ItemDef);
             foreach (var eq in _equipments)
