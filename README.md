@@ -1,7 +1,7 @@
 # Cursed Apple Curiosities
 
 A BepInEx plugin for **Risk of Rain 2** that adds custom items, equipment and survivors adapted
-from Deadlock. See [HANDOFF.md](HANDOFF.md) for the full roster, architecture, and build notes.
+from Deadlock.
 
 ## Building
 
@@ -31,3 +31,9 @@ card's top 200×200 square, resized.
 
 Deadlock models, animations and sounds for survivors are read at runtime from the player's own
 Deadlock install and are never shipped.
+
+## License
+
+The code is under the [MIT License](LICENSE). Deadlock and its art, models, animations and sounds
+belong to Valve and are not covered by it. Third-party components in the Thunderstore package are
+listed in [packaging/THIRD_PARTY_NOTICES.md](packaging/THIRD_PARTY_NOTICES.md).

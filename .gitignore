@@ -23,3 +23,8 @@ CursedAppleCuriosities/Resources/(Gradient) MARK_Filled.png
 
 # Source2Viewer-CLI crash logs
 exceptions.txt
+
+# Development notes: kept locally, not published
+HANDOFF.md
+docs/
+tools/itempass/README.md

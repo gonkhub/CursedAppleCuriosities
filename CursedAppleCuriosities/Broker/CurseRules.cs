@@ -9,7 +9,7 @@ namespace CursedAppleCuriosities.Broker
     /// Mult/Add are picked per item so one cursed copy lands near double the item's effect: linear items ×2, items
     /// whose first copy is worth more than the rest (or that scale hyperbolically) get an extra copy or ×3. Items whose
     /// stacking can't double them (Dio's Best Friend, Pluripotent Larva) keep their count and get a custom effect.
-    /// The full reasoning per item is in <c>docs/CursedBrokerAudit.md</c>.
+    /// <c>tools/gen_curse_audit.py</c> writes a per-item audit table from these rules.
     ///
     /// Keyed by <see cref="ItemDef.name"/> (vanilla: the RoR2Content/DLCxContent field name; ours: ITEM_CURSEDAPPLE_*).
     /// Items not listed (other mods) count double with a generic description.
