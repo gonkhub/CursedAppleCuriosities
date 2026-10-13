@@ -76,7 +76,8 @@ namespace CursedAppleCuriosities.Survivors.Viscous
         public static float BallResist = 0.5f;         // damage taken while rolling (Deadlock BulletResist/TechResist 35%; 50% by the user)
 
         /// <summary>The ball's radius on this body: Mystic Expansion makes it bigger (user); it is drawn, bounced and hit with this.</summary>
-        public static float Radius(CharacterBody? body) => BallRadius * MysticExpansion.RadiusMultiplier(body);
+        /// <summary>The ball's radius: Mystic Expansion and Colossus both grow it (user).</summary>
+        public static float Radius(CharacterBody? body) => BallRadius * MysticExpansion.RadiusMultiplier(body) * Colossus.SizeMultiplier(body);
 
         // ---- alt primary: his alt fire (Deadlock citadel_weapon_viscous_set_2): a slow glob that bursts on impact ----
         public static float AltDamage = 3.5f;           // Deadlock 42 per glob (4x his bullet)
