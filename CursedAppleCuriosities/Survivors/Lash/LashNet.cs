@@ -19,6 +19,7 @@ namespace CursedAppleCuriosities.Survivors.Lash
         {
             NetworkingAPI.RegisterMessageType<SlamMessage>();
             NetworkingAPI.RegisterMessageType<SoundMessage>();
+            NetworkingAPI.RegisterMessageType<DiveGrabMessage>();
             DeadlockFallGuard.Hook();
         }
 
@@ -119,6 +120,107 @@ namespace CursedAppleCuriosities.Survivors.Lash
                 var carry = t.GetComponent<LashSlamCarry>() ?? t.AddComponent<LashSlamCarry>();
                 carry.Throw(group, Point + new Vector3(Random.Range(-1f, 1f), 0f, Random.Range(-1f, 1f)));
             }
+        }
+    }
+
+    /// <summary>
+    /// Ground Strike's dive: Release false = Lash's dive touched this enemy (the server carries it down only if it's
+    /// airborne); Release true = Lash hit terrain, let go of everything he carries.
+    /// </summary>
+    public class DiveGrabMessage : INetMessage
+    {
+        public GameObject? Attacker;
+        public GameObject? Target;
+        public bool Release;
+
+        public void Serialize(NetworkWriter w) { w.Write(Attacker); w.Write(Target); w.Write(Release); }
+        public void Deserialize(NetworkReader r) { Attacker = r.ReadGameObject(); Target = r.ReadGameObject(); Release = r.ReadBoolean(); }
+
+        public void OnReceived()
+        {
+            if (!NetworkServer.active || Attacker == null) return;
+            var lash = Attacker.GetComponent<CharacterBody>();
+            if (lash == null) return;
+            if (Release)
+            {
+                foreach (LashDiveCarry c in Object.FindObjectsOfType<LashDiveCarry>()) if (c.Lash == lash) c.Drop();
+                return;
+            }
+            if (Target == null || Target.GetComponent<LashDiveCarry>() != null || Target.GetComponent<LashSlamCarry>() != null) return;
+            var body = Target.GetComponent<CharacterBody>();
+            if (body == null || body.healthComponent == null || !body.healthComponent.alive) return;
+            // Airborne only: a flyer, or anything off the ground (knocked up, mid-jump). Grounded enemies just take the strike.
+            if (body.characterMotor != null && body.characterMotor.isGrounded) return;
+            int slot = 0;
+            foreach (LashDiveCarry c in Object.FindObjectsOfType<LashDiveCarry>()) if (c.Lash == lash) slot++;
+            Target.AddComponent<LashDiveCarry>().Grab(lash, slot);
+        }
+    }
+
+    /// <summary>
+    /// Server only: an airborne enemy Lash's Ground Strike dive ran into, dragged down beside him (stunned, no fall
+    /// damage) until he hits terrain; there it's let go inside his strike. Its own motor still collides, so it stops on
+    /// the ground rather than being pushed through it.
+    /// </summary>
+    public class LashDiveCarry : MonoBehaviour
+    {
+        public CharacterBody? Lash;
+        private int _slot;
+        private float _until;
+        private CharacterBody? _body;
+        private CharacterMotor? _motor;
+        private Rigidbody? _rb;
+
+        public void Grab(CharacterBody lash, int slot)
+        {
+            Lash = lash;
+            _slot = slot;
+            _body = GetComponent<CharacterBody>();
+            _motor = GetComponent<CharacterMotor>();
+            _rb = GetComponent<Rigidbody>();
+            _until = Time.time + LashData.GroundStrikeCarryMax;
+            SetStateOnHurt.SetStunOnObject(gameObject, LashData.GroundStrikeCarryMax);
+            DeadlockFallGuard.Protect(gameObject, LashData.GroundStrikeCarryMax + 1.5f);
+            SoundMessage.Everyone("lash_gs_hit", transform.position);
+        }
+
+        /// <summary>Beside Lash rather than under him, so he never lands on what he carries.</summary>
+        private Vector3 HoldSpot()
+        {
+            Vector3 v = Lash!.characterMotor != null ? Lash.characterMotor.velocity : Vector3.down;
+            Vector3 fwd = new Vector3(v.x, 0f, v.z);
+            fwd = fwd.sqrMagnitude > 0.5f ? fwd.normalized : Lash.transform.forward;
+            float reach = 1.2f + (_body != null ? _body.radius : 1f) + Lash.radius;
+            Vector3 side = Quaternion.Euler(0f, _slot * 70f, 0f) * fwd * reach;
+            return Lash.transform.position + side;
+        }
+
+        private void FixedUpdate()
+        {
+            if (!NetworkServer.active || Lash == null || _body == null || _body.healthComponent == null || !_body.healthComponent.alive || Time.time > _until) { Drop(); return; }
+            float dt = Time.fixedDeltaTime;
+            Vector3 v = (HoldSpot() - _body.transform.position) / dt;
+            if (v.magnitude > LashData.GroundStrikeCarrySpeed) v = v.normalized * LashData.GroundStrikeCarrySpeed;
+            if (_motor != null)
+            {
+                _motor.velocity = v;
+                _motor.Motor.ForceUnground();
+                _motor.disableAirControlUntilCollision = true;
+            }
+            else if (_rb != null && !_rb.isKinematic) _rb.velocity = v;
+            else transform.position += v * dt;
+        }
+
+        public void Drop()
+        {
+            if (_motor != null) _motor.velocity = Vector3.zero;
+            else if (_rb != null && !_rb.isKinematic) _rb.velocity = Vector3.zero;
+            if (_body != null && _body.healthComponent != null && _body.healthComponent.alive)
+            {
+                DeadlockFallGuard.Protect(gameObject, 1.5f, landed: true);
+                SetStateOnHurt.SetStunOnObject(gameObject, 0.6f);
+            }
+            Destroy(this);
         }
     }
 

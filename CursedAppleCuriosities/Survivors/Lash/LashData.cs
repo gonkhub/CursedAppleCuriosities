@@ -58,6 +58,9 @@ namespace CursedAppleCuriosities.Survivors.Lash
         public const float GroundStrikeMinHeight = 3f;  // cast lower and Lash hops up first
         public const float GroundStrikeMinAimDeg = 60f; // dive at most this far from straight down
         public static float GroundStrikeSpeed = 90f;  // Deadlock StrikeVelocity 50; faster by playtest
+        // Airborne enemies the dive runs into are dragged down beside Lash and let go in his strike (user)
+        public const float GroundStrikeCarryMax = 5f;      // seconds: safety, the dive ends long before
+        public const float GroundStrikeCarrySpeed = 160f;  // m/s an enemy may be pulled at to keep up with him
 
         // ---- secondary: Grapple ----
         public static float GrappleCooldown = 6f;
