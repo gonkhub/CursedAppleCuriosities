@@ -523,7 +523,12 @@ namespace CursedAppleCuriosities.Deadlock
         }
 
         private class Row { public string State = "", Clip = "", Next = "", Layer = ""; public bool Loop; }
-        private class Layer { public Row Row = null!; public AnimClip Clip = null!; public float T; public bool Valid; }
+        private class Layer
+        {
+            public Row Row = null!; public AnimClip Clip = null!; public float T; public bool Valid;
+            /// <summary>This frame: how far the pelvis lock pulled the pelvis back, in the cloth points' frame (see ClothLockShift).</summary>
+            public Vector3 ClothShift;
+        }
 
         private DeadlockHeroDef _def = null!;
         private CharacterBody? _body;
@@ -843,6 +848,8 @@ namespace CursedAppleCuriosities.Deadlock
         private void Apply()
         {
             float w = _prev.Valid ? Mathf.SmoothStep(0f, 1f, _fade) : 1f;
+            _cur.ClothShift = ClothLockShift(_cur);
+            if (_prev.Valid) _prev.ClothShift = ClothLockShift(_prev);
             foreach (AnimTrack tr in _cur.Clip.Tracks)
             {
                 if (!_bones.TryGetValue(tr.Bone, out Transform bone)) continue;
@@ -887,7 +894,27 @@ namespace CursedAppleCuriosities.Deadlock
         {
             if (!t.SamplePos(l.T, out p)) return false;
             if (t.Bone == "pelvis" && t.Pos != null && t.Pos.Length > 0 && _def.IsRootLocked(l.Row.State)) { p.x = t.Pos[0].x; p.z = t.Pos[0].z; }
+            else if (l.ClothShift != Vector3.zero && t.Bone.StartsWith("$cloth", StringComparison.Ordinal)) p -= l.ClothShift;
             return true;
+        }
+
+        /// <summary>
+        /// The pelvis lock pins the pelvis at its first-frame spot, but cloth points ($cloth_*, off the model root) carry
+        /// the pelvis's lead over root_motion in a locked clip (Celeste's dash: 0.6 m mid-dash): they ran ahead of her
+        /// body and snapped back, as Abrams' coat once did. They are pulled back by the same amount, turned into their
+        /// frame (root_motion's resting turn: GlbLoader moved them into it).
+        /// </summary>
+        private Vector3 ClothLockShift(Layer l)
+        {
+            if (!l.Valid || !_def.IsRootLocked(l.Row.State)) return Vector3.zero;
+            AnimTrack? pelvis = Find(l.Clip, "pelvis");
+            if (pelvis == null || pelvis.Pos == null || pelvis.Pos.Length == 0 || !pelvis.SamplePos(l.T, out Vector3 pp)) return Vector3.zero;
+            Vector3 d = new Vector3(pp.x - pelvis.Pos[0].x, 0f, pp.z - pelvis.Pos[0].z);
+            if (d.sqrMagnitude < 1e-6f) return Vector3.zero;
+            AnimTrack? root = Find(l.Clip, "root_motion");
+            Quaternion turn = root != null && root.Rot != null && root.Rot.Length > 0 ? root.Rot[0]
+                : _bones.TryGetValue("root_motion", out Transform rb) ? rb.localRotation : Quaternion.identity;
+            return turn * d;
         }
 
         /// <summary>Bend the spine toward where the player aims (Deadlock clips only aim straight ahead).</summary>
