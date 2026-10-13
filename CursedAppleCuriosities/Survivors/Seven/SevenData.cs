@@ -108,8 +108,8 @@ namespace CursedAppleCuriosities.Survivors.Seven
         public const float StormStrayReach = 45f;       // m from Seven: strays fall where he can see them, even once the cloud is map-wide
         public const float StormRise = 3f;              // Deadlock CloudHeight 120 hu: he lifts this far
         public const float StormRiseTime = 0.6f;
-        public const float StormDrift = 1.5f;           // Deadlock FlightControlEnabled 1.5 m/s
-        public static float StormClimb = 1f;            // m/s: after the rise he keeps climbing slowly for the whole channel (user)
+        public const float StormDrift = 3f;             // Deadlock FlightControlEnabled 1.5 m/s, doubled (user, 2.0)
+        public static float StormClimb = 2f;            // m/s: after the rise he keeps climbing for the whole channel (user; doubled in 2.0)
         public const float StormBossScale = 0.5f;       // Deadlock m_flBossDamageScale
         public static float StrikeDamage = 6f;          // Lightning Strike (Deadlock 75)
         public const float StrikeRadius = 7f;           // Deadlock LightningStrikeRadius
