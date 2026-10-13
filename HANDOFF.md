@@ -135,7 +135,7 @@ read it before touching tiers, buffs, pickups, or minion interactions.
 | Refresher | 80s cd. `SkillLocator.ResetSkills()` (networked to the owning client). Not playtested. | ✅ |
 | Arctic Blast | 75s cd. 12m BlastAttack, 300% dmg, `Freeze2s` (frozen <30% HP get executed); unfreezables Slow80; all hit Slow60 4s. Not playtested. | ✅ |
 | Cultist Sacrifice | 120s cd (playtest: 30 → 120). Aimed (40m, 20° cone, spherecast fallback, reticle): kill a non-boss/non-champion enemy via `Suicide`; pays 4x its own `goldReward` total (elites/rich enemies pay more). Blessing: +50 max HP for 105s (non-stacking). No target = no cooldown. Not playtested. | ✅ |
-| Majestic Leap | 45s cd. Launch forward (22 m/s) and up (38 m/s) via `CharacterMotor.ApplyForceImpulse` (networked to the owner), barrier 50% max HP, no fall damage on the landing (`DeadlockFallGuard.ProtectNextLanding`). Deadlock sounds `sounds/mods/armor/majestic_leap/*`; icon cropped from `Resources\Vitality\MajesticLeap.png`. Not playtested. | ✅ |
+| Majestic Leap | 22.5s cd (45 before 1.7, user). Launch forward (22 m/s) and up (46.5 m/s: 1.5x the height of 1.0's 38, 1.7 user) via `CharacterMotor.ApplyForceImpulse` (networked to the owner), barrier 50% max HP, no fall damage on the landing (`DeadlockFallGuard.ProtectNextLanding`). Deadlock sounds `sounds/mods/armor/majestic_leap/*`; icon cropped from `Resources\Vitality\MajesticLeap.png`. Not playtested. | ✅ |
 | Focus Lens | 45s cd. Aimed (60m, 20° cone, spherecast fallback, reticle; bosses OK): target silenced 4.5s (`SkillSilence`); 50% of ALL damage it took in that window echoes when it ends. Not playtested. | ✅ |
 
 ---

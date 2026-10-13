@@ -13,6 +13,7 @@
 - **Seven**: sprinting while shooting during **Power Surge**, he runs with his gun up instead of his out-of-combat sprint.
 - **Seven**: **Lightning Ball** slows the enemies it shocks by 80% while they're inside it (and half a second after).
 - **Celeste**: 4 stamina (was 5).
+- **Majestic Leap**: leaps 50% higher, and its cooldown is halved (22.5 s, was 45).
 
 ## 1.6.0
 - Fixed: **Cursed Broker** cooldown penalties (all skills, Secondary, Utility, Special) now actually lengthen your cooldowns.

@@ -33,11 +33,11 @@ namespace CursedAppleCuriosities.Items
 
         public override void Init(ConfigFile config)
         {
-            CooldownSeconds = config.Bind("Equipment", "Majestic Leap - Cooldown", 45f,
+            CooldownSeconds = config.Bind("Equipment", "Majestic Leap - Cooldown", 22.5f, // half of 45 (user, 1.7)
                 "Equipment cooldown in seconds.").Value;
             BarrierFraction = config.Bind("Equipment", "Majestic Leap - Barrier", 0.5f,
                 "Barrier gained, as a share of max health (0.5 = 50%).").Value;
-            UpSpeed = config.Bind("Equipment", "Majestic Leap - Up Speed", 38f,
+            UpSpeed = config.Bind("Equipment", "Majestic Leap - Up Speed", 46.5f, // 38 before 1.7: 1.5x the height (height grows with speed squared; user)
                 "Launch speed upward, metres per second.").Value;
             ForwardSpeed = config.Bind("Equipment", "Majestic Leap - Forward Speed", 22f,
                 "Launch speed forward (where you aim, flattened), metres per second.").Value;
