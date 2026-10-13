@@ -371,22 +371,37 @@ namespace CursedAppleCuriosities.Items
         private CharacterBody _body = null!;
         private GooseEggProgress? _progress;
         private int _shown = -1;
+        private float _lastStopwatch = float.NaN;
 
         private void Awake() => _body = GetComponent<CharacterBody>();
 
+        /// <summary>
+        /// How far the run timer itself moved since the last tick. Eggs mature on the run's clock, so they stop wherever
+        /// it does, whatever stopped it: the Bazaar, Gilded Coast, between stages, trial gongs' force pause (user, 1.7/2.0).
+        /// A jump (timer set by the game or a mod) counts as nothing.
+        /// </summary>
+        private float RunTimerDelta()
+        {
+            Run? run = Run.instance;
+            if (run == null || run.isGameOverServer) { _lastStopwatch = float.NaN; return 0f; }
+            float now = run.GetRunStopwatch();
+            float delta = float.IsNaN(_lastStopwatch) ? 0f : now - _lastStopwatch;
+            _lastStopwatch = now;
+            return delta > 0f && delta < 1f ? delta : 0f;
+        }
+
         private void FixedUpdate()
         {
+            if (!NetworkServer.active) return;
+            float delta = RunTimerDelta(); // read every tick, so time not spent holding never counts later
             Inventory? inventory = _body.inventory;
-            if (!NetworkServer.active || Egg?.EquipmentDef == null || inventory == null) return;
+            if (Egg?.EquipmentDef == null || inventory == null) return;
             EquipmentLocation location = inventory.activeEquipmentLocation;
             if (inventory.GetEquipmentIndex(in location) != Egg.EquipmentDef.equipmentIndex) return;
             _progress ??= GooseEggProgress.For(inventory);
-            // Eggs mature on the run's clock: not while it's stopped (the Bazaar, Gilded Coast, between stages...; user, 1.7),
-            // and only while the holder is alive (user, 2.0). Holding is checked above: only the active slot matures.
-            Run? run = Run.instance;
-            bool paused = run == null || run.isRunStopwatchPaused || run.isGameOverServer
-                || _body.healthComponent == null || !_body.healthComponent.alive;
-            float seconds = _progress.Get(location) + (paused ? 0f : Time.fixedDeltaTime);
+            // Only while the holder is alive (user, 2.0). Holding is checked above: only the active slot matures.
+            if (_body.healthComponent == null || !_body.healthComponent.alive) delta = 0f;
+            float seconds = _progress.Get(location) + delta;
             _progress.Set(location, seconds);
             int stacks = GooseEgg.StacksFor(seconds);
             if (stacks == _shown || Egg.StackBuff == null || Egg.StackBuff.buffIndex == BuffIndex.None) return;

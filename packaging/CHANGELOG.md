@@ -4,7 +4,8 @@
 - **Goose Eggs**: each stack now hatches more than the last. Grey yields 4 whites at 1 stack, 10 at 2, 18 at 3; Green 2/5/9;
   Red 1/2/4; Golden 1/3/6; Void 2/5/9. New config keys (**First Stack Items**, **Extra Items Per Stack**) replace
   **Items Per Stack**.
-- **Goose Eggs** only mature while their holder is alive.
+- **Goose Eggs** only mature while their holder is alive and the run timer is actually counting up (they now also stop
+  during trial gongs and anywhere else the timer is held).
 
 ## 1.9.0
 - Updating from an older version: your config file keeps the values it already has, so the Goose Egg change below only
