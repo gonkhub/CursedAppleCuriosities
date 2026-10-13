@@ -60,6 +60,8 @@ namespace CursedAppleCuriosities.Deadlock
         public float WallJumpUp = 13.3f, WallJumpOutMax = 7.9f, WallJumpOutMin = 5.7f, WallJumpRecharge = 1.25f, WallJumpPowerMin = 0.2f;
         // Air: momentum is kept; input steers it at AirAccel (RoR2's own is 20 m/s2 toward a walk), speed above a run bleeds off at AirDrag.
         public float AirAccel = 50f, AirDrag = 3f;
+        /// <summary>CharacterMotor.gravityScale (Celeste's innate modifier_hero_gravity: -25%).</summary>
+        public float GravityScale = 1f;
         /// <summary>After any stamina move in the air (air jump, air dash, down-dash...), air control is this many times stronger until landing (user).</summary>
         public float AirControlBoost = 1.35f;
         // Down-dash (Deadlock): double-tap the slide key in the air for a quick push down. Half a stamina pip (user).
@@ -132,6 +134,7 @@ namespace CursedAppleCuriosities.Deadlock
             cb.sprintingSpeedMultiplier = 1f;                            // the Deadlock sprint builds this up out of combat
             cb.useSprintCrosshair = false;                               // they sprint on their own: keep the weapon crosshair
             body.GetComponent<CharacterMotor>().airControl = 0f;         // DeadlockMain steers in the air itself (keeps momentum)
+            body.GetComponent<CharacterMotor>().gravityScale = profile.GravityScale;
             var mover = body.AddComponent<DeadlockMover>();
             Profiles[profile.Hero] = profile;
             mover.HeroKey = profile.Hero;

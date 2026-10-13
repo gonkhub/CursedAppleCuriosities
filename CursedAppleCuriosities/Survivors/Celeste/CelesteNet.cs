@@ -13,7 +13,7 @@ namespace CursedAppleCuriosities.Survivors.Celeste
 {
     /// <summary>
     /// Server side of Celeste: Light Eater's flare and mark (bonus blade damage, lifesteal), Radiant Daggers' beam and
-    /// Radiance stacks, Dazzling Trick's prism (barrier; breaks into a silencing burst), and the blade and orb projectiles.
+    /// Radiance stacks, Dazzling Trick's prism (barrier; breaks into a stunning burst), and the blade and orb projectiles.
     /// States run on the owning player and message the server.
     /// </summary>
     public static class CelesteNet
@@ -23,7 +23,6 @@ namespace CursedAppleCuriosities.Survivors.Celeste
             NetworkingAPI.RegisterMessageType<CelesteFlareMessage>();
             NetworkingAPI.RegisterMessageType<CelesteBeamMessage>();
             NetworkingAPI.RegisterMessageType<CelestePrismMessage>();
-            if (CelesteSurvivor.SilenceBuff != null) SkillSilence.Register(CelesteSurvivor.SilenceBuff);
 
             On.RoR2.HealthComponent.TakeDamage += (orig, self, info) =>
             {
@@ -106,18 +105,16 @@ namespace CursedAppleCuriosities.Survivors.Celeste
             EquipmentFx.Sound(stacks >= CelesteData.RadianceMaxStacks ? "celeste_beam_buff_max" : "celeste_beam_buff", celeste.corePosition, celeste.gameObject);
         }
 
-        /// <summary>Server: the next enemy for a ricochet or a bounce, nearest first but elites and bosses before anyone else.</summary>
+        /// <summary>Server: the nearest visible enemy for a ricochet or a bounce (user: just the nearest).</summary>
         public static HealthComponent? NextTarget(Vector3 from, float range, TeamIndex team, HealthComponent? skip)
         {
             HealthComponent? best = null;
-            float bestScore = float.MaxValue;
+            float bestD = float.MaxValue;
             foreach (HealthComponent hc in EnemiesIn(from, range, team))
             {
                 if (hc == skip || hc.body == null) continue;
                 float d = (Core(hc) - from).sqrMagnitude;
-                // Deadlock prioritises heroes: here the champions and elites go first.
-                float score = d - (hc.body.isChampion ? 10000f : hc.body.isElite ? 5000f : 0f);
-                if (score < bestScore && Visible(from, Core(hc))) { bestScore = score; best = hc; }
+                if (d < bestD && Visible(from, Core(hc))) { bestD = d; best = hc; }
             }
             return best;
         }
@@ -248,14 +245,15 @@ namespace CursedAppleCuriosities.Survivors.Celeste
             var body = Attacker.GetComponent<CharacterBody>();
             if (body == null || body.healthComponent == null) return;
             float seconds = CelesteData.PrismSeconds * DurationExtender.Multiplier(body);
-            body.healthComponent.AddBarrier(body.healthComponent.fullCombinedHealth * CelesteData.PrismBarrier);
+            float barrier = body.healthComponent.fullCombinedHealth * CelesteData.PrismBarrier;
+            body.healthComponent.AddBarrier(barrier);
             if (CelesteSurvivor.PrismBuff != null)
             {
                 body.ClearTimedBuffs(CelesteSurvivor.PrismBuff);
                 using (DurationExtender.Exact()) body.AddTimedBuff(CelesteSurvivor.PrismBuff, seconds);
             }
             var p = body.GetComponent<CelestePrism>() ?? body.gameObject.AddComponent<CelestePrism>();
-            p.Raise(seconds);
+            p.Raise(seconds, barrier);
             EquipmentFx.Sound("celeste_prism_cast", body.corePosition, body.gameObject);
         }
     }
@@ -269,7 +267,26 @@ namespace CursedAppleCuriosities.Survivors.Celeste
 
         private void Awake() => _body = GetComponent<CharacterBody>();
 
-        public void Raise(float seconds) { _until = Time.fixedTime + seconds; _up = true; }
+        private float _barrier;
+
+        public bool Up => _up;
+
+        public void Raise(float seconds, float barrier) { _until = Time.fixedTime + seconds; _up = true; _barrier = barrier; }
+
+        /// <summary>Shining Wonder bounced off the prism (Deadlock's T3, given free: user): its time starts over and its barrier is topped back up.</summary>
+        public void Refresh()
+        {
+            if (!_up || _body == null || _body.healthComponent == null) return;
+            float seconds = CelesteData.PrismSeconds * DurationExtender.Multiplier(_body);
+            _until = Time.fixedTime + seconds;
+            float missing = _barrier - _body.healthComponent.barrier;
+            if (missing > 0f) _body.healthComponent.AddBarrier(missing);
+            if (CelesteSurvivor.PrismBuff != null)
+            {
+                _body.ClearTimedBuffs(CelesteSurvivor.PrismBuff);
+                using (DurationExtender.Exact()) _body.AddTimedBuff(CelesteSurvivor.PrismBuff, seconds);
+            }
+        }
 
         private void FixedUpdate()
         {
@@ -295,8 +312,7 @@ namespace CursedAppleCuriosities.Survivors.Celeste
                 foreach (HealthComponent hc in caught)
                 {
                     CelesteNet.Hit(_body, hc, CelesteData.PrismDamage * _body.damage, crit, DamageSource.Utility);
-                    if (hc.alive && hc.body != null && CelesteSurvivor.SilenceBuff != null)
-                        hc.body.AddTimedBuff(CelesteSurvivor.SilenceBuff, CelesteData.PrismSilence);
+                    if (hc.alive) SetStateOnHurt.SetStunOnObject(hc.gameObject, CelesteData.PrismStun); // a stun (user), Deadlock's silence
                 }
         }
     }
@@ -407,8 +423,9 @@ namespace CursedAppleCuriosities.Survivors.Celeste
     // ================= Shining Wonder =================
 
     /// <summary>
-    /// Server, on the orb (Deadlock's Shining Wonder): homes onto an enemy near its line, then bounces from enemy to enemy
-    /// (never the same one twice in a row), slowing each. With nothing in reach it lingers, waiting for a target.
+    /// Server, on the orb (Deadlock's Shining Wonder): homes onto an enemy near its line, then bounces to the nearest enemy
+    /// (never the same one twice in a row), slowing each. Celeste's raised prism is a target too (Deadlock's T3, user): a
+    /// bounce off it does no damage, restarts the prism and tops its barrier up. With nothing in reach it lingers, waiting.
     /// </summary>
     [RequireComponent(typeof(ProjectileController))]
     public class CelesteOrb : MonoBehaviour
@@ -459,7 +476,7 @@ namespace CursedAppleCuriosities.Survivors.Celeste
                 _rb.velocity = Vector3.zero;
                 _linger += dt;
                 _search -= dt;
-                if (_search <= 0f) { _search = 0.15f; _target = CelesteNet.NextTarget(transform.position, BounceRange(owner), owner.teamComponent.teamIndex, _last); }
+                if (_search <= 0f) { _search = 0.15f; _target = Next(owner); }
                 if (_target != null) { _lingering = false; _linger = 0f; }
                 else if (_linger > CelesteData.OrbLinger) { Expire(); return; }
             }
@@ -475,10 +492,23 @@ namespace CursedAppleCuriosities.Survivors.Celeste
 
         private float BounceRange(CharacterBody owner) => CelesteData.OrbBounceRange * MysticExpansion.RadiusMultiplier(owner);
 
+        /// <summary>The nearest enemy in bounce range, or Celeste's prism when it is nearer (never what it just hit).</summary>
+        private HealthComponent? Next(CharacterBody owner)
+        {
+            float range = BounceRange(owner);
+            HealthComponent? enemy = CelesteNet.NextTarget(transform.position, range, owner.teamComponent.teamIndex, _last);
+            HealthComponent? self = owner.healthComponent;
+            var prism = owner.GetComponent<CelestePrism>();
+            if (self == null || self == _last || prism == null || !prism.Up) return enemy;
+            float ds = (owner.corePosition - transform.position).sqrMagnitude;
+            if (ds > range * range || !CelesteNet.Visible(transform.position, owner.corePosition)) return enemy;
+            return enemy == null || ds < (CelesteNet.Core(enemy) - transform.position).sqrMagnitude ? self : enemy;
+        }
+
         /// <summary>The first target: an enemy near the orb's line (or anything it is about to touch).</summary>
         private HealthComponent? Seek(CharacterBody owner, bool first)
         {
-            if (!first) return CelesteNet.NextTarget(transform.position, BounceRange(owner), owner.teamComponent.teamIndex, _last);
+            if (!first) return Next(owner);
             Vector3 v = _rb != null ? _rb.velocity : transform.forward;
             HealthComponent? best = null;
             float bestAngle = CelesteData.OrbHomeConeDeg;
@@ -503,6 +533,7 @@ namespace CursedAppleCuriosities.Survivors.Celeste
 
         private void Strike(CharacterBody owner, HealthComponent hc)
         {
+            if (hc == owner.healthComponent) { OffPrism(owner); return; }
             float dmg = _pd != null ? _pd.damage : owner.damage;
             bool crit = _pd != null && _pd.crit;
             CelesteNet.Hit(owner, hc, CelesteData.OrbDamage * dmg, crit, DamageSource.Special);
@@ -516,7 +547,21 @@ namespace CursedAppleCuriosities.Survivors.Celeste
             CursedAppleCuriositiesPlugin.Logger?.LogInfo($"[Celeste] Shining Wonder hit {hc.name} ({_hits}/{CelesteData.OrbBounces + 1})");
             EquipmentFx.Sound(final ? "celeste_orb_final" : "celeste_orb_bounce", transform.position);
             if (final) { Destroy(gameObject); return; }
-            _target = CelesteNet.NextTarget(transform.position, BounceRange(owner), owner.teamComponent.teamIndex, hc);
+            _target = Next(owner);
+            if (_target == null) StartLinger();
+        }
+
+        /// <summary>Off Celeste's prism: no damage, the prism restarts, and it counts as a bounce.</summary>
+        private void OffPrism(CharacterBody owner)
+        {
+            owner.GetComponent<CelestePrism>()?.Refresh();
+            _hits++;
+            _last = owner.healthComponent;
+            transform.position = owner.corePosition;
+            CursedAppleCuriositiesPlugin.Logger?.LogInfo($"[Celeste] Shining Wonder bounced off the prism ({_hits}/{CelesteData.OrbBounces + 1})");
+            EquipmentFx.Sound("celeste_orb_bounce", transform.position);
+            if (_hits > CelesteData.OrbBounces) { Destroy(gameObject); return; }
+            _target = Next(owner);
             if (_target == null) StartLinger();
         }
 

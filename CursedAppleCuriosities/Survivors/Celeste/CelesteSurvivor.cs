@@ -35,7 +35,7 @@ namespace CursedAppleCuriosities.Survivors.Celeste
 
         public static GameObject? BodyPrefab, DisplayPrefab, DaggerProjectile, OrbProjectile;
         public static SurvivorDef? Survivor;
-        public static BuffDef? MarkBuff, RadianceBuff, PrismBuff, SilenceBuff, OrbSlow;
+        public static BuffDef? MarkBuff, RadianceBuff, PrismBuff, OrbSlow;
         public static BodyIndex BodyIndex = BodyIndex.None;
 
         public static GameObject? HitEffect, FlareEffect, BeamEffect, BeamWarning, ShatterEffect, BreakEffect, OrbHitEffect, RicochetTracer;
@@ -108,7 +108,6 @@ namespace CursedAppleCuriosities.Survivors.Celeste
             MarkBuff = Buff("CursedAppleCelesteMarked", new Color(1f, 0.85f, 0.4f), debuff: true, stack: false);
             RadianceBuff = Buff("CursedAppleCelesteRadiance", new Color(1f, 0.92f, 0.6f), debuff: false, stack: true);
             PrismBuff = Buff("CursedAppleCelestePrism", new Color(0.8f, 0.7f, 1f), debuff: false, stack: false);
-            SilenceBuff = Buff("CursedAppleCelesteSilenced", new Color(0.75f, 0.6f, 0.95f), debuff: true, stack: false);
             OrbSlow = Buff("CursedAppleCelesteDazzled", new Color(1f, 0.9f, 0.55f), debuff: true, stack: false);
         }
 
@@ -275,7 +274,6 @@ namespace CursedAppleCuriosities.Survivors.Celeste
             if (beam != null && RadianceBuff != null) RadianceBuff.iconSprite = beam;
             Sprite? prism = Set(_prism, CelesteData.IconShield);
             if (prism != null && PrismBuff != null) PrismBuff.iconSprite = prism;
-            if (prism != null && SilenceBuff != null) SilenceBuff.iconSprite = prism;
             Sprite? orb = Set(_orb, CelesteData.IconOrb);
             if (orb != null && OrbSlow != null) OrbSlow.iconSprite = orb;
             Sprite? gun = Set(_blade, CelesteData.IconGun);
@@ -304,15 +302,15 @@ namespace CursedAppleCuriosities.Survivors.Celeste
                 "< ! > Carny Life's blades curve onto enemies near your aim and bounce once off walls. Aim close, not exact.\n\n" +
                 "< ! > Light Eater first: marked enemies take extra damage from every blade and heal you for part of all you deal them.\n\n" +
                 "< ! > Dazzling Trick rewards being hit. Raise it in the thick of a fight and let them break it.\n\n" +
-                "< ! > Shining Wonder bounces to elites and bosses first. Release it into a crowd.</color>\n");
+                "< ! > Shining Wonder bounces off your own prism: raise Dazzling Trick in a crowd and let the orb ping-pong.</color>\n");
             LanguageAPI.Add(Token + "OUTRO", "..and so she left, to a standing ovation.");
             LanguageAPI.Add(Token + "FAILURE", "..and so she vanished, her final trick.");
             LanguageAPI.Add(Token + "LORE", "Every show needs an encore.");
 
             LanguageAPI.Add(Token + "PASSIVE_NAME", "Showstopper");
             LanguageAPI.Add(Token + "PASSIVE_DESC",
-                "Celeste <style=cIsUtility>hangs in the air</style> while she casts Light Eater and floats down while aiming Shining Wonder. " +
-                $"She has <style=cIsUtility>{CelesteData.Movement.StaminaPips} stamina</style>, <style=cIsUtility>sprints automatically</style> out of combat, and can <style=cIsUtility>dash</style> and <style=cIsUtility>air jump</style>.");
+                "Celeste falls <style=cIsUtility>25% slower</style> with <style=cIsUtility>stronger air control</style>. She hangs in the air while she casts Light Eater and floats down while aiming Shining Wonder. " +
+                $"She has <style=cIsUtility>{CelesteData.Movement.StaminaPips} stamina</style>, <style=cIsUtility>sprints automatically</style> out of combat, and can <style=cIsUtility>air jump</style> and <style=cIsUtility>air dash</style> twice.");
 
             LanguageAPI.Add(Token + "BLADE_NAME", "Carny Life");
             LanguageAPI.Add(Token + "BLADE_DESC",
@@ -334,12 +332,13 @@ namespace CursedAppleCuriosities.Survivors.Celeste
             LanguageAPI.Add(Token + "PRISM_DESC",
                 $"Surround yourself with a prism: <style=cIsHealing>{D(CelesteData.PrismBarrier)} barrier</style> for {CelesteData.PrismSeconds:0}s. " +
                 $"If it's <style=cIsDamage>broken</style>, it bursts for <style=cIsDamage>{D(CelesteData.PrismDamage)} damage</style> in {CelesteData.PrismRadius:0}m and " +
-                $"<style=cIsUtility>silences</style> enemies for {CelesteData.PrismSilence:0.##}s.");
+                $"<style=cIsUtility>stuns</style> enemies for {CelesteData.PrismStun:0.##}s.");
 
             LanguageAPI.Add(Token + "ORB_NAME", "Shining Wonder");
             LanguageAPI.Add(Token + "ORB_DESC",
                 $"Hold to aim, release to launch an orb of light for <style=cIsDamage>{D(CelesteData.OrbDamage)} damage</style> that <style=cIsUtility>slows</style> by {D(CelesteData.OrbSlow)}. " +
-                $"It <style=cIsDamage>bounces</style> up to {CelesteData.OrbBounces} times to enemies within {CelesteData.OrbBounceRange:0.#}m, elites and bosses first, and waits a moment for a target when none is near.");
+                $"It <style=cIsDamage>bounces</style> up to {CelesteData.OrbBounces} times to the nearest enemy within {CelesteData.OrbBounceRange:0.#}m, and waits a moment for a target when none is near. " +
+                "It also bounces off your <style=cIsUtility>Dazzling Trick</style> prism, restarting it and restoring its barrier.");
         }
     }
 

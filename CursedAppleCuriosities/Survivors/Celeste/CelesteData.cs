@@ -23,12 +23,18 @@ namespace CursedAppleCuriosities.Survivors.Celeste
         public const float DamagePerLevel = 2.4f;
         public const float BaseSpeed = 6.2f;            // Deadlock EMaxMoveSpeed
         public const float BaseRegen = 1f;              // Deadlock EBaseHealthRegen
-        // ---- Deadlock movement: hero defaults (3 stamina, 1 air jump, 1 air dash; Deadlock gives her 4 stamina) ----
+        // ---- Deadlock movement: Lash's extras (user): 5 stamina, 2 air jumps, 2 air dashes, plus her low gravity ----
         public static readonly DeadlockMovementProfile Movement = new DeadlockMovementProfile
         {
             Hero = Hero,
             Anim = CelesteModel.Play,
-            StaminaPips = 3,                   // the user's rule for new heroes (Deadlock EStamina 4)
+            StaminaPips = 5,                   // user (Deadlock EStamina 4)
+            AirJumps = 2,                      // like Lash (user)
+            AirDashesPerAir = 2,
+            AirDashMetres = 14f,               // a couple of metres short of Lash's 16 (user)
+            // Her innate modifier_hero_gravity (on citadel_weapon_unicorn_set): gravity -25%, air control +44%, air accel +10%.
+            GravityScale = 0.75f,
+            AirAccel = 50f * 1.44f,
             OutOfCombatSpeed = 1.6f / 6.2f,    // Deadlock ESprintSpeed over her run
             WallJumpUp = 22f,                  // Lash's playtested controls, kept for every hero
             WallJumpPowerMin = 0.6f,
@@ -68,12 +74,12 @@ namespace CursedAppleCuriosities.Survivors.Celeste
         public const int RadianceMaxStacks = 6;          // Deadlock BuffMaxStacks
         public const float RadianceSeconds = 30f;        // Deadlock BuffDuration
 
-        // ---- utility: Dazzling Trick (Deadlock: a 100 barrier for 4 s; broken = 14 m burst, 1.75 s silence, half the barrier as damage) ----
+        // ---- utility: Dazzling Trick (Deadlock: a 100 barrier for 4 s; broken = 14 m burst, half the barrier as damage, a 1.75 s silence: a stun here, user) ----
         public static float PrismBarrier = 0.2f;         // share of max health (Deadlock CombatBarrier 100 of 690 health)
         public const float PrismSeconds = 4f;            // Deadlock MaxLifetime
         public static float PrismDamage = 5f;            // the burst when it breaks
         public static float PrismRadius = 14f;           // Deadlock ExplodeRadius
-        public static float PrismSilence = 1.75f;        // Deadlock DebuffDuration
+        public static float PrismStun = 1.75f;           // Deadlock DebuffDuration (a silence there; a stun here: user)
         public static float PrismCooldown = 12f;         // Deadlock 38
 
         // ---- special: Shining Wonder (Deadlock: hold to aim, release; 140 damage, 32% slow 1.5 s, 8 bounces within 15.5 m) ----
@@ -112,11 +118,11 @@ namespace CursedAppleCuriosities.Survivors.Celeste
             PrismBarrier = c.Bind(Section, "Dazzling Trick - Barrier", PrismBarrier, "Barrier as a share of max health.").Value;
             PrismDamage = c.Bind(Section, "Dazzling Trick - Damage", PrismDamage, "Damage coefficient of the burst when the barrier breaks.").Value;
             PrismRadius = c.Bind(Section, "Dazzling Trick - Radius", PrismRadius, "Metres.").Value;
-            PrismSilence = c.Bind(Section, "Dazzling Trick - Silence", PrismSilence, "Seconds enemies caught can't use skills.").Value;
+            PrismStun = c.Bind(Section, "Dazzling Trick - Stun", PrismStun, "Seconds enemies caught are stunned.").Value;
             PrismCooldown = c.Bind(Section, "Dazzling Trick - Cooldown", PrismCooldown, "Seconds.").Value;
             OrbDamage = c.Bind(Section, "Shining Wonder - Damage", OrbDamage, "Damage coefficient of each hit.").Value;
             OrbBounces = c.Bind(Section, "Shining Wonder - Bounces", OrbBounces, "Bounces after the first hit.").Value;
-            OrbBounceRange = c.Bind(Section, "Shining Wonder - Bounce Range", OrbBounceRange, "Metres to the next target.").Value;
+            OrbBounceRange = c.Bind(Section, "Shining Wonder - Bounce Range", OrbBounceRange, "Metres to the next target (the nearest enemy, or Celeste's prism).").Value;
             OrbCooldown = c.Bind(Section, "Shining Wonder - Cooldown", OrbCooldown, "Seconds.").Value;
         }
 

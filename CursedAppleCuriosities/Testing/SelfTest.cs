@@ -207,7 +207,7 @@ namespace CursedAppleCuriosities.Testing
                 {
                     CharacterBody? b = LocalUserManager.GetFirstLocalUser()?.cachedBody;
                     Collider? c = b != null && b.mainHurtBox != null ? b.mainHurtBox.collider : null;
-                    Log(b == null ? "probe: no body" : $"probe: maxHP {b.maxHealth:0.#} foot {b.footPosition} hurtbox {(c != null ? c.bounds.center + " size " + c.bounds.size : "none")} state {EntityStateMachine.FindByCustomName(b.gameObject, "Body")?.state?.GetType().Name}");
+                    Log(b == null ? "probe: no body" : $"probe: maxHP {b.maxHealth:0.#} gravity {b.characterMotor?.gravityScale} jumps {b.maxJumpCount} pips {b.GetComponent<CursedAppleCuriosities.Deadlock.DeadlockMover>()?.Max} foot {b.footPosition} hurtbox {(c != null ? c.bounds.center + " size " + c.bounds.size : "none")} state {EntityStateMachine.FindByCustomName(b.gameObject, "Body")?.state?.GetType().Name}");
                     return null;
                 }
                 case "log": Log(rest); return null;
