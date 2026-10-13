@@ -98,7 +98,7 @@ namespace CursedAppleCuriosities.Survivors.Viscous
         public static float PunchRange = 40f;           // Deadlock AbilityCastRange (Mystic Expansion: farther)
         public static float PunchRadius = 4f;           // Deadlock Radius (Mystic Expansion: wider)
         public const float PunchHalfHeight = 5.5f;      // Deadlock PunchHalfHeight
-        public static float PunchUp = 42f;              // user: sends most things flying, straight out of the surface (was 26, 34; Deadlock TossSpeed 625 hu/s = 16 m/s)
+        public static float PunchUp = 38f;              // user: sends most things flying, straight out of the surface (was 26, 34, 42 (a touch much); Deadlock TossSpeed 625 hu/s = 16 m/s)
         public const float PunchUpBias = 0.15f;         // user: a little upward tilt on every punch (a wall throws ~8.5 deg up)
         public const float PunchWindup = 0.3f;          // Deadlock m_flWindupTime 0.2 + m_flAttackTime 0.1
         public const float PunchTelegraph = 0.45f;      // Deadlock m_flEnemyPortalTelegraphTime: the portal shows this long first (m_flSelfPortalTelegraphTime 0: a self-punch is quick)

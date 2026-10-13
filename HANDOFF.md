@@ -433,7 +433,7 @@ same on a stand-in model.
 
 - **1.6.0 (branch `1.6`, 2026-10-12, user's list):** Cursed Broker guaranteed on stage 4 and in each later loop's first Bazaar;
   Viscous air jump = Kelvin `jump_ground` (`jump_start_short` is posed on Abrams' bigger skeleton: limbs 30-50% long) and ground dash =
-  Kelvin's `dash_ground` roll; Puddle Punch windup 0.3 s + Deadlock's 0.45 s enemy portal telegraph (self-punch none), launch 42 m/s held
+  Kelvin's `dash_ground` roll; Puddle Punch windup 0.3 s + Deadlock's 0.45 s enemy portal telegraph (self-punch none), launch 38 m/s (42 was a touch much, user) held
   for Deadlock's 0.6 s toss (`PunchToss`), then `disableAirControlUntilCollision` (others) / no air drag 2.5 s (himself,
   `DeadlockMover.SuspendAirDrag`); Celeste blade/orb/movement changes (see Survivors). Not playtested yet.
 - **Playtest pass (user, 2026-10-12 evening):** Celeste retuned (movement, Carny Life, Light Eater, Radiant Daggers preview, uncapped
