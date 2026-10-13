@@ -56,13 +56,13 @@ namespace CursedAppleCuriosities.Survivors.Celeste
         public const float DaggerLifetime = 3f;
 
         // ---- secondary: Light Eater (Deadlock: 70 deg cone, 10 m, 0.3 s delay, 40 damage; marked 8 s; 15 per bullet; 18% lifesteal) ----
-        public static float FlareDamage = 4f;
+        public static float FlareDamage = 2f;             // 400% until 2.0 (user)
         public static float FlareRange = 15f;            // Deadlock AbilityCastRange 10 m; 15 by playtest (user). Mystic Expansion widens it
         public const float FlareConeDeg = 35f;           // half of Deadlock's 70 deg TargetingConeAngle
         public const float FlareDelay = 0.3f;            // Deadlock AbilityCastDelay
         public static float FlareCooldown = 7f;          // Deadlock 20
         public static float MarkSeconds = 8f;            // Deadlock AbilityDuration
-        public static float MarkDaggerBonus = 1.8f;      // extra damage coefficient on each Carny Life hit on a marked enemy (Deadlock Damage 15)
+        public static float MarkDaggerBonus = 2.5f;      // (1.8 until 2.0, user) extra damage coefficient on each Carny Life hit on a marked enemy (Deadlock Damage 15)
         public static float MarkLifesteal = 0.18f;       // share of her damage to marked enemies she heals (Deadlock AbilityLifestealPercentHero)
         public const float FlareHangFall = 1f;           // m/s: she hangs in the air while casting (Deadlock m_flJumpFallSpeedMax)
 
