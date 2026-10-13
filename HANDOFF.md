@@ -356,7 +356,8 @@ same on a stand-in model.
     gets x3 air control for 2.5 s via `DeadlockMover.BoostAirControl`). Utility **The Cube** (own "Cube" machine: tap = ally under the
     crosshair with Tricorn reticle, nobody = refund; hold 0.3 s = self; 3 s x Duration Extender, invulnerable, held in place (UpdateVelocity
     hook + rootMotion zeroed), SkillSilence, 5%/s heal, jump breaks out after 1 s; then `PostCubeBuff` 8 s: +2.5 m/s and stamina x1/0.7 via
-    `DeadlockMover.RegenMultipliers`). Cube drawn by `ViscousCubeHost` with Deadlock's `viscous_cube` model (green box until converted).
+    `DeadlockMover.RegenMultipliers`). Cube drawn by `ViscousCubeHost` with Deadlock's `viscous_cube` model (green box until converted), sized to the
+    target (user, 1.6.0): `ViscousCubes.FitSize`, the bounds of its CharacterModel's drawn meshes, tallest/widest side x1.1.
   - Globs = `ViscousGlob` on a CrocoSpit clone; bursts are BlastAttacks so Mystic Expansion's hook widens them (effect spawned at base radius
     so the hook grows it); ghost scaled by Mystic Expansion. Punch radius/range, cube range, ball size all take Mystic Expansion (user).
   - Splatter/Punch/Cube castable while rolling (Deadlock CastWhileRolling). Ball steers with WASD relative to the camera, else the crosshair (user).

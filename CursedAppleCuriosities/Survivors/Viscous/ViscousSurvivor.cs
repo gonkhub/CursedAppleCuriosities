@@ -340,7 +340,7 @@ namespace CursedAppleCuriosities.Survivors.Viscous
         {
             yield return null; // the Deadlock model attaches on its first frame
             yield return null;
-            _cube = ViscousCubes.MakeVisual(2.4f * Scale);
+            _cube = ViscousCubes.MakeVisual(ViscousCubes.FitSize(gameObject, GetComponentInChildren<CharacterModel>()) ?? 2.4f * Scale);
             _cube.transform.SetPositionAndRotation(Home, HomeRotation);
             DeadlockSounds.Play("viscous_cube_cast", Home);
             _loop = DeadlockSounds.Loop("viscous_cube_loop", _cube, ViscousData.CubeDuration + 0.5f);

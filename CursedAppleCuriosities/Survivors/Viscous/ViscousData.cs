@@ -184,6 +184,7 @@ namespace CursedAppleCuriosities.Survivors.Viscous
         public const string CubeKey = "viscous_cube";
         public const string DlCubeModel = "models/abilities/viscous_cube.vmdl_c";
         public const float CubeModelHeight = 2.14f;
+        public const float CubeMargin = 1.1f;           // the cube's side over the target's tallest or widest extent (user: proportionate)
 
         /// <summary>
         /// State, Deadlock clip, loop, next state, layer. Viscous uses Kelvin's skeleton and AnimGraph1 clip names (as
