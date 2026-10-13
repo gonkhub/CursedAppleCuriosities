@@ -61,6 +61,7 @@ namespace CursedAppleCuriosities.Survivors.Seven
         public const float BallHitSpeed = 3.5f;         // Deadlock m_flNonHeroHitSpeed 138 hu/s: it crawls while it's shocking something
         public const float BallLifetime = 5f;           // Deadlock MaxLifetime
         public const float BallProc = 0.5f;
+        public const float BallSlowLinger = 0.5f;      // enemies it shocks are slowed 80% (Slow80) while inside and this long after (user, 1.7)
 
         // ---- secondary (alt): Static Charge (Deadlock's v2: strike a unit or a spot) ----
         public static float StaticDamage = 4f;

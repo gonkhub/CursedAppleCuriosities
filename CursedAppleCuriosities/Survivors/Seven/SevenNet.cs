@@ -482,6 +482,7 @@ namespace CursedAppleCuriosities.Survivors.Seven
             foreach (HealthComponent hc in inside)
             {
                 SevenNet.Hit(body, hc, SevenData.BallDps * SevenData.BallTickRoR2 * baseDamage, _pd != null && _pd.crit, Vector3.zero, DamageSource.Secondary, SevenData.BallProc);
+                if (hc.alive && hc.body != null) hc.body.AddTimedBuff(RoR2Content.Buffs.Slow80, SevenData.BallTickRoR2 + SevenData.BallSlowLinger);
                 SevenNet.Effect(SevenSurvivor.BoltEffect, SevenNet.Core(hc), 0.6f);
             }
             if (_ps != null && !_stuck) _ps.desiredForwardSpeed = inside.Count > 0 ? SevenData.BallHitSpeed : SevenData.BallSpeed;
