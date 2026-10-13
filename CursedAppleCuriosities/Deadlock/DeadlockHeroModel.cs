@@ -586,9 +586,34 @@ namespace CursedAppleCuriosities.Deadlock
         public void Play(string id)
         {
             if (_clips == null || !_states.TryGetValue(id, out Row row)) return;
-            if (row.Layer == "additive" || row.Layer == "delta") { SetLayer(_over, row); _overWeight = Mathf.Max(_overWeight, 0.01f); }
+            // An ability cast mid-slide plays over the slide pose (Deadlock masks casts to the upper body): as a full
+            // pose it stood the hero up while the body kept sliding.
+            bool overSlide = Sliding && !row.Loop && !IsMovement(id) && _states.ContainsKey("slide");
+            if (row.Layer == "additive" || row.Layer == "delta" || overSlide)
+            {
+                SetLayer(_over, overSlide && row.Layer == "full" ? new Row { State = row.State, Clip = row.Clip, Next = row.Next, Layer = "delta" } : row);
+                _overWeight = Mathf.Max(_overWeight, 0.01f);
+                if (overSlide && _cur.Row.State != "slide_start") Switch("slide", 0.1f);
+            }
             else Switch(id, 0.08f);
         }
+
+        private EntityStateMachine? _bodyMachine;
+
+        /// <summary>The body is in a Deadlock slide (the Body state machine runs on every client).</summary>
+        private bool Sliding
+        {
+            get
+            {
+                if (_body == null) return false;
+                if (_bodyMachine == null) _bodyMachine = EntityStateMachine.FindByCustomName(_body.gameObject, "Body");
+                return _bodyMachine != null && _bodyMachine.state is EntityStates.CursedApple.Deadlock.DeadlockSlide;
+            }
+        }
+
+        /// <summary>Movement states that take the whole body even mid-slide (the slide's own, jumps out of it, dashes, death).</summary>
+        private static bool IsMovement(string id) =>
+            id.StartsWith("slide") || id.StartsWith("dash") || id.EndsWith("jump") || id == "in_air" || id == "falling" || id == "land" || id == "hard_land" || id == "death";
 
         /// <summary>Only while just moving around (doesn't cut into an ability), e.g. a jump or landing.</summary>
         private void PlaySoft(string id)
@@ -676,6 +701,12 @@ namespace CursedAppleCuriosities.Deadlock
             _wasGrounded = grounded;
 
             string loco = Locomotion(out float scale);
+            // Whatever ends mid-slide (a full-body pose from before it, a loop rule) goes back to the slide, not a standing run.
+            if (grounded && Sliding && _states.ContainsKey("slide") && id != "slide_start" && (IsLocomotion(id) || !_cur.Row.Loop && _cur.T >= _cur.Clip.Length))
+            {
+                Switch("slide", 0.15f);
+                return 1f;
+            }
             if (!_cur.Row.Loop && _cur.T >= _cur.Clip.Length)
             {
                 string next = _cur.Row.Next;

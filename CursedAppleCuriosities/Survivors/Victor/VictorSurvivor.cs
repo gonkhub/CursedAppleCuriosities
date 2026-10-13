@@ -259,19 +259,17 @@ namespace CursedAppleCuriosities.Survivors.Victor
             LanguageAPI.Add(Token + "SKIN_DEFAULT", "Default");
             LanguageAPI.Add(Token + "DESCRIPTION",
                 "Victor woke up on a mortuary table, stitched together from strangers. Pain is the one thing he understands.<color=#CCD3E0>\n\n" +
-                "< ! > Pain Battery fills only when you get hurt, from any source, your own Aura and Jumpstart included.\n\n" +
-                "< ! > Jumpstart costs health up front but heals back more than it took. Use it to fill the battery.\n\n" +
-                "< ! > Aura of Suffering hurts you too, and can kill you. Shocking Reanimation catches you when it's ready.</color>\n");
+                "< ! > Pain Battery only fills when you get hurt, by anything, yourself included.\n\n" +
+                "< ! > Jumpstart costs health but heals back more. Use it to charge the battery.\n\n" +
+                "< ! > Aura of Suffering can kill you. Shocking Reanimation catches you when it's ready.</color>\n");
             LanguageAPI.Add(Token + "OUTRO", "..and so he left, still looking for the people he's made of.");
             LanguageAPI.Add(Token + "FAILURE", "..and so he died, and this time stayed dead.");
             LanguageAPI.Add(Token + "LORE", "You can't kill me.");
 
             LanguageAPI.Add(Token + "PASSIVE_NAME", "Shocking Reanimation");
             LanguageAPI.Add(Token + "PASSIVE_DESC",
-                "When you would die, you go down instead: nearby enemies are <style=cIsUtility>slowed</style> and you are <style=cIsUtility>invulnerable</style> for " +
-                $"{VictorData.ReviveChannel:0}s, then get back up with <style=cIsHealing>{P(VictorData.ReviveHealth)} health</style>, dealing <style=cIsDamage>{D(VictorData.ReviveDamage)} damage</style> " +
-                $"and <style=cIsUtility>stunning</style> enemies within {VictorData.ReviveRadius:0}m. Recharges in <style=cIsUtility>{VictorData.ReviveCooldown:0}s</style> or on a new stage. " +
-                $"Victor has <style=cIsUtility>{VictorData.Movement.StaminaPips} stamina</style>, <style=cIsUtility>sprints automatically</style> out of combat, and can <style=cIsUtility>dash</style> and <style=cIsUtility>air jump</style>.");
+                $"When you would die, go down instead, <style=cIsUtility>invulnerable</style> for {VictorData.ReviveChannel:0}s, then revive with <style=cIsHealing>{P(VictorData.ReviveHealth)} health</style>, " +
+                $"dealing <style=cIsDamage>{D(VictorData.ReviveDamage)} damage</style> and <style=cIsUtility>stunning</style> nearby enemies. Recharges in <style=cIsUtility>{VictorData.ReviveCooldown:0}s</style> or each stage.");
 
             LanguageAPI.Add(Token + "GUN_NAME", "Memento Mori");
             LanguageAPI.Add(Token + "GUN_DESC",
@@ -279,21 +277,15 @@ namespace CursedAppleCuriosities.Survivors.Victor
 
             LanguageAPI.Add(Token + "BATTERY_NAME", "Pain Battery");
             LanguageAPI.Add(Token + "BATTERY_DESC",
-                $"<style=cIsHealth>Charges only from damage you take</style> ({P(VictorData.BatteryFillFraction)} of your max health fills it). " +
-                $"When full, fire {VictorData.BatteryBolts} shocking bolts in a fan, dealing <style=cIsDamage>{D(VictorData.BatteryDamage)} damage</style> to each enemy hit. " +
-                $"Each enemy hit <style=cIsHealing>heals {P(VictorData.BatteryHealMissing)} of your missing health</style>.");
+                $"<style=cIsHealth>Charges from damage you take</style>. When full, fire {VictorData.BatteryBolts} bolts for <style=cIsDamage>{D(VictorData.BatteryDamage)} damage</style>. Each enemy hit <style=cIsHealing>heals {P(VictorData.BatteryHealMissing)} of missing health</style>.");
 
             LanguageAPI.Add(Token + "JUMPSTART_NAME", "Jumpstart");
             LanguageAPI.Add(Token + "JUMPSTART_DESC",
-                $"Shock yourself for <style=cIsHealth>{P(VictorData.JumpstartCost)} of your current health</style>, then <style=cIsHealing>heal {VictorData.JumpstartHealRatio:0.#}x that</style> " +
-                $"(at least {P(VictorData.JumpstartMinHeal)} of max health) and gain <style=cIsUtility>+{VictorData.JumpstartSpeed:0} m/s move speed</style>, both fading over {VictorData.JumpstartSeconds:0.#}s. " +
-                $"Holds <style=cIsUtility>{VictorData.JumpstartCharges} charges</style>.");
+                $"Spend <style=cIsHealth>{P(VictorData.JumpstartCost)} of current health</style>, then <style=cIsHealing>heal {VictorData.JumpstartHealRatio:0.#}x that</style> and gain <style=cIsUtility>+{VictorData.JumpstartSpeed:0} m/s</style> over {VictorData.JumpstartSeconds:0.#}s. <style=cIsUtility>{VictorData.JumpstartCharges} charges</style>.");
 
             LanguageAPI.Add(Token + "AURA_NAME", "Aura of Suffering");
             LanguageAPI.Add(Token + "AURA_DESC",
-                $"Toggle an aura that deals <style=cIsDamage>{D(VictorData.AuraMinDamage)}</style> rising to <style=cIsDamage>{D(VictorData.AuraMaxDamage)} damage per second</style> " +
-                $"over {VictorData.AuraRampSeconds:0}s to enemies within {VictorData.AuraRadius:0}m, and <style=cIsHealth>{P(VictorData.AuraSelfMin)} rising to {P(VictorData.AuraSelfMax)} of your max health per second to yourself</style>. " +
-                "Lasts until you press it again or die.");
+                $"Toggle an aura dealing <style=cIsDamage>{D(VictorData.AuraMinDamage)}-{D(VictorData.AuraMaxDamage)} damage per second</style> to nearby enemies, ramping up over {VictorData.AuraRampSeconds:0}s. <style=cIsHealth>It hurts you too</style>.");
         }
     }
 

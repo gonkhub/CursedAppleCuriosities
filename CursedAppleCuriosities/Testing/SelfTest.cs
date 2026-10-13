@@ -27,7 +27,7 @@ namespace CursedAppleCuriosities.Testing
     /// shot name                       save a screenshot of the screen
     /// portrait name yaw [zoom] [h]    render the player's body from yaw degrees (0 = its front) to name.png; h = aim height (0..1)
     /// setskill special CursedAppleAbramsSeismic   put a skill in a slot of the live body only (the saved loadout is untouched)
-    /// probe                           log the body's foot, main hurtbox bounds and Body state
+    /// probe                           log the body's foot, main hurtbox bounds, Body state and animation state
     /// log text                        write a line to the BepInEx log
     /// quit
     /// </code>
@@ -207,7 +207,7 @@ namespace CursedAppleCuriosities.Testing
                 {
                     CharacterBody? b = LocalUserManager.GetFirstLocalUser()?.cachedBody;
                     Collider? c = b != null && b.mainHurtBox != null ? b.mainHurtBox.collider : null;
-                    Log(b == null ? "probe: no body" : $"probe: maxHP {b.maxHealth:0.#} gravity {b.characterMotor?.gravityScale} jumps {b.maxJumpCount} pips {b.GetComponent<CursedAppleCuriosities.Deadlock.DeadlockMover>()?.Max} foot {b.footPosition} hurtbox {(c != null ? c.bounds.center + " size " + c.bounds.size : "none")} state {EntityStateMachine.FindByCustomName(b.gameObject, "Body")?.state?.GetType().Name}");
+                    Log(b == null ? "probe: no body" : $"probe: maxHP {b.maxHealth:0.#} gravity {b.characterMotor?.gravityScale} jumps {b.maxJumpCount} pips {b.GetComponent<CursedAppleCuriosities.Deadlock.DeadlockMover>()?.Max} foot {b.footPosition} hurtbox {(c != null ? c.bounds.center + " size " + c.bounds.size : "none")} state {EntityStateMachine.FindByCustomName(b.gameObject, "Body")?.state?.GetType().Name} anim {CursedAppleCuriosities.Deadlock.DeadlockModelSwap.AnimatorOf(b.gameObject)?.Current}");
                     return null;
                 }
                 case "log": Log(rest); return null;

@@ -300,47 +300,40 @@ namespace CursedAppleCuriosities.Survivors.Celeste
             LanguageAPI.Add(Token + "SKIN_DEFAULT", "Default");
             LanguageAPI.Add(Token + "SKIN_MINT", "Mint");
             LanguageAPI.Add(Token + "DESCRIPTION",
-                "Celeste ran away with the carnival and never stopped performing. The show goes on, wherever the tent lands.<color=#CCD3E0>\n\n" +
-                "< ! > Carny Life's blades arc, curve onto enemies near your aim and bounce once off walls. Aim close, not exact.\n\n" +
-                "< ! > Light Eater first: marked enemies take extra damage from every blade and heal you for part of all you deal them.\n\n" +
-                "< ! > Dazzling Trick rewards being hit. Raise it in the thick of a fight and let them break it.\n\n" +
-                "< ! > Shining Wonder bounces off your own prism: raise Dazzling Trick in a crowd and let the orb ping-pong.</color>\n");
+                "Celeste ran away with the carnival and never stopped performing.<color=#CCD3E0>\n\n" +
+                "< ! > Mark enemies with Light Eater, then finish them with your blades.\n\n" +
+                "< ! > Dazzling Trick rewards being hit: raise it in the thick of a fight.\n\n" +
+                "< ! > Shining Wonder bounces off your own prism. Raise it in a crowd and let the orb ping-pong.</color>\n");
             LanguageAPI.Add(Token + "OUTRO", "..and so she left, to a standing ovation.");
             LanguageAPI.Add(Token + "FAILURE", "..and so she vanished, her final trick.");
             LanguageAPI.Add(Token + "LORE", "Every show needs an encore.");
 
             LanguageAPI.Add(Token + "PASSIVE_NAME", "Showstopper");
             LanguageAPI.Add(Token + "PASSIVE_DESC",
-                "Celeste falls <style=cIsUtility>25% slower</style> with <style=cIsUtility>stronger air control</style>. She hangs in the air while she casts Light Eater and floats down while aiming Shining Wonder. " +
-                $"She has <style=cIsUtility>{CelesteData.Movement.StaminaPips} stamina</style>, <style=cIsUtility>sprints automatically</style> out of combat, and can <style=cIsUtility>air jump</style> and <style=cIsUtility>air dash</style> twice.");
+                $"Falls <style=cIsUtility>25% slower</style> with better air control, and <style=cIsUtility>hovers</style> while casting. <style=cIsUtility>{CelesteData.Movement.StaminaPips} stamina</style>; air jump and air dash twice.");
 
             LanguageAPI.Add(Token + "BLADE_NAME", "Carny Life");
             LanguageAPI.Add(Token + "BLADE_DESC",
-                $"Throw a blade of light for <style=cIsDamage>{D(CelesteData.DaggerDamage)} damage</style>. It <style=cIsUtility>homes</style> onto enemies near its path " +
-                "and <style=cIsUtility>bounces</style> once off walls.");
+                $"Throw an arcing blade of light for <style=cIsDamage>{D(CelesteData.DaggerDamage)} damage</style> that <style=cIsUtility>homes</style> onto nearby enemies.");
 
             LanguageAPI.Add(Token + "FLARE_NAME", "Light Eater");
             LanguageAPI.Add(Token + "FLARE_DESC",
-                $"Flare in a cone for <style=cIsDamage>{D(CelesteData.FlareDamage)} damage</style>, <style=cIsUtility>marking</style> enemies for {CelesteData.MarkSeconds:0}s. " +
-                $"Your blades deal <style=cIsDamage>+{D(CelesteData.MarkDaggerBonus)} damage</style> to marked enemies, and you <style=cIsHealing>heal {D(CelesteData.MarkLifesteal)}</style> of all damage you deal them.");
+                $"Flare in a cone for <style=cIsDamage>{D(CelesteData.FlareDamage)} damage</style> and <style=cIsUtility>mark</style> enemies for {CelesteData.MarkSeconds:0}s. " +
+                $"Your blades deal <style=cIsDamage>+{D(CelesteData.MarkDaggerBonus)}</style> to marked enemies, and you <style=cIsHealing>heal {D(CelesteData.MarkLifesteal)}</style> of damage dealt to them.");
 
             LanguageAPI.Add(Token + "BEAM_NAME", "Radiant Daggers");
             LanguageAPI.Add(Token + "BEAM_DESC",
-                $"Call a beam of light onto a spot up to {CelesteData.BeamRange:0}m away. After <style=cIsUtility>{CelesteData.BeamDelay:0.#}s</style> it explodes for " +
-                $"<style=cIsDamage>{D(CelesteData.BeamDamage)} damage</style> in {CelesteData.BeamRadius:0}m. Each enemy hit gives <style=cIsDamage>+{D(CelesteData.RadianceDamage)} damage</style> " +
-                $"for {CelesteData.RadianceSeconds:0}s, up to {CelesteData.RadianceMaxStacks} times.");
+                $"Call down a beam of light that explodes after {CelesteData.BeamDelay:0.#}s for <style=cIsDamage>{D(CelesteData.BeamDamage)} damage</style>. " +
+                $"Each enemy hit grants <style=cIsDamage>+{D(CelesteData.RadianceDamage)} damage</style> for {CelesteData.RadianceSeconds:0}s, up to {CelesteData.RadianceMaxStacks} times.");
 
             LanguageAPI.Add(Token + "PRISM_NAME", "Dazzling Trick");
             LanguageAPI.Add(Token + "PRISM_DESC",
-                $"Surround yourself with a prism: <style=cIsHealing>{D(CelesteData.PrismBarrier)} barrier</style> for {CelesteData.PrismSeconds:0}s. " +
-                $"If it's <style=cIsDamage>broken</style>, it bursts for <style=cIsDamage>{D(CelesteData.PrismDamage)} damage</style> in {CelesteData.PrismRadius:0}m and " +
-                $"<style=cIsUtility>stuns</style> enemies for {CelesteData.PrismStun:0.##}s.");
+                $"Gain <style=cIsHealing>{D(CelesteData.PrismBarrier)} barrier</style> for {CelesteData.PrismSeconds:0}s. If it breaks, it bursts for <style=cIsDamage>{D(CelesteData.PrismDamage)} damage</style> and <style=cIsUtility>stuns</style> nearby enemies.");
 
             LanguageAPI.Add(Token + "ORB_NAME", "Shining Wonder");
             LanguageAPI.Add(Token + "ORB_DESC",
-                $"Hold to aim, release to launch an orb of light for <style=cIsDamage>{D(CelesteData.OrbDamage)} damage</style> that <style=cIsUtility>slows</style> by {D(CelesteData.OrbSlow)}. " +
-                $"It <style=cIsDamage>bounces</style> up to {CelesteData.OrbBounces} times to the nearest enemy within {CelesteData.OrbBounceRange:0.#}m, and waits a moment for a target when none is near. " +
-                "It also bounces off your <style=cIsUtility>Dazzling Trick</style> prism, restarting it and restoring its barrier.");
+                $"Hold, then release an orb of light for <style=cIsDamage>{D(CelesteData.OrbDamage)} damage</style> that <style=cIsUtility>slows</style> and <style=cIsDamage>bounces</style> between nearby enemies, up to {CelesteData.OrbBounces} times. " +
+                "It also bounces off your prism, restoring it.");
         }
     }
 

@@ -279,8 +279,8 @@ namespace CursedAppleCuriosities.Survivors.Viscous
             LanguageAPI.Add(Token + "SKIN_BLUE", "Blue");
             LanguageAPI.Add(Token + "DESCRIPTION",
                 "Viscous is a living blob of goo in a diving suit, here to help, mostly.<color=#CCD3E0>\n\n" +
-                "< ! > Goo Ball rolls where you look, or where WASD points. Hold Primary to go fast, Jump to jump (and once more in the air).\n\n" +
-                "< ! > Puddle Punch launches everything over it, you and your allies included. Punch your own feet to fly.\n\n" +
+                "< ! > Goo Ball steers where you look. The faster it rolls, the harder it hits.\n\n" +
+                "< ! > Puddle Punch launches everything above it, you included.\n\n" +
                 "< ! > Tap The Cube to protect an ally, hold it to protect yourself.</color>\n");
             LanguageAPI.Add(Token + "OUTRO", "..and so he left, still dripping.");
             LanguageAPI.Add(Token + "FAILURE", "..and so he died, a puddle on a strange world.");
@@ -288,36 +288,31 @@ namespace CursedAppleCuriosities.Survivors.Viscous
 
             LanguageAPI.Add(Token + "PASSIVE_NAME", "Goo");
             LanguageAPI.Add(Token + "PASSIVE_DESC",
-                $"Viscous has <style=cIsUtility>{ViscousData.Movement.StaminaPips} stamina</style>, <style=cIsUtility>sprints automatically</style> out of combat, and can <style=cIsUtility>dash</style> and <style=cIsUtility>air jump</style>.");
+                $"<style=cIsUtility>{ViscousData.Movement.StaminaPips} stamina</style>. Dash, air jump and slide; sprints automatically out of combat.");
 
             LanguageAPI.Add(Token + "GUN_NAME", "Goo Gun");
             LanguageAPI.Add(Token + "GUN_DESC", $"Fire for <style=cIsDamage>{D(ViscousData.GunDamage)} damage</style>.");
 
             LanguageAPI.Add(Token + "ALT_NAME", "Goo Glob");
             LanguageAPI.Add(Token + "ALT_DESC",
-                $"Lob a slow glob of goo that bursts on impact for <style=cIsDamage>{D(ViscousData.AltDamage)} damage</style> in a {ViscousData.AltRadius:0.#}m radius.");
+                $"Lob a glob of goo that bursts for <style=cIsDamage>{D(ViscousData.AltDamage)} damage</style>.");
 
             LanguageAPI.Add(Token + "SPLATTER_NAME", "Splatter");
             LanguageAPI.Add(Token + "SPLATTER_DESC",
-                $"Throw a bouncing ball of goo that bursts for <style=cIsDamage>{D(ViscousData.SplatterDamage)} damage</style> in a {ViscousData.SplatterRadius:0}m radius " +
-                $"every time it hits something, <style=cIsUtility>{ViscousData.SplatterBounces} times</style>.");
+                $"Throw a bouncing ball of goo that bursts for <style=cIsDamage>{D(ViscousData.SplatterDamage)} damage</style> each bounce, <style=cIsUtility>{ViscousData.SplatterBounces} times</style>.");
             LanguageAPI.Add(Token + "PUNCH_NAME", "Puddle Punch");
             LanguageAPI.Add(Token + "PUNCH_DESC",
-                $"A goo fist erupts from the ground where you aim, dealing <style=cIsDamage>{D(ViscousData.PunchDamage)} damage</style> and <style=cIsUtility>launching</style> " +
-                "everything above it into the air: enemies, allies, and you. Punching yourself gives you <style=cIsUtility>greatly increased air control</style> for a moment.");
+                $"Punch up from the ground where you aim for <style=cIsDamage>{D(ViscousData.PunchDamage)} damage</style>, <style=cIsUtility>launching</style> everything above it, you included.");
 
             LanguageAPI.Add(Token + "CUBE_NAME", "The Cube");
             LanguageAPI.Add(Token + "CUBE_DESC",
-                $"<style=cIsUtility>Tap</style> to encase the ally you're looking at, <style=cIsUtility>hold</style> to encase yourself, for {ViscousData.CubeDuration:0}s: " +
-                $"<style=cIsUtility>cleansed</style> of debuffs, <style=cIsUtility>immune to hits</style> (new debuffs still stick) and <style=cIsHealing>healing {ViscousData.CubeHeal * 100f:0}% max health per second</style>, but unable to act. No fall damage. " +
-                $"Jump breaks out early. Afterwards, <style=cIsUtility>+{ViscousData.PostCubeSpeed:0.#} m/s move speed</style> and faster stamina for {ViscousData.PostCubeSeconds:0}s.");
+                $"<style=cIsUtility>Tap</style> to encase an ally, <style=cIsUtility>hold</style> to encase yourself, for {ViscousData.CubeDuration:0}s: <style=cIsUtility>cleansed</style>, <style=cIsUtility>immune to damage</style> and <style=cIsHealing>healing {ViscousData.CubeHeal * 100f:0}% per second</style>. " +
+                $"Afterwards, gain <style=cIsUtility>+{ViscousData.PostCubeSpeed:0.#} m/s</style> and faster stamina.");
 
             LanguageAPI.Add(Token + "BALL_NAME", "Goo Ball");
             LanguageAPI.Add(Token + "BALL_DESC",
-                $"Morph into a large goo ball for <style=cIsUtility>{ViscousData.BallDuration:0}s</style>. It rolls where you look (or where WASD points), <style=cIsUtility>bounces off walls</style> and can <style=cIsUtility>double jump</style>; " +
-                "hold Primary to go faster. <style=cIsDamage>Heavy</style>. Enemies it rolls into take " +
-                $"<style=cIsDamage>{D(ViscousData.BallDamage)} damage</style>, +{D(ViscousData.BallHeavyDamage)} per m/s of speed, and are <style=cIsUtility>stunned</style> and knocked away; bosses take <style=cIsDamage>{ViscousData.BossDamageMult:0.#}x</style> and bounce the ball off. " +
-                $"Take <style=cIsUtility>{ViscousData.BallResist * 100f:0}% less damage</style> while rolling. Special again pops out early.");
+                $"<style=cIsDamage>Heavy</style>. Roll as a goo ball for <style=cIsUtility>{ViscousData.BallDuration:0}s</style>, dealing <style=cIsDamage>{D(ViscousData.BallDamage)} damage</style> (+{D(ViscousData.BallHeavyDamage)} per m/s) and <style=cIsUtility>stunning</style> enemies in your way. " +
+                $"Hold Primary to roll faster. Take <style=cIsUtility>{ViscousData.BallResist * 100f:0}% less damage</style> while rolling.");
         }
     }
 

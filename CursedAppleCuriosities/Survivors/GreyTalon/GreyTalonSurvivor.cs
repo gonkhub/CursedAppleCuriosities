@@ -302,41 +302,35 @@ namespace CursedAppleCuriosities.Survivors.GreyTalon
             LanguageAPI.Add(Token + "SUBTITLE", "The Last Hunt");
             LanguageAPI.Add(Token + "SKIN_DEFAULT", "Default");
             LanguageAPI.Add(Token + "DESCRIPTION",
-                "Grey Talon spent forty years hunting the monsters that preyed on man. This planet has more of them than he can count.<color=#CCD3E0>\n\n" +
-                "< ! > His bow hits hardest across long distances: keep your distance and pick your shots.\n\n" +
-                "< ! > Charged Shot pierces everything in a line. Line enemies up before you let go.\n\n" +
+                "Grey Talon spent forty years hunting monsters. This planet has more than he can count.<color=#CCD3E0>\n\n" +
+                "< ! > His bow keeps full damage across long distances: keep your distance.\n\n" +
+                "< ! > Line enemies up for Charged Shot: it pierces them all.\n\n" +
                 "< ! > Rain of Arrows turns every shot into five. Leap above the crowd and shoot down into it.\n\n" +
-                "< ! > Grey Talon can't be hurt or seen while he steers his owl, but his owl is gone for a long time once it flies.</color>\n");
+                "< ! > His owl hits very hard, but takes a long time to return.</color>\n");
             LanguageAPI.Add(Token + "OUTRO", "..and so he left, one last trophy for the wall.");
             LanguageAPI.Add(Token + "FAILURE", "..and so he vanished, the hunter finally hunted.");
             LanguageAPI.Add(Token + "LORE", "Every monster he ever hunted had a weakness. He meant to find this one's.");
 
             LanguageAPI.Add(Token + "PASSIVE_NAME", "Seasoned Hunter");
             LanguageAPI.Add(Token + "PASSIVE_DESC",
-                $"Grey Talon has <style=cIsUtility>{GreyTalonData.Movement.StaminaPips} stamina</style>, <style=cIsUtility>sprints automatically</style> out of combat, " +
-                "and can <style=cIsUtility>slide</style>, <style=cIsUtility>dash</style> and <style=cIsUtility>air jump</style>.");
+                $"<style=cIsUtility>{GreyTalonData.Movement.StaminaPips} stamina</style>. Dash, air jump and slide; sprints automatically out of combat.");
 
             LanguageAPI.Add(Token + "BOW_NAME", "Bow");
             LanguageAPI.Add(Token + "BOW_DESC",
-                $"Loose an arrow for <style=cIsDamage>{D(GreyTalonData.BowDamage)} damage</style> at very long range. " +
-                $"Beyond {GreyTalonData.BowFalloffStart:0}m its damage falls to half at {GreyTalonData.BowFalloffEnd:0}m.");
+                $"Loose an arrow for <style=cIsDamage>{D(GreyTalonData.BowDamage)} damage</style>. Damage falls off beyond {GreyTalonData.BowFalloffStart:0}m.");
 
             LanguageAPI.Add(Token + "CHARGED_NAME", "Charged Shot");
             LanguageAPI.Add(Token + "CHARGED_DESC",
-                $"Draw a powerful arrow and <style=cIsUtility>hold it</style> as long as you like. Release to fire a large, fast arrow that " +
-                $"<style=cIsDamage>pierces</style> every enemy in its path for <style=cIsDamage>{D(GreyTalonData.ChargedDamage)} damage</style>.");
+                $"Draw and <style=cIsUtility>hold</style>, then release a <style=cIsDamage>piercing</style> arrow for <style=cIsDamage>{D(GreyTalonData.ChargedDamage)} damage</style>.");
 
             LanguageAPI.Add(Token + "RAIN_NAME", "Rain of Arrows");
             LanguageAPI.Add(Token + "RAIN_DESC",
-                $"<style=cIsUtility>Leap high into the air</style> and <style=cIsUtility>glide</style> for {GreyTalonData.RainDuration:0}s. While airborne, your bow fires " +
-                $"<style=cIsDamage>{GreyTalonData.RainArrows} arrows</style> in a fan, each dealing <style=cIsDamage>+{D(GreyTalonData.RainDamageBonus)}</style> damage; " +
-                $"after the first, arrows that hit the same enemy deal {D(GreyTalonData.RainRepeatHit)}. Jump to drop early, keeping your speed.");
+                $"<style=cIsUtility>Leap</style> and <style=cIsUtility>glide</style> for {GreyTalonData.RainDuration:0}s. While airborne, every shot fires <style=cIsDamage>{GreyTalonData.RainArrows} arrows</style> for <style=cIsDamage>+{D(GreyTalonData.RainDamageBonus)}</style> damage each.");
 
             LanguageAPI.Add(Token + "OWL_NAME", "Guided Owl");
             LanguageAPI.Add(Token + "OWL_DESC",
-                $"After {GreyTalonData.OwlCastDelay:0.#}s, launch a spirit owl that <style=cIsUtility>you steer</style>. It explodes on impact for " +
-                $"<style=cIsDamage>{D(GreyTalonData.OwlDamage)} damage</style> within {GreyTalonData.OwlRadius:0}m and <style=cIsDamage>stuns</style>. Hold forward to fly faster, Primary to detonate it early, jump to let it go. " +
-                $"You are <style=cIsUtility>invulnerable and unseen</style> while you control it, and for {GreyTalonData.OwlExitGrace:0.#}s after. Each boss it kills permanently gives it <style=cIsDamage>+{D(GreyTalonData.OwlBossBonus)} damage</style>.");
+                $"Steer a spirit owl that explodes for <style=cIsDamage>{D(GreyTalonData.OwlDamage)} damage</style> and <style=cIsDamage>stuns</style>. You are <style=cIsUtility>invulnerable</style> while steering. " +
+                $"Each boss it kills permanently grants <style=cIsDamage>+{D(GreyTalonData.OwlBossBonus)} damage</style>.");
         }
     }
 
