@@ -426,7 +426,7 @@ namespace CursedAppleCuriosities.Survivors.Celeste
         private Rigidbody? _rb;
         private HealthComponent? _target, _last;
         private int _hits;
-        private float _flight, _linger, _search;
+        private float _flight, _linger, _search, _orbit;
         private bool _lingering;
         private DeadlockVoice? _hum;
 
@@ -464,7 +464,7 @@ namespace CursedAppleCuriosities.Survivors.Celeste
             }
             if (_lingering)
             {
-                _rb.velocity = Vector3.zero;
+                Orbit(dt);
                 _linger += dt;
                 _search -= dt;
                 if (_search <= 0f) { _search = 0.15f; _target = Next(owner); }
@@ -512,6 +512,24 @@ namespace CursedAppleCuriosities.Survivors.Celeste
             return best;
         }
 
+        /// <summary>
+        /// Waiting for a target: it circles whatever it last hit (an enemy, or Celeste after a prism bounce) at a little past
+        /// its body (user); with nothing to circle (it stopped at a wall) it hovers in place.
+        /// </summary>
+        private void Orbit(float dt)
+        {
+            HealthComponent? around = _last != null && _last.alive && _last.body != null ? _last : null;
+            if (around == null) { _rb!.velocity = Vector3.zero; return; }
+            CharacterBody b = around.body;
+            float radius = Mathf.Max(1.2f, b.bestFitRadius + 1f);
+            _orbit += CelesteData.OrbOrbitDegPerSec * dt;
+            float a = _orbit * Mathf.Deg2Rad;
+            Vector3 point = b.corePosition + new Vector3(Mathf.Cos(a) * radius, 0.35f * radius * Mathf.Sin(a * 2f), Mathf.Sin(a) * radius);
+            Vector3 to = point - transform.position;
+            // Glide onto the circle, then ride it (velocity carries the position to every client).
+            _rb!.velocity = Vector3.ClampMagnitude(to / dt, CelesteData.OrbSpeed * 2f);
+        }
+
         private bool HitsWorld(Vector3 step) =>
             step.sqrMagnitude > 0.0001f && Physics.SphereCast(transform.position, 0.4f, step.normalized, out _, step.magnitude + 0.2f, LayerIndex.world.mask, QueryTriggerInteraction.Ignore);
 
@@ -519,6 +537,11 @@ namespace CursedAppleCuriosities.Survivors.Celeste
         {
             _lingering = true;
             _linger = 0f;
+            if (_last != null && _last.body != null)
+            {
+                Vector3 off = transform.position - _last.body.corePosition;
+                _orbit = Mathf.Atan2(off.z, off.x) * Mathf.Rad2Deg;
+            }
             EquipmentFx.Sound("celeste_orb_linger", transform.position, gameObject);
         }
 

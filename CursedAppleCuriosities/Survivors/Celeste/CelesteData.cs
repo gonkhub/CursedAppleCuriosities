@@ -89,6 +89,7 @@ namespace CursedAppleCuriosities.Survivors.Celeste
         public const float OrbRadius = 1.65f;            // Deadlock m_flBulletRadius 65 hu
         public const float OrbSlow = 0.32f;              // Deadlock SlowPercent
         public const float OrbSlowSeconds = 1.5f;        // Deadlock SlowDuration
+        public const float OrbOrbitDegPerSec = 240f;     // while it waits, it circles what it last hit (user)
         public const float OrbLinger = 3.25f;            // Deadlock BounceGrace: no target, it waits this long for one
         public const float OrbHomeConeDeg = 25f;
         public const float OrbFlightSeconds = 3f;        // without a target it flies on this long, then lingers where it is
