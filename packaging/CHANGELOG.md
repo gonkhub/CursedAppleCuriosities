@@ -1,6 +1,7 @@
 # Changelog
 
-## 1.8.0 (unreleased)
+## 1.8.0
+- **Abrams**: **Heavy Melee** lunges about 10 m (was 6).
 - New red item: **Lightning Scroll**. The first time your special skill hits an enemy, a purple bolt of lightning strikes it
   3 seconds later for 500% damage (+250% per stack) and stuns it for 2 seconds.
 - The mod's content is now an **expansion** you can switch off in the lobby, next to the base game's expansions. Off: none of
