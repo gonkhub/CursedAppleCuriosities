@@ -47,6 +47,19 @@ namespace CursedAppleCuriosities.Deadlock
             return slot;
         }
 
+        /// <summary>The hero's own copy of the stand-in's camera, pivot raised and pulled back for a bigger model.</summary>
+        public static void BiggerCamera(GameObject body, string name, float height, float distance)
+        {
+            var target = body.GetComponent<CameraTargetParams>();
+            if (target == null || target.cameraParams == null) return;
+            CharacterCameraParams cam = ScriptableObject.Instantiate(target.cameraParams);
+            cam.name = name;
+            cam.data.pivotVerticalOffset.value += height;
+            Vector3 pos = cam.data.idealLocalCameraPos.value;
+            cam.data.idealLocalCameraPos.value = new Vector3(pos.x, pos.y, pos.z * distance);
+            target.cameraParams = cam;
+        }
+
         /// <summary>
         /// The hero's own copies of the stand-in's default skin (sharing its SkinDef would mix up skin indices): the
         /// default, then any extra skins. They only differ in name and icon here; the look is the hero def's Skins,

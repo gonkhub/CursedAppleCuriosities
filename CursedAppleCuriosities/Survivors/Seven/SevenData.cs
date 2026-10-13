@@ -138,7 +138,7 @@ namespace CursedAppleCuriosities.Survivors.Seven
         // ---- Deadlock assets (read from the player's own install, never shipped) ----
 
         public const string DlModel = "models/heroes_staging/gigawatt_prisoner/gigawatt_prisoner.vmdl_c";
-        public const float ModelHeightScale = 1.08f * 1.25f; // Lash's size (playtest: heroes read small on the stand-in)
+        public const float ModelHeightScale = 1.08f * 1.25f * 1.15f; // Lash's size, then x1.15 by playtest (heroes read small on the stand-in)
         public const string MuzzleBone = "muzzle_fx";
 
         // Deadlock's internal name for Seven is "gigawatt" (icons giga_*).

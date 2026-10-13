@@ -129,7 +129,7 @@ namespace CursedAppleCuriosities.Survivors.Celeste
         // ---- Deadlock assets (read from the player's own install, never shipped) ----
 
         public const string DlModel = "models/heroes_wip/unicorn/unicorn.vmdl_c";
-        public const float ModelHeightScale = 1.08f * 1.25f; // Lash's size
+        public const float ModelHeightScale = 1.08f * 1.25f * 1.15f; // Lash's size, then x1.15 by playtest
         public const string MuzzleBone = "hand_R";           // she throws from her right hand
 
         public const string IconPortrait = "panorama/images/heroes/unicorn_sm_psd.vtex_c";

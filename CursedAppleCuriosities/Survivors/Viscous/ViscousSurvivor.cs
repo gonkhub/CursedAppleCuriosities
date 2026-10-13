@@ -204,6 +204,7 @@ namespace CursedAppleCuriosities.Survivors.Viscous
             if (children != null && children.FindChild(MuzzleName) == null) children.AddChild(MuzzleName, model);
             Kit.OwnSkin(model.gameObject, "skinCursedAppleViscousDEFAULT", Token + "SKIN_DEFAULT", DefaultSkinIcon, ("skinCursedAppleViscousBLUE", Token + "SKIN_BLUE", BlueSkinIcon));
 
+            Kit.BiggerCamera(body, "ccpCursedAppleViscous", 0.5f, 1.2f); // pivot up (m), distance (x Commando's) for the bigger model
             ContentAddition.AddBody(body);
             return body;
         }

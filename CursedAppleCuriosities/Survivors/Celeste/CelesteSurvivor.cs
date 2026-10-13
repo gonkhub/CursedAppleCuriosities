@@ -246,6 +246,7 @@ namespace CursedAppleCuriosities.Survivors.Celeste
             if (children != null && children.FindChild(MuzzleName) == null) children.AddChild(MuzzleName, model);
             Kit.OwnSkin(model.gameObject, "skinCursedAppleCelesteDEFAULT", Token + "SKIN_DEFAULT", DefaultSkinIcon, ("skinCursedAppleCelesteMINT", Token + "SKIN_MINT", MintSkinIcon));
 
+            Kit.BiggerCamera(body, "ccpCursedAppleCeleste", 0.6f, 1.25f); // pivot up (m), distance (x Commando's) for the bigger model
             ContentAddition.AddBody(body);
             return body;
         }

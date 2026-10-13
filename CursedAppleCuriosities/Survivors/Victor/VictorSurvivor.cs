@@ -184,6 +184,7 @@ namespace CursedAppleCuriosities.Survivors.Victor
             if (children != null && children.FindChild(MuzzleName) == null) children.AddChild(MuzzleName, model);
             Kit.OwnSkin(model.gameObject, "skinCursedAppleVictorDEFAULT", Token + "SKIN_DEFAULT", DefaultSkinIcon);
 
+            Kit.BiggerCamera(body, "ccpCursedAppleVictor", 0.8f, 1.3f); // pivot up (m), distance (x Commando's) for the bigger model
             ContentAddition.AddBody(body);
             return body;
         }

@@ -221,6 +221,7 @@ namespace CursedAppleCuriosities.Survivors.Seven
             if (children != null && children.FindChild(MuzzleName) == null) children.AddChild(MuzzleName, model);
             Kit.OwnSkin(model.gameObject, "skinCursedAppleSevenDEFAULT", Token + "SKIN_DEFAULT", DefaultSkinIcon);
 
+            Kit.BiggerCamera(body, "ccpCursedAppleSeven", 0.6f, 1.25f); // pivot up (m), distance (x Commando's) for the bigger model
             ContentAddition.AddBody(body);
             return body;
         }
