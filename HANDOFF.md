@@ -352,7 +352,7 @@ same on a stand-in model.
   `models/heroes_staging/kelvin_v2/clip/...`, which his own model exports: Deadlock's live Viscous runs hero_*+kelvin graphs). Goo Ball
   playtested OK 2026-10-12 (user); full kit added the same day and playtested by the user that evening:
   - M1 Goo Gun (0.21 s) / alt **Goo Glob** (Deadlock alt fire: 38 m/s, 0.2 gravity, 350% burst 3.56 m, 1.26 s). M2 **Splatter** (user: 3 bursts,
-    500% each, 5 m) / alt **Puddle Punch** (user: 700%, 40 m aim, 4 m, launches enemies, allies (landing guarded) and Viscous himself, who
+    500% each, 5 m) / alt **Puddle Punch** (user: 700%, 40 m aim, 5 m (1.6.0, user; Deadlock 4), launches enemies, allies (landing guarded) and Viscous himself, who
     gets x3 air control for 2.5 s via `DeadlockMover.BoostAirControl`). Utility **The Cube** (own "Cube" machine: tap = ally under the
     crosshair with Tricorn reticle, nobody = refund; hold 0.3 s = self; 3 s x Duration Extender, invulnerable, held in place (UpdateVelocity
     hook + rootMotion zeroed), SkillSilence, 5%/s heal, jump breaks out after 1 s; then `PostCubeBuff` 8 s: +2.5 m/s and stamina x1/0.7 via

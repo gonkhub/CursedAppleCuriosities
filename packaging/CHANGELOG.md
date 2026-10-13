@@ -6,7 +6,7 @@
 - **Cursed Broker**: always appears on stage 4, and after looping in your first visit to the Bazaar Between Time each loop.
 - **Viscous**: his air jump no longer stretches him out, and his ground dash is his own roll.
 - **Viscous**: **Puddle Punch** winds up like Deadlock's (its portal shows for a moment before the fist comes out), throws
-  harder, and the throw carries: everything punched keeps its full speed for a moment, then flies on without slowing.
+  harder over a 25% wider area (5 m), and the throw carries: everything punched keeps its full speed for a moment, then flies on without slowing.
 - **Viscous**: **The Cube** fits whoever is inside it (much smaller around Viscous himself).
 - **Viscous**: **Goo Ball** cooldown 32 s (was 20). Anything it can't stun now gets the boss treatment (double damage, a
   dramatic freeze), and the ball rebounds off them faster than it hit, keeping that speed for a moment.

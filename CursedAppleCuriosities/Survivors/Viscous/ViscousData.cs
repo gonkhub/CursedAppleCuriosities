@@ -100,7 +100,7 @@ namespace CursedAppleCuriosities.Survivors.Viscous
         // ---- secondary alt: Puddle Punch (Deadlock viscous_telepunch; user: 700%, launches everything, Viscous too) ----
         public static float PunchDamage = 7f;           // user
         public static float PunchRange = 40f;           // Deadlock AbilityCastRange (Mystic Expansion: farther)
-        public static float PunchRadius = 4f;           // Deadlock Radius (Mystic Expansion: wider)
+        public static float PunchRadius = 5f;           // Deadlock Radius 4 m, x1.25 (user; Mystic Expansion: wider)
         public const float PunchHalfHeight = 5.5f;      // Deadlock PunchHalfHeight
         public static float PunchUp = 38f;              // user: sends most things flying, straight out of the surface (was 26, 34, 42 (a touch much); Deadlock TossSpeed 625 hu/s = 16 m/s)
         public const float PunchUpBias = 0.15f;         // user: a little upward tilt on every punch (a wall throws ~8.5 deg up)
