@@ -327,20 +327,21 @@ namespace CursedAppleCuriosities.Survivors.Seven
     }
 
     /// <summary>
-    /// Server, on Seven while Storm Cloud channels: every 0.3 s, every enemy inside the cloud that Seven can see takes
-    /// damage. The cloud starts at Deadlock's 10 m and grows (slowly, then fast) to the whole map by the end (user).
+    /// Server, on Seven while Storm Cloud channels: every enemy inside the cloud that Seven can see is struck by a lightning
+    /// bolt every ~0.25 s (each on its own jittered clock, so the storm flickers rather than pulsing), proc 1.0; stray bolts
+    /// also fall on random spots near him. The cloud starts at 30 m and grows (slowly, then fast) to the whole map (user).
     /// </summary>
     public class SevenStorm : MonoBehaviour
     {
         private CharacterBody _body = null!;
-        private float _age, _tick;
+        private float _age, _tick, _stray;
         private bool _on;
-        private int _ticks;
+        private readonly Dictionary<HealthComponent, float> _next = new Dictionary<HealthComponent, float>();
 
         private void Awake() => _body = GetComponent<CharacterBody>();
 
-        public void Begin() { _on = true; _age = 0f; _tick = 0f; _ticks = 0; }
-        public void End() => _on = false;
+        public void Begin() { _on = true; _age = 0f; _tick = 0f; _stray = 0f; _next.Clear(); }
+        public void End() { _on = false; _next.Clear(); }
 
         public float Radius => SevenData.StormRadius(_age, _body);
 
@@ -349,21 +350,43 @@ namespace CursedAppleCuriosities.Survivors.Seven
             if (!_on || !NetworkServer.active) return;
             if (_body == null || _body.healthComponent == null || !_body.healthComponent.alive || SevenSurvivor.StormBuff == null || !_body.HasBuff(SevenSurvivor.StormBuff)) { _on = false; return; }
             _age += Time.fixedDeltaTime;
+            float dps = SevenData.StormDps(Mathf.Clamp01(_age / (SevenData.StormChannel * DurationExtender.Multiplier(_body)))) * _body.damage;
+            Strays(dps);
+            // Enemies are gathered 10 times a second; each is struck when its own clock comes round.
             _tick += Time.fixedDeltaTime;
-            if (_tick < SevenData.StormTick) return;
-            _tick -= SevenData.StormTick;
-            _ticks++;
+            if (_tick < 0.1f) return;
+            _tick = 0f;
             Vector3 eye = _body.corePosition + Vector3.up * 1f;
-            bool crit = _body.RollCrit();
             foreach (HealthComponent hc in SevenNet.EnemiesIn(_body.corePosition, Radius, _body.teamComponent.teamIndex))
             {
+                if (!_next.TryGetValue(hc, out float due)) { _next[hc] = _age + Random.Range(0f, SevenData.StormStrikeGap); continue; }
+                if (_age < due) continue;
                 Vector3 to = SevenNet.Core(hc);
                 // Deadlock: enemies out of Seven's line of sight take no damage.
                 if (Physics.Linecast(eye, to, LayerIndex.world.mask, QueryTriggerInteraction.Ignore)) continue;
-                float dmg = SevenData.StormDps(Mathf.Clamp01(_age / (SevenData.StormChannel * DurationExtender.Multiplier(_body)))) * SevenData.StormTick * _body.damage;
+                float gap = SevenData.StormStrikeGap * Random.Range(0.8f, 1.2f);
+                _next[hc] = _age + gap;
+                float dmg = dps * gap;
                 if (hc.body != null && hc.body.isChampion) dmg *= SevenData.StormBossScale;
-                SevenNet.Hit(_body, hc, dmg, crit, Vector3.zero, DamageSource.Special, 0.3f);
-                if ((_ticks + hc.GetInstanceID()) % 3 == 0) SevenNet.Effect(SevenSurvivor.BoltEffect, to, 1f);
+                SevenNet.Hit(_body, hc, dmg, _body.RollCrit(), Vector3.zero, DamageSource.Special, SevenData.StormProc);
+                SevenNet.Effect(SevenSurvivor.BoltEffect, to, 1f);
+            }
+        }
+
+        /// <summary>Stray bolts: random spots on the ground under the cloud (within StormStrayReach of Seven), each a small blast.</summary>
+        private void Strays(float dps)
+        {
+            _stray += Time.fixedDeltaTime * SevenData.StormStrayRate;
+            for (; _stray >= 1f; _stray -= 1f)
+            {
+                Vector2 off = Random.insideUnitCircle * Mathf.Min(Radius, SevenData.StormStrayReach);
+                Vector3 sky = _body.corePosition + new Vector3(off.x, 20f, off.y);
+                if (!Physics.Raycast(sky, Vector3.down, out RaycastHit ground, 80f, LayerIndex.world.mask, QueryTriggerInteraction.Ignore)) continue;
+                SevenNet.Effect(SevenSurvivor.BoltEffect, ground.point, SevenData.StormStrayRadius);
+                float dmg = dps * SevenData.StormStrikeGap;
+                bool crit = _body.RollCrit();
+                foreach (HealthComponent hc in SevenNet.EnemiesIn(ground.point, SevenData.StormStrayRadius * MysticExpansion.RadiusMultiplier(_body), _body.teamComponent.teamIndex))
+                    SevenNet.Hit(_body, hc, hc.body != null && hc.body.isChampion ? dmg * SevenData.StormBossScale : dmg, crit, Vector3.zero, DamageSource.Special, SevenData.StormProc);
             }
         }
     }

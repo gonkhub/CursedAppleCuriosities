@@ -1,6 +1,10 @@
 # Changelog
 
 ## 1.7.0 (unreleased)
+- **Seven**: his gun's tracer is a thin beam of lightning instead of a thick laser.
+- **Seven**: **Storm Cloud** starts 30 m wide (was 10) and strikes every enemy it can see with a bolt of lightning about
+  four times a second, each proccing fully (was 0.3), for less damage overall (100-600% per second, was 150-990%). Stray bolts
+  also fall around Seven, hitting anything near them.
 
 ## 1.6.0
 - Fixed: **Cursed Broker** cooldown penalties (all skills, Secondary, Utility, Special) now actually lengthen your cooldowns.

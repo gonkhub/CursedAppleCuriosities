@@ -90,6 +90,7 @@ namespace CursedAppleCuriosities.Survivors.Seven
             // Commando's tracer and hitspark if those are missing
             TracerEffect = Kit.Recoloured(TryLoad<GameObject>("RoR2/Junk/Characters/Mage/TracerMageLightningLaser.prefab", "RoR2/Junk/Mage/TracerMageLightningLaser.prefab",
                 "RoR2/Base/Commando/TracerCommandoDefault.prefab", "RoR2/Base/Characters/Commando/TracerCommandoDefault.prefab"), "CursedAppleSevenTracer", Hue, effect: true);
+            Thin(TracerEffect, 0.15f); // Artificer's laser is a thick beam: a hairline of it (user)
             HitEffect = Kit.Recoloured(TryLoad<GameObject>("RoR2/Base/Common/VFX/Stylized(Omni)/OmniImpactVFXLightning.prefab",
                 "RoR2/Base/Commando/HitsparkCommando.prefab", "RoR2/Base/Characters/Commando/HitsparkCommando.prefab"), "CursedAppleSevenHit", Hue, effect: true);
             MuzzleEffect = Kit.Recoloured(TryLoad<GameObject>("RoR2/Base/Mage/MuzzleflashMageLightning.prefab", "RoR2/Base/Characters/Mage/Skills/MuzzleflashMageLightning.prefab"), "CursedAppleSevenMuzzle", Hue, effect: true);
@@ -104,6 +105,20 @@ namespace CursedAppleCuriosities.Survivors.Seven
             }
             Material? laser = TryLoad<Material>("RoR2/Base/Common/VFX/matLaserPointerBeam.mat");
             IndicatorMaterial = laser != null ? new Material(laser) : new Material(Addressables.LoadAssetAsync<Material>("RoR2/Base/Loader/matLoaderHookRope.mat").WaitForCompletion());
+        }
+
+        /// <summary>Narrows a beam effect: its line renderers and trails to a fraction of their width, its particles to a fraction of their size.</summary>
+        private static void Thin(GameObject? effect, float scale)
+        {
+            if (effect == null) return;
+            foreach (LineRenderer lr in effect.GetComponentsInChildren<LineRenderer>(true)) lr.widthMultiplier *= scale;
+            foreach (TrailRenderer tr in effect.GetComponentsInChildren<TrailRenderer>(true)) tr.widthMultiplier *= scale;
+            foreach (ParticleSystem ps in effect.GetComponentsInChildren<ParticleSystem>(true))
+            {
+                ParticleSystem.MainModule main = ps.main;
+                if (main.startSize3D) { main.startSizeXMultiplier *= scale; main.startSizeYMultiplier *= scale; main.startSizeZMultiplier *= scale; }
+                else main.startSizeMultiplier *= scale;
+            }
         }
 
         private static void CreateBuffs()
@@ -328,7 +343,7 @@ namespace CursedAppleCuriosities.Survivors.Seven
 
             LanguageAPI.Add(Token + "STORM_NAME", "Storm Cloud");
             LanguageAPI.Add(Token + "STORM_DESC",
-                $"<style=cIsUtility>Float</style> and channel a storm for <style=cIsUtility>{SevenData.StormChannel:0}s</style> that grows to cover <style=cIsDamage>the whole map</style>, dealing <style=cIsDamage>{D(SevenData.StormDpsStart)}-{D(SevenData.StormDpsEnd)} damage per second</style> to every enemy you can see. " +
+                $"<style=cIsUtility>Float</style> and channel a storm for <style=cIsUtility>{SevenData.StormChannel:0}s</style> that grows from {SevenData.StormInitialRadius:0} m to cover <style=cIsDamage>the whole map</style>, striking every enemy you can see with lightning for <style=cIsDamage>{D(SevenData.StormDpsStart)}-{D(SevenData.StormDpsEnd)} damage per second</style>. " +
                 $"Primary calls a <style=cIsDamage>Lightning Strike</style> for {D(SevenData.StrikeDamage)}.");
         }
     }
