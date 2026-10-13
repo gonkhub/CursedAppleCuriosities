@@ -16,7 +16,7 @@ namespace CursedAppleCuriosities.Stages.DeadlockMap
     /// </summary>
     internal static class NavBuilder
     {
-        public const int Version = 3;
+        public const int Version = 4;
         private const float GroundSpacing = 4.5f, AirSpacing = 12f;
         private const float MaxLink = 15f, MaxAirLink = 30f;
         private const float LosRange = 140f;

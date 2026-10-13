@@ -1,3 +1,4 @@
+using System;
 using System.Collections.Generic;
 using RoR2;
 using UnityEngine;
@@ -21,6 +22,7 @@ namespace CursedAppleCuriosities.Stages.DeadlockMap
             root.transform.SetParent(world, false);
             Barrier(root.transform, section, playable);
             Seals(root.transform, section);
+            SubwayDoors(root.transform, section);
             KillFloor(root.transform, playable);
             Sun(scene);
         }
@@ -73,6 +75,22 @@ namespace CursedAppleCuriosities.Stages.DeadlockMap
             }
         }
 
+        /// <summary>Deadlock's subway "TELEPORTER" doorways: whoever walks in comes out at the stage's teleporter.</summary>
+        private static void SubwayDoors(Transform parent, SectionSpace section)
+        {
+            int[] b = MapSectionDef.SunkenPlaza.SubwayTeleports;
+            for (int i = 0; i + 5 < b.Length; i += 6)
+            {
+                Vector3 p0 = section.ToSection(new Vector3(b[i] - 24, b[i + 1] - 24, b[i + 2]));
+                Vector3 p1 = section.ToSection(new Vector3(b[i + 3] + 24, b[i + 4] + 24, b[i + 5]));
+                var go = new GameObject("SubwayDoor");
+                go.transform.SetParent(parent, false);
+                go.transform.localPosition = (p0 + p1) / 2f;
+                var door = go.AddComponent<SubwayDoor>();
+                door.HalfSize = new Vector3(Mathf.Abs(p1.x - p0.x), Mathf.Abs(p1.y - p0.y), Mathf.Abs(p1.z - p0.z)) / 2f;
+            }
+        }
+
         /// <summary>A trigger well below the map: anyone falling in is put back on the ground, as in vanilla stages.</summary>
         private static void KillFloor(Transform parent, Bounds playable)
         {
@@ -116,6 +134,36 @@ namespace CursedAppleCuriosities.Stages.DeadlockMap
             RenderSettings.fogColor = new Color(0.72f, 0.52f, 0.42f);
             RenderSettings.fogStartDistance = 120f;
             RenderSettings.fogEndDistance = 1100f;
+        }
+    }
+
+    /// <summary>
+    /// A doorway that sends a local player who walks into it to the teleporter (on a safe spot beside it). Checked per frame
+    /// against the player's own body, which this machine moves (RoR2 movement is client-side), so no physics trigger is needed.
+    /// </summary>
+    internal class SubwayDoor : MonoBehaviour
+    {
+        public Vector3 HalfSize;
+        private float _cooldown;
+
+        private void Update()
+        {
+            if (_cooldown > 0f) { _cooldown -= Time.deltaTime; return; }
+            TeleporterInteraction? tp = TeleporterInteraction.instance;
+            if (tp == null) return;
+            foreach (LocalUser user in LocalUserManager.readOnlyLocalUsersList)
+            {
+                CharacterBody? body = user.cachedBody;
+                if (body == null || !body.hasEffectiveAuthority) continue;
+                Vector3 local = transform.InverseTransformPoint(body.footPosition + Vector3.up * 0.5f);
+                Vector3 s = transform.lossyScale;
+                if (Mathf.Abs(local.x) * s.x > HalfSize.x || Mathf.Abs(local.y) * s.y > HalfSize.y || Mathf.Abs(local.z) * s.z > HalfSize.z) continue;
+                Vector3 near = tp.transform.position + tp.transform.forward * 6f;
+                Vector3 to = TeleportHelper.FindSafeTeleportDestination(near, body, RoR2Application.rng) ?? near + Vector3.up;
+                TeleportHelper.TeleportBody(body, to);
+                CursedAppleCuriositiesPlugin.Logger?.LogInfo($"[DeadlockMap] subway door: {body.GetDisplayName()} sent to the teleporter");
+                _cooldown = 1f;
+            }
         }
     }
 

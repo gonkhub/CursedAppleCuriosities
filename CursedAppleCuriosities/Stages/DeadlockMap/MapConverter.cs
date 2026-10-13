@@ -19,8 +19,8 @@ namespace CursedAppleCuriosities.Stages.DeadlockMap
     public class MapConverter
     {
         /// <summary>Bump when the cache content changes (players then convert again).</summary>
-        public const int PipelineVersion = 3;
-        private const int MaxMemoryMb = 2000;
+        public const int PipelineVersion = 4;
+        private const int MaxMemoryMb = 2500;
 
         public readonly MapSectionDef Def;
         public volatile MapState State;
@@ -47,6 +47,17 @@ namespace CursedAppleCuriosities.Stages.DeadlockMap
             }) { IsBackground = true, Name = "CursedApple map converter", Priority = ThreadPriority.BelowNormal }.Start();
         }
 
+        /// <summary>The section's outline, origin and sealed volumes: a change to any of them means converting again.</summary>
+        private static uint ShapeHash(MapSectionDef d)
+        {
+            uint h = 2166136261;
+            void Add(float v) { h ^= (uint)BitConverter.ToInt32(BitConverter.GetBytes(v), 0); h *= 16777619; }
+            foreach (float v in d.Outline) Add(v);
+            foreach (float v in d.Origin) Add(v);
+            foreach (int v in d.NoWalk) Add(v);
+            return h;
+        }
+
         private void Run(string folder, string exe)
         {
             string? citadel = DeadlockInstall.CitadelDir();
@@ -71,7 +82,7 @@ namespace CursedAppleCuriosities.Stages.DeadlockMap
             string node = $"maps/{Def.Map}/worldnodes/n0.vwnod_c";
             var crcs = DeadlockInstall.VpkCrcs(mapVpk, p => p == node);
             if (!crcs.TryGetValue(node, out uint crc)) throw new InvalidDataException($"{node} not in {mapVpk}");
-            string fingerprint = $"{Def.Map}:{crc:x8}:{Def.Id}:{PipelineVersion}";
+            string fingerprint = $"{Def.Map}:{crc:x8}:{Def.Id}:{PipelineVersion}:{ShapeHash(Def):x8}";
             if (cached == fingerprint) { Fingerprint = fingerprint; State = MapState.Ready; Status = "cached"; Log($"{Def.Id}: cached ({fingerprint})"); return; }
             string cli = DeadlockInstall.Converter();
             if (!File.Exists(cli) || !File.Exists(exe)) { State = MapState.Failed; Status = "converter missing"; Warn($"{Status}: {cli} / {exe}"); return; }

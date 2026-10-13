@@ -60,6 +60,8 @@ namespace CursedAppleCuriosities.Stages.DeadlockMap
             public GameObject Root = null!;
             public Vector3 OriginUnits;
             public Bounds Playable;      // section space: the playable chunks' bounds
+            public Bounds Hidden;        // section space: where the hidden materials were (the replaced statue)
+            public bool HasHidden;
         }
 
         /// <summary>
@@ -76,9 +78,12 @@ namespace CursedAppleCuriosities.Stages.DeadlockMap
 
             var textures = new Dictionary<string, Texture2D?>();
             var mats = new Material?[cache.Materials.Count];
+            var hidden = new bool[cache.Materials.Count];
+            for (int i = 0; i < hidden.Length; i++) hidden[i] = Array.IndexOf(conv.Def.HiddenMaterials, cache.Materials[i].Name) >= 0;
             for (int i = 0; i < mats.Length; i++)
             {
                 MapMaterial m = cache.Materials[i];
+                if (hidden[i]) continue;
                 bool glass = (m.Flags & MapMatFlags.Translucent) != 0;
                 if (glass && SunkenPlazaStage.GlassMaterial == null) continue; // no glass shader: leave it undrawn (still solid)
                 Texture2D? tex = null;
@@ -96,6 +101,7 @@ namespace CursedAppleCuriosities.Stages.DeadlockMap
             long tris = 0, backTris = 0;
             bool any = false;
             Bounds play = default;
+            int hiddenVerts = 0;
             foreach (MapChunk c in cache.Chunks())
             {
                 var go = new GameObject(c.Backdrop ? "Backdrop" : "Chunk");
@@ -108,7 +114,22 @@ namespace CursedAppleCuriosities.Stages.DeadlockMap
                 }
                 // Render mesh: every drawn material as a submesh, sharing one vertex buffer.
                 var subs = new List<MapSub>();
-                foreach (MapSub s in c.Subs) if (mats[s.Material] != null) subs.Add(s);
+                foreach (MapSub s in c.Subs)
+                {
+                    if (hidden[s.Material])
+                    {
+                        // The statue's own placement is its biggest piece (the same material is used by small bits elsewhere).
+                        if (s.Pos.Length > hiddenVerts)
+                        {
+                            hiddenVerts = s.Pos.Length;
+                            built.Hidden = new Bounds(s.Pos[0], Vector3.zero);
+                            foreach (Vector3 p in s.Pos) built.Hidden.Encapsulate(p);
+                            built.HasHidden = true;
+                        }
+                        continue;
+                    }
+                    if (mats[s.Material] != null) subs.Add(s);
+                }
                 if (subs.Count > 0)
                 {
                     Mesh mesh = Combine(subs, out var used);
@@ -124,7 +145,7 @@ namespace CursedAppleCuriosities.Stages.DeadlockMap
                 if (c.Backdrop || !colliders) continue;
                 // Collision: the solid materials (glass included: it's only not drawn).
                 var solid = new List<MapSub>();
-                foreach (MapSub s in c.Subs) if ((cache.Materials[s.Material].Flags & MapMatFlags.NoCollide) == 0) solid.Add(s);
+                foreach (MapSub s in c.Subs) if ((cache.Materials[s.Material].Flags & MapMatFlags.NoCollide) == 0 && !hidden[s.Material]) solid.Add(s);
                 if (solid.Count == 0) continue;
                 var holder = new GameObject("Collision");
                 holder.transform.SetParent(go.transform, false);
@@ -149,7 +170,7 @@ namespace CursedAppleCuriosities.Stages.DeadlockMap
             for (int i = 0; i < ids.Length; i++) ids[i] = bake[i].Mesh.GetInstanceID();
             Parallel.For(0, ids.Length, new ParallelOptions { MaxDegreeOfParallelism = 2 }, i => Physics.BakeMesh(ids[i], false));
             foreach (var (mesh, holder) in bake) holder.AddComponent<MeshCollider>().sharedMesh = mesh;
-            Log($"section built in {watch.ElapsedMilliseconds} ms: {tris} playable + {backTris} backdrop triangles drawn, {bake.Count} collision meshes ({clipTris.Length / 3} clip triangles), {textures.Count} textures");
+            Log($"section built in {watch.ElapsedMilliseconds} ms: {tris} playable + {backTris} backdrop triangles drawn, {bake.Count} collision meshes ({clipTris.Length / 3} clip triangles), {textures.Count} textures" + (built.HasHidden ? $", hidden statue at {built.Hidden.center} size {built.Hidden.size}" : ", nothing hidden"));
             return built;
         }
 

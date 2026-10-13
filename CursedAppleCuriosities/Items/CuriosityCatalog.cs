@@ -196,24 +196,47 @@ namespace CursedAppleCuriosities.Items
             Run.instance != null ? Run.instance.GetDifficultyScaledCost(baseCost) : baseCost;
 
         // ── Shop spawning ─────────────────────────────────────────────────────
-        internal static void SpawnShop(Vector3 pos)
+        internal static void SpawnShop(Vector3 pos) => SpawnShop(pos, requiresCatalog: true, WhiteCost, GreenCost, RedCost);
+
+        /// <summary>
+        /// The mod's items and equipment that aren't Deadlock's (checked against Deadlock's own item names): left out of
+        /// shops that sell Deadlock items only.
+        /// </summary>
+        private static readonly HashSet<string> NotDeadlock = new HashSet<string>(System.StringComparer.Ordinal)
+        {
+            "ITEM_CURSEDAPPLE_CURIOSITYCATALOG",
+            "ITEM_CURSEDAPPLE_RADIANTREGEN",
+            "EQUIP_CURSEDAPPLE_GREYGOOSEEGG",
+            "EQUIP_CURSEDAPPLE_GREENGOOSEEGG",
+            "EQUIP_CURSEDAPPLE_REDGOOSEEGG",
+            "EQUIP_CURSEDAPPLE_VOIDGOOSEEGG",
+        };
+
+        /// <summary>
+        /// A Curiosity shop: a floating cube that opens the Curiosity picker, buys repeatedly, prices scaled live by
+        /// difficulty. The catalog's own shop needs the catalog; others (the Deadlock map's shops) are open to everyone
+        /// at their own base prices per tier.
+        /// </summary>
+        internal static GameObject? SpawnShop(Vector3 pos, bool requiresCatalog, int white, int green, int red, bool deadlockOnly = false)
         {
             var prefab = CommandCubePrefab;
             if (prefab == null)
             {
                 CursedAppleCuriositiesPlugin.Logger?.LogWarning(
                     "[CuriosityCatalog] CommandCube prefab not found.");
-                return;
+                return null;
             }
 
-            BuildStock(out var pickups, out var baseCosts);
-            if (pickups.Length == 0) return;
+            BuildStock(white, green, red, deadlockOnly, out var pickups, out var baseCosts);
+            if (pickups.Length == 0) return null;
 
             var obj = UnityEngine.Object.Instantiate(prefab, pos + Vector3.up * 1.5f, Quaternion.identity);
 
             var marker       = obj.AddComponent<CuriosityPickerMarker>();
             marker.Pickups   = pickups;
             marker.BaseCosts = baseCosts;
+            marker.RequiresCatalog = requiresCatalog;
+            marker.TierCosts = new[] { white, green, red };
 
             // Vanilla cubes inherit the pickup of the droplet that made them; other mods
             // (e.g. WolfoFixes' SetOptionsInternal hook) assume it's set and NRE otherwise.
@@ -227,16 +250,19 @@ namespace CursedAppleCuriosities.Items
             if (ppc != null) ppc.SetOptionsServer(BuildOptions(marker, money: uint.MaxValue));
 
             NetworkServer.Spawn(obj);
+            return obj;
         }
 
         // ── Build the combined stock, ordered white → green → red ─────────────
-        private static void BuildStock(out PickupIndex[] pickups, out int[] baseCosts)
+        private static void BuildStock(int white, int green, int red, bool deadlockOnly, out PickupIndex[] pickups, out int[] baseCosts)
         {
             var stock = new List<(PickupIndex pickup, ItemTier tab)>();
 
             foreach (var itemDef in CursedAppleCuriositiesPlugin.ModItemDefs)
             {
                 if (itemDef == null || itemDef == StaticItemDef) continue;
+                if (deadlockOnly && NotDeadlock.Contains(itemDef.name)) continue;
+                if (Run.instance != null && !Run.instance.IsItemAvailable(itemDef.itemIndex)) continue; // e.g. the expansion is off
                 var pidx = PickupCatalog.FindPickupIndex(itemDef.itemIndex);
                 if (pidx != PickupIndex.none) stock.Add((pidx, GetItemTab(itemDef)));
             }
@@ -244,6 +270,8 @@ namespace CursedAppleCuriosities.Items
             foreach (var eqDef in CursedAppleCuriositiesPlugin.ModEquipmentDefs)
             {
                 if (eqDef == null) continue;
+                if (deadlockOnly && NotDeadlock.Contains(eqDef.name)) continue;
+                if (Run.instance != null && !Run.instance.IsEquipmentAvailable(eqDef.equipmentIndex)) continue;
                 var pidx = PickupCatalog.FindPickupIndex(eqDef.equipmentIndex);
                 if (pidx != PickupIndex.none) stock.Add((pidx, GetEquipmentTab(eqDef)));
             }
@@ -259,7 +287,7 @@ namespace CursedAppleCuriosities.Items
             for (int i = 0; i < sorted.Count; i++)
             {
                 pickups[i]   = sorted[i].pickup;
-                baseCosts[i] = TabBaseCost(sorted[i].tab);
+                baseCosts[i] = sorted[i].tab switch { ItemTier.Tier1 => white, ItemTier.Tier2 => green, _ => red };
             }
         }
 
@@ -280,13 +308,6 @@ namespace CursedAppleCuriosities.Items
             }
             return options;
         }
-
-        private static int TabBaseCost(ItemTier tab) => tab switch
-        {
-            ItemTier.Tier1 => WhiteCost,
-            ItemTier.Tier2 => GreenCost,
-            _              => RedCost,
-        };
 
         private static ItemTier GetItemTab(ItemDef def)
         {
@@ -334,16 +355,18 @@ namespace CursedAppleCuriosities.Items
             On.RoR2.PickupPickerController.orig_GetContextString orig,
             PickupPickerController self, Interactor activator)
         {
-            if (self.GetComponent<CuriosityPickerMarker>() != null)
+            var shop = self.GetComponent<CuriosityPickerMarker>();
+            if (shop != null)
             {
-                // Only catalog holders can shop here.
-                if (!HoldsCatalog(activator?.GetComponent<CharacterBody>()))
+                // Only catalog holders can shop at the catalog's own shop.
+                if (shop.RequiresCatalog && !HoldsCatalog(activator?.GetComponent<CharacterBody>()))
                     return "Requires the Curiosity Catalog";
 
+                int[] tiers = shop.TierCosts ?? new[] { WhiteCost, GreenCost, RedCost };
                 return "Browse Curiosities — " +
-                       $"<color=#ffffff>{ScaledCost(WhiteCost)}g</color> / " +
-                       $"<color=#77ff17>{ScaledCost(GreenCost)}g</color> / " +
-                       $"<color=#e7543a>{ScaledCost(RedCost)}g</color>";
+                       $"<color=#ffffff>{ScaledCost(tiers[0])}g</color> / " +
+                       $"<color=#77ff17>{ScaledCost(tiers[1])}g</color> / " +
+                       $"<color=#e7543a>{ScaledCost(tiers[2])}g</color>";
             }
             return orig(self, activator);
         }
@@ -356,16 +379,17 @@ namespace CursedAppleCuriosities.Items
             var marker = self.GetComponent<CuriosityPickerMarker>();
             if (marker != null && NetworkServer.active)
             {
-                // Non-holders can't open the shop — bounce them before the picker opens.
+                // Non-holders can't open the catalog's shop — bounce them before the picker opens.
                 var body = activator?.GetComponent<CharacterBody>();
-                if (!HoldsCatalog(body))
+                if (body == null) return;
+                if (marker.RequiresCatalog && !HoldsCatalog(body))
                 {
                     Chat.AddMessage(
                         "<color=#8888ff>[Curiosity Catalog] Only catalog holders can shop here.</color>");
                     return;
                 }
                 marker.ActivatorBody = body;
-                self.SetOptionsServer(BuildOptions(marker, body!.master?.money ?? 0));
+                self.SetOptionsServer(BuildOptions(marker, body.master?.money ?? 0));
             }
             orig(self, activator);
         }
@@ -387,8 +411,8 @@ namespace CursedAppleCuriosities.Items
             if (pickups == null || index < 0 || index >= pickups.Length) return;
 
             var body = marker.ActivatorBody;
-            // Safety net: never let a non-holder complete a purchase.
-            if (!HoldsCatalog(body) || body!.master == null) return;
+            // Safety net: never let a non-holder complete a catalog purchase.
+            if (body == null || body.master == null || (marker.RequiresCatalog && !HoldsCatalog(body))) return;
 
             int cost = ScaledCost(marker.BaseCosts![index]); // live price at the moment of purchase
             if (body.master.money >= (uint)cost)
@@ -419,6 +443,8 @@ namespace CursedAppleCuriosities.Items
         public PickupIndex[]? Pickups;
         public int[]?         BaseCosts; // unscaled, parallel to Pickups; price is scaled live per purchase
         public CharacterBody? ActivatorBody;
+        public bool RequiresCatalog = true;   // the catalog's own shop; map shops are open to everyone
+        public int[]? TierCosts;              // base white / green / red, for the hover prompt
     }
 
     // Tags the droplet that lands as the shop (server-side only).

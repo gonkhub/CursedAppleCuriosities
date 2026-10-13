@@ -10,12 +10,22 @@ namespace CursedAppleCuriosities.Stages.DeadlockMap
         public string Id = "";
         public string Map = "dl_midtown";
         public float[] Outline = System.Array.Empty<float>();   // x0, y0, x1, y1, ... (closed implicitly)
+        /// <summary>Where the section's Unity origin sits (Deadlock units). Fixed, so marks and placements stay put when the outline changes.</summary>
+        public float[] Origin = System.Array.Empty<float>();
         /// <summary>Volumes nobody may walk into (Deadlock's vent tunnels): no navigation nodes there.</summary>
         public int[] NoWalk = System.Array.Empty<int>();       // min x, y, z, max x, y, z per box
         /// <summary>Openings to seal with an invisible wall (the vents' entrances).</summary>
         public int[] Seal = System.Array.Empty<int>();
         /// <summary>Deadlock's shops inside the outline (spots for interactables).</summary>
         public int[] Shops = System.Array.Empty<int>();
+        /// <summary>Deadlock materials left out entirely (drawn and solid), e.g. a prop to be replaced; their biggest piece's bounds are kept.</summary>
+        public string[] HiddenMaterials = System.Array.Empty<string>();
+        /// <summary>Where interactables (chests, shrines...) may spawn: near these points (x, y, z units), Deadlock's neutral camps.</summary>
+        public int[] InteractableSpots = System.Array.Empty<int>();
+        /// <summary>Doorways that send whoever walks in to the teleporter (min x, y, z, max x, y, z units).</summary>
+        public int[] SubwayTeleports = System.Array.Empty<int>();
+        /// <summary>Newt altars: x, y, z, yaw per altar, in the section's Unity space (from cac_map_mark).</summary>
+        public float[] NewtAltars = System.Array.Empty<float>();
         /// <summary>Lowest point of the playable area (units): anything below falls out of the map.</summary>
         public float FloorZ = -800f;
 
@@ -28,15 +38,21 @@ namespace CursedAppleCuriosities.Stages.DeadlockMap
         {
             Id = "sunkenplaza",
             Outline = SunkenPlazaData.Outline,
+            Origin = new[] { -3700f, 3200f, 0f }, // the first outline's centre (2026-10-13): every mark is relative to it
             NoWalk = SunkenPlazaData.VentTunnels,
             Seal = SunkenPlazaData.VentOpenings,
             Shops = SunkenPlazaData.Shops,
+            NewtAltars = SunkenPlazaData.NewtAltars,
+            InteractableSpots = SunkenPlazaData.InteractableSpots,
+            SubwayTeleports = SunkenPlazaData.SubwayTeleports,
         };
     }
 
     internal static class SunkenPlazaData
     {
-        public static readonly float[] Outline = {-8010, 576, -7869, 1256, -7757, 2042, -7528, 2883, -6921, 3447, -6347, 4221, -6262, 4769, -6010, 5393, -5403, 5764, -5036, 5933, -4453, 6300, -1800, 6300, -1800, 5000, 830, 5000, 823, 3898, 776, 3628, 667, 3488, -413, 2842, -578, 1729, -578, 695, -473, 100, -8230, 100 };
+        // Outline (Deadlock units, x/y), from the yellow and blue lane ziplines (tools/mapstage/selpoly.py), widened by the
+        // user 2026-10-13: the street outside the yellow-side base approach, the whole NYSE block, the strip west of the yellow lane; south edge on the railing over the trench.
+        public static readonly float[] Outline = {823, 3898, 776, 3628, 667, 3488, -413, 2842, -578, 1729, -578, 695, -513, 326, -6931, 326, -6931, 792, -9314, 792, -9314, 3044, -9239, 3416, -8793, 3751, -8718, 4123, -8346, 4421, -6950, 4421, -6950, 6208, -5033, 6617, -2985, 7232, -1496, 7790, -1440, 5277, -1800, 5115, -1800, 5000, 830, 5000 };
         public static readonly int[] VentTunnels = { // min x, y, z, max x, y, z
             -1328, 1312, -640, 832, 1696, -184,
             -1328, 1056, -640, -640, 1312, -448,
@@ -74,6 +90,32 @@ namespace CursedAppleCuriosities.Stages.DeadlockMap
             -4520, 1472, -144, -4440, 1568, -80,
             -5152, 2620, 256, -5072, 2716, 320,
             -872, 3408, 384, -792, 3504, 448,
+        };
+        /// <summary>Deadlock's neutral trooper camps and spawns and item crates (x, y, z units): where interactables may stand.</summary>
+        public static readonly int[] InteractableSpots = {
+            -8464, 4136, 640, -8096, 1891, 259, -7968, 2304, 259, -7959, 2040, 262,
+            -7824, 1808, 259, -7790, 2272, 256, -7776, 2096, 259, -5843, 1581, 928,
+            -5728, 1088, 256, -5728, 1216, 256, -5696, 1664, 936, -5696, 1792, 928,
+            -5549, 1581, 928, -4672, 2816, 256, -4640, 2560, 256, -4544, 2560, 656,
+            -4496, 1792, -144, -4496, 1920, -144, -4480, 2240, 256, -4480, 2560, 264,
+            -4448, 1856, -144, -4384, 2432, 256, -4384, 2688, 256, -3936, 3896, 384,
+            -3808, 4024, 384, -3680, 3896, 384, -3680, 4152, 384, -3104, 2432, -44,
+            -3104, 2688, -44, -2976, 2560, -44, -2816, 2560, -44, -2592, 2560, -44,
+            -2464, 1120, -256, -2432, 2560, -44, -2400, 1168, -256, -2348, 1024, 392,
+            -2336, 1120, -256, -2304, 2432, -44, -2304, 2672, -44, -2220, 1024, 392,
+            -2176, 1984, -32, -2176, 2080, -32, -2176, 3040, -32, -2176, 3136, -32,
+            -2092, 928, 384, -2092, 1120, 384, -1388, 800, 384, -1297, 928, 384,
+            -1201, 800, 384, -1201, 1088, 384, -960, 3840, 384, -832, 3904, 384,
+            -832, 4024, 384, -720, 1584, -640, -704, 3840, 384, -640, 1472, -640,
+        };
+        /// <summary>Deadlock's subway "TELEPORTER" doorway (min x, y, z, max x, y, z units): walking in sends you to the teleporter.</summary>
+        public static readonly int[] SubwayTeleports = { -3960, 1736, -144, -3848, 1848, -16 };
+        /// <summary>Hidden by hand in-game (cac_map_mark newt): x, y, z, yaw in section space.</summary>
+        public static readonly float[] NewtAltars = {
+            60.09f, 30.79f, -4.78f, -89.7f,
+            15.35f, 29.38f, -43.29f, -117.3f,
+            -24.37f, 26.02f, 31.50f, -115.2f,
+            45.55f, -3.24f, 19.36f, -28.3f,
         };
         public static readonly int[] Shops = { // min x, y, z, max x, y, z
             -1078, 1104, 376, -762, 1376, 504,

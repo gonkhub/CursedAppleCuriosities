@@ -23,6 +23,7 @@ namespace CursedAppleCuriosities.Stages.DeadlockMap
         public const string SceneName = "cac_sunkenplaza";
         public static ConfigEntry<float>? Weight;
         public static ConfigEntry<string>? Sky;
+        public static ConfigEntry<int>? ShopWhite, ShopGreen, ShopRed;
         private static SceneDef? _def;
         private static AssetBundle? _scenes, _assets;
         internal static Material? BarrierMaterial, GlassMaterial;
@@ -34,6 +35,9 @@ namespace CursedAppleCuriosities.Stages.DeadlockMap
         {
             Sky = config.Bind("Deadlock Map", "Sunken Plaza Sky", "RoR2/DLC1/ancientloft/matSkyboxAncientLoft.mat",
                 "Skybox material borrowed from a vanilla stage (Addressables key). Default: Aphelion Sanctuary's sunset.");
+            ShopWhite = config.Bind("Deadlock Map", "Shop White Base Cost", 25, "Curiosity shop on the map: base price of a white (a small chest's base cost; scaled by difficulty like chests).");
+            ShopGreen = config.Bind("Deadlock Map", "Shop Green Base Cost", 50, "Base price of a green (a large chest's base cost).");
+            ShopRed = config.Bind("Deadlock Map", "Shop Red Base Cost", 400, "Base price of a red (a legendary chest's base cost).");
             Weight = config.Bind("Deadlock Map", "Sunken Plaza Weight", 1f,
                 "How likely Sunken Plaza is as stage 3, against each vanilla stage 3 (1 = as likely as each of them, 0 = never on its own).");
             _scenes = LoadBundle("cac_stagescenes");
@@ -136,6 +140,32 @@ namespace CursedAppleCuriosities.Stages.DeadlockMap
             Run.instance.AdvanceStage(_def);
         }
 
+        internal const string NewtPrefab = "RoR2/Base/NewtStatue/NewtStatue.prefab";
+
+        [ConCommand(commandName = "cac_map_newt", flags = ConVarFlags.ExecuteOnServer,
+            helpText = "Cursed Apple: put a newt altar where you stand, facing your way (host; to try a spot out).")]
+        private static void CCNewt(ConCommandArgs args)
+        {
+            CharacterBody? body = args.senderBody;
+            if (body == null) throw new ConCommandException("Needs your body.");
+            Vector3 aim = body.inputBank != null ? body.inputBank.aimDirection : body.transform.forward;
+            GameObject prefab = Addressables.LoadAssetAsync<GameObject>(NewtPrefab).WaitForCompletion();
+            GameObject altar = UnityEngine.Object.Instantiate(prefab, body.footPosition, Quaternion.Euler(0f, Mathf.Atan2(aim.x, aim.z) * Mathf.Rad2Deg, 0f));
+            SitOnFloor(altar, body.footPosition.y);
+            NetworkServer.Spawn(altar);
+        }
+
+        /// <summary>Lift a spawned prop so the bottom of its visible model rests at floorY (the newt altar's pivot sits well above its base).</summary>
+        internal static void SitOnFloor(GameObject go, float floorY)
+        {
+            var renderers = go.GetComponentsInChildren<Renderer>();
+            if (renderers.Length == 0) return;
+            float bottom = float.MaxValue;
+            foreach (Renderer r in renderers) if (r.enabled && !(r is ParticleSystemRenderer)) bottom = Mathf.Min(bottom, r.bounds.min.y);
+            if (bottom == float.MaxValue) return;
+            go.transform.position += Vector3.up * (floorY - bottom);
+        }
+
         [ConCommand(commandName = "cac_map_party", flags = ConVarFlags.ExecuteOnServer, helpText = "Cursed Apple: can everyone load Sunken Plaza? (host)")]
         private static void CCParty(ConCommandArgs args)
         {
@@ -226,8 +256,110 @@ namespace CursedAppleCuriosities.Stages.DeadlockMap
                     sd.usePlacedSpawnPoints = Spawns.Count > 0;
                 }
                 SceneDirector.onTeleporterPlaced += LogTeleporter;
+                SceneDirector.onPrePopulateSceneServer += SeedCamps;
+                SpawnNewtAltars(gameObject.scene);
+                SpawnShops();
                 Log($"director started (stage ready), {Spawns.Count} player spawns placed");
                 Destroy(gameObject);
+            }
+
+            private static void SpawnNewtAltars(Scene scene)
+            {
+                float[] a = MapSectionDef.SunkenPlaza.NewtAltars;
+                GameObject? world = GameObject.Find("DeadlockMap");
+                if (a.Length < 4 || world == null) return;
+                GameObject prefab = Addressables.LoadAssetAsync<GameObject>(NewtPrefab).WaitForCompletion();
+                for (int i = 0; i + 3 < a.Length; i += 4)
+                {
+                    Vector3 at = world.transform.TransformPoint(new Vector3(a[i], a[i + 1], a[i + 2]));
+                    GameObject altar = Instantiate(prefab, at, Quaternion.Euler(0f, a[i + 3] + world.transform.eulerAngles.y, 0f));
+                    SitOnFloor(altar, at.y);
+                    NetworkServer.Spawn(altar);
+                }
+                Log($"{a.Length / 4} newt altars placed");
+            }
+
+            /// <summary>
+            /// A Curiosity shop at each of Deadlock's shop counters in the section: open to everyone, bought from as often
+            /// as you like, priced like chests (small / large / legendary base costs, scaled by difficulty the same way). Deadlock's
+            /// own items only.
+            /// </summary>
+            private static void SpawnShops()
+            {
+                GameObject? world = GameObject.Find("DeadlockMap");
+                MapBuilder.Built? t = DeadlockMaps.Template();
+                if (world == null || t == null) return;
+                int[] b = MapSectionDef.SunkenPlaza.Shops;
+                int placed = 0;
+                for (int i = 0; i + 5 < b.Length; i += 6)
+                {
+                    // The counter's trigger box: its centre, dropped onto the floor beneath it.
+                    var centre = new Vector3((b[i] + b[i + 3]) / 2f, (b[i + 1] + b[i + 4]) / 2f, b[i + 5]);
+                    Vector3 top = world.transform.TransformPoint(MapCache.ToUnity(centre, t.OriginUnits));
+                    if (!Physics.Raycast(top, Vector3.down, out RaycastHit hit, 12f, LayerIndex.world.mask, QueryTriggerInteraction.Ignore)) continue;
+                    if (Items.CuriosityCatalog.SpawnShop(hit.point, requiresCatalog: false,
+                            ShopWhite?.Value ?? 25, ShopGreen?.Value ?? 50, ShopRed?.Value ?? 400, deadlockOnly: true) != null)
+                        placed++;
+                }
+                Log($"{placed} curiosity shops placed at Deadlock's shop counters");
+            }
+
+            /// <summary>
+            /// Before the director spends its interactable credits at random: one interactable at each of Deadlock's neutral
+            /// camps (its spawn points merged into clusters), from the stage's own interactable deck and paid from the same
+            /// budget, using at most 60% of it so the rest of the map still gets its share.
+            /// </summary>
+            private static void SeedCamps(SceneDirector sd)
+            {
+                SceneDirector.onPrePopulateSceneServer -= SeedCamps;
+                GameObject? world = GameObject.Find("DeadlockMap");
+                MapBuilder.Built? t = DeadlockMaps.Template();
+                ClassicStageInfo? csi = ClassicStageInfo.instance;
+                if (world == null || t == null || csi == null || csi.interactableCategories == null || DirectorCore.instance == null) return;
+                var section = new SectionSpace(MapSectionDef.SunkenPlaza, t.OriginUnits);
+
+                // Camp clusters: spawn points within ~6 m of each other are one camp.
+                int[] sp = MapSectionDef.SunkenPlaza.InteractableSpots;
+                var camps = new List<Vector3>();
+                for (int i = 0; i + 2 < sp.Length; i += 3)
+                {
+                    Vector3 local = section.ToSection(new Vector3(sp[i], sp[i + 1], sp[i + 2]));
+                    if (!section.Inside(local)) continue;
+                    Vector3 p = world.transform.TransformPoint(local);
+                    if (camps.Exists(c => (c - p).sqrMagnitude < 36f)) continue;
+                    camps.Add(p);
+                }
+                var rng = new Xoroshiro128Plus(Run.instance.stageRng.nextUlong);
+                Util.ShuffleList(camps, rng);
+                WeightedSelection<DirectorCard> deck = csi.interactableCategories.GenerateDirectorCardWeightedSelection();
+                int budget = (int)(sd.interactableCredit * 0.6f), spent = 0, placed = 0;
+                var anchor = new GameObject("CampAnchor");
+                foreach (Vector3 camp in camps)
+                {
+                    if (deck.Count == 0) break;
+                    DirectorCard? card = null;
+                    for (int tries = 0; tries < 8 && card == null; tries++)
+                    {
+                        DirectorCard c = deck.Evaluate(rng.nextNormalizedFloat);
+                        if (c != null && c.IsAvailable() && c.cost <= budget - spent && c.cost <= sd.interactableCredit) card = c;
+                    }
+                    if (card == null) continue;
+                    anchor.transform.position = camp;
+                    var rule = new DirectorPlacementRule
+                    {
+                        placementMode = DirectorPlacementRule.PlacementMode.Approximate,
+                        spawnOnTarget = anchor.transform,
+                        minDistance = 0f,
+                        maxDistance = 8f,
+                    };
+                    GameObject? spawned = DirectorCore.instance.TrySpawnObject(new DirectorSpawnRequest(card.GetSpawnCard(), rule, rng));
+                    if (spawned == null) continue;
+                    spent += card.cost;
+                    sd.interactableCredit -= card.cost;
+                    placed++;
+                }
+                Destroy(anchor);
+                Log($"camps seeded: {placed} interactables at {camps.Count} Deadlock camps ({spent} credits; {sd.interactableCredit} left for the rest of the map)");
             }
 
             private static void LogTeleporter(SceneDirector sd, GameObject tp)

@@ -48,7 +48,7 @@ namespace CursedAppleMapConvert
             for (int i = 0; i < _outline.Length; i++) _outline[i] = new V2(_def.Outline[i * 2], _def.Outline[i * 2 + 1]);
             _oMin = new V2(_outline.Min(p => p.X), _outline.Min(p => p.Y));
             _oMax = new V2(_outline.Max(p => p.X), _outline.Max(p => p.Y));
-            _origin = new V3((_oMin.X + _oMax.X) / 2f, (_oMin.Y + _oMax.Y) / 2f, 0f);
+            _origin = _def.Origin.Length >= 3 ? new V3(_def.Origin[0], _def.Origin[1], _def.Origin[2]) : new V3((_oMin.X + _oMax.X) / 2f, (_oMin.Y + _oMax.Y) / 2f, 0f);
         }
 
         /// <summary>
@@ -167,6 +167,13 @@ namespace CursedAppleMapConvert
                 finally { try { Directory.Delete(dir, true); } catch (Exception e) { Program.Log($"couldn't delete {dir}: {e.Message}"); } }
                 batchesDone++;
                 Program.Status($"converting: {batchesDone}/{batches.Count} batches");
+                // The builders' big arrays fragment the large-object heap: compact it now and then, so the process's memory
+                // tracks what it really holds.
+                if (batchesDone % 4 == 0)
+                {
+                    System.Runtime.GCSettings.LargeObjectHeapCompactionMode = System.Runtime.GCLargeObjectHeapCompactionMode.CompactOnce;
+                    GC.Collect();
+                }
             }
             exporter.Wait();
             Program.Log($"{read} models read, {missing} missing");
@@ -252,6 +259,8 @@ namespace CursedAppleMapConvert
                 {
                     byte flags = 0;
                     if (info.Cutout) flags |= Cutout | NoCollide;
+                    // Overlays are decals (posters, grates, puddles, signs) floating just off the surface: never solid, drawn cut out by their alpha.
+                    if (info.Shader.StartsWith("citadel_overlay")) flags |= Cutout | NoCollide;
                     if (info.Translucent || info.Glass) flags |= Translucent; // drawn with the glass shader, still solid
                     if (info.DoubleSided) flags |= DoubleSided;
                     if (info.SelfIllum) flags |= SelfIllum;
