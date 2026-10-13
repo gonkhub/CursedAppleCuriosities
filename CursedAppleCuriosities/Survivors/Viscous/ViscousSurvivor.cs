@@ -331,21 +331,35 @@ namespace CursedAppleCuriosities.Survivors.Viscous
     /// </summary>
     public class ViscousDisplayIntro : DeadlockDisplayIntro
     {
+        // The cube is a scene object of its own: picking another survivor mid-intro destroys the display (and stops this
+        // coroutine), so the cube and its sound are cleaned up from OnDisable too (playtest: it stayed forever).
+        private GameObject? _cube;
+        private DeadlockVoice? _loop;
+
         protected override IEnumerator Run()
         {
             yield return null; // the Deadlock model attaches on its first frame
             yield return null;
-            GameObject cube = ViscousCubes.MakeVisual(2.4f * Scale);
-            cube.transform.SetPositionAndRotation(Home, HomeRotation);
+            _cube = ViscousCubes.MakeVisual(2.4f * Scale);
+            _cube.transform.SetPositionAndRotation(Home, HomeRotation);
             DeadlockSounds.Play("viscous_cube_cast", Home);
-            DeadlockVoice? loop = DeadlockSounds.Loop("viscous_cube_loop", cube, ViscousData.CubeDuration + 0.5f);
+            _loop = DeadlockSounds.Loop("viscous_cube_loop", _cube, ViscousData.CubeDuration + 0.5f);
             yield return new WaitForSeconds(ViscousData.CubeDuration);
-            DeadlockSounds.Stop(loop);
-            Destroy(cube);
+            CleanUp();
             DeadlockSounds.Play("viscous_cube_end", Home);
             if (ViscousSurvivor.SplashEffect != null)
                 EffectManager.SpawnEffect(ViscousSurvivor.SplashEffect, new EffectData { origin = Home, scale = 3f * Scale }, false);
         }
+
+        private void CleanUp()
+        {
+            DeadlockSounds.Stop(_loop);
+            _loop = null;
+            if (_cube != null) Destroy(_cube);
+            _cube = null;
+        }
+
+        private void OnDisable() => CleanUp();
     }
 
     public class ViscousIcons : MonoBehaviour
