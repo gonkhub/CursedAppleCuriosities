@@ -70,7 +70,7 @@ read it before touching tiers, buffs, pickups, or minion interactions.
 
 ---
 
-## Roster (31 items + 9 equipment)
+## Roster (31 items + 14 equipment)
 
 ### White (Tier 1)
 | Item | Mechanic | Art |
@@ -350,7 +350,7 @@ same on a stand-in model.
 - `Survivors/Viscous/` — **Viscous** (`CursedAppleViscousBody`, Deadlock `hero_viscous`, model `models/heroes_staging/viscous/viscous`, Kelvin's
   skeleton, AnimGraph1 clip names like Abrams; in the air and his ability overlays use Kelvin's AnimGraph2 clips by path,
   `models/heroes_staging/kelvin_v2/clip/...`, which his own model exports: Deadlock's live Viscous runs hero_*+kelvin graphs). Goo Ball
-  playtested OK 2026-10-12 (user); full kit added the same day, **not launched yet**:
+  playtested OK 2026-10-12 (user); full kit added the same day and playtested by the user that evening:
   - M1 Goo Gun (0.21 s) / alt **Goo Glob** (Deadlock alt fire: 38 m/s, 0.2 gravity, 350% burst 3.56 m, 1.26 s). M2 **Splatter** (user: 3 bursts,
     500% each, 5 m) / alt **Puddle Punch** (user: 700%, 40 m aim, 4 m, launches enemies, allies (landing guarded) and Viscous himself, who
     gets x3 air control for 2.5 s via `DeadlockMover.BoostAirControl`). Utility **The Cube** (own "Cube" machine: tap = ally under the
@@ -360,7 +360,7 @@ same on a stand-in model.
   - Globs = `ViscousGlob` on a CrocoSpit clone; bursts are BlastAttacks so Mystic Expansion's hook widens them (effect spawned at base radius
     so the hook grows it); ghost scaled by Mystic Expansion. Punch radius/range, cube range, ball size all take Mystic Expansion (user).
   - Splatter/Punch/Cube castable while rolling (Deadlock CastWhileRolling). Ball steers with WASD relative to the camera, else the crosshair (user).
-  - Lobby intro (user): he stands in the cube for its 3 s, it pops, then his select line.
+  - Lobby intro (user): he stands in the cube for its 3 s, it pops, then his select line. The cube and its sound go away with the display if it is swapped mid-intro.
   - Playtest 2 (user, 2026-10-12): Kelvin clip names must be SHORT in the anim table (`GlbLoader` keys clips by the last path part;
     the converter matches short names too); full paths silently fell back to the run in the air. Goo Glob: no gravity, splats at
     Deadlock range 25.4 m, Splatter's burst effect (Beetle spit burst had a stray ring). Splatter ignores enemies (IgnoreCollision on
@@ -373,9 +373,9 @@ same on a stand-in model.
   - Goo Ball = Deadlock `viscous_goo_bowling_ball`: 0.55 s curl (`rolling_goo`), then 11 s rolling (own `GooBall` Body state, owner moves it via
     rootMotion): 11.4 m/s, Primary held = 20.3 m/s (accel 15.2, decel 1.27 m/s2), steers to the crosshair 110/50 deg/s, walls bounce it
     (sphere cast 0.45 m smaller than the 1.4 m ball, so curbs roll over; 65% speed kept, 0.1 s no steering), jump + 1 double jump (12.7 m/s),
-    1.8 m hit radius (Mystic Expansion), 550%, 0.5 s stun, 10 m/s knock, each enemy every 1.2 s; it rolls through normal enemies.
+    1.8 m hit radius (Mystic Expansion), 250% + Heavy (user: Loader's rule, +30% per m/s of speed), 0.5 s stun, 10 m/s knock, each enemy every 1.2 s; it rolls through normal enemies.
     Bosses (user): double damage, no stun, the ball freezes dead 0.3 s (`BossFreeze`, roll timer paused) then bounces off as off a wall.
-    Down-dash works in the ball too (shared movement). 35% resist = armor via
+    Down-dash works in the ball too (shared movement). 50% resist (user; Deadlock 35%) = armor via
     the synced `BallBuff`. Special again ends it; cooldown 40 s starts when it ends. Camera pulled back x1.5 and up 1.2 m.
   - The ball is his own model's hidden mesh group `inflated` (renderers `inflated_N`, skinned to `inflated_center`, radius 1.51 model units).
     `ViscousBallLook` (body + display, runs after the animator) swaps body/gun/outline for it while the Body state is `GooBall`, and puts
@@ -385,22 +385,28 @@ same on a stand-in model.
     shell count for height only). Skin: Blue.
 
 - `Survivors/Celeste/` — **Celeste** (`CursedAppleCelesteBody`, Deadlock `hero_unicorn`, model `models/heroes_wip/unicorn/unicorn`,
-  AnimGraph2 clips in `unicorn/clips`, icons `unicorn_*`, VO `sounds/vo/unicorn`). Built 2026-10-12 while the user was away:
-  **kit, numbers, sounds and writing are my picks, pending the user's review** (memory `celeste-design`). Self-tested in game.
-  - M1 Carny Life: a blade every 0.58 s, 220%, 50 m/s shallow arc, homes onto an enemy within 22.5 deg of its flight, one bounce
-    off the world, no ricochet (user); always falls 9 m/s2; ghost 0.45x, blue-violet (`CelesteDagger` on a Bandit shiv clone).
-  - M2 Light Eater: 0.3 s (she hangs in the air), 70 deg cone 10 m, 400%, marks 8 s (Merc's expose marker): +150% per blade hit on
-    marked enemies and 18% of all her damage to them heals her. Alt Radiant Daggers: beam onto the aimed spot (30 m), pink warning
-    ring + beam (`CelesteBeamWarning`, an effect so every client sees it), 1.4 s, 600% in 8 m (a tall cylinder), +7% damage per
-    enemy hit (Radiance, max 6, 30 s).
+  AnimGraph2 clips in `unicorn/clips`, icons `unicorn_*`, VO `sounds/vo/unicorn`). Built 2026-10-12 while the user was away,
+  then tuned by the user in playtest the same evening (memory `celeste-design`). All numbers are `[Celeste]` config knobs.
+  - Movement (user): Lash's extras: 5 stamina, 2 air jumps, 2 air dashes of 14 m; her innate low gravity (-25%, +44% air control).
+    Air-dash pose holds 0.8 s before the in-air loop.
+  - M1 Carny Life: a blade every 0.58 s, 120% (user: a light poke), 75 m/s, always drops 18 m/s2 and loses airspeed after 20 m,
+    homes gently onto an enemy within 22.5 deg of its flight, one bounce off the world, no ricochet; ghost 0.45x, light blue-violet
+    (`CelesteDagger` on a Bandit shiv clone).
+  - M2 Light Eater: 0.3 s (she hangs in the air; in the air the flare plays over her in-air pose), 70 deg cone 10 m, 400%, marks 8 s
+    (mark shown over the enemy): +180% per blade hit on marked enemies and 18% of all her damage to them heals her. Alt Radiant Daggers:
+    hold to preview (ring + beam marker), release to cast, like Puddle Punch; beam onto the aimed spot (30 m), 1.4 s, 600% in 8 m (a tall
+    cylinder), +7% damage per enemy hit (Radiance: uncapped, one counter, 30 s from the latest hit).
   - Utility Dazzling Trick: 20% max HP barrier, 4 s window (Lunar Golem shell visual); the hit that takes the barrier to 0 bursts
-    it: 500% in 14 m + 1.75 s silence (`SkillSilence`).
-  - Special Shining Wonder: hold to aim (slow fall), release: orb (Artifact shell's seeking flare, given SolarFlareGhost) at
-    50.8 m/s, homes in a 25 deg cone, 800% + 32% slow per hit, 8 bounces within 15.5 m (elites/bosses first, never the same enemy
-    twice running), lingers 3.25 s for a target.
-  - Every radius takes Mystic Expansion; mark/slow/prism durations take Duration Extender. VFX pink (Hue 0.9, her hair).
+    it: 500% in 14 m + 1.75 s stun (user; Deadlock silences).
+  - Special Shining Wonder: hold to aim (slow fall), release: orb (Artifact shell's seeking flare, given SolarFlareGhost, 0.8x) at
+    18 m/s (user: a floating ball of light), chases the nearest enemy through walls, 1000% + 32% slow per hit, 8 bounces within 7 m of
+    the enemy it hit (or off her prism, which tops the prism back up), lingers 3.25 s for a target circling what it last hit.
+  - Every radius takes Mystic Expansion; mark/slow/prism durations take Duration Extender. Her light is pink (Hue 0.9, her hair);
+    projectiles blue-violet (Hue 0.72). Soft purple glow: self-lit horn shell (`unicorn_glow`) and a faint chest light (`CelesteGlow`).
+  - VO by Deadlock's mapping: power3 = Shining Wonder, power4 = Radiant Daggers.
   - Her model exports no `shoot_idle`/`ability_luminous_flux`: `shoot_idle_start` and `ability_radiant_daggers_stand_idle` stand in.
   - Lobby intro (user): she ground-dashes in from the back right, as Vyper slides in (`dash_ground`), then turns to the camera. Item displays fitted (`CelesteItemDisplays.cs`). Skin: Mint.
+  - Deadlock animator: in root-locked clips her cloth points are pulled back with the pinned pelvis (her skirt used to run ahead in the dash).
 
 ## Self-test (playtesting without the user, 2026-10-12)
 
@@ -421,6 +427,10 @@ same on a stand-in model.
 
 ## Recent changes (since last handoff)
 
+- **Playtest pass (user, 2026-10-12 evening):** Celeste retuned (movement, Carny Life, Light Eater, Radiant Daggers preview, uncapped
+  Radiance, Dazzling Trick stuns, slower homing Shining Wonder, purple glow, VO mapping; see Survivors above); Viscous Goo Ball is Heavy
+  (250% + 30% per m/s) with 50% resist; Viscous' lobby cube is cleaned up mid-intro; shorter skill descriptions for the six newer heroes;
+  projectile clones strip components without the startup 'Can't remove' error; Siphon Bullets' stolen max HP synced to clients.
 - **Autonomous session (2026-10-12, user away):** self-test harness (above); Celeste; item displays for Viscous and Celeste
   (`tools/itempass`, `HERO=viscous|celeste`, plus `allview.py`); skins Mint Celeste / Coral Vyper / Blue Viscous; Kinetic Dash
   triggers on dash-jumps (Deadlock's own trigger; `KineticDashJumpMessage` from the dashing client); Abrams' Heavy Melee hits are
@@ -428,7 +438,7 @@ same on a stand-in model.
   at once and all 10 equipment ran in the self-test with no exceptions from the mod.
 - **Character select colours (user, 2026-10-12):** each survivor's `Color` (body colour + SurvivorDef primary colour): Lash light blue,
   Abrams dark blue, Seven orange, Vyper yellowish green, Grey Talon dark green, Victor greyish green.
-- **Victor (1.5.0, prototyped 2026-10-12, NOT launched).** Sixth survivor; see Survivors above and memory `victor-design`.
+- **Victor (1.5.0, prototyped 2026-10-12, tuned in the user's playtests).** Sixth survivor; see Survivors above and memory `victor-design`.
 
 - **Cursed Broker (1.4.0, built 2026-10-12, NOT playtested).** `Broker/`: `CursedBroker` (Shrine of Order clone with its
   purchase stripped and a `PickupPickerController` + Command picker panel; symbol tinted purple; spawned in

@@ -4,15 +4,18 @@
 - New survivor: **Viscous**. His **Goo Ball** rolls him up into a bowling ball that bowls through enemies. **Splatter**
   bounces a ball of goo that bursts three times; alt **Puddle Punch** launches everything off any surface, him included.
   **The Cube** encases an ally (tap) or himself (hold): invulnerable, then faster with quicker stamina.
-- New survivor: **Celeste**. **Carny Life** throws blades of light that arc and curve onto enemies, and bounce off walls. **Light Eater** marks enemies: your blades hit them harder and heal you. Alt **Radiant Daggers** calls down a
-  beam of light that strengthens you for every enemy it hits. **Dazzling Trick** raises a barrier prism that bursts and
-  silences enemies if it breaks. **Shining Wonder**: hold, then release an orb that bounces between enemies, elites
-  and bosses first.
+- New survivor: **Celeste**. She moves like Lash (more stamina, two air jumps and air dashes) and falls slowly. **Carny Life** throws
+  arcing blades of light that curve onto enemies and bounce off walls. **Light Eater** marks enemies: your blades hit them harder and
+  heal you. Alt **Radiant Daggers**: aim, then call down a beam of light that strengthens you for every enemy it hits, with no cap.
+  **Dazzling Trick** raises a barrier prism that bursts and stuns enemies if it breaks. **Shining Wonder**: hold, then release a
+  slow orb of light that chases the nearest enemy and bounces between enemies close together.
 - **Viscous**: the Goo Ball is **Heavy** (like Loader's punches): 250% plus 30% per m/s of speed, rolling or falling, and takes 50% less damage while rolling.
 - New skins: **Mint** Celeste, **Coral** Vyper, **Blue** Viscous.
 - **Kinetic Dash**: dash-jumping (Deadlock heroes) triggers it too, as in Deadlock.
 - Fixed: Abrams' **Heavy Melee** now counts as his Special (Ethereal Shift's bonus and other Special effects apply).
 - Viscous and Celeste show items on their bodies.
+- Shorter skill descriptions for Seven, Vyper, Grey Talon, Victor, Viscous and Celeste.
+- Fixed: Viscous' lobby cube no longer stays forever if you switch survivor during his intro.
 - Fixed: in multiplayer, **Siphon Bullets**' stolen max health now shows for every player, not only the host.
 - Fixed: while Viscous rolls, hits land on the whole Goo Ball (his hitbox was still his standing size).
 - New survivor: **Victor**.
