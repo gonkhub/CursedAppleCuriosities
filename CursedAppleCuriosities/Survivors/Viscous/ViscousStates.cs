@@ -127,6 +127,20 @@ namespace EntityStates.CursedApple.Viscous
         private CameraTargetParams.CameraParamsOverrideHandle _camera;
 
         private float R => ViscousData.Radius(characterBody); // Mystic Expansion grows the ball (user)
+
+        /// <summary>
+        /// Move speed items (and slows) scale the ball's speeds (user): his move speed over his base, sprinting divided out
+        /// so it doesn't count twice.
+        /// </summary>
+        private float SpeedScale
+        {
+            get
+            {
+                float speed = characterBody.moveSpeed;
+                if (characterBody.isSprinting && characterBody.sprintingSpeedMultiplier > 0f) speed /= characterBody.sprintingSpeedMultiplier;
+                return Mathf.Clamp(speed / Mathf.Max(0.1f, characterBody.baseMoveSpeed), 0.25f, 10f);
+            }
+        }
         private Vector3 Center => characterBody.footPosition + Vector3.up * R;
 
         public override void OnEnter()
@@ -141,7 +155,7 @@ namespace EntityStates.CursedApple.Viscous
             if (!isAuthority) return;
             _dir = Shared.Flat(GetAimRay().direction, characterDirection.forward);
             Vector3 v = characterMotor.velocity;
-            _speed = Mathf.Max(ViscousData.BallSpeed, new Vector3(v.x, 0f, v.z).magnitude); // never slower than its roll; a running start carries over
+            _speed = Mathf.Max(ViscousData.BallSpeed * SpeedScale, new Vector3(v.x, 0f, v.z).magnitude); // never slower than its roll; a running start carries over
             _lastPos = transform.position;
             characterMotor.disableAirControlUntilCollision = false;
             ViscousNet.ToServer(new ViscousBallMessage { Body = gameObject, Rolling = true, Seconds = _duration });
@@ -208,7 +222,7 @@ namespace EntityStates.CursedApple.Viscous
                 Vector3 want = keys.sqrMagnitude > 0.01f ? keys.normalized : Shared.Flat(GetAimRay().direction, _dir);
                 _dir = Shared.Flat(Vector3.RotateTowards(_dir, want, turn, 0f), _dir);
             }
-            float target = inputBank.skill1.down ? ViscousData.BallFastSpeed : ViscousData.BallSpeed;
+            float target = (inputBank.skill1.down ? ViscousData.BallFastSpeed : ViscousData.BallSpeed) * SpeedScale;
             _speed = _speed < target ? Mathf.Min(target, _speed + ViscousData.BallAccel * dt) : Mathf.Max(target, _speed - ViscousData.BallDecel * dt);
 
             Bounce(dt);
