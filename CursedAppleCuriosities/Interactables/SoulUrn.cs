@@ -14,7 +14,7 @@ namespace CursedAppleCuriosities.Interactables
 {
     /// <summary>
     /// The Soul Urn (user, 2.0): 30% of stages have one lying on the ground, well away from the teleporter. Pick it up
-    /// and carry it to the teleporter within 30 s without taking damage; getting hit, running out of time or the carrier
+    /// and carry it to the teleporter in time (30 s at 180 m, more the further it spawned) without taking damage; getting hit, running out of time or the carrier
     /// dying sends it back to where it spawned. A delivery showers the carrier with items at chest rarity weights,
     /// more the further into the run.
     /// <para>The server owns the state; every machine (host included) learns it from <see cref="SoulUrnMessage"/> and
@@ -24,7 +24,9 @@ namespace CursedAppleCuriosities.Interactables
     {
         public static bool Enabled;
         public static float SpawnChance;
-        public static float TimeLimit;
+        public static float TimeLimit; // the shortest limit: an urn at the minimum distance
+        public static float SecondsPerMeter;
+        public static float MaxTimeLimit;
         public static float MinTeleporterDistance;
         public static float DeliveryRadius;
         public static int BaseItems;
@@ -69,7 +71,11 @@ namespace CursedAppleCuriosities.Interactables
             Enabled = config.Bind(S, "Enabled", true,
                 "Spawn the Soul Urn: carry it to the teleporter in time, without taking damage, for a pile of items.").Value;
             SpawnChance = config.Bind(S, "Spawn Chance", 0.3f, "Chance that a Soul Urn appears on any stage (0.3 = 30%).").Value;
-            TimeLimit = config.Bind(S, "Time Limit", 30f, "Seconds to reach the teleporter after picking the urn up.").Value;
+            TimeLimit = config.Bind(S, "Time Limit", 30f,
+                "The shortest time (s) to reach the teleporter after picking the urn up. Urns further away get longer (Seconds Per Meter).").Value;
+            SecondsPerMeter = config.Bind(S, "Seconds Per Meter", 1f / 6f,
+                "Delivery time per metre of straight-line distance from the urn's spawn to the teleporter (1/6 = 30 s at 180 m, 60 s at 360 m). Never less than Time Limit.").Value;
+            MaxTimeLimit = config.Bind(S, "Max Time Limit", 120f, "The longest time (s) any urn gets.").Value;
             MinTeleporterDistance = config.Bind(S, "Min Teleporter Distance", 180f, // 60 until 2.0 (user)
                 "The urn always spawns at least this far (m) from the teleporter.").Value;
             DeliveryRadius = config.Bind(S, "Delivery Radius", 12f, "How close (m) to the teleporter the carrier must get.").Value;
@@ -211,7 +217,8 @@ namespace CursedAppleCuriosities.Interactables
                     continue;
                 }
                 CursedAppleCuriositiesPlugin.Logger?.LogInfo($"[SoulUrn] Spawned at {spawned.transform.position}, " +
-                    $"{Vector3.Distance(spawned.transform.position, tp.transform.position):0} m from the teleporter.");
+                    $"{Vector3.Distance(spawned.transform.position, tp.transform.position):0} m from the teleporter " +
+                    $"({spawned.GetComponent<SoulUrnController>()?.PreviewTimeLimit():0} s to deliver).");
                 return;
             }
             CursedAppleCuriositiesPlugin.Logger?.LogWarning("[SoulUrn] No spot far enough from the teleporter for the urn this stage.");
@@ -345,6 +352,8 @@ namespace CursedAppleCuriosities.Interactables
         public Vector3 Home => transform.position;
         /// <summary>Seconds left to deliver (0 when not carried).</summary>
         public float Remaining => Carrier != null ? Mathf.Max(0f, _deadline - Time.time) : 0f;
+        /// <summary>Seconds this urn gives its carrier: scaled with its spawn's distance to the teleporter (set on pickup).</summary>
+        public float TimeLimit { get; private set; } = SoulUrn.TimeLimit;
 
         private float _deadline;
         private bool _carried; // Carrier alone can't tell: a destroyed body compares equal to null
@@ -431,12 +440,23 @@ namespace CursedAppleCuriosities.Interactables
             CharacterBody? body = activator.GetComponent<CharacterBody>();
             if (body == null || body.healthComponent == null || !body.healthComponent.alive) return;
 
-            _deadline = Time.time + SoulUrn.TimeLimit;
+            TimeLimit = ScaledTimeLimit();
+            _deadline = Time.time + TimeLimit;
             SetCarrier(body);
             if (_interaction != null) _interaction.Networkinteractability = Interactability.Disabled;
-            Send(SoulUrnState.Carried, body, SoulUrn.TimeLimit);
+            Send(SoulUrnState.Carried, body, TimeLimit);
             SoulUrn.Broadcast($"{SoulUrn.NameOf(body)} picked up the Soul Urn.");
             Effect(transform.position + Vector3.up);
+        }
+
+        internal float PreviewTimeLimit() => ScaledTimeLimit();
+
+        /// <summary>Time Limit at the minimum distance, longer the further the spawn is from the teleporter (straight line).</summary>
+        private float ScaledTimeLimit()
+        {
+            TeleporterInteraction? tp = TeleporterInteraction.instance;
+            float scaled = tp != null ? Vector3.Distance(Home, tp.transform.position) * SoulUrn.SecondsPerMeter : 0f;
+            return Mathf.Min(Mathf.Max(SoulUrn.TimeLimit, scaled), Mathf.Max(SoulUrn.TimeLimit, SoulUrn.MaxTimeLimit));
         }
 
         private void ServerTick()
@@ -540,6 +560,7 @@ namespace CursedAppleCuriosities.Interactables
             {
                 case SoulUrnState.Carried:
                     if (body == null) return;
+                    TimeLimit = msg.Remaining; // sent at pickup, so the full limit
                     _deadline = Time.time + msg.Remaining;
                     SetCarrier(body);
                     break;
