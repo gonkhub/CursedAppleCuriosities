@@ -120,7 +120,7 @@ namespace EntityStates.CursedApple.Viscous
     {
         private Vector3 _dir, _lastPos;
         private float _speed, _duration, _steerPause, _stalledFor, _freezeLeft;
-        private bool _airJumped, _ending;
+        private bool _airJumped, _ending, _cubed;
         private readonly Dictionary<HealthComponent, float> _nextHit = new Dictionary<HealthComponent, float>();
         private DeadlockVoice? _loop;
         private DeadlockMover? _mover;
@@ -187,6 +187,32 @@ namespace EntityStates.CursedApple.Viscous
                 _stalledFor = 0f;
                 return;
             }
+            // Cubed inside the ball (user): the ball lets go. Its speed and heading become real momentum and The Cube's
+            // frictionless slide carries him; no steering, jumps, hits or casts. When the cube ends, the ball takes over
+            // again from wherever the slide left him. The roll's own time keeps running.
+            if (ViscousSurvivor.CubeBuff != null && characterBody.HasBuff(ViscousSurvivor.CubeBuff))
+            {
+                if (!_cubed)
+                {
+                    _cubed = true;
+                    Vector3 cv = characterMotor.velocity;
+                    characterMotor.velocity = _dir * _speed + Vector3.up * cv.y;
+                }
+                characterMotor.moveDirection = Vector3.zero;
+                _lastPos = transform.position;
+                _stalledFor = 0f;
+                if (fixedAge >= _duration) { _ending = true; outer.SetNextStateToMain(); }
+                return;
+            }
+            if (_cubed)
+            {
+                _cubed = false;
+                Vector3 slid = characterMotor.velocity;
+                slid.y = 0f;
+                _speed = slid.magnitude;
+                if (slid.sqrMagnitude > 0.01f) _dir = slid.normalized;
+            }
+
             bool grounded = characterMotor.isGrounded;
             if (grounded) _airJumped = false;
 

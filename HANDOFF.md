@@ -360,7 +360,8 @@ same on a stand-in model.
     target (user, 1.6.0): `ViscousCubes.FitSize`, the bounds of its CharacterModel's drawn meshes, tallest/widest side x1.1.
   - Globs = `ViscousGlob` on a CrocoSpit clone; bursts are BlastAttacks so Mystic Expansion's hook widens them (effect spawned at base radius
     so the hook grows it); ghost scaled by Mystic Expansion. Punch radius/range, cube range, ball size all take Mystic Expansion (user).
-  - Splatter/Punch/Cube castable while rolling (Deadlock CastWhileRolling). Ball steers with WASD relative to the camera, else the crosshair (user).
+  - Splatter/Punch/Cube castable while rolling (Deadlock CastWhileRolling). Cubed in the ball (user, 1.6.0): the ball lets go, its speed
+    becomes momentum for the cube's slide (no steering, jumps, hits, casts), and takes back over from the slide when the cube ends. Ball steers with WASD relative to the camera, else the crosshair (user).
   - Lobby intro (user): he stands in the cube for its 3 s, it pops, then his select line. The cube and its sound go away with the display if it is swapped mid-intro.
   - Playtest 2 (user, 2026-10-12): Kelvin clip names must be SHORT in the anim table (`GlbLoader` keys clips by the last path part;
     the converter matches short names too); full paths silently fell back to the run in the air. Goo Glob: no gravity, splats at

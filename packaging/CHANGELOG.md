@@ -11,6 +11,8 @@
 - **Viscous**: move speed items (and slows) now change how fast the **Goo Ball** rolls.
 - **Viscous** takes fall damage again whenever he isn't in the Goo Ball or The Cube (landing after popping out mid-air,
   or after Puddle Punching himself).
+- **Viscous**: cubing yourself while in the **Goo Ball** stops the ball's control: the cube slides on with the ball's speed,
+  and the ball picks up from there when the cube ends.
 - Fixed: damage over time (burn, poison...) no longer hurts anyone inside **The Cube**; it still sticks and resumes after.
 - Fixed: with a spare **Goo Ball** charge, ending the ball early no longer rolls the next one at once; the charge is kept.
 - **Celeste**: blades are a little slower and ease out gradually toward the end of their range; they flash where they bounce
