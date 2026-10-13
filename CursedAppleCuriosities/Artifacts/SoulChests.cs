@@ -1,5 +1,4 @@
 using System.Collections.Generic;
-using R2API;
 using RoR2;
 using UnityEngine;
 using UnityEngine.AddressableAssets;
@@ -10,8 +9,7 @@ namespace CursedAppleCuriosities.Artifacts
     /// <summary>
     /// Server, as each stage starts (Artifact of the Catalog): every item chest and multishop the director placed is
     /// shuffled and dealt its tier, WhiteShare / GreenShare / RedShare of them each, then swapped in place for that
-    /// tier's vanilla chest (small, large, legendary) or multishop (small, large; a red multishop is the large one
-    /// stocked with reds) and priced at that tier's souls. Equipment barrels, shrines, drones, lunar pods, void
+    /// tier's vanilla chest (small, large, legendary; multishops become chests too) and priced at that tier's souls. Equipment barrels, shrines, drones, lunar pods, void
     /// containers and free chests are left alone (still priced in souls).
     /// </summary>
     public static class SoulChests
@@ -25,30 +23,6 @@ namespace CursedAppleCuriosities.Artifacts
             _ => "RoR2/Base/Chest1/Chest1.prefab",
         });
 
-        private static GameObject? Multishop(ItemTier tier) => tier switch
-        {
-            ItemTier.Tier1 => Load("RoR2/Base/TripleShop/TripleShop.prefab"),
-            ItemTier.Tier2 => Load("RoR2/Base/TripleShopLarge/TripleShopLarge.prefab"),
-            _ => RedMultishop,
-        };
-
-        /// <summary>No vanilla multishop sells reds: the large one, stocked with reds (a multishop stocks as it's created).</summary>
-        private static GameObject? _redMultishop;
-        private static GameObject? RedMultishop
-        {
-            get
-            {
-                if (_redMultishop != null) return _redMultishop;
-                GameObject? large = Load("RoR2/Base/TripleShopLarge/TripleShopLarge.prefab");
-                if (large == null) return null;
-                _redMultishop = large.InstantiateClone("CursedAppleTripleShopRed", true);
-                _redMultishop.GetComponent<MultiShopController>().itemTier = ItemTier.Tier3;
-                return _redMultishop;
-            }
-        }
-
-        private static readonly System.Reflection.PropertyInfo? ShopCost =
-            typeof(MultiShopController).GetProperty("Networkcost", System.Reflection.BindingFlags.Instance | System.Reflection.BindingFlags.NonPublic | System.Reflection.BindingFlags.Public);
 
         private static readonly Dictionary<string, GameObject?> Prefabs = new Dictionary<string, GameObject?>();
         private static GameObject? Load(string key)
@@ -65,28 +39,18 @@ namespace CursedAppleCuriosities.Artifacts
         public static void Hook()
         {
             SceneDirector.onPostPopulateSceneServer += _ => Retier();
-            // A multishop prices its terminals as it starts: ours get their tier's price right after.
-            On.RoR2.MultiShopController.Start += (orig, self) =>
-            {
-                orig(self);
-                var tag = self.GetComponent<SoulTier>();
-                if (tag == null || !NetworkServer.active) return;
-                int gold = Souls.GoldFor(CatalogArtifact.Mult(tag.Tier));
-                ShopCost?.SetValue(self, gold);
-                foreach (GameObject t in self.terminalGameObjectsList)
-                    if (t != null && t.TryGetComponent(out PurchaseInteraction pi)) pi.Networkcost = gold;
-            };
         }
 
         private static void Retier()
         {
             if (!NetworkServer.active || !CatalogArtifact.Active || Run.instance == null) return;
 
-            var spots = new List<(GameObject go, bool shop)>();
+            // Multishops become chests too (user): one spot each.
+            var spots = new List<GameObject>();
             foreach (ChestBehavior c in Object.FindObjectsOfType<ChestBehavior>())
-                if (IsItemChest(c.gameObject)) spots.Add((c.gameObject, false));
+                if (IsItemChest(c.gameObject)) spots.Add(c.gameObject);
             foreach (MultiShopController m in Object.FindObjectsOfType<MultiShopController>())
-                if (!m.doEquipmentInstead && !m.isTripleDroneVendor && m.costType == CostTypeIndex.Money) spots.Add((m.gameObject, true));
+                if (!m.doEquipmentInstead && !m.isTripleDroneVendor && m.costType == CostTypeIndex.Money) spots.Add(m.gameObject);
             if (spots.Count == 0) return;
 
             // Deal the tiers by share (largest remainder), then shuffle which spot gets which.
@@ -102,7 +66,7 @@ namespace CursedAppleCuriosities.Artifacts
             for (int i = 0; i < spots.Count; i++)
             {
                 ItemTier tier = deal[i];
-                if (Swap(spots[i].go, spots[i].shop, tier)) counts[System.Array.IndexOf(Tiers, tier)]++;
+                if (Swap(spots[i], tier)) counts[System.Array.IndexOf(Tiers, tier)]++;
             }
             CursedAppleCuriositiesPlugin.Logger?.LogInfo($"[Catalog] {spots.Count} chests re-tiered: {counts[0]} white, {counts[1]} green, {counts[2]} red; " +
                 $"a basic chest is {Souls.Unit} gold = {Souls.PerChest} souls");
@@ -142,24 +106,26 @@ namespace CursedAppleCuriosities.Artifacts
             return deal.ToArray();
         }
 
-        /// <summary>Replaces the object with its tier's chest or multishop at the same spot, priced in that tier's souls.</summary>
-        private static bool Swap(GameObject old, bool shop, ItemTier tier)
+        /// <summary>Replaces the chest or multishop with its tier's chest at the same spot, priced in that tier's souls.</summary>
+        private static bool Swap(GameObject old, ItemTier tier)
         {
-            GameObject? prefab = shop ? Multishop(tier) : Chest(tier);
+            GameObject? prefab = Chest(tier);
             if (prefab == null) return false;
             Transform t = old.transform;
             GameObject fresh = Object.Instantiate(prefab, t.position, t.rotation);
-            if (shop) fresh.AddComponent<SoulTier>().Tier = tier; // priced and stocked as it starts
-            else if (fresh.TryGetComponent(out PurchaseInteraction pi)) pi.Networkcost = Souls.GoldFor(CatalogArtifact.Mult(tier));
+            if (fresh.TryGetComponent(out PurchaseInteraction pi)) pi.Networkcost = Souls.GoldFor(CatalogArtifact.Mult(tier));
             NetworkServer.Spawn(fresh);
-            NetworkServer.Destroy(old);
+            DestroyWithTerminals(old);
             return true;
         }
-    }
 
-    /// <summary>Server: the tier a re-tiered multishop was dealt.</summary>
-    public class SoulTier : MonoBehaviour
-    {
-        public ItemTier Tier;
+        /// <summary>A multishop's terminals are their own networked objects: they go with it.</summary>
+        private static void DestroyWithTerminals(GameObject old)
+        {
+            if (old.TryGetComponent(out MultiShopController shop))
+                foreach (GameObject t in shop.terminalGameObjectsList)
+                    if (t != null) NetworkServer.Destroy(t);
+            NetworkServer.Destroy(old);
+        }
     }
 }

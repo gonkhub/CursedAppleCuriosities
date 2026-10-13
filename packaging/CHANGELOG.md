@@ -3,7 +3,7 @@
 ## Unreleased (2.0)
 - New **Artifact of the Catalog**, replacing the Curiosity Catalog item. Gold is shown as
   **souls**, at a rate fixed each stage so a basic chest always costs 800. As each stage starts, its item chests and
-  multishops are re-rolled: 40% white chests (800 souls), 40% large chests (3200) and 20% legendary chests (6400).
+  multishops (which become chests) are re-rolled: 40% white chests (800 souls), 40% large chests (3200) and 20% legendary chests (6400).
   The Bazaar Between Time has a shop selling all of this mod's items by tier. With the Artifact of Command, chests offer
   a pick of their tier as usual. Pair it with the Artifact of the Curio for this mod's items only.
 - **Artifact of the Curio** also filters what Command's picks and printers offer.
