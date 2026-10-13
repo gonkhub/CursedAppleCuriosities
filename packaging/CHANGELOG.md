@@ -1,5 +1,9 @@
 # Changelog
 
+## 1.8.0 (unreleased)
+- The mod's content is now an **expansion** you can switch off in the lobby, next to the base game's expansions. Off: none of
+  its items, equipment or artifacts drop or can be given, and no Cursed Broker appears. Its survivors can still be played.
+
 ## 1.7.0
 - Survivors now release one at a time: this package has **Lash**, **Abrams** and **Seven**. The other heroes from
   earlier notes come back in later releases.

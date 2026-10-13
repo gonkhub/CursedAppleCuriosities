@@ -37,6 +37,7 @@ namespace CursedAppleCuriosities.Artifacts
             ArtifactDef.descriptionToken   = $"CURSEDAPPLE_{ArtifactLangTokenName}_DESC";
             ArtifactDef.smallIconSelectedSprite   = LoadIcon(EnabledIconFileName,  EnabledIconColor);
             ArtifactDef.smallIconDeselectedSprite = LoadIcon(DisabledIconFileName, DisabledIconColor);
+            ArtifactDef.requiredExpansion = CuriositiesExpansion.Def;
             ContentAddition.AddArtifactDef(ArtifactDef);
         }
 
