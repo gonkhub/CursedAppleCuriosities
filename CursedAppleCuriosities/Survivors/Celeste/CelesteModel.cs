@@ -23,6 +23,8 @@ namespace CursedAppleCuriosities.Survivors.Celeste
             // Mint Celeste (skin 1): her pink hair and skirt turned mint and teal; the leather jacket stays.
             Skins = new[] { new DeadlockSkin { Id = "mint1", Recolor = DeadlockSkin.HueShift(270f, 325f, -125f, 0.08f) } },
             ItemAnchors = CelesteItemDisplays.Anchors,
+            // Her horn's glow shell (a blank white material in the converted model): a soft self-lit purple (user).
+            MaterialGlows = new System.Collections.Generic.Dictionary<string, Color> { ["unicorn_glow"] = new Color(0.72f, 0.5f, 1f) },
             // AnimGraph2 jump and air-dash clips span the whole time in the air (Victor's rule): they loop here and end on
             // landing, or hand over to the in-air loop once the rise is over.
             LoopRule = c =>

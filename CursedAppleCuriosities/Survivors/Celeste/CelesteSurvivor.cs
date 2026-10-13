@@ -213,6 +213,7 @@ namespace CursedAppleCuriosities.Survivors.Celeste
                 icon = ItemBase.CreatePlaceholderSprite(Color),
             };
             DeadlockMovement.Apply(body, CelesteData.Movement);
+            body.AddComponent<CelesteGlow>(); // a faint purple light around her (user)
 
             Transform model = body.GetComponent<ModelLocator>().modelTransform;
             model.gameObject.AddComponent<DeadlockModelSwap>().HeroKey = CelesteData.Hero;
@@ -238,6 +239,7 @@ namespace CursedAppleCuriosities.Survivors.Celeste
                 Kit.OwnSkin(cm.gameObject, "skinCursedAppleCelesteDISPLAY", Token + "SKIN_DEFAULT", DefaultSkinIcon, ("skinCursedAppleCelesteDISPLAYMINT", Token + "SKIN_MINT", MintSkinIcon));
             }
             display.AddComponent<CelesteDisplayIntro>();
+            display.AddComponent<CelesteGlow>();
             return display;
         }
 
@@ -339,6 +341,35 @@ namespace CursedAppleCuriosities.Survivors.Celeste
                 $"Hold to aim, release to launch an orb of light for <style=cIsDamage>{D(CelesteData.OrbDamage)} damage</style> that <style=cIsUtility>slows</style> by {D(CelesteData.OrbSlow)}. " +
                 $"It <style=cIsDamage>bounces</style> up to {CelesteData.OrbBounces} times to the nearest enemy within {CelesteData.OrbBounceRange:0.#}m, and waits a moment for a target when none is near. " +
                 "It also bounces off your <style=cIsUtility>Dazzling Trick</style> prism, restarting it and restoring its barrier.");
+        }
+    }
+
+    /// <summary>A faint purple light at her chest (user: "glow purple a little"), on the body and the lobby display.</summary>
+    public class CelesteGlow : MonoBehaviour
+    {
+        public static readonly Color GlowColor = new Color(0.7f, 0.45f, 1f);
+        private Light? _light;
+
+        private void Start()
+        {
+            var go = new GameObject("CelesteGlow");
+            go.transform.SetParent(transform, false);
+            // The body's origin is its capsule's centre; the lobby display's is at its feet.
+            go.transform.localPosition = Vector3.up * (GetComponent<CharacterBody>() != null ? 0.4f : 1.3f);
+            _light = go.AddComponent<Light>();
+            _light.type = LightType.Point;
+            _light.color = GlowColor;
+            _light.intensity = 1.1f;
+            _light.range = 3.5f * Mathf.Max(0.1f, transform.lossyScale.y);
+            _light.shadows = LightShadows.None;
+        }
+
+        private void Update()
+        {
+            if (_light == null) return;
+            _light.intensity = 1.1f + 0.15f * Mathf.Sin(Time.time * 2.2f); // a slow shimmer
+            var hc = GetComponent<HealthComponent>();
+            _light.enabled = hc == null || hc.alive;
         }
     }
 
