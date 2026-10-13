@@ -78,6 +78,7 @@ namespace CursedAppleCuriosities.Survivors.GreyTalon
 
         // ---- special: Guided Owl (user: 1200%, steered; very long cooldown; untargetable while casting) ----
         public static float OwlDamage = 25f;            // user: 1200% -> 2500% (Deadlock Damage 230 +0.94x spirit)
+        public const float OwlExecute = 0.75f;          // a blast dealing more than this share of the target's current health (with shield and barrier) kills it (user, 1.7)
         public static float OwlBossBonus = 0.2f;        // owl damage per boss it killed, whole run (user; Deadlock: +8 spirit per kill)
         public static float OwlCooldown = 125f;         // Deadlock's own, kept (user: very very long)
         public const float OwlCastDelay = 1.5f;         // Deadlock AbilityCastDelay

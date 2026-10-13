@@ -329,7 +329,7 @@ namespace CursedAppleCuriosities.Survivors.GreyTalon
 
             LanguageAPI.Add(Token + "OWL_NAME", "Guided Owl");
             LanguageAPI.Add(Token + "OWL_DESC",
-                $"Steer a spirit owl that explodes for <style=cIsDamage>{D(GreyTalonData.OwlDamage)} damage</style> and <style=cIsDamage>stuns</style>. You are <style=cIsUtility>invulnerable</style> while steering. " +
+                $"Steer a spirit owl that explodes for <style=cIsDamage>{D(GreyTalonData.OwlDamage)} damage</style> and <style=cIsDamage>stuns</style>, <style=cIsHealth>executing</style> anything that loses over {D(GreyTalonData.OwlExecute)} of its remaining health. You are <style=cIsUtility>invulnerable</style> while steering. " +
                 $"Each boss it kills permanently grants <style=cIsDamage>+{D(GreyTalonData.OwlBossBonus)} damage</style>.");
         }
     }

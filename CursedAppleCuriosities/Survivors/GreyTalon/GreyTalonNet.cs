@@ -192,7 +192,11 @@ namespace CursedAppleCuriosities.Survivors.GreyTalon
             {
                 bool boss = hc.body != null && (hc.body.isChampion || hc.body.isBoss);
                 Vector3 away = GreyTalonNet.Core(hc) - Point;
+                float before = hc.combinedHealth;
                 GreyTalonNet.Hit(body, hc, damage, Crit, (away.sqrMagnitude > 0.01f ? away.normalized : Vector3.up) * 1200f, DamageSource.Special, 1f);
+                // Execute (user, 1.7): a blast that took more than OwlExecute of what the target had left finishes it (kill credited to him).
+                if (hc.alive && before > 0f && before - hc.combinedHealth > GreyTalonData.OwlExecute * before)
+                    hc.Suicide(body.gameObject, body.gameObject, DamageSource.Special);
                 if (!hc.alive) { if (boss) bossKills++; continue; }
                 using (DurationExtender.From(body)) SetStateOnHurt.SetStunOnObject(hc.gameObject, GreyTalonData.OwlStun);
             }

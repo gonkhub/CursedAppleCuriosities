@@ -308,7 +308,7 @@ same on a stand-in model.
     (DLC4) x2.5, 203 m/s, pierces every enemy (`GreyTalonChargedArrow` sweeps its path), 800%, no falloff. 6 s cd.
   - Utility Rain of Arrows: 0.2 s, launch 27.5 m/s at 60 deg, 4 s glide (fall <= 0.64 m/s, drift 6.6 m/s), jump cancels. 8 s cd.
   - Special Guided Owl: 1.5 s cast, then the owl flies on the owner's client (`GreyTalonOwl`) steered by look (110 deg/s), 15 -> 36 m/s
-    while forward is held, bursts on touch or on Primary (12 m, 2500%, 0.75 s stun); camera = `ICameraStateProvider` override that keeps the
+    while forward is held, bursts on touch or on Primary (12 m, 2500%, 0.75 s stun; 1.7 user: executes (`HealthComponent.Suicide`, kill credited to him) anything that lost >75% of its combined health to the blast); camera = `ICameraStateProvider` override that keeps the
     player's look rotation and only moves the position behind the owl. Jump releases it. Grey Talon is HiddenInvincibility + Cloak +
     SkillSilence while steering. Boss kills: +20% owl damage each, whole run (`GreyTalonOwlTrophies` on the master, shown as a buff).
     125 s cd (Deadlock's, user wanted it very long). The owl model is Deadlock's `archer_guided_arrow` (converted as `greytalon_owl`)
