@@ -87,12 +87,12 @@ namespace CursedAppleCuriosities.Survivors.Celeste
         public static int OrbBounces = 24;               // user: triple Deadlock's MaxBounces 8 (hits after the first)
         public static float OrbBounceRange = 15.5f;      // from the enemy it just hit: Deadlock BounceRadius (user: back from 7 m)
         public static float OrbCooldown = 40f;           // Deadlock 160
-        public const float OrbSpeed = 18f;               // much slower than Deadlock's 50.8 m/s (user): a floating ball of light
+        public const float OrbSpeed = 12f;               // much slower than Deadlock's 50.8 m/s (user): a floating ball of light (18 before 1.7)
         public const float OrbRadius = 1.65f;            // Deadlock m_flBulletRadius 65 hu
         public const float OrbSlow = 0.32f;              // Deadlock SlowPercent
         public const float OrbSlowSeconds = 1.5f;        // Deadlock SlowDuration
         public const float OrbOrbitDegPerSec = 240f;     // while it waits, it circles what it last hit (user)
-        public const float OrbLinger = 3.25f;            // Deadlock BounceGrace: no target, it waits this long for one
+        public const float OrbLinger = 6f;               // no target, it waits this long for one (Deadlock BounceGrace 3.25; user, 1.7)
         public const float OrbHomeConeDeg = 25f;
         public const float OrbFlightSeconds = 3f;        // without a target it flies on this long, then lingers where it is
         public const float OrbMinHold = 0.35f;           // Deadlock AbilityCastDelay 0.75 is the wind-up; she can release after this

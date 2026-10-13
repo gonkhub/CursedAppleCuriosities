@@ -8,6 +8,7 @@
 - Wall jumps (every Deadlock hero) lose height when spammed: each one within a second of the last is 60% as high as the one
   before. Waiting a full second, an air jump, an air dash or landing restores full height.
 - **Celeste**: **Light Eater** flashes a purple cone showing exactly what it reaches.
+- **Celeste**: **Shining Wonder** drifts slower (12 m/s, was 18) and waits up to 6 s for a new target (was 3.25).
 
 ## 1.6.0
 - Fixed: **Cursed Broker** cooldown penalties (all skills, Secondary, Utility, Special) now actually lengthen your cooldowns.

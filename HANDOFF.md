@@ -406,8 +406,8 @@ same on a stand-in model.
   - Utility Dazzling Trick: 20% max HP barrier, 4 s window (Lunar Golem shell visual); the hit that takes the barrier to 0 bursts
     it: 500% in 14 m + 1.75 s stun (user; Deadlock silences).
   - Special Shining Wonder: hold to aim (slow fall), release: orb (Artifact shell's seeking flare, given SolarFlareGhost, 0.8x) at
-    18 m/s (user: a floating ball of light), chases the nearest enemy through walls, 500% + 32% slow per hit, 24 bounces (user) within 15.5 m (Deadlock's; user, was 7) of
-    the enemy it hit (or off her prism, which tops the prism back up), lingers 3.25 s for a target circling what it last hit.
+    12 m/s (user: a floating ball of light; 18 before 1.7), chases the nearest enemy through walls, 500% + 32% slow per hit, 24 bounces (user) within 15.5 m (Deadlock's; user, was 7) of
+    the enemy it hit (or off her prism, which tops the prism back up), lingers 6 s (1.7 user; was 3.25) for a target circling what it last hit.
   - Every radius takes Mystic Expansion; mark/slow/prism durations take Duration Extender. Her light is pink (Hue 0.9, her hair);
     projectiles blue-violet (Hue 0.72). Soft purple glow: self-lit horn shell (`unicorn_glow`) and a faint chest light (`CelesteGlow`).
   - VO by Deadlock's mapping: power3 = Shining Wonder, power4 = Radiant Daggers.

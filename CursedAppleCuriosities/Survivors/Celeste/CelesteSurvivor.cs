@@ -164,7 +164,7 @@ namespace CursedAppleCuriosities.Survivors.Celeste
             // Shining Wonder: the Artifact shell's seeking solar flare, steered by CelesteOrb (it passes through everything).
             OrbProjectile = Kit.CloneProjectile(
                 TryLoad<GameObject>("RoR2/Base/ArtifactShell/ArtifactShellSeekingSolarFlare.prefab", "RoR2/Base/Mage/MageLightningBombProjectile.prefab"),
-                "CursedAppleCelesteOrb", typeof(CelesteOrb), CelesteData.OrbSpeed, 40f, gravity: false, triggers: true, steer: false);
+                "CursedAppleCelesteOrb", typeof(CelesteOrb), CelesteData.OrbSpeed, 120f, /* a backstop: CelesteOrb ends it; 24 slow bounces and lingers outlast 40 s */ gravity: false, triggers: true, steer: false);
             var orbPc = OrbProjectile != null ? OrbProjectile.GetComponent<RoR2.Projectile.ProjectileController>() : null;
             if (orbPc != null && orbPc.ghostPrefab == null) // the seeking flare draws itself: give it the flare's own ghost
                 orbPc.ghostPrefab = TryLoad<GameObject>("RoR2/Base/ArtifactShell/SolarFlareGhost.prefab", "RoR2/Base/Mage/MageLightningBombGhost.prefab");
