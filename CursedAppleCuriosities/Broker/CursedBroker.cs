@@ -14,8 +14,8 @@ using UnityEngine.Networking;
 namespace CursedAppleCuriosities.Broker
 {
     /// <summary>
-    /// The Cursed Broker: a rare shrine (stage 3 onward, or any stage once the run has looped; always on stage 4, and in
-    /// the first Bazaar visit of each loop after the first). Each player may curse
+    /// The Cursed Broker: a rare shrine (user, 1.7: 10% on any stage, 50% on stage 3 of every loop, and 50% per Bazaar
+    /// visit until one has appeared there this loop). Each player may curse
     /// one non-lunar item in their inventory once per broker. Opening it rolls one penalty per eligible item for
     /// that player (kept for that broker, so reopening can't reroll); the menu's tooltips show what each curse would
     /// improve and its penalty. A curse roughly doubles the item and every copy of it (<see cref="CurseRules"/>) and
@@ -25,10 +25,10 @@ namespace CursedAppleCuriosities.Broker
     {
         public static bool Enabled;
         public static float SpawnChance;
-        public static int MinStage;
-        public static int GuaranteedStage;
-        public static bool GuaranteedBazaar;
+        public static float StageThreeChance;
+        public static float BazaarChance;
         public static bool DebugAlwaysSpawn;
+        private const int StagesPerLoop = 5;
 
         private static GameObject? _prefab;
         private static InteractableSpawnCard? _card;
@@ -41,14 +41,12 @@ namespace CursedAppleCuriosities.Broker
         {
             Enabled = config.Bind("Cursed Broker", "Enabled", true,
                 "Spawn the Cursed Broker, a rare shrine that curses one of your items: a far stronger item, a harsh penalty.").Value;
-            SpawnChance = config.Bind("Cursed Broker", "Spawn Chance", 0.2f,
-                "Chance per eligible stage that a Cursed Broker appears (0.2 = 20%).").Value;
-            MinStage = config.Bind("Cursed Broker", "First Stage", 3,
-                "First stage of the first loop a Cursed Broker can appear on. After looping it can appear on any stage.").Value;
-            GuaranteedStage = config.Bind("Cursed Broker", "Guaranteed Stage", 4,
-                "Stage of the first loop that always has a Cursed Broker (0 = none).").Value;
-            GuaranteedBazaar = config.Bind("Cursed Broker", "Guaranteed In Bazaar", true,
-                "After looping, the first Bazaar Between Time visit of each loop always has a Cursed Broker.").Value;
+            SpawnChance = config.Bind("Cursed Broker", "Spawn Chance", 0.1f,
+                "Chance that a Cursed Broker appears on any stage (0.1 = 10%). Stage 3 of each loop uses its own chance.").Value;
+            StageThreeChance = config.Bind("Cursed Broker", "Stage 3 Chance", 0.5f,
+                "Chance that a Cursed Broker appears on stage 3 of every loop (0.5 = 50%).").Value;
+            BazaarChance = config.Bind("Cursed Broker", "Bazaar Chance", 0.5f,
+                "Chance per visit to the Bazaar Between Time that a Cursed Broker appears there. Once one has, no more appear in the Bazaar until the next loop.").Value;
             DebugAlwaysSpawn = config.Bind("Cursed Broker", "Debug - Spawn Every Stage", false,
                 "Testing: a Cursed Broker spawns on every stage, ignoring stage number and chance.").Value;
 
@@ -64,7 +62,7 @@ namespace CursedAppleCuriosities.Broker
 
             SceneDirector.onPostPopulateSceneServer += OnPostPopulateScene;
             Stage.onServerStageBegin += OnServerStageBegin;
-            Run.onRunStartGlobal += _ => _bazaarBrokerLoop = 0;
+            Run.onRunStartGlobal += _ => _bazaarBrokerLoop = -1;
             On.RoR2.PickupPickerController.GetContextString += GetContextString;
             On.RoR2.PickupPickerController.GetInteractability += GetInteractability;
             On.RoR2.PickupPickerController.OnInteractionBegin += OnInteractionBegin;
@@ -169,9 +167,11 @@ namespace CursedAppleCuriosities.Broker
         {
             SceneDef? scene = SceneCatalog.mostRecentSceneDef;
             if (scene == null || scene.sceneType != SceneType.Stage || scene.isFinalStage) return false;
-            if (DebugAlwaysSpawn) return true;
-            return run.loopClearCount > 0 || run.stageClearCount + 1 >= MinStage;
+            return true;
         }
+
+        /// <summary>Stage 3 of a loop (stages 3, 8, 13...).</summary>
+        private static bool IsLoopStageThree(Run run) => run.stageClearCount % StagesPerLoop == 2;
 
         private static bool _forceNextStage; // set by cac_broker_stage3
 
@@ -184,8 +184,8 @@ namespace CursedAppleCuriosities.Broker
             if (!forced && !StageEligible(run)) return;
 
             var rng = new Xoroshiro128Plus(run.seed ^ (ulong)(run.stageClearCount + 1) * 0x9E3779B97F4A7C15UL);
-            bool guaranteed = run.loopClearCount == 0 && GuaranteedStage > 0 && run.stageClearCount + 1 == GuaranteedStage;
-            if (!forced && !guaranteed && !DebugAlwaysSpawn && rng.nextNormalizedFloat >= SpawnChance) return;
+            float chance = IsLoopStageThree(run) ? StageThreeChance : SpawnChance;
+            if (!forced && !DebugAlwaysSpawn && rng.nextNormalizedFloat >= chance) return;
 
             for (int attempt = 0; attempt < 10; attempt++)
             {
@@ -200,12 +200,12 @@ namespace CursedAppleCuriosities.Broker
             CursedAppleCuriositiesPlugin.Logger?.LogWarning("[CursedBroker] No spot found for the broker this stage.");
         }
 
-        /// <summary>The last loop whose Bazaar already had its broker (0 = none yet this run).</summary>
-        private static int _bazaarBrokerLoop;
+        /// <summary>The last loop whose Bazaar already had its broker (-1 = none yet this run).</summary>
+        private static int _bazaarBrokerLoop = -1;
 
         /// <summary>
-        /// The Bazaar has no scene population for interactables, so its broker is placed here: once per loop after the
-        /// first, on the first visit. It stands near the Newt's lunar shop (the director's ground nodes when it has them,
+        /// The Bazaar has no scene population for interactables, so its broker is placed here: BazaarChance per visit,
+        /// until one has appeared there this loop. It stands near the Newt's lunar shop (the director's ground nodes when it has them,
         /// else straight onto the floor next to a shop terminal).
         /// </summary>
         private static void OnServerStageBegin(Stage stage)
@@ -214,15 +214,17 @@ namespace CursedAppleCuriosities.Broker
             if (!Enabled || run == null || _prefab == null || _card == null) return;
             SceneDef? scene = SceneCatalog.GetSceneDefForCurrentScene();
             if (scene == null || scene.cachedName != "bazaar") return;
+            // Rolled per visit (seeded by the stage count, so each visit has its own roll).
+            var rng = new Xoroshiro128Plus(run.seed ^ (ulong)(run.stageClearCount + 1) * 0xC2B2AE3D27D4EB4FUL);
             if (!DebugAlwaysSpawn)
             {
-                if (!GuaranteedBazaar || run.loopClearCount <= 0 || _bazaarBrokerLoop >= run.loopClearCount) return;
+                if (_bazaarBrokerLoop >= run.loopClearCount) return;
+                if (rng.nextNormalizedFloat >= BazaarChance) return;
             }
             _bazaarBrokerLoop = run.loopClearCount;
 
             ShopTerminalBehavior? terminal = UnityEngine.Object.FindObjectOfType<ShopTerminalBehavior>();
             Transform? anchor = terminal != null ? terminal.transform : null;
-            var rng = new Xoroshiro128Plus(run.seed ^ (ulong)run.loopClearCount * 0xC2B2AE3D27D4EB4FUL);
 
             if (DirectorCore.instance != null)
             {

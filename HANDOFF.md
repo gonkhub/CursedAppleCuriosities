@@ -454,8 +454,8 @@ same on a stand-in model.
 
 - **Cursed Broker (1.4.0, built 2026-10-12, NOT playtested).** `Broker/`: `CursedBroker` (Shrine of Order clone with its
   purchase stripped and a `PickupPickerController` + Command picker panel; symbol tinted purple; spawned in
-  `SceneDirector.onPostPopulateSceneServer`, 20% per stage from stage 3 or after a loop, always on stage 4 of the first loop, and (1.6.0, user)
-  in the first Bazaar visit of each later loop (`Stage.onServerStageBegin`, near the Newt's shop terminal), config `[Cursed Broker]`),
+  `SceneDirector.onPostPopulateSceneServer`; 1.7 (user): 10% on any stage, 50% on stage 3 of every loop (`stageClearCount % 5 == 2`), and
+  50% per Bazaar visit until one has appeared there this loop (`Stage.onServerStageBegin`, near the Newt's shop terminal, `_bazaarBrokerLoop`), config `[Cursed Broker]`),
   `CurseRules` (per-item Mult/Add on the effective stack count + improvement text; full table in
   `docs/CursedBrokerAudit.md`, regenerate with `tools/gen_curse_audit.py`; any non-lunar tier incl. white),
   `CursePenalties` (26 narrow penalties, rolled per item when a player first opens a broker, cached per broker+player), `CurseLedger` (per-master curse list, server-owned, mirrored by `CurseLedgerMessage`; IL hook on

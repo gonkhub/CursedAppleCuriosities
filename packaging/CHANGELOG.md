@@ -16,6 +16,8 @@
 - **Celeste**: 4 stamina (was 5).
 - **Majestic Leap**: leaps 50% higher, and its cooldown is halved (22.5 s, was 45).
 - **Grey Talon**: **Guided Owl** executes anything its blast takes more than 75% of the remaining health from.
+- **Cursed Broker** spawns: 10% on any stage, 50% on stage 3 of every loop, and 50% each visit to the Bazaar Between Time
+  (once one has appeared there, not again until the next loop). No longer guaranteed on stage 4.
 - **Goose Eggs** don't mature while the run timer is stopped (the Bazaar Between Time and other places it pauses).
 
 ## 1.6.0
