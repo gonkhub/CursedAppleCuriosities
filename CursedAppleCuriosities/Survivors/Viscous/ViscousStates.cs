@@ -127,7 +127,7 @@ namespace EntityStates.CursedApple.Viscous
         private CameraTargetParams.CameraParamsOverrideHandle _camera;
         private float _cameraScale;
 
-        private float R => ViscousData.Radius(characterBody); // Mystic Expansion grows the ball (user)
+        private float R => ViscousData.Radius(characterBody); // Mystic Expansion and Colossus grow the ball (user)
 
         /// <summary>
         /// Move speed items (and slows) scale the ball's speeds (user): his move speed over his base, sprinting divided out
@@ -333,7 +333,7 @@ namespace EntityStates.CursedApple.Viscous
         private void Contact()
         {
             Vector3 center = Center;
-            float radius = ViscousData.BallHitRadius * MysticExpansion.RadiusMultiplier(characterBody);
+            float radius = ViscousData.BallHitRadius * R / ViscousData.BallRadius; // grows with the ball (Mystic Expansion, Colossus)
             var normal = new List<GameObject>();
             var bosses = new List<GameObject>();
             Vector3 dir = _dir;

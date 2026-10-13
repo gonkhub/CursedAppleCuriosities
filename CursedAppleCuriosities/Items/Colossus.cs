@@ -38,6 +38,28 @@ namespace CursedAppleCuriosities.Items
 
         public static BuffDef? ColossusBuffDef;
 
+        /// <summary>
+        /// How much bigger Colossus makes this body (1 without it), from the synced buff count so every machine agrees:
+        /// the base step for stack 1, then a geometrically decaying step per extra stack.
+        /// </summary>
+        public static float SizeMultiplier(CharacterBody? body)
+        {
+            int stacks = body != null && ColossusBuffDef != null && ColossusBuffDef.buffIndex != BuffIndex.None ? body.GetBuffCount(ColossusBuffDef.buffIndex) : 0;
+            return SizeForStacks(stacks);
+        }
+
+        public static float SizeForStacks(int stacks)
+        {
+            float growth = 0f;
+            float step = ScaleFactor - 1f;
+            for (int i = 0; i < stacks; i++)
+            {
+                growth += step;
+                step *= ScaleDecay;
+            }
+            return 1f + growth;
+        }
+
         public override void Init(ConfigFile config)
         {
             CooldownSeconds = config.Bind("Equipment", "Colossus - Cooldown", 35f,
@@ -252,16 +274,7 @@ namespace CursedAppleCuriosities.Items
                 _originalScale = _model.localScale;
             }
             _shownStacks = stacks;
-            // From the original scale (never compounded): the base step for stack 1, then a geometrically
-            // decaying step per extra stack, so it keeps growing but by less each time.
-            float growth = 0f;
-            float step   = Colossus.ScaleFactor - 1f;
-            for (int i = 0; i < stacks; i++)
-            {
-                growth += step;
-                step   *= Colossus.ScaleDecay;
-            }
-            _model.localScale = _originalScale * (1f + growth);
+            _model.localScale = _originalScale * Colossus.SizeForStacks(stacks); // from the original scale, never compounded
         }
 
         private void OnDestroy()
