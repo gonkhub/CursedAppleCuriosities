@@ -328,8 +328,9 @@ namespace CursedAppleCuriosities.Survivors.Seven
 
     /// <summary>
     /// Server, on Seven while Storm Cloud channels: every enemy inside the cloud that Seven can see is struck by a lightning
-    /// bolt every ~0.25 s (each on its own jittered clock, so the storm flickers rather than pulsing), proc 1.0; stray bolts
-    /// also fall on random spots near him. The cloud starts at 30 m and grows (slowly, then fast) to the whole map (user).
+    /// bolt every ~0.25 s, faster with attack speed (each on its own jittered clock, so the storm flickers rather than pulsing),
+    /// proc 1.0; stray bolts also fall on random spots near him, more of them with attack speed. Each bolt's damage is fixed, so
+    /// attack speed raises the storm's damage. The cloud starts at 30 m and grows (slowly, then fast) to the whole map (user).
     /// </summary>
     public class SevenStorm : MonoBehaviour
     {
@@ -358,16 +359,17 @@ namespace CursedAppleCuriosities.Survivors.Seven
             if (_tick < 0.05f) return;
             _tick = 0f;
             Vector3 eye = _body.corePosition + Vector3.up * 1f;
+            float gapBase = SevenData.StormStrikeGap / Mathf.Max(0.1f, _body.attackSpeed);
             foreach (HealthComponent hc in SevenNet.EnemiesIn(_body.corePosition, Radius, _body.teamComponent.teamIndex))
             {
-                if (!_next.TryGetValue(hc, out float due)) { _next[hc] = _age + Random.Range(0f, SevenData.StormStrikeGap); continue; }
+                if (!_next.TryGetValue(hc, out float due)) { _next[hc] = _age + Random.Range(0f, gapBase); continue; }
                 if (_age < due) continue;
                 Vector3 to = SevenNet.Core(hc);
                 // Deadlock: enemies out of Seven's line of sight take no damage.
                 if (Physics.Linecast(eye, to, LayerIndex.world.mask, QueryTriggerInteraction.Ignore)) continue;
-                float gap = SevenData.StormStrikeGap * Random.Range(0.8f, 1.2f);
-                _next[hc] = _age + gap;
-                float dmg = dps * gap;
+                float jitter = Random.Range(0.8f, 1.2f);
+                _next[hc] = _age + gapBase * jitter;
+                float dmg = dps * SevenData.StormStrikeGap * jitter; // the base gap's worth: faster bolts add damage
                 if (hc.body != null && hc.body.isChampion) dmg *= SevenData.StormBossScale;
                 SevenNet.Hit(_body, hc, dmg, _body.RollCrit(), Vector3.zero, DamageSource.Special, SevenData.StormProc);
                 SevenNet.Effect(SevenSurvivor.BoltEffect, to, 1f);
@@ -377,7 +379,7 @@ namespace CursedAppleCuriosities.Survivors.Seven
         /// <summary>Stray bolts: random spots on the ground under the cloud (within StormStrayReach of Seven), each a small blast.</summary>
         private void Strays(float dps)
         {
-            _stray += Time.fixedDeltaTime * SevenData.StormStrayRate;
+            _stray += Time.fixedDeltaTime * SevenData.StormStrayRate * Mathf.Max(0.1f, _body.attackSpeed);
             for (; _stray >= 1f; _stray -= 1f)
             {
                 Vector2 off = Random.insideUnitCircle * Mathf.Min(Radius, SevenData.StormStrayReach);
