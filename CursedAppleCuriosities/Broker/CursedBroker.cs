@@ -14,7 +14,8 @@ using UnityEngine.Networking;
 namespace CursedAppleCuriosities.Broker
 {
     /// <summary>
-    /// The Cursed Broker: a rare shrine (stage 3 onward, or any stage once the run has looped). Each player may curse
+    /// The Cursed Broker: a rare shrine (stage 3 onward, or any stage once the run has looped; always on stage 4, and in
+    /// the first Bazaar visit of each loop after the first). Each player may curse
     /// one non-lunar item in their inventory once per broker. Opening it rolls one penalty per eligible item for
     /// that player (kept for that broker, so reopening can't reroll); the menu's tooltips show what each curse would
     /// improve and its penalty. A curse roughly doubles the item and every copy of it (<see cref="CurseRules"/>) and
@@ -25,6 +26,8 @@ namespace CursedAppleCuriosities.Broker
         public static bool Enabled;
         public static float SpawnChance;
         public static int MinStage;
+        public static int GuaranteedStage;
+        public static bool GuaranteedBazaar;
         public static bool DebugAlwaysSpawn;
 
         private static GameObject? _prefab;
@@ -42,6 +45,10 @@ namespace CursedAppleCuriosities.Broker
                 "Chance per eligible stage that a Cursed Broker appears (0.2 = 20%).").Value;
             MinStage = config.Bind("Cursed Broker", "First Stage", 3,
                 "First stage of the first loop a Cursed Broker can appear on. After looping it can appear on any stage.").Value;
+            GuaranteedStage = config.Bind("Cursed Broker", "Guaranteed Stage", 4,
+                "Stage of the first loop that always has a Cursed Broker (0 = none).").Value;
+            GuaranteedBazaar = config.Bind("Cursed Broker", "Guaranteed In Bazaar", true,
+                "After looping, the first Bazaar Between Time visit of each loop always has a Cursed Broker.").Value;
             DebugAlwaysSpawn = config.Bind("Cursed Broker", "Debug - Spawn Every Stage", false,
                 "Testing: a Cursed Broker spawns on every stage, ignoring stage number and chance.").Value;
 
@@ -56,6 +63,8 @@ namespace CursedAppleCuriosities.Broker
             if (_prefab == null) return;
 
             SceneDirector.onPostPopulateSceneServer += OnPostPopulateScene;
+            Stage.onServerStageBegin += OnServerStageBegin;
+            Run.onRunStartGlobal += _ => _bazaarBrokerLoop = 0;
             On.RoR2.PickupPickerController.GetContextString += GetContextString;
             On.RoR2.PickupPickerController.GetInteractability += GetInteractability;
             On.RoR2.PickupPickerController.OnInteractionBegin += OnInteractionBegin;
@@ -175,7 +184,8 @@ namespace CursedAppleCuriosities.Broker
             if (!forced && !StageEligible(run)) return;
 
             var rng = new Xoroshiro128Plus(run.seed ^ (ulong)(run.stageClearCount + 1) * 0x9E3779B97F4A7C15UL);
-            if (!forced && !DebugAlwaysSpawn && rng.nextNormalizedFloat >= SpawnChance) return;
+            bool guaranteed = run.loopClearCount == 0 && GuaranteedStage > 0 && run.stageClearCount + 1 == GuaranteedStage;
+            if (!forced && !guaranteed && !DebugAlwaysSpawn && rng.nextNormalizedFloat >= SpawnChance) return;
 
             for (int attempt = 0; attempt < 10; attempt++)
             {
@@ -188,6 +198,66 @@ namespace CursedAppleCuriosities.Broker
                 }
             }
             CursedAppleCuriositiesPlugin.Logger?.LogWarning("[CursedBroker] No spot found for the broker this stage.");
+        }
+
+        /// <summary>The last loop whose Bazaar already had its broker (0 = none yet this run).</summary>
+        private static int _bazaarBrokerLoop;
+
+        /// <summary>
+        /// The Bazaar has no scene population for interactables, so its broker is placed here: once per loop after the
+        /// first, on the first visit. It stands near the Newt's lunar shop (the director's ground nodes when it has them,
+        /// else straight onto the floor next to a shop terminal).
+        /// </summary>
+        private static void OnServerStageBegin(Stage stage)
+        {
+            Run? run = Run.instance;
+            if (!Enabled || run == null || _prefab == null || _card == null) return;
+            SceneDef? scene = SceneCatalog.GetSceneDefForCurrentScene();
+            if (scene == null || scene.cachedName != "bazaar") return;
+            if (!DebugAlwaysSpawn)
+            {
+                if (!GuaranteedBazaar || run.loopClearCount <= 0 || _bazaarBrokerLoop >= run.loopClearCount) return;
+            }
+            _bazaarBrokerLoop = run.loopClearCount;
+
+            ShopTerminalBehavior? terminal = UnityEngine.Object.FindObjectOfType<ShopTerminalBehavior>();
+            Transform? anchor = terminal != null ? terminal.transform : null;
+            var rng = new Xoroshiro128Plus(run.seed ^ (ulong)run.loopClearCount * 0xC2B2AE3D27D4EB4FUL);
+
+            if (DirectorCore.instance != null)
+            {
+                var rule = anchor != null
+                    ? new DirectorPlacementRule { placementMode = DirectorPlacementRule.PlacementMode.Approximate, minDistance = 6f, maxDistance = 25f, spawnOnTarget = anchor }
+                    : new DirectorPlacementRule { placementMode = DirectorPlacementRule.PlacementMode.Random };
+                for (int attempt = 0; attempt < 10; attempt++)
+                {
+                    GameObject? spawned = DirectorCore.instance.TrySpawnObject(new DirectorSpawnRequest(_card, rule, rng));
+                    if (spawned != null)
+                    {
+                        CursedAppleCuriositiesPlugin.Logger?.LogInfo($"[CursedBroker] Bazaar broker at {spawned.transform.position}.");
+                        return;
+                    }
+                }
+            }
+            if (anchor == null)
+            {
+                CursedAppleCuriositiesPlugin.Logger?.LogWarning("[CursedBroker] No spot found for the Bazaar broker.");
+                return;
+            }
+
+            // No nodes to place on: walk around the shop terminal until a floor turns up with room to stand.
+            for (int i = 0; i < 16; i++)
+            {
+                float angle = i * 22.5f * Mathf.Deg2Rad;
+                Vector3 probe = anchor.position + new Vector3(Mathf.Cos(angle), 0f, Mathf.Sin(angle)) * 7f + Vector3.up * 5f;
+                if (!Physics.Raycast(probe, Vector3.down, out RaycastHit hit, 20f, LayerIndex.world.mask)) continue;
+                if (Physics.CheckSphere(hit.point + Vector3.up * 2f, 1.5f, LayerIndex.world.mask)) continue;
+                GameObject go = UnityEngine.Object.Instantiate(_prefab, hit.point, Quaternion.Euler(0f, angle * Mathf.Rad2Deg + 180f, 0f));
+                NetworkServer.Spawn(go);
+                CursedAppleCuriositiesPlugin.Logger?.LogInfo($"[CursedBroker] Bazaar broker placed by hand at {hit.point}.");
+                return;
+            }
+            CursedAppleCuriositiesPlugin.Logger?.LogWarning("[CursedBroker] No floor found next to the Bazaar shop for the broker.");
         }
 
         // ───────────────────────────────────── debug commands ─────────────────────────────────────
