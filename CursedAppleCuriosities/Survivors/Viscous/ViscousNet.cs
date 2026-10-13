@@ -189,10 +189,9 @@ namespace CursedAppleCuriosities.Survivors.Viscous
             if (body == null) return;
             body.ClearTimedBuffs(ViscousSurvivor.BallBuff);
             while (body.HasBuff(ViscousSurvivor.BallBuff)) body.RemoveBuff(ViscousSurvivor.BallBuff);
+            // Popped out mid-air: no landing guard. Out of the ball he takes fall damage like anyone (user).
             if (Rolling)
                 using (DurationExtender.Exact()) body.AddTimedBuff(ViscousSurvivor.BallBuff, Seconds + 0.25f); // the state already extended it
-            else if (body.characterMotor != null && !body.characterMotor.isGrounded)
-                DeadlockFallGuard.ProtectNextLanding(body.gameObject, 8f); // popped out mid-air (after a ball jump): that landing is safe too
         }
     }
 
@@ -226,7 +225,7 @@ namespace CursedAppleCuriosities.Survivors.Viscous
             EquipmentFx.Sound("viscous_punch_hit", Point);
             if (ViscousSurvivor.PunchEffect != null)
                 EffectManager.SpawnEffect(ViscousSurvivor.PunchEffect, new EffectData { origin = Point, rotation = Quaternion.FromToRotation(Vector3.up, Normal), scale = grown * 1.5f }, true);
-            if (SelfHit) DeadlockFallGuard.ProtectNextLanding(Attacker, 8f);
+            // Punching himself up has no landing guard (user: fall damage whenever he isn't in the ball or cube).
             bool crit = body.RollCrit();
             foreach (CharacterBody b in CharacterBody.readOnlyInstancesList.ToArray())
             {

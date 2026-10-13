@@ -24,6 +24,9 @@ namespace CursedAppleCuriosities.Survivors.Viscous
     {
         public const string Token = "CURSEDAPPLE_VISCOUS_";
         public const string BodyName = "CursedAppleViscousBody";
+
+        /// <summary>Is this body Viscous (the survivor, not an ally he cubed)?</summary>
+        public static bool Is(CharacterBody? body) => body != null && body.name.StartsWith(BodyName, System.StringComparison.Ordinal);
         public const string MuzzleName = "ViscousMuzzle";
         public static readonly Color Color = new Color(0.38f, 0.75f, 0.4f); // his goo green (Deadlock viscous_body)
         /// <summary>Skin icon in the hero's own palette (goo greens and his dark outline), not the stand-in's.</summary>

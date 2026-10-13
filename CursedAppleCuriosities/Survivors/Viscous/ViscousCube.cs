@@ -143,8 +143,9 @@ namespace CursedAppleCuriosities.Survivors.Viscous
                 body.ClearTimedBuffs(cube);
                 while (body.HasBuff(cube)) body.RemoveBuff(cube);
             }
-            if (body.characterMotor != null && !body.characterMotor.isGrounded)
-                DeadlockFallGuard.ProtectNextLanding(body.gameObject, 8f); // the cube ended mid-air: that landing is safe too
+            // The cube ended mid-air: an ally's landing is safe too. Viscous takes fall damage whenever he isn't in the cube or ball (user).
+            if (body.characterMotor != null && !body.characterMotor.isGrounded && !ViscousSurvivor.Is(body))
+                DeadlockFallGuard.ProtectNextLanding(body.gameObject, 8f);
             if (ViscousSurvivor.PostCubeBuff != null)
                 using (DurationExtender.Exact()) body.AddTimedBuff(ViscousSurvivor.PostCubeBuff, e.PostSeconds);
             EquipmentFx.Sound("viscous_cube_end", body.corePosition, body.gameObject);
