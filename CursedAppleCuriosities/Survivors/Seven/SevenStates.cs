@@ -226,7 +226,10 @@ namespace EntityStates.CursedApple.Seven
             Vector3 flat = new Vector3(v.x, 0f, v.z) * Mathf.Pow(0.1f, Time.fixedDeltaTime * 3f);
             Vector3 wish = inputBank.moveVector;
             wish.y = 0f;
-            if (wish.sqrMagnitude > 0.01f) flat = Vector3.MoveTowards(flat, Vector3.ClampMagnitude(wish, 1f) * SevenData.StormDrift, 10f * Time.fixedDeltaTime);
+            // Drift scales with move speed (user): Goat Hoof etc. carry over, sprint doesn't.
+            float speedScale = characterBody.baseMoveSpeed > 0f
+                ? characterBody.moveSpeed / (characterBody.isSprinting ? characterBody.sprintingSpeedMultiplier : 1f) / characterBody.baseMoveSpeed : 1f;
+            if (wish.sqrMagnitude > 0.01f) flat = Vector3.MoveTowards(flat, Vector3.ClampMagnitude(wish, 1f) * SevenData.StormDrift * speedScale, 10f * Time.fixedDeltaTime);
             characterMotor.velocity = flat + Vector3.up * up;
 
             if (!_struck && inputBank.skill1.justPressed)
