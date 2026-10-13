@@ -42,14 +42,46 @@ namespace CursedAppleMapConvert
             _def = def; _cli = cli; _citadel = citadel; _out = outFolder; _fingerprint = fingerprint; _parallel = Math.Max(1, parallel);
         }
 
-        public void Run()
+        private void Init()
         {
-            string mapVpk = Path.Combine(_citadel, "maps", _def.Map + ".vpk");
             _outline = new V2[_def.Outline.Length / 2];
             for (int i = 0; i < _outline.Length; i++) _outline[i] = new V2(_def.Outline[i * 2], _def.Outline[i * 2 + 1]);
             _oMin = new V2(_outline.Min(p => p.X), _outline.Min(p => p.Y));
             _oMax = new V2(_outline.Max(p => p.X), _outline.Max(p => p.Y));
             _origin = new V3((_oMin.X + _oMax.X) / 2f, (_oMin.Y + _oMax.Y) / 2f, 0f);
+        }
+
+        /// <summary>
+        /// Only (re)adds the player clips to an existing cache whose clip section is empty (a cache written before clips
+        /// could be read): seconds instead of a full conversion.
+        /// </summary>
+        public void PatchClips()
+        {
+            Init();
+            string file = Path.Combine(_out, "section.bin");
+            string tmp = Path.Combine(_out, "tmp");
+            ReadClips(Path.Combine(_citadel, "maps", _def.Map + ".vpk"), Path.Combine(tmp, "physics"));
+            try { Directory.Delete(tmp, true); } catch { }
+            using (var fs = new FileStream(file, FileMode.Open, FileAccess.ReadWrite))
+            {
+                var br = new BinaryReader(fs);
+                if (br.ReadUInt32() != 0x4D434143u || br.ReadInt32() != 2 || br.ReadString() != _fingerprint) throw new InvalidDataException("cache doesn't match");
+                fs.Position = fs.Length - 8;
+                if (br.ReadInt32() != 0 || br.ReadInt32() != 0) throw new InvalidDataException("cache already has clips");
+                fs.SetLength(fs.Length - 8);
+                fs.Position = fs.Length;
+                var bw = new BinaryWriter(fs);
+                bw.Write(_clipPos.Count); foreach (V3 v in _clipPos) W(bw, v);
+                bw.Write(_clipTris.Count); foreach (int i in _clipTris) bw.Write(i);
+                bw.Flush();
+            }
+            Program.Log($"clips patched into {file}");
+        }
+
+        public void Run()
+        {
+            Init();
+            string mapVpk = Path.Combine(_citadel, "maps", _def.Map + ".vpk");
 
             // 1. What the world node places, and every world model's bounds (text dumps: seconds).
             Program.Status("reading the map's layout");
@@ -157,9 +189,11 @@ namespace CursedAppleMapConvert
         /// </summary>
         private void ReadClips(string mapVpk, string dir)
         {
-            RunCli($"-i \"{mapVpk}\" -f \"maps/{_def.Map}/world_physics.vmdl_c\" -o \"{dir}\" -d --gltf_export_format glb", _ => { });
-            string? glb = Directory.Exists(dir) ? Directory.GetFiles(dir, "*_physics.glb", SearchOption.AllDirectories).FirstOrDefault() : null;
-            if (glb == null) { Program.Log("no physics export: no player clips"); return; }
+            // One file in: the CLI takes -o as that file's name (and writes the physics next to it as *_physics.glb).
+            Directory.CreateDirectory(dir);
+            RunCli($"-i \"{mapVpk}\" -f \"maps/{_def.Map}/world_physics.vmdl_c\" -o \"{Path.Combine(dir, "world_physics.glb")}\" -d --gltf_export_format glb", _ => { });
+            string glb = Path.Combine(dir, "world_physics_physics.glb");
+            if (!File.Exists(glb)) { Program.Log("no physics export: no player clips"); return; }
             Model phys = Glb.Read(glb);
             var map = new Dictionary<int, int>();
             foreach (Prim p in phys.Prims)

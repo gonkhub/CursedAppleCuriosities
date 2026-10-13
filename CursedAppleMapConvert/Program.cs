@@ -57,7 +57,8 @@ namespace CursedAppleMapConvert
             try
             {
                 Directory.CreateDirectory(outDir);
-                new Converter(def, cli, citadel, outDir, fp, parallel).Run();
+                var conv = new Converter(def, cli, citadel, outDir, fp, parallel);
+                if (a.ContainsKey("clips-only")) conv.PatchClips(); else conv.Run();
                 Log($"done in {watch.Elapsed.TotalMinutes:0.0} min, peak memory {Process.GetCurrentProcess().PeakWorkingSet64 / (1024 * 1024)} MB");
                 return 0;
             }
