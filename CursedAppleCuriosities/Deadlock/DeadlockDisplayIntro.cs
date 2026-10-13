@@ -53,6 +53,9 @@ namespace CursedAppleCuriosities.Deadlock
         /// <summary>Play one of the hero's animation states (nothing on the stand-in).</summary>
         protected void Play(string state) => _swap?.Animator?.Play(state);
 
+        /// <summary>Play a full-body state with a crossfade this many seconds long.</summary>
+        protected void Play(string state, float blend) => _swap?.Animator?.Play(state, blend);
+
         /// <summary>The animation state playing ("" on the stand-in, or while the clips are still loading).</summary>
         protected string Current => _swap?.Animator?.Current ?? "";
     }

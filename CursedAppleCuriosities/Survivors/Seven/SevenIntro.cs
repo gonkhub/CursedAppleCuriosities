@@ -11,7 +11,10 @@ namespace CursedAppleCuriosities.Survivors.Seven
     /// wears Storm Cloud's look, as in a run: only his glowing orange skeleton shows (SevenStormLook).
     /// Deadlock's float spins his pelvis (storm start 36 -> 93 deg, the loop on round, the end clip -75 -> -9 in 0.4 s), which
     /// read as an awkward spin with his legs pointing off as he landed (user): the display counter-turns to keep his hips
-    /// square to the camera the whole way down and through the landing, then eases back.
+    /// square to the camera the whole way down and through the landing, then eases back. Storm Cloud's end clip isn't
+    /// played: its hips whip nearly a full turn in 0.15 s (-15 -> 164 -> 68 -> -38 deg), too fast to counter-turn, and
+    /// that was the spin still left after the storm (user). He crossfades slowly from the float straight to his idle
+    /// instead, the counter-turn following along, and his idle hips are already square to the camera.
     /// </summary>
     public class SevenDisplayIntro : DeadlockDisplayIntro
     {
@@ -19,7 +22,8 @@ namespace CursedAppleCuriosities.Survivors.Seven
         private const float Descent = 2.6f;     // seconds to the ground, slowing as he arrives
         private const int Bolts = 5;            // lightning strikes around him on the way down
         private const float BoltRingMin = 2f, BoltRingMax = 4.5f; // metres from the pedestal
-        private const float Settle = 0.7f;      // seconds after touching down that his hips are still held to the camera
+        private const float Settle = 0.8f;      // seconds after touching down that his hips are still held to the camera
+        private const float LandBlend = 0.6f;   // seconds of crossfade from the float to his idle (slow enough to counter-turn)
         private const float Ease = 0.4f;        // then seconds to hand the turn back
 
         private Transform? _hipL, _hipR;
@@ -56,7 +60,7 @@ namespace CursedAppleCuriosities.Survivors.Seven
             Lift(0f);
             DeadlockSounds.Stop(loop);
             if (look != null) look.ForceStorm = false;
-            Play("storm_end");
+            Play("idle", LandBlend); // not storm_end: see the summary
             DeadlockSounds.Play("seven_storm_end", Home);
             for (float t = 0f; t < Settle; t += Time.deltaTime) { HipsToCamera(); yield return null; }
             float from = _face; // already within +-180: the short way back (the long way was a whole extra spin, playtest)
