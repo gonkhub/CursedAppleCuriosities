@@ -16,6 +16,8 @@ namespace CursedAppleCuriosities.Deadlock
         public bool Voice;
         /// <summary>Per play: pitch varies by up to +/- this share, volume drops by up to this share (rapid fire stays lively).</summary>
         public float PitchJitter, VolumeJitter;
+        /// <summary>Distance never takes it below this share of its volume: team callouts (pings) heard map-wide, still panned.</summary>
+        public float MinGain;
         /// <summary>Vanilla Wwise event played instead when this player has no Deadlock copy (or null).</summary>
         public string? Fallback;
     }
@@ -165,7 +167,7 @@ namespace CursedAppleCuriosities.Deadlock
                     Vector3 to = p.Pos - ear;
                     float dist = to.magnitude, near = 5f, max = Mathf.Max(near + 1f, p.Row.Range);
                     float fade = Mathf.Clamp01(1f - (dist - near) / (max - near));
-                    gain *= fade * fade; // squared: drops off quickly past the near zone, silent at Range
+                    gain *= Mathf.Max(p.Row.MinGain, fade * fade); // squared: drops off quickly past the near zone, silent at Range
                     if (dist > 0.01f) pan = Mathf.Clamp(Vector3.Dot(to / dist, right), -1f, 1f) * 0.8f * Mathf.InverseLerp(2f, 8f, dist);
                 }
                 else if (inRun) gain = 0f; // mid-run with nowhere to hear from (loading, scene change): stay quiet
@@ -205,14 +207,24 @@ namespace CursedAppleCuriosities.Deadlock
 
         public static bool Has(string id) => Rows.ContainsKey(id);
 
-        /// <summary>Play a sound at a point, or following a GameObject (follow != null).</summary>
-        public static void Play(string id, Vector3 pos, GameObject? follow = null)
+        /// <summary>How many takes of a sound this player's cache holds (0 before decoding or without Deadlock).</summary>
+        public static int Takes(string id)
+        {
+            if (!_decoded) return 0;
+            lock (Clips) return Clips.TryGetValue(id, out var list) ? list.Count : 0;
+        }
+
+        /// <summary>
+        /// Play a sound at a point, or following a GameObject (follow != null). <paramref name="speaker"/> names who is
+        /// talking when that isn't the followed object (the Soul Urn riding on its carrier), so the two don't cut each other off.
+        /// </summary>
+        public static void Play(string id, Vector3 pos, GameObject? follow = null, string? speaker = null)
         {
             if (!Rows.TryGetValue(id, out DeadlockSound row)) return;
             if (LastPlayed.TryGetValue(id, out float last) && Time.time - last < row.MinGap) return;
             // A hero never talks over themself; other heroes' lines don't block yours. The speaker is the object the
             // line follows, or the hero prefix ("abrams_vo_death") for lines left at a point.
-            string speaker = follow != null ? follow.GetInstanceID().ToString() : id.Substring(0, Mathf.Max(0, id.IndexOf('_')));
+            speaker ??= follow != null ? follow.GetInstanceID().ToString() : id.Substring(0, Mathf.Max(0, id.IndexOf('_')));
             if (row.Voice && LastVoice.TryGetValue(speaker, out float spoke) && Time.time - spoke < 1.5f) return;
             if (Random.value > row.Chance) return;
             PcmClip? clip = Pick(id);

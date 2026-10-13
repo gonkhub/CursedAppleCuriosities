@@ -49,6 +49,7 @@ namespace CursedAppleCuriosities.Survivors.Lash
             LashData.Bind(config);
 
             foreach (DeadlockSound s in LashData.Sounds) DeadlockSounds.Register(s);
+            DeadlockHeroVoice.Track(BodyName, LashData.Hero, "lash");
             DeadlockPingVoice.Track(BodyName, LashData.Hero, "lash");
             foreach (string icon in new[] { LashData.IconPortrait, LashData.IconGroundStrike, LashData.IconGrapple, LashData.IconDeathSlam })
                 DeadlockInstall.WantIcon(icon);
@@ -66,8 +67,6 @@ namespace CursedAppleCuriosities.Survivors.Lash
             LashNet.Register();
 
             host.AddComponent<LashIcons>();
-            GlobalEventManager.onCharacterDeathGlobal += OnDeath;
-            GlobalEventManager.onClientDamageNotified += OnDamaged;
         }
 
         // ---------------- assets ----------------
@@ -294,42 +293,6 @@ namespace CursedAppleCuriosities.Survivors.Lash
                 steps.sprintFootliftOverrideString = "";
             }
             model.AddComponent<DeadlockFootsteps>().HeroKey = LashData.Hero;
-        }
-
-        private static readonly Dictionary<GameObject, float> LastHealth = new Dictionary<GameObject, float>();
-
-        /// <summary>Every client: Lash grunts when hit (big hits more often) and warns when his health runs low.</summary>
-        private static void OnDamaged(DamageDealtMessage msg)
-        {
-            if (msg.victim == null || !(msg.victim.GetComponent<DeadlockMover>() is DeadlockMover mover && mover.HeroKey == LashData.Hero)) return;
-            var hc = msg.victim.GetComponent<HealthComponent>();
-            if (hc == null || !hc.alive) return;
-            float max = Mathf.Max(1f, hc.fullCombinedHealth);
-            Vector3 at = msg.victim.transform.position;
-            if (msg.damage >= max * 0.15f) DeadlockSounds.Play("lash_vo_pain", at, msg.victim);
-            else DeadlockSounds.Play("lash_vo_pain_small", at, msg.victim);
-            float frac = hc.combinedHealth / max;
-            float before = LastHealth.TryGetValue(msg.victim, out float b) ? b : 1f;
-            LastHealth[msg.victim] = frac;
-            if (frac < 0.25f && before >= 0.25f) DeadlockSounds.Play("lash_vo_low_health", at, msg.victim);
-        }
-
-        private static readonly List<float> RecentKills = new List<float>();
-
-        // ---------------- voice ----------------
-
-        private static void OnDeath(DamageReport report)
-        {
-            if (report.attackerBody != null && report.attackerBody.bodyIndex == BodyCatalog.FindBodyIndex(BodyName) && report.attackerBody.hasEffectiveAuthority)
-            {
-                // Twelve kills within 10 s: a killstreak line instead of the usual kill one.
-                RecentKills.Add(Time.time);
-                RecentKills.RemoveAll(t => Time.time - t > 10f);
-                if (RecentKills.Count >= 12) { DeadlockSounds.Play("lash_vo_killstreak", report.attackerBody.corePosition, report.attackerBody.gameObject); RecentKills.Clear(); }
-                else DeadlockSounds.Play("lash_vo_kill", report.attackerBody.corePosition, report.attackerBody.gameObject);
-            }
-            if (report.victimBody != null && report.victimBody.bodyIndex == BodyCatalog.FindBodyIndex(BodyName))
-                DeadlockSounds.Play("lash_vo_death", report.victimBody.corePosition);
         }
 
         // ---------------- language ----------------

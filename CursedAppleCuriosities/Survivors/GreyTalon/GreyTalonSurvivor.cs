@@ -71,8 +71,8 @@ namespace CursedAppleCuriosities.Survivors.GreyTalon
                 if (ChargingBuff != null && body.HasBuff(ChargingBuff))
                     args.moveSpeedReductionMultAdd += GreyTalonData.BaseSpeed / GreyTalonData.ChargedMoveSpeed - 1f;
             };
-            DeadlockHeroVoice.Track(BodyName, GreyTalonData.Hero);
-            // Ping lines wait for the user's sound review (DeadlockPingVoice registers Deadlock VO itself).
+            DeadlockHeroVoice.Track(BodyName, GreyTalonData.Hero, "orion");
+            DeadlockPingVoice.Track(BodyName, GreyTalonData.Hero, "orion");
 
             host.AddComponent<GreyTalonIcons>();
         }

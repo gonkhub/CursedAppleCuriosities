@@ -235,7 +235,7 @@ namespace CursedAppleCuriosities.Survivors.Seven
             new DeadlockSound { Id = "seven_vo_power3", VpkPrefix = "sounds/vo/gigawatt/gigawatt_use_power3", Chance = 0.6f, MinGap = 4f, Voice = true },
             // "_0": 01-09 and the 01 alt laugh, not the gigawatt_use_power4_as_enemy lines (what an enemy hears).
             new DeadlockSound { Id = "seven_vo_power4", VpkPrefix = "sounds/vo/gigawatt/gigawatt_use_power4_0", Range = 80f, MinGap = 4f, Voice = true },
-            // Desperation: the same abilities cast below a quarter health (DeadlockHeroVoice.Power picks them).
+            // Desperation: the same abilities cast below 35% health (DeadlockHeroVoice.Power picks them).
             new DeadlockSound { Id = "seven_vo_desperation_power1", VpkPrefix = "sounds/vo/gigawatt/gigawatt_desperation_power1", Chance = 0.8f, MinGap = 4f, Voice = true },
             new DeadlockSound { Id = "seven_vo_desperation_power2", VpkPrefix = "sounds/vo/gigawatt/gigawatt_desperation_power2", Chance = 0.8f, MinGap = 4f, Voice = true },
             new DeadlockSound { Id = "seven_vo_desperation_power3", VpkPrefix = "sounds/vo/gigawatt/gigawatt_desperation_power3", Chance = 0.8f, MinGap = 4f, Voice = true },

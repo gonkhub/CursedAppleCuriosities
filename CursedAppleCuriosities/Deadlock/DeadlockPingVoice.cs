@@ -39,6 +39,7 @@ namespace CursedAppleCuriosities.Deadlock
         public const int CrowdSize = 6;           // this many enemies near the ping is "a lot of 'em"
         public const float CrowdRadius = 20f;
         public const float Gap = 1.2f;            // per pinger, so ping spam doesn't stack lines
+        public const float TeamCallout = 0.4f;    // quietest a ping gets, however far away
 
         private class Hero { public string Id = "", Vo = ""; }
         private static readonly Dictionary<string, Hero> BodyToHero = new Dictionary<string, Hero>();
@@ -68,7 +69,8 @@ namespace CursedAppleCuriosities.Deadlock
         {
             Id = $"{h.Id}_ping_{key}",
             VpkPrefix = $"sounds/vo/{h.Vo}/ping/{h.Vo}_ping_{file}",
-            Range = 400f, // Deadlock plays pings flat to the whole team; this keeps them audible map-wide
+            Range = 150f,
+            MinGain = TeamCallout, // Deadlock plays pings flat to the whole team: audible map-wide, panned toward the pinger
         });
 
         private static void OnRebuildPing(On.RoR2.PingerController.orig_RebuildPing orig, PingerController self, PingerController.PingInfo info)

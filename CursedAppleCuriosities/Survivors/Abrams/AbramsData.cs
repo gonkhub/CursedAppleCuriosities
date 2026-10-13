@@ -231,7 +231,7 @@ namespace CursedAppleCuriosities.Survivors.Abrams
             new DeadlockSound { Id = "abrams_vo_power1", VpkPrefix = "sounds/vo/atlas/atlas_use_power1", Chance = 0.6f, MinGap = 4f, Voice = true },
             new DeadlockSound { Id = "abrams_vo_power2", VpkPrefix = "sounds/vo/atlas/atlas_use_power2", Chance = 0.6f, MinGap = 4f, Voice = true },
             new DeadlockSound { Id = "abrams_vo_power4", VpkPrefix = "sounds/vo/atlas/atlas_use_power4", Range = 50f, MinGap = 4f, Voice = true },
-            // Desperation: the same abilities cast below a quarter health (DeadlockHeroVoice.Power picks them).
+            // Desperation: the same abilities cast below 35% health (DeadlockHeroVoice.Power picks them).
             new DeadlockSound { Id = "abrams_vo_desperation_power1", VpkPrefix = "sounds/vo/atlas/atlas_desperation_power1", Chance = 0.8f, MinGap = 4f, Voice = true },
             new DeadlockSound { Id = "abrams_vo_desperation_power2", VpkPrefix = "sounds/vo/atlas/atlas_desperation_power2", Chance = 0.8f, MinGap = 4f, Voice = true },
             new DeadlockSound { Id = "abrams_vo_desperation_power4", VpkPrefix = "sounds/vo/atlas/atlas_desperation_power4", Range = 50f, MinGap = 4f, Voice = true },

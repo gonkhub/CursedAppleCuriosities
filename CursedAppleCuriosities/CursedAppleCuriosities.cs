@@ -102,6 +102,10 @@ namespace CursedAppleCuriosities
 
             try { Broker.CursedBroker.Init(Config); Logger.LogInfo("  + [Interactable] Cursed Broker"); }
             catch (Exception e) { Logger.LogError($"  ! [Interactable] Cursed Broker failed to init: {e}"); }
+            try { Interactables.SoulUrn.Init(Config); Logger.LogInfo("  + [Interactable] Soul Urn"); }
+            catch (Exception e) { Logger.LogError($"  ! [Interactable] Soul Urn failed to init: {e}"); }
+            try { if (Interactables.SoulUrn.Enabled) Interactables.SoulUrnVoice.Init(gameObject); }
+            catch (Exception e) { Logger.LogError($"  ! [Interactable] Soul Urn voice failed to init: {e}"); }
 
             // Populate the sets used by CuriosityShop to filter drop tables.
             foreach (var item in _items)

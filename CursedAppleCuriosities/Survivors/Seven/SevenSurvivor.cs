@@ -70,11 +70,11 @@ namespace CursedAppleCuriosities.Survivors.Seven
                 if (SurgeBuff != null && body.HasBuff(SurgeBuff) && body.baseMoveSpeed > 0f)
                     args.moveSpeedMultAdd += SevenData.SurgeMoveSpeed / body.baseMoveSpeed;
             };
-            DeadlockHeroVoice.Track(BodyName, SevenData.Hero);
+            DeadlockHeroVoice.Track(BodyName, SevenData.Hero, "gigawatt");
+            DeadlockPingVoice.Track(BodyName, SevenData.Hero, "gigawatt");
             EquipmentFx.RegisterBuffFx(SurgeBuff, null, "seven_surge_loop");
             EquipmentFx.RegisterBuffFx(StormBuff, null, "seven_storm_loop");
             EquipmentFx.RegisterBuffFx(StormBuff, null, "seven_storm_aoe_loop");
-            // Ping lines wait for the user's sound review (DeadlockPingVoice registers Deadlock VO itself).
 
             host.AddComponent<SevenIcons>();
         }

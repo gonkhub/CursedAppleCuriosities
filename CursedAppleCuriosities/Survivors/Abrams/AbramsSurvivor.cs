@@ -67,7 +67,7 @@ namespace CursedAppleCuriosities.Survivors.Abrams
             AbramsNet.Register();
             AbramsResilience.Hook();
             AbramsResilienceBar.Hook();
-            DeadlockHeroVoice.Track(BodyName, AbramsData.Hero);
+            DeadlockHeroVoice.Track(BodyName, AbramsData.Hero, "atlas");
             DeadlockPingVoice.Track(BodyName, AbramsData.Hero, "atlas");
 
             host.AddComponent<AbramsIcons>();

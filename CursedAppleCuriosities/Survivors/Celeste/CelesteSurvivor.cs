@@ -66,7 +66,8 @@ namespace CursedAppleCuriosities.Survivors.Celeste
             CreateSurvivor();
             AddLanguage();
             CelesteNet.Register();
-            DeadlockHeroVoice.Track(BodyName, CelesteData.Hero);
+            DeadlockHeroVoice.Track(BodyName, CelesteData.Hero, "unicorn");
+            DeadlockPingVoice.Track(BodyName, CelesteData.Hero, "unicorn");
             EquipmentFx.RegisterBuffFx(PrismBuff, "RoR2/Base/LunarGolem/LunarDefense.prefab", "celeste_prism_loop"); // a crystal shell
             EquipmentFx.RegisterBuffFx(MarkBuff, "RoR2/Base/Merc/MercExposeEffect.prefab", "celeste_mark_loop"); // a mark over marked enemies
             RoR2Application.onLoad += () => BodyIndex = BodyCatalog.FindBodyIndex(BodyName);

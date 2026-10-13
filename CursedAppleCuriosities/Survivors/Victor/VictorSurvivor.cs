@@ -62,7 +62,8 @@ namespace CursedAppleCuriosities.Survivors.Victor
             CreateSurvivor();
             AddLanguage();
             VictorNet.Register();
-            DeadlockHeroVoice.Track(BodyName, VictorData.Hero);
+            DeadlockHeroVoice.Track(BodyName, VictorData.Hero, "frank");
+            DeadlockPingVoice.Track(BodyName, VictorData.Hero, "frank");
             EquipmentFx.RegisterBuffFx(AuraBuff, null, "victor_aura_loop");
             EquipmentFx.RegisterBuffFx(JumpstartBuff, null, "victor_jumpstart_loop");
 

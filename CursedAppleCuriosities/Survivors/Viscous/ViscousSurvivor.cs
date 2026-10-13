@@ -66,7 +66,8 @@ namespace CursedAppleCuriosities.Survivors.Viscous
             CreateSurvivor();
             AddLanguage();
             ViscousNet.Register();
-            DeadlockHeroVoice.Track(BodyName, ViscousData.Hero);
+            DeadlockHeroVoice.Track(BodyName, ViscousData.Hero, "viscous");
+            DeadlockPingVoice.Track(BodyName, ViscousData.Hero, "viscous");
 
             host.AddComponent<ViscousIcons>();
             host.AddComponent<ViscousCubeHost>();

@@ -64,7 +64,8 @@ namespace CursedAppleCuriosities.Survivors.Vyper
             CreateSurvivor();
             AddLanguage();
             VyperNet.Register();
-            DeadlockHeroVoice.Track(BodyName, VyperData.Hero);
+            DeadlockHeroVoice.Track(BodyName, VyperData.Hero, "viper");
+            DeadlockPingVoice.Track(BodyName, VyperData.Hero, "viper");
             EquipmentFx.RegisterBuffFx(VenomBuff, null, "vyper_venom_loop");
             EquipmentFx.RegisterBuffFx(PetrifyBuff, "RoR2/Base/GainArmor/ElephantDefense.prefab", "vyper_petrify_loop"); // a stone shell while petrified
 

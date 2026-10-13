@@ -211,7 +211,7 @@ namespace CursedAppleCuriosities.Survivors.Lash
             new DeadlockSound { Id = "lash_vo_power2", VpkPrefix = "sounds/vo/lash/lash_use_power2", Chance = 0.6f, MinGap = 4f, Voice = true },
             new DeadlockSound { Id = "lash_vo_power3", VpkPrefix = "sounds/vo/lash/lash_use_power3", Chance = 0.6f, MinGap = 4f, Voice = true },
             new DeadlockSound { Id = "lash_vo_power4", VpkPrefix = "sounds/vo/lash/lash_use_power4", MinGap = 4f, Voice = true },
-            // Desperation: the same abilities cast below a quarter health (DeadlockHeroVoice.Power picks them).
+            // Desperation: the same abilities cast below 35% health (DeadlockHeroVoice.Power picks them).
             new DeadlockSound { Id = "lash_vo_desperation_power1", VpkPrefix = "sounds/vo/lash/lash_desperation_power1", Chance = 0.8f, MinGap = 4f, Voice = true },
             new DeadlockSound { Id = "lash_vo_desperation_power2", VpkPrefix = "sounds/vo/lash/lash_desperation_power2", Chance = 0.8f, MinGap = 4f, Voice = true },
             new DeadlockSound { Id = "lash_vo_desperation_power3", VpkPrefix = "sounds/vo/lash/lash_desperation_power3", Chance = 0.8f, MinGap = 4f, Voice = true },
