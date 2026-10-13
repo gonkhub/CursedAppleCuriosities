@@ -18,6 +18,7 @@
 - **Lash**: **Death Slam** pulls enemies up to him in the same time from any distance (from the skybox too), and always waits
   until every lifted enemy is up beside him before throwing.
 - Every Deadlock hero but Vyper is 5% smaller.
+- **Grey Talon**: **Charged Shot** deals 1000% (was 800%). His bow hits weak points (like Railgunner's: x1.5).
 - **Grey Talon**: **Guided Owl** executes anything its blast takes more than 75% of the remaining health from.
 - **Cursed Broker** spawns: 10% on any stage, 50% on stage 3 of every loop, and 50% each visit to the Bazaar Between Time
   (once one has appeared there, not again until the next loop). No longer guaranteed on stage 4.

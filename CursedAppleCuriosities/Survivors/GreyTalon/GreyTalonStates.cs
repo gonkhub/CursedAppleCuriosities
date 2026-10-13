@@ -63,6 +63,7 @@ namespace EntityStates.CursedApple.GreyTalon
                     radius = GreyTalonData.BowRadius,
                     maxDistance = GreyTalonData.BowRange,
                     smartCollision = true,
+                    sniper = true, // weak points (Railgunner's): x1.5 and the weak-point hit colour (user, 1.7)
                     falloffModel = BulletAttack.FalloffModel.None,
                     // Falloff by distance (user): full damage across about half a map, easing to half.
                     modifyOutgoingDamageCallback = (BulletAttack _, ref BulletAttack.BulletHit hit, DamageInfo info) =>

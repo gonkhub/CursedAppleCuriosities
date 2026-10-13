@@ -46,8 +46,8 @@ namespace CursedAppleCuriosities.Survivors.GreyTalon
         public const float BowRadius = 0.2f;            // Deadlock m_flBulletRadius 5 hu, a little forgiving
         public const float BowForce = 400f;
 
-        // ---- secondary: Charged Shot (user: 800%; Deadlock: pierces, hold to keep it drawn) ----
-        public static float ChargedDamage = 8f;         // (Deadlock Damage 80 +1x spirit)
+        // ---- secondary: Charged Shot (user: 1000%, 800% before 1.7; Deadlock: pierces, hold to keep it drawn) ----
+        public static float ChargedDamage = 10f;        // (Deadlock Damage 80 +1x spirit)
         public static float ChargedCooldown = 6f;       // Deadlock 17
         public const float ChargeTime = 0.5f;           // Deadlock AbilityCastDelay: drawn after this, then held
         public const float ChargedMoveSpeed = 1.5f;     // Deadlock ChannelMoveSpeed 1.5 m/s while drawing and holding

@@ -305,7 +305,7 @@ same on a stand-in model.
   icons `archer_*`, VO `sounds/vo/orion`). Built 2026-10-12, **never launched**. Kit is the user's (memory `grey-talon-design`):
   - M1 Bow: 300% hitscan, 0.6 s, 600 m reach; falloff only past 150 m (to 50% at 300 m). During Rain of Arrows: 5-arrow fan, +13% each.
   - M2 Charged Shot: draw 0.5 s, hold with M1 or M2, zoomed over-shoulder camera, walk at Deadlock's 1.5 m/s; release = Lynx Archer arrow
-    (DLC4) x2.5, 203 m/s, pierces every enemy (`GreyTalonChargedArrow` sweeps its path), 800%, no falloff. 6 s cd.
+    (DLC4) x2.5, 203 m/s, pierces every enemy (`GreyTalonChargedArrow` sweeps its path), 1000% (800% before 1.7, user), no falloff. 6 s cd.
   - Utility Rain of Arrows: 0.2 s, launch 27.5 m/s at 60 deg, 4 s glide (fall <= 0.64 m/s, drift 6.6 m/s), jump cancels. 8 s cd.
   - Special Guided Owl: 1.5 s cast, then the owl flies on the owner's client (`GreyTalonOwl`) steered by look (110 deg/s), 15 -> 36 m/s
     while forward is held, bursts on touch or on Primary (12 m, 2500%, 0.75 s stun; 1.7 user: executes (`HealthComponent.Suicide`, kill credited to him) anything that lost >75% of its combined health to the blast); camera = `ICameraStateProvider` override that keeps the

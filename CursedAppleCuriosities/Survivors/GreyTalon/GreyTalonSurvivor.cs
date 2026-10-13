@@ -317,7 +317,7 @@ namespace CursedAppleCuriosities.Survivors.GreyTalon
 
             LanguageAPI.Add(Token + "BOW_NAME", "Bow");
             LanguageAPI.Add(Token + "BOW_DESC",
-                $"Loose an arrow for <style=cIsDamage>{D(GreyTalonData.BowDamage)} damage</style>. Damage falls off beyond {GreyTalonData.BowFalloffStart:0}m.");
+                $"Loose an arrow for <style=cIsDamage>{D(GreyTalonData.BowDamage)} damage</style> that can hit <style=cIsDamage>weak points</style>. Damage falls off beyond {GreyTalonData.BowFalloffStart:0}m.");
 
             LanguageAPI.Add(Token + "CHARGED_NAME", "Charged Shot");
             LanguageAPI.Add(Token + "CHARGED_DESC",
