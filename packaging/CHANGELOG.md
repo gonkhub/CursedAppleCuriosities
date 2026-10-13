@@ -6,7 +6,8 @@
 - **Viscous**: **Puddle Punch** winds up like Deadlock's (its portal shows for a moment before the fist comes out), throws
   harder, and the throw carries: everything punched keeps its full speed for a moment, then flies on without slowing.
 - **Viscous**: **The Cube** fits whoever is inside it (much smaller around Viscous himself).
-- **Viscous**: **Goo Ball** cooldown 32 s (was 20).
+- **Viscous**: **Goo Ball** cooldown 32 s (was 20). Anything it can't stun now gets the boss treatment (double damage, a
+  dramatic freeze), and the ball rebounds off bosses fast instead of slowing down.
 - **Viscous**: move speed items (and slows) now change how fast the **Goo Ball** rolls.
 - **Viscous** takes fall damage again whenever he isn't in the Goo Ball or The Cube (landing after popping out mid-air,
   or after Puddle Punching himself).

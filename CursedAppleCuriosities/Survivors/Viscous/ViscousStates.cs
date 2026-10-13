@@ -268,18 +268,19 @@ namespace EntityStates.CursedApple.Viscous
             }
         }
 
-        private void BounceOff(Vector3 normal, Vector3 point)
+        private void BounceOff(Vector3 normal, Vector3 point, bool impact = false)
         {
             _dir = Shared.Flat(Vector3.Reflect(_dir, normal), -_dir);
-            _speed *= ViscousData.BallElasticity;
+            // Off a wall it loses speed; off an impact (after the freeze) it rebounds fast (user): at least Go Fast speed.
+            _speed = impact ? Mathf.Max(_speed, ViscousData.BallFastSpeed * SpeedScale) * ViscousData.ImpactRebound : _speed * ViscousData.BallElasticity;
             _steerPause = ViscousData.BallWallPause;
             ViscousNet.ToServer(new ViscousFxMessage { Kind = ViscousFxKind.Wall, Point = point, Normal = normal });
         }
 
         /// <summary>
         /// Enemies the ball touches, each once per 1.2 s. Normal enemies: rolled through, stunned and knocked away.
-        /// A boss (user): the ball stops dead for a moment (BossFreeze), the boss takes double damage and no stun,
-        /// and the ball comes off it as off a wall.
+        /// A boss, or anything it can't stun (user): the ball stops dead for a moment (BossFreeze), the target takes
+        /// double damage instead of a stun, and the ball rebounds off it fast.
         /// </summary>
         private void Contact()
         {
@@ -294,10 +295,10 @@ namespace EntityStates.CursedApple.Viscous
                 if (hc == null || !hc.alive) continue;
                 if (_nextHit.TryGetValue(hc, out float at) && fixedAge < at) continue;
                 _nextHit[hc] = fixedAge + ViscousData.BallRehit;
-                if (!ViscousNet.Immovable(hc.body)) { normal.Add(hc.gameObject); continue; }
+                if (!ViscousNet.BallImpact(hc.body)) { normal.Add(hc.gameObject); continue; }
                 bosses.Add(hc.gameObject);
                 Vector3 away = Shared.Flat(center - h.transform.position, -_dir);
-                if (Vector3.Dot(_dir, away) < 0f) BounceOff(away, h.transform.position);
+                if (Vector3.Dot(_dir, away) < 0f) BounceOff(away, h.transform.position, impact: true);
             }
             // Heavy (Loader's punch): the faster the ball is going, rolling or falling, the harder it hits.
             float vy = characterMotor != null ? characterMotor.velocity.y : 0f;

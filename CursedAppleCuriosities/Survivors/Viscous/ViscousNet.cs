@@ -85,6 +85,17 @@ namespace CursedAppleCuriosities.Survivors.Viscous
         public static bool Immovable(CharacterBody? b) =>
             b == null || b.isChampion || b.hullClassification == HullClassification.BeetleQueen;
 
+        /// <summary>Can't be stunned (no SetStateOnHurt, or stuns turned off): the ball can't stop it, so it stops the ball.</summary>
+        public static bool Unstunnable(CharacterBody? b)
+        {
+            if (b == null) return true;
+            SetStateOnHurt? s = b.GetComponent<SetStateOnHurt>();
+            return s == null || !s.canBeStunned;
+        }
+
+        /// <summary>The Goo Ball's impact hit (user): bosses, the biggest monsters, and anything it can't stun.</summary>
+        public static bool BallImpact(CharacterBody? b) => Immovable(b) || Unstunnable(b);
+
         /// <summary>Is this body a Goo Ball right now (curling up or rolling)? Read from its Body state machine, so true on every client.</summary>
         public static bool IsBall(GameObject? body, bool castToo = true)
         {

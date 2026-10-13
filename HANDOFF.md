@@ -376,7 +376,9 @@ same on a stand-in model.
     rootMotion): 11.4 m/s, Primary held = 20.3 m/s (both x his move speed over base, sprint divided out; user, 1.6.0) (accel 15.2, decel 1.27 m/s2), steers to the crosshair 110/50 deg/s, walls bounce it
     (sphere cast 0.45 m smaller than the 1.4 m ball, so curbs roll over; 65% speed kept, 0.1 s no steering), jump + 1 double jump (12.7 m/s),
     1.8 m hit radius (Mystic Expansion), 250% + Heavy (user: Loader's rule, +30% per m/s of speed), 0.5 s stun, 10 m/s knock, each enemy every 1.2 s; it rolls through normal enemies.
-    Bosses (user): double damage, no stun, the ball freezes dead 0.3 s (`BossFreeze`, roll timer paused) then bounces off as off a wall.
+    Bosses and anything it can't stun (`ViscousNet.BallImpact`: champion, BeetleQueen hull, no SetStateOnHurt or
+    !canBeStunned; user): double damage, no stun, the ball freezes dead 0.3 s (`BossFreeze`, roll timer paused) then rebounds fast
+    (1.1x its speed, at least Go Fast's; walls keep 65%).
     Down-dash works in the ball too (shared movement). 50% resist (user; Deadlock 35%) = armor via
     the synced `BallBuff`. Special again ends it; cooldown 40 s starts when it ends. Camera pulled back x1.5 and up 1.2 m.
   - The ball is his own model's hidden mesh group `inflated` (renderers `inflated_N`, skinned to `inflated_center`, radius 1.51 model units).
