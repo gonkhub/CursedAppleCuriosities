@@ -261,7 +261,7 @@ same on a stand-in model.
   converter exports their vnmclips by name (test-converted OK). Kit decisions are the user's (memory `seven-vyper-design`).
   - Seven: M1 Cold Calculus 3-round burst · M2 Lightning Ball (Nano-Bomb projectile clone + `SevenBall`) / alt Static Charge (must lock onto an enemy (user): Tricorn reticle while ready, 48 m / 20 deg, no target = no cast; 3.5 s
     delay, 3 s stun, Mystic Expansion radius) · Utility Power Surge (own `Surge` machine; 10 s chain lightning per burst + 3 m/s) ·
-    Special Storm Cloud (float 3 m, drift, 7 s; radius 10 m → 1000 m (cubic), damage on the same curve 150%→990%/s (~2520% per full channel, user), line of sight from Seven, bosses ×0.5; M1 once = Lightning Strike).
+    Special Storm Cloud (float 3 m, drift, 7 s; radius 30 m → 1000 m (cubic; 30 m start 1.7, user), damage on the same curve 100%→600%/s (~1575% per full channel; was 150-990% before 1.7, user) dealt as a bolt per enemy every ~0.25 s on its own jittered clock at proc 1.0, plus 6 stray bolts/s (4 m blasts) within 45 m of Seven (`SevenStorm`), line of sight from Seven, bosses ×0.5; M1 once = Lightning Strike). Gun tracer: Artificer's laser thinned to 15% (`SevenSurvivor.Thin`, 1.7).
   - Vyper: M1 The Rattler full-auto 0.07 s, proc 1.0 · M2 Screwjab Dagger (2 charges, stacking dmg/slow; Bandit shiv clone) · Utility
     Lethal Venom (aimed 10 m, 3 s, 300%→2100% by missing health; no target = refund) · Special Petrifying Bola (Commando grenade clone, no
     gravity; everything in 12 m petrified 2.2 s = stunned + immune except Venom; bosses 1 s stun only) · Passive Slither (new profile knobs
