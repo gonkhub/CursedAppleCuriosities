@@ -692,12 +692,13 @@ namespace CursedAppleCuriosities.Survivors.Celeste
     /// </summary>
     public class CelesteFlareCone : MonoBehaviour
     {
-        private const float Grow = 0.08f, Life = 0.7f;
+        private const float Grow = 0.08f, Life = 0.7f, Opacity = 0.7f; // 30% fainter than the materials (user, 1.7)
         private const int Around = 32, Rings = 6;
         private float _age, _range = 15f;
         private Transform? _shape;
         private Material? _fill, _edge;
         private Color _fillTint, _edgeTint;
+        private string? _edgeProp;
 
         private void Start()
         {
@@ -717,6 +718,7 @@ namespace CursedAppleCuriosities.Survivors.Celeste
             {
                 _fill = new Material(CelesteSurvivor.ConeFill);
                 _fillTint = _fill.HasProperty("_TintColor") ? _fill.GetColor("_TintColor") : Color.white;
+                _fillTint.a *= Opacity;
                 shape.AddComponent<MeshFilter>().sharedMesh = Mesh(half);
                 var mr = shape.AddComponent<MeshRenderer>();
                 mr.sharedMaterial = _fill;
@@ -726,7 +728,9 @@ namespace CursedAppleCuriosities.Survivors.Celeste
             if (CelesteSurvivor.ConeEdge != null)
             {
                 _edge = new Material(CelesteSurvivor.ConeEdge);
-                _edgeTint = _edge.HasProperty("_TintColor") ? _edge.GetColor("_TintColor") : CelesteSurvivor.ConeColor;
+                _edgeProp = _edge.HasProperty("_TintColor") ? "_TintColor" : _edge.HasProperty("_Color") ? "_Color" : null;
+                _edgeTint = _edgeProp != null ? _edge.GetColor(_edgeProp) : CelesteSurvivor.ConeColor;
+                _edgeTint.a *= Opacity;
                 // The rim where the cone ends, and edges from her out to it.
                 LineRenderer rim = Line(Around + 1);
                 for (int i = 0; i <= Around; i++) rim.SetPosition(i, Point(half, i * Mathf.PI * 2f / Around));
@@ -753,7 +757,7 @@ namespace CursedAppleCuriosities.Survivors.Celeste
             lr.positionCount = points;
             lr.widthMultiplier = 0.08f;
             lr.sharedMaterial = _edge;
-            lr.startColor = lr.endColor = CelesteSurvivor.ConeColor;
+            lr.startColor = lr.endColor = new Color(CelesteSurvivor.ConeColor.r, CelesteSurvivor.ConeColor.g, CelesteSurvivor.ConeColor.b, Opacity);
             lr.shadowCastingMode = UnityEngine.Rendering.ShadowCastingMode.Off;
             return lr;
         }
@@ -791,7 +795,7 @@ namespace CursedAppleCuriosities.Survivors.Celeste
             float fade = 1f - Mathf.Clamp01((_age - Grow) / (Life - Grow));
             fade *= fade;
             if (_fill != null && _fill.HasProperty("_TintColor")) _fill.SetColor("_TintColor", new Color(_fillTint.r, _fillTint.g, _fillTint.b, _fillTint.a * fade));
-            if (_edge != null && _edge.HasProperty("_TintColor")) _edge.SetColor("_TintColor", new Color(_edgeTint.r, _edgeTint.g, _edgeTint.b, _edgeTint.a * fade));
+            if (_edge != null && _edgeProp != null) _edge.SetColor(_edgeProp, new Color(_edgeTint.r, _edgeTint.g, _edgeTint.b, _edgeTint.a * fade));
             if (_age >= Life) Destroy(gameObject);
         }
 
