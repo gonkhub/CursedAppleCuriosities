@@ -332,7 +332,7 @@ namespace CursedAppleCuriosities.Survivors.Celeste
         private HealthComponent? _target;
         private bool _bounced, _done, _looked;
         private Vector3 _lastVel;
-        private float _age;
+        private float _age, _flown;
 
         private void Awake()
         {
@@ -357,7 +357,14 @@ namespace CursedAppleCuriosities.Survivors.Celeste
                     Vector3 to = CelesteNet.Core(_target) - transform.position;
                     v = Vector3.RotateTowards(v, to.normalized * v.magnitude, CelesteData.DaggerTurnDegPerSec * Mathf.Deg2Rad * Time.fixedDeltaTime, 0f);
                 }
-                v += Vector3.down * CelesteData.DaggerDrop * Time.fixedDeltaTime; // always falls: a shallow arc (user)
+                v += Vector3.down * CelesteData.DaggerDrop * Time.fixedDeltaTime; // always falls: an arc (user)
+                // Past 20 m it loses airspeed (user): its forward speed fades while gravity keeps pulling.
+                _flown += v.magnitude * Time.fixedDeltaTime;
+                if (_flown > CelesteData.DaggerDragFrom)
+                {
+                    float keep = Mathf.Exp(-CelesteData.DaggerDrag * Time.fixedDeltaTime);
+                    v = new Vector3(v.x * keep, v.y, v.z * keep);
+                }
             }
             _rb.velocity = v;
             if (v.sqrMagnitude > 0.01f) transform.rotation = Quaternion.LookRotation(v);

@@ -43,8 +43,10 @@ namespace CursedAppleCuriosities.Survivors.Celeste
         // ---- primary: Carny Life (Deadlock: a bouncing, homing thrown blade every 0.58 s, 18 damage, gravity 0.2) ----
         public static float DaggerDamage = 1.2f;        // a light poke (user): her damage is Shining Wonder and blades on marked enemies
         public const float DaggerCycle = 0.58f;          // Deadlock m_flCycleTime
-        public const float DaggerSpeed = 50f;            // Deadlock m_flBulletSpeed 1968.5 hu/s
-        public const float DaggerDrop = 9f;              // m/s2, homing or not: a shallow arc (user; Deadlock gravity scale 0.2)
+        public const float DaggerSpeed = 75f;            // faster than Deadlock's 50 m/s (user)
+        public const float DaggerDrop = 18f;             // m/s2, homing or not: an arc (user)
+        public const float DaggerDragFrom = 20f;         // metres flown before it starts losing airspeed (user)
+        public const float DaggerDrag = 3f;              // per second after that: forward speed fades, so it drops away
         public const float DaggerHomeConeDeg = 22.5f;    // Deadlock: homes onto an enemy within ~45 deg of its flight
         public const float DaggerHomeRange = 45f;
         public const float DaggerTurnDegPerSec = 150f;  // gentle, so the arc shows
