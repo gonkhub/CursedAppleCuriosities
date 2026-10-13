@@ -226,6 +226,6 @@ namespace CursedAppleCuriosities
     {
         public const string PLUGIN_GUID = "com.cursedapple.curiosities";
         public const string PLUGIN_NAME = "Cursed Apple Curiosities";
-        public const string PLUGIN_VERSION = "1.6.0";
+        public const string PLUGIN_VERSION = "1.7.0";
     }
 }

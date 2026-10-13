@@ -1,6 +1,8 @@
 # Changelog
 
-## 1.6.0 (unreleased)
+## 1.7.0 (unreleased)
+
+## 1.6.0
 - Fixed: **Cursed Broker** cooldown penalties (all skills, Secondary, Utility, Special) now actually lengthen your cooldowns.
 - Cursed items have a dark-red outline in your inventory.
 - **Cursed Broker**: always appears on stage 4, and after looping in your first visit to the Bazaar Between Time each loop.
@@ -22,6 +24,14 @@
   off a surface, and their rings no longer grow in flight.
 - **Celeste**: **Shining Wonder** deals half damage (500%) but bounces three times as often (24), and reaches 15.5 m to its next target again (was 7).
 - **Celeste**: shorter air dashes (10 m, was 14) and higher air jumps.
+- **Lash**: **Ground Strike** drags airborne enemies he dives into down with him (stunned, no fall damage) and strikes only
+  when he reaches terrain, walls and slopes included; enemies on the ground no longer stop the dive.
+- **Lash** and **Seven** shoot differently: Lash is close range (full damage to 16 m), tight and recoil-free; Seven is mid range
+  (full damage to 20 m) with climbing recoil and a lightning tracer.
+- **Lash**, **Seven**, **Celeste**, **Victor** and **Viscous** are 15% bigger, each with a camera raised and pulled back to suit.
+- **Viscous**: the **Goo Ball** camera rises and pulls back as the ball grows (Mystic Expansion), even mid-roll.
+- **Celeste**: **Light Eater** reaches 15 m (was 10). **Carny Life** blades fly up to 90 m (was 45), slowing evenly from 10 m.
+- **Seven**: his character-select intro settles smoothly from the storm into his idle pose.
 
 ## 1.5.0
 - New survivor: **Viscous**. His **Goo Ball** rolls him up into a bowling ball that bowls through enemies. **Splatter**

@@ -7,7 +7,7 @@ map is the "Cursed Apple" and items are bought from a "curiosity shop."
 **State:** builds clean (0 errors), **31 items + 14 equipment**, 8 survivors (Lash, Abrams, Seven, Vyper, Grey Talon, Victor, Viscous, Celeste). **v1.0.0** released
 2026-10-11; **v1.2.5** packaged 2026-10-12 for friends (tag `v1.2.5` on main); **v1.3.0** finished 2026-10-12 on branch `1.3`
 (tag `v1.3.0`, not packaged); **v1.4.0** (Cursed Broker, not yet playtested) finished 2026-10-12 on branch `1.4` (tag `v1.4.0`,
-not packaged); **v1.5.0** (Viscous, Celeste, Victor) merged to main 2026-10-12 (tag `v1.5.0`, PR #1). New work happens on branch `1.6` (version 1.6.0). The user playtests as we go.
+not packaged); **v1.5.0** (Viscous, Celeste, Victor) merged to main 2026-10-12 (tag `v1.5.0`, PR #1); **v1.6.0** (Viscous/Celeste tuning, Cursed Broker fixes, Lash Ground Strike carry, bigger heroes) merged to main 2026-10-12 (tag `v1.6.0`, PR #2). New work happens on branch `1.7` (version 1.7.0). The user playtests as we go.
 
 ---
 
@@ -438,7 +438,7 @@ same on a stand-in model.
   Viscous air jump = Kelvin `jump_ground` (`jump_start_short` is posed on Abrams' bigger skeleton: limbs 30-50% long) and ground dash =
   Kelvin's `dash_ground` roll; Puddle Punch windup 0.3 s + Deadlock's 0.45 s enemy portal telegraph (self-punch none), launch 38 m/s (42 was a touch much, user) held
   for Deadlock's 0.6 s toss (`PunchToss`), then `disableAirControlUntilCollision` (others) / no air drag 2.5 s (himself,
-  `DeadlockMover.SuspendAirDrag`); Celeste blade/orb/movement changes (see Survivors). Not playtested yet.
+  `DeadlockMover.SuspendAirDrag`); Celeste blade/orb/movement changes (see Survivors). Playtested and tuned by the user through the 1.6 branch; full list in `packaging/CHANGELOG.md`.
 - **Playtest pass (user, 2026-10-12 evening):** Celeste retuned (movement, Carny Life, Light Eater, Radiant Daggers preview, uncapped
   Radiance, Dazzling Trick stuns, slower homing Shining Wonder, purple glow, VO mapping; see Survivors above); Viscous Goo Ball is Heavy
   (250% + 30% per m/s) with 50% resist; Viscous' lobby cube is cleaned up mid-intro; shorter skill descriptions for the six newer heroes;
