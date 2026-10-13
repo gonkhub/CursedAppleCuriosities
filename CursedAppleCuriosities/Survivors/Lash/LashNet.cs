@@ -285,8 +285,26 @@ namespace CursedAppleCuriosities.Survivors.Lash
             DeadlockFallGuard.Protect(gameObject, _limit);
         }
 
+        private ThrowGroup? _pendingGroup;
+        private Vector3 _pendingLand;
+
+        /// <summary>Still on its way up to Lash (server).</summary>
+        private bool Rising => _phase == Phase.Lift && _lash != null && (HoldSpot() - transform.position).magnitude > LashData.DeathSlamArrived
+            && Time.time - _started < LashData.DeathSlamWaitMax;
+
         public void Throw(ThrowGroup group, Vector3 land)
         {
+            // Not up to Lash yet (user, 1.7): keep pulling, and throw the moment it arrives.
+            if (Rising)
+            {
+                _pendingGroup = group;
+                _pendingLand = land;
+                _limit = LashData.DeathSlamWaitMax + 1f;
+                SetStateOnHurt.SetStunOnObject(gameObject, _limit - (Time.time - _started));
+                DeadlockFallGuard.Protect(gameObject, _limit);
+                return;
+            }
+            _pendingGroup = null;
             _phase = Phase.Throw;
             _group = group;
             _lash = group.Attacker;
@@ -322,6 +340,7 @@ namespace CursedAppleCuriosities.Survivors.Lash
                 Vector3 to = HoldSpot() - _body.transform.position;
                 float speed = Mathf.Max(4f, to.magnitude / Mathf.Max(0.05f, LashData.DeathSlamPull - t));
                 Move(to, Mathf.Min(speed, LashData.DeathSlamLiftMaxSpeed));
+                if (_pendingGroup != null && !Rising) { Throw(_pendingGroup, _pendingLand); return; }
                 if (t > _limit) Destroy(this);
                 return;
             }

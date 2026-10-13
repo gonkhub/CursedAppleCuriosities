@@ -499,8 +499,27 @@ namespace EntityStates.CursedApple.Lash
             DeathSlamFreeze.Apply(characterMotor, characterDirection);
             StartAimMode(0.5f);
             if (fixedAge < LashData.DeathSlamPull + LashData.DeathSlamHang) return;
+            if (!AllUp() && fixedAge < LashData.DeathSlamWaitMax) return; // far ones are still on their way (user, 1.7)
             ThrowNow();
             outer.SetNextState(new DeathSlamThrow());
+        }
+
+        /// <summary>
+        /// Every lifted enemy has reached Lash, as this client sees them: close beside him and not below him. (The
+        /// server also holds back each throw until its enemy arrives, so an early cut-in can't throw them short.)
+        /// </summary>
+        private bool AllUp()
+        {
+            Vector3 me = transform.position;
+            foreach (GameObject t in Targets)
+            {
+                if (t == null) continue;
+                var hc = t.GetComponent<HealthComponent>();
+                if (hc == null || !hc.alive) continue;
+                Vector3 to = t.transform.position - me;
+                if (to.y < -1.5f || new Vector3(to.x, 0f, to.z).magnitude > 4f) return false;
+            }
+            return true;
         }
 
         private LineRenderer? _ring;

@@ -178,7 +178,7 @@ same on a stand-in model.
   `CharacterModel`'s; `LashAnimator` plays his Deadlock clips (anim table in `LashData`).
   - Primary: 3-round burst gun. Secondary: **Grapple** (needs a
     target, enemy or ally player; refunds air jump; 6 s cd). Utility: **Ground Strike** (300% + 50%/m; Flog removed 2026-10-12). Special: **Death Slam** (channel/lock-on, lift 0.6 s + hang 0.3 s, throw).
-    Death Slam (2026-10-12): carried enemies take no fall damage; lift speed capped at 35 m/s and held under ceilings; thrown enemies fly on their line until they hit terrain (sphere-cast ahead), and one with no terrain below after 8 s is TrueKilled (credited to Lash). MapZone also kills monsters leaving the map.
+    Death Slam (2026-10-12): carried enemies take no fall damage; lift speed capped at 35 m/s and held under ceilings; the throw always waits for every lifted enemy to reach him (1.7 user: `DeathSlamHold.AllUp` on the client, and the server's `LashSlamCarry.Throw` defers a still-rising enemy's throw until it's within 1.5 m of its hold spot; 5 s backstop); thrown enemies fly on their line until they hit terrain (sphere-cast ahead), and one with no terrain below after 8 s is TrueKilled (credited to Lash). MapZone also kills monsters leaving the map.
   - Passive "Perfect Cardio, Perfect Form, Perfect Hair": the shared Deadlock movement (see below) with Lash's
     profile `LashData.Movement`: 4 stamina, 2 air jumps + 2 air dashes of 16 m (heroes 8 m; default to 3 / 1 / 1), 0.3 s
     ground dash, slide on Mouse 4. Grapple resets air jumps/dashes and refunds a pip.
@@ -209,7 +209,7 @@ same on a stand-in model.
     the HUD shows half bars. `DeadlockMover.TryDownDash(motor)` is called by DeadlockMain and Viscous' GooBall state.
   - **Air control boost** (user): any `TrySpend` while airborne (air jump, air dash, down-dash, Grey Talon's glide dash) sets
     `AirBoost` until landing: `AirSteer` accel x`AirControlBoost` (1.35); Goo Ball's air turn rate too.
-  - Ground Strike interrupts Grapple and Death Slam's hold (the throw fires at once). Grounded Ground Strike = no hop.
+  - Ground Strike interrupts Grapple and Death Slam's hold (the throw fires at once; enemies still rising are thrown when they reach him). Grounded Ground Strike = no hop.
   - Numbers + config in `LashData` (`[Lash]` section).
   - Server work (Flog damage+heal, Death Slam lift/throw/impact) goes through R2API.Networking messages in `LashNet`.
 - Build copies the converter (Source2Viewer-CLI, 122 MB) once from `$(VrfSource)` (set in the csproj) into
