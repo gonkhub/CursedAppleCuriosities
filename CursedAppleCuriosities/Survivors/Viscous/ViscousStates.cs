@@ -119,7 +119,7 @@ namespace EntityStates.CursedApple.Viscous
     public class GooBall : BaseSkillState
     {
         private Vector3 _dir, _lastPos;
-        private float _speed, _duration, _steerPause, _stalledFor, _freezeLeft;
+        private float _speed, _duration, _steerPause, _stalledFor, _freezeLeft, _reboundLeft;
         private bool _airJumped, _ending, _cubed;
         private readonly Dictionary<HealthComponent, float> _nextHit = new Dictionary<HealthComponent, float>();
         private DeadlockVoice? _loop;
@@ -248,8 +248,13 @@ namespace EntityStates.CursedApple.Viscous
                 Vector3 want = keys.sqrMagnitude > 0.01f ? keys.normalized : Shared.Flat(GetAimRay().direction, _dir);
                 _dir = Shared.Flat(Vector3.RotateTowards(_dir, want, turn, 0f), _dir);
             }
-            float target = (inputBank.skill1.down ? ViscousData.BallFastSpeed : ViscousData.BallSpeed) * SpeedScale;
-            _speed = _speed < target ? Mathf.Min(target, _speed + ViscousData.BallAccel * dt) : Mathf.Max(target, _speed - ViscousData.BallDecel * dt);
+            bool fast = inputBank.skill1.down;
+            float target = (fast ? ViscousData.BallFastSpeed : ViscousData.BallSpeed) * SpeedScale;
+            // Above the target: holding Primary it sheds speed slowly (Deadlock); let go and it brakes to the slow roll
+            // quickly (user), except just after an impact rebound.
+            _reboundLeft -= dt;
+            float decel = fast || _reboundLeft > 0f ? ViscousData.BallDecel : ViscousData.BallBrake;
+            _speed = _speed < target ? Mathf.Min(target, _speed + ViscousData.BallAccel * dt) : Mathf.Max(target, _speed - decel * dt);
 
             Bounce(dt);
             characterDirection.forward = _dir;
@@ -299,6 +304,7 @@ namespace EntityStates.CursedApple.Viscous
             _dir = Shared.Flat(Vector3.Reflect(_dir, normal), -_dir);
             // Off a wall it loses speed; off an impact (after the freeze) it rebounds fast (user): at least Go Fast speed.
             _speed = impact ? Mathf.Max(_speed, ViscousData.BallFastSpeed * SpeedScale) * ViscousData.ImpactRebound : _speed * ViscousData.BallElasticity;
+            if (impact) _reboundLeft = ViscousData.BallReboundHold; // counts down after the freeze (the freeze skips this)
             _steerPause = ViscousData.BallWallPause;
             ViscousNet.ToServer(new ViscousFxMessage { Kind = ViscousFxKind.Wall, Point = point, Normal = normal });
         }

@@ -51,7 +51,9 @@ namespace CursedAppleCuriosities.Survivors.Viscous
         public static float BallSpeed = 11.43f;         // Deadlock m_flDefaultBallSpeed 450 hu/s
         public static float BallFastSpeed = 20.32f;     // Deadlock m_flFastBallSpeed 800 hu/s, while Primary is held ("Go Fast")
         public const float BallAccel = 15.24f;          // Deadlock m_flSpeedAccel 600 hu/s2: up to the speed it should have
-        public const float BallDecel = 1.27f;           // Deadlock m_flSpeedDeccel 50 hu/s2: a fast ball sheds speed slowly
+        public const float BallDecel = 1.27f;           // Deadlock m_flSpeedDeccel 50 hu/s2: a fast ball sheds speed slowly (while Primary is held)
+        public const float BallBrake = 14f;             // user: let go of Primary and it drops back to its slow roll quickly
+        public const float BallReboundHold = 0.75f;     // an impact rebound keeps its speed this long before the brake applies
         public const float BallTurn = 110f;             // Deadlock m_flTurnRatio, deg/s toward where he looks
         public const float BallAirTurn = 50f;           // Deadlock m_flAirTurnRatio
         public const float BallElasticity = 0.65f;      // Deadlock m_flElasticity: speed kept off a wall

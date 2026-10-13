@@ -374,7 +374,7 @@ same on a stand-in model.
     (OnCharacterHitGroundServer hooks). Out of them he takes fall damage (user, 1.6.0): no landing guard when the ball or his own
     cube ends mid-air, or after punching himself up (allies keep theirs). Goo Ball jump 22 m/s, cooldown 32 s (1.6.0, user; was 20) (user's cfg hand-edited, backup `.bak-viscous`).
   - Goo Ball = Deadlock `viscous_goo_bowling_ball`: 0.55 s curl (`rolling_goo`), then 11 s rolling (own `GooBall` Body state, owner moves it via
-    rootMotion): 11.4 m/s, Primary held = 20.3 m/s (both x his move speed over base, sprint divided out; user, 1.6.0) (accel 15.2, decel 1.27 m/s2), steers to the crosshair 110/50 deg/s, walls bounce it
+    rootMotion): 11.4 m/s, Primary held = 20.3 m/s (both x his move speed over base, sprint divided out; user, 1.6.0) (accel 15.2, decel 1.27 m/s2 while Primary is held; let go and it brakes at 14 m/s2, except 0.75 s after an impact rebound; user, 1.6.0), steers to the crosshair 110/50 deg/s, walls bounce it
     (sphere cast 0.45 m smaller than the 1.4 m ball, so curbs roll over; 65% speed kept, 0.1 s no steering), jump + 1 double jump (12.7 m/s),
     1.8 m hit radius (Mystic Expansion), 250% + Heavy (user: Loader's rule, +30% per m/s of speed), 0.5 s stun, 10 m/s knock, each enemy every 1.2 s; it rolls through normal enemies.
     Bosses and anything it can't stun (`ViscousNet.BallImpact`: champion, BeetleQueen hull, no SetStateOnHurt or
