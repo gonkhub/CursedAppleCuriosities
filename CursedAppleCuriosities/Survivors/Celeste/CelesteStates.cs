@@ -36,11 +36,14 @@ namespace EntityStates.CursedApple.Celeste
             if (isAuthority && CelesteSurvivor.DaggerProjectile != null)
             {
                 Ray aim = GetAimRay();
+                // Thrown a little above the crosshair (user, 1.7), so the arc rises before it drops.
+                Vector3 side = Vector3.Cross(Vector3.up, aim.direction);
+                Vector3 dir = side.sqrMagnitude > 0.001f ? Quaternion.AngleAxis(-CelesteData.DaggerLoftDeg, side.normalized) * aim.direction : aim.direction;
                 ProjectileManager.instance.FireProjectile(new FireProjectileInfo
                 {
                     projectilePrefab = CelesteSurvivor.DaggerProjectile,
                     position = aim.origin + aim.direction * 0.5f,
-                    rotation = Quaternion.LookRotation(aim.direction),
+                    rotation = Quaternion.LookRotation(dir),
                     owner = gameObject,
                     damage = damageStat,
                     crit = RollCrit(),

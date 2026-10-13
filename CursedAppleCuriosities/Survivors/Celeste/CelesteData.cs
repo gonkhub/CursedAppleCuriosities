@@ -45,6 +45,7 @@ namespace CursedAppleCuriosities.Survivors.Celeste
         public static float DaggerDamage = 1.2f;        // a light poke (user): her damage is Shining Wonder and blades on marked enemies
         public const float DaggerCycle = 0.58f;          // Deadlock m_flCycleTime
         public const float DaggerSpeed = 60f;            // a little faster than Deadlock's 50 m/s (user: 75 was too fast)
+        public const float DaggerLoftDeg = 4f;           // thrown this far above the crosshair (user, 1.7)
         public const float DaggerDrop = 18f;             // m/s2, homing or not: an arc (user)
         public const float DaggerDragFrom = 10f;         // metres flown before it starts losing airspeed (user; 15, then earlier so it is already slowing at 20 m)
         public const float DaggerStopAt = 90f;           // by here its forward speed has eased all the way out and it only drops (user: gradual, not steep; 45, doubled)

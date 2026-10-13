@@ -14,6 +14,7 @@
 - **Seven**: sprinting while shooting during **Power Surge**, he runs with his gun up instead of his out-of-combat sprint.
 - **Seven**: **Lightning Ball** slows the enemies it shocks by 80% while they're inside it (and half a second after).
 - **Celeste**: 4 stamina (was 5).
+- **Celeste**: **Carny Life** blades are thrown a little higher (4 degrees above the crosshair).
 - **Majestic Leap**: leaps 50% higher, and its cooldown is halved (22.5 s, was 45).
 - **Lash**: **Death Slam** pulls enemies up to him in the same time from any distance (from the skybox too), and always waits
   until every lifted enemy is up beside him before throwing.
