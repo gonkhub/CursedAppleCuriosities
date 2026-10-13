@@ -1,0 +1,20 @@
+<!doctype html><html><head><meta charset="utf-8"><title>Section preview</title>
+<style>body{margin:0;background:#9ab;overflow:hidden}#s{position:fixed;top:8px;left:8px;color:#fff;font:14px sans-serif;text-shadow:0 0 3px #000}</style>
+<script type="importmap">{"imports":{"three":"https://cdn.jsdelivr.net/npm/three@0.160.0/build/three.module.js","three/addons/":"https://cdn.jsdelivr.net/npm/three@0.160.0/examples/jsm/"}}</script>
+</head><body><div id="s">loading</div><script type="module">
+import * as THREE from 'three';
+import {GLTFLoader} from 'three/addons/loaders/GLTFLoader.js';
+import {OrbitControls} from 'three/addons/controls/OrbitControls.js';
+const r=new THREE.WebGLRenderer({antialias:true});r.setSize(innerWidth,innerHeight);document.body.appendChild(r.domElement);
+r.outputColorSpace=THREE.SRGBColorSpace;
+const sc=new THREE.Scene();sc.background=new THREE.Color(0x9ab4c8);sc.fog=new THREE.Fog(0x9ab4c8,150,500);
+sc.add(new THREE.HemisphereLight(0xdde8ff,0x554433,1.6));const d=new THREE.DirectionalLight(0xfff0dd,2.2);d.position.set(80,150,40);sc.add(d);
+const cam=new THREE.PerspectiveCamera(60,innerWidth/innerHeight,0.5,3000);
+window.view=(x,y,z,tx,ty,tz)=>{cam.position.set(x,y,z);ctl.target.set(tx,ty,tz);ctl.update()};
+const ctl=new OrbitControls(cam,r.domElement);view(130,140,130,0,10,0);
+const meta=await (await fetch('section.json')).json();const L=new GLTFLoader();let n=0,tris=0;
+window.done=false;
+await Promise.all(meta.models.map(m=>L.loadAsync(m).then(g=>{g.scene.traverse(o=>{if(o.isMesh){o.material.side=THREE.DoubleSide;tris+=o.geometry.index.count/3}});sc.add(g.scene);n++;document.getElementById('s').textContent=`${n}/${meta.models.length} models, ${(tris/1e6).toFixed(2)}M tris`}).catch(e=>{n++;console.warn(m,e)})));
+window.done=true;
+(function loop(){requestAnimationFrame(loop);r.render(sc,cam)})();
+</script></body></html>
