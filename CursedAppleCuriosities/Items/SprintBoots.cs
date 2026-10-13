@@ -11,12 +11,14 @@ namespace CursedAppleCuriosities.Items
         public override string ItemName => "Sprint Boots";
         public override string ItemLangTokenName => "SPRINTBOOTS";
 
-        public override string ItemPickupDesc => "Build up movement speed while sprinting.";
+        public override string ItemPickupDesc => "Build up movement speed while sprinting. Regenerate a little health out of danger.";
         public override string ItemFullDescription =>
             $"While <style=cIsUtility>sprinting</style>, build up to " +
             $"<style=cIsUtility>+{BaseMaxBonus * 100:0}% movement speed</style> " +
             $"<style=cStack>(+{MaxBonusPerStack * 100:0}% per stack)</style> over " +
-            $"<style=cIsUtility>{MaxRampTime:0}s</style>. The bonus resets when you stop sprinting.";
+            $"<style=cIsUtility>{MaxRampTime:0}s</style>. The bonus resets when you stop sprinting. " +
+            $"Out of danger, regenerate <style=cIsHealing>+{BaseRegen:0.#} hp/s</style> " +
+            $"<style=cStack>(+{RegenPerStack:0.#} hp/s per stack)</style>.";
 
         public override string ItemLore =>
             "Look who's ready for a 2 AM metro ride!";
@@ -28,6 +30,10 @@ namespace CursedAppleCuriosities.Items
         public const float MaxRampTime     = 6f;
         public static float BaseMaxBonus;
         public const float MaxBonusPerStack = 0.12f;
+        // A little out-of-danger regen (user): flat, not growing with level, so it helps early and fades late; well under
+        // Cautious Slug (+3 hp/s, scaling with level) and Fortitude (1% max health/s).
+        public static float BaseRegen = 1f;
+        public const float RegenPerStack = 0.5f;
 
         public static ItemDef?  StaticItemDef;
         public static BuffDef?  SprintBuffDef;
@@ -45,6 +51,8 @@ namespace CursedAppleCuriosities.Items
 
             BaseMaxBonus = config.Bind("White", "Sprint Boots - Max Move Speed", 0.25f,
                 "Maximum sprint move-speed bonus at 1 stack.").Value;
+            BaseRegen = config.Bind("White", "Sprint Boots - Out Of Danger Regen", BaseRegen,
+                "Health per second regenerated while out of danger at 1 stack (+0.5 per extra stack). Flat: doesn't grow with level.").Value;
             CreateLang();
             CreateItem();
             StaticItemDef = ItemDef;
@@ -78,6 +86,9 @@ namespace CursedAppleCuriosities.Items
             if (sender.inventory == null) return;
             int count = sender.inventory.GetItemCountEffective(ItemDef);
             if (count <= 0) return;
+
+            // RoR2 recalculates stats when outOfDanger flips (as for Cautious Slug).
+            if (sender.outOfDanger) args.baseRegenAdd += BaseRegen + RegenPerStack * (count - 1);
 
             var tracker = sender.GetComponent<SprintBootsTracker>();
             if (tracker == null || tracker.RampRatio <= 0f) return;

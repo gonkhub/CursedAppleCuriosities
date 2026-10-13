@@ -105,7 +105,16 @@ namespace CursedAppleCuriosities.Items
             tex.Apply();
             return Sprite.Create(tex, new Rect(0f, 0f, 1f, 1f), new Vector2(0.5f, 0.5f));
         }
+        // Decoded once per file: an item's icon and its buff icon are the same PNG.
+        private static readonly System.Collections.Generic.Dictionary<string, Sprite?> IconCache = new System.Collections.Generic.Dictionary<string, Sprite?>();
+
         internal static Sprite? LoadEmbeddedIcon(string fileName)
+        {
+            if (IconCache.TryGetValue(fileName, out Sprite? cached) && cached != null) return cached;
+            return IconCache[fileName] = DecodeEmbeddedIcon(fileName);
+        }
+
+        private static Sprite? DecodeEmbeddedIcon(string fileName)
         {
             var asm    = System.Reflection.Assembly.GetExecutingAssembly();
             using var stream = asm.GetManifestResourceStream($"CursedAppleCuriosities.Resources.{fileName}");

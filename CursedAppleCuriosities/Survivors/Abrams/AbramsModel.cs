@@ -32,6 +32,8 @@ namespace CursedAppleCuriosities.Survivors.Abrams
             // Siphon Life: his drain locomotion while it lasts.
             LocoSet = body => AbramsSurvivor.SiphonBuff != null && body.HasBuff(AbramsSurvivor.SiphonBuff) ? "siphon" : null,
             ItemAnchors = AbramsItemDisplays.Anchors,
+            // Green Abrams (skin 1): his blues (coat, skin, trousers) turned green; leather, brass and paper stay.
+            Skins = new[] { new DeadlockSkin { Id = "green1", Recolor = DeadlockSkin.HueShift(180f, 275f, -95f) } },
         };
 
         /// <summary>Entity states ask for animation states by name (every client runs OnEnter, so all see it).</summary>

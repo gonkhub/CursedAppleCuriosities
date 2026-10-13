@@ -13,6 +13,34 @@ namespace CursedAppleCuriosities.Deadlock
         public readonly Dictionary<string, Transform> Bones = new Dictionary<string, Transform>();
         public readonly Dictionary<string, Matrix4x4> RestInRoot = new Dictionary<string, Matrix4x4>(); // bone rest pose, root space
         public float Height;                           // model height (root space)
+        /// <summary>Per extra skin (skin index 1, 2...): base material -> that skin's material. Materials not listed stay.</summary>
+        public readonly List<Dictionary<Material, Material>> SkinMaterials = new List<Dictionary<Material, Material>>();
+    }
+
+    /// <summary>A GLB model read into plain data (no Unity objects), so it can be read off the main thread.</summary>
+    public class GlbData
+    {
+        public struct Node { public string Name; public Vector3 Pos; public Quaternion Rot; public Vector3 Scale; public int Parent; }
+        /// <summary>Skins: per extra skin, its recoloured texture (null: the base texture).</summary>
+        public class Mat { public string Name = ""; public TexData? Tex; public TexData?[] Skins = Array.Empty<TexData?>(); }
+        public class Prim
+        {
+            public string Name = "";
+            public int Material;
+            public Vector3[] V = null!;
+            public Vector3[]? N;
+            public Vector2[]? Uv;
+            public BoneWeight[]? W;
+            public int[] Tris = null!;
+        }
+
+        public string Name = "";
+        public Node[] Nodes = Array.Empty<Node>();
+        public readonly List<Mat> Mats = new List<Mat>();
+        public int[]? Joints;
+        public Matrix4x4[]? Bindposes;
+        public readonly List<Prim> Prims = new List<Prim>();
+        public float Height;
     }
 
     /// <summary>One animation clip: per bone, keyframed local rotation and position (mirrored into Unity space).</summary>
@@ -201,7 +229,9 @@ namespace CursedAppleCuriosities.Deadlock
                 Vector3 start = root.Pos![0];
                 foreach (AnimTrack t in clip.Tracks)
                 {
-                    if (!besideRoot.Contains(t.Bone) || t.Pos == null) continue;
+                    // Cloth points are taken into root_motion's frame below (travel and all): taking the travel out here
+                    // too did it twice, and Grey Talon's skirt ran off and snapped back each loop.
+                    if (!besideRoot.Contains(t.Bone) || t.Pos == null || t.Bone.StartsWith("$cloth", StringComparison.Ordinal)) continue;
                     for (int k = 0; k < t.Pos.Length; k++)
                     {
                         root.SamplePos(t.PosTimes![k], out Vector3 rp);
@@ -247,91 +277,101 @@ namespace CursedAppleCuriosities.Deadlock
         }
 
         /// <summary>
-        /// Load the model. makeMaterial turns a base-colour texture (or null) into the material each renderer uses.
+        /// Load the model now (parse and build). makeMaterial turns a base-colour texture (or null) into the material each renderer uses.
         /// </summary>
         public static GlbModel Load(string file, Func<string, Texture2D?, Material> makeMaterial, ICollection<string> hideMeshes)
-            => Load(Read(file), Path.GetFileNameWithoutExtension(file), Path.GetDirectoryName(file), makeMaterial, hideMeshes);
+            => BuildNow(Parse(file, hideMeshes), makeMaterial);
 
         /// <summary>Load a model from GLB bytes (e.g. an embedded resource). External image files are not resolved.</summary>
         public static GlbModel Load(byte[] glb, string name, Func<string, Texture2D?, Material> makeMaterial)
-            => Load(Read(glb, name), name, null, makeMaterial, Array.Empty<string>());
+            => BuildNow(Parse(Read(glb, name), name, null, Array.Empty<string>()), makeMaterial);
 
-        private static GlbModel Load(Glb g, string name, string? dir, Func<string, Texture2D?, Material> makeMaterial, ICollection<string> hideMeshes)
+        public static GlbModel BuildNow(GlbData d, Func<string, Texture2D?, Material> makeMaterial)
+        {
+            var model = new GlbModel();
+            foreach (bool _ in Build(d, makeMaterial, model)) { }
+            return model;
+        }
+
+        /// <summary>
+        /// Everything that doesn't make Unity objects: safe on a background thread (texture decoding included). Each of
+        /// skins (the hero's extra skins) gets its recolour of every texture.
+        /// </summary>
+        public static GlbData Parse(string file, ICollection<string> hideMeshes, IList<DeadlockSkin>? skins = null)
+            => Parse(Read(file), Path.GetFileNameWithoutExtension(file), Path.GetDirectoryName(file), hideMeshes, skins);
+
+        private static GlbData Parse(Glb g, string name, string? dir, ICollection<string> hideMeshes, IList<DeadlockSkin>? skinRecolors = null)
         {
             var j = g.J;
+            var d = new GlbData { Name = name };
 
-            var model = new GlbModel();
-            model.Root = new GameObject(name);
-            model.Root.SetActive(false);
-            UnityEngine.Object.DontDestroyOnLoad(model.Root);
-
-            // Nodes -> transforms (mirrored X).
+            // Nodes (mirrored X).
             var nodes = MiniJson.Arr(j, "nodes")!;
-            var tf = new Transform[nodes.Count];
+            d.Nodes = new GlbData.Node[nodes.Count];
             for (int i = 0; i < nodes.Count; i++)
             {
                 object n = nodes[i];
-                var go = new GameObject(MiniJson.Str(n, "name") ?? $"node{i}");
-                tf[i] = go.transform;
-                if (MiniJson.Arr(n, "translation") is List<object> t) go.transform.localPosition = new Vector3(-MiniJson.F(t[0]), MiniJson.F(t[1]), MiniJson.F(t[2]));
-                if (MiniJson.Arr(n, "rotation") is List<object> r) go.transform.localRotation = new Quaternion(MiniJson.F(r[0]), -MiniJson.F(r[1]), -MiniJson.F(r[2]), MiniJson.F(r[3]));
-                if (MiniJson.Arr(n, "scale") is List<object> sc) go.transform.localScale = new Vector3(MiniJson.F(sc[0]), MiniJson.F(sc[1]), MiniJson.F(sc[2]));
+                var node = new GlbData.Node { Name = MiniJson.Str(n, "name") ?? $"node{i}", Rot = Quaternion.identity, Scale = Vector3.one, Parent = -1 };
+                if (MiniJson.Arr(n, "translation") is List<object> t) node.Pos = new Vector3(-MiniJson.F(t[0]), MiniJson.F(t[1]), MiniJson.F(t[2]));
+                if (MiniJson.Arr(n, "rotation") is List<object> r) node.Rot = new Quaternion(MiniJson.F(r[0]), -MiniJson.F(r[1]), -MiniJson.F(r[2]), MiniJson.F(r[3]));
+                if (MiniJson.Arr(n, "scale") is List<object> sc) node.Scale = new Vector3(MiniJson.F(sc[0]), MiniJson.F(sc[1]), MiniJson.F(sc[2]));
+                d.Nodes[i] = node;
             }
-            var hasParent = new bool[nodes.Count];
             for (int i = 0; i < nodes.Count; i++)
                 if (MiniJson.Arr(nodes[i], "children") is List<object> kids)
-                    foreach (object k in kids) { int c = (int)(double)k; tf[c].SetParent(tf[i], false); hasParent[c] = true; }
-            for (int i = 0; i < nodes.Count; i++) if (!hasParent[i]) tf[i].SetParent(model.Root.transform, false);
+                    foreach (object k in kids) d.Nodes[(int)(double)k].Parent = i;
 
             // Materials (base colour only).
-            var materials = new List<Material>();
-            var textures = new Dictionary<int, Texture2D>();
             var images = MiniJson.Arr(j, "images");
             var texs = MiniJson.Arr(j, "textures");
+            var byImage = new Dictionary<int, TexData>();
+            var skinsByImage = new Dictionary<int, TexData?[]>();
+            int skinCount = skinRecolors?.Count ?? 0;
             foreach (object m in MiniJson.Arr(j, "materials") ?? new List<object>())
             {
-                string matName = MiniJson.Str(m, "name") ?? "mat";
-                Texture2D? tex = null;
+                var mat = new GlbData.Mat { Name = MiniJson.Str(m, "name") ?? "mat" };
                 int? texIndex = MiniJson.Int(MiniJson.Obj(MiniJson.Obj(m, "pbrMetallicRoughness"), "baseColorTexture"), "index");
                 if (texIndex != null && texs != null && images != null)
                 {
                     int img = MiniJson.Int(texs[texIndex.Value], "source") ?? 0;
-                    if (!textures.TryGetValue(img, out tex))
+                    if (!byImage.TryGetValue(img, out TexData tex))
                     {
                         string? uri = MiniJson.Str(images[img], "uri");
-                        tex = new Texture2D(2, 2, TextureFormat.RGBA32, true) { name = uri ?? "tex" };
-                        if (uri != null && dir != null && File.Exists(Path.Combine(dir, uri))) LoadPng(tex, File.ReadAllBytes(Path.Combine(dir, uri)));
-                        textures[img] = tex;
+                        string? path = uri != null && dir != null ? Path.Combine(dir, uri) : null;
+                        bool found = path != null && File.Exists(path);
+                        tex = found ? HeroTextures.Prepare(path!) : new TexData { Key = name + "/" + img, Name = uri ?? "tex" };
+                        byImage[img] = tex;
+                        var skinTex = new TexData?[skinCount];
+                        for (int k = 0; k < skinCount && found; k++)
+                            skinTex[k] = HeroTextures.PrepareSkin(path!, skinRecolors![k].Id, skinRecolors[k].Recolor);
+                        skinsByImage[img] = skinTex;
                     }
+                    mat.Tex = tex;
+                    mat.Skins = skinsByImage[img];
                 }
-                materials.Add(makeMaterial(matName, tex));
+                d.Mats.Add(mat);
             }
 
             // Skin: joints and their rest pose (inverse of the mirrored inverse-bind matrix).
             var skins = MiniJson.Arr(j, "skins");
             object? skin = skins != null && skins.Count > 0 ? skins[0] : null;
-            Transform[]? joints = null;
-            Matrix4x4[]? bindposes = null;
             if (skin != null)
             {
                 var jointIdx = MiniJson.Arr(skin, "joints")!;
-                joints = new Transform[jointIdx.Count];
-                for (int k = 0; k < joints.Length; k++) joints[k] = tf[(int)(double)jointIdx[k]];
+                d.Joints = new int[jointIdx.Count];
+                for (int k = 0; k < d.Joints.Length; k++) d.Joints[k] = (int)(double)jointIdx[k];
                 float[] ibm = ReadFloats(g, MiniJson.Int(skin, "inverseBindMatrices")!.Value, 16);
-                bindposes = new Matrix4x4[joints.Length];
-                for (int k = 0; k < joints.Length; k++)
+                d.Bindposes = new Matrix4x4[d.Joints.Length];
+                for (int k = 0; k < d.Joints.Length; k++)
                 {
                     var m = new Matrix4x4();
                     for (int c = 0; c < 4; c++) for (int r = 0; r < 4; r++) m[r, c] = ibm[k * 16 + c * 4 + r]; // column-major
-                    bindposes[k] = Mirror(m);
-                    model.Bones[joints[k].name] = joints[k];
-                    model.RestInRoot[joints[k].name] = bindposes[k].inverse;
+                    d.Bindposes[k] = Mirror(m);
                 }
             }
 
             // Meshes: one renderer per primitive.
             var meshes = MiniJson.Arr(j, "meshes")!;
-            float top = 0f;
             for (int i = 0; i < nodes.Count; i++)
             {
                 int? meshIndex = MiniJson.Int(nodes[i], "mesh");
@@ -344,42 +384,117 @@ namespace CursedAppleCuriosities.Deadlock
                 foreach (object prim in MiniJson.Arr(mesh, "primitives")!)
                 {
                     var attrs = MiniJson.Obj(prim, "attributes")!;
-                    Mesh um = BuildMesh(g, prim, attrs, joints, bindposes, meshName + "_" + primIndex);
-                    top = Mathf.Max(top, um.bounds.max.y);
-                    int? matIndex = MiniJson.Int(prim, "material");
-                    Material mat = matIndex != null && matIndex.Value < materials.Count ? materials[matIndex.Value] : materials[0];
-                    var holder = new GameObject(um.name);
-                    holder.transform.SetParent(model.Root.transform, false);
-                    if (joints != null)
-                    {
-                        var smr = holder.AddComponent<SkinnedMeshRenderer>();
-                        smr.sharedMesh = um;
-                        smr.bones = joints;
-                        smr.rootBone = joints[0];
-                        smr.sharedMaterial = mat;
-                        smr.updateWhenOffscreen = true;
-                    }
-                    else
-                    {
-                        holder.AddComponent<MeshFilter>().sharedMesh = um;
-                        holder.AddComponent<MeshRenderer>().sharedMaterial = mat;
-                    }
+                    GlbData.Prim p = ParsePrim(g, prim, attrs, d.Joints != null, meshName + "_" + primIndex);
+                    p.Material = MiniJson.Int(prim, "material") ?? -1;
+                    d.Prims.Add(p);
+                    foreach (Vector3 v in p.V) d.Height = Mathf.Max(d.Height, v.y);
                     primIndex++;
                 }
             }
-            model.Height = top;
-            return model;
+            return d;
         }
 
-        /// <summary>One primitive as a compact single-submesh Unity mesh (only the vertices its triangles use).</summary>
-        private static Mesh BuildMesh(Glb g, object prim, Dictionary<string, object> attrs, Transform[]? joints, Matrix4x4[]? bindposes, string name)
+        /// <summary>
+        /// Main thread: the Unity objects, yielding after each new texture and each mesh so the work can be spread over
+        /// frames. The model's Root is set only by the last step.
+        /// </summary>
+        public static IEnumerable<bool> Build(GlbData d, Func<string, Texture2D?, Material> makeMaterial, GlbModel model)
+        {
+            var textures = new Dictionary<TexData, Texture2D>();
+            foreach (GlbData.Mat m in d.Mats)
+                if (m.Tex != null && !textures.ContainsKey(m.Tex))
+                {
+                    bool fresh = !HeroTextures.IsMade(m.Tex.Key);
+                    textures[m.Tex] = HeroTextures.Make(m.Tex);
+                    if (fresh) yield return true;
+                }
+            var materials = new List<Material>();
+            foreach (GlbData.Mat m in d.Mats) materials.Add(makeMaterial(m.Name, m.Tex != null ? textures[m.Tex] : null));
+
+            // Extra skins: a material of their own wherever their texture differs.
+            int skins = 0;
+            foreach (GlbData.Mat m in d.Mats) skins = Math.Max(skins, m.Skins.Length);
+            for (int k = 0; k < skins; k++)
+            {
+                var swap = new Dictionary<Material, Material>();
+                for (int i = 0; i < d.Mats.Count; i++)
+                {
+                    TexData? st = k < d.Mats[i].Skins.Length ? d.Mats[i].Skins[k] : null;
+                    if (st == null || swap.ContainsKey(materials[i])) continue;
+                    bool fresh = !HeroTextures.IsMade(st.Key);
+                    swap[materials[i]] = makeMaterial(d.Mats[i].Name, HeroTextures.Make(st));
+                    if (fresh) yield return true;
+                }
+                model.SkinMaterials.Add(swap);
+            }
+
+            var root = new GameObject(d.Name);
+            root.SetActive(false);
+            UnityEngine.Object.DontDestroyOnLoad(root);
+            var tf = new Transform[d.Nodes.Length];
+            for (int i = 0; i < d.Nodes.Length; i++)
+            {
+                GlbData.Node n = d.Nodes[i];
+                tf[i] = new GameObject(n.Name).transform;
+                tf[i].localPosition = n.Pos;
+                tf[i].localRotation = n.Rot;
+                tf[i].localScale = n.Scale;
+            }
+            for (int i = 0; i < d.Nodes.Length; i++) tf[i].SetParent(d.Nodes[i].Parent >= 0 ? tf[d.Nodes[i].Parent] : root.transform, false);
+
+            Transform[]? joints = null;
+            if (d.Joints != null)
+            {
+                joints = new Transform[d.Joints.Length];
+                for (int k = 0; k < joints.Length; k++)
+                {
+                    joints[k] = tf[d.Joints[k]];
+                    model.Bones[joints[k].name] = joints[k];
+                    model.RestInRoot[joints[k].name] = d.Bindposes![k].inverse;
+                }
+            }
+
+            foreach (GlbData.Prim p in d.Prims)
+            {
+                yield return true;
+                var um = new Mesh { name = p.Name, indexFormat = UnityEngine.Rendering.IndexFormat.UInt32 };
+                um.vertices = p.V;
+                if (p.N != null) um.normals = p.N;
+                if (p.Uv != null) um.uv = p.Uv;
+                if (p.W != null) { um.boneWeights = p.W; um.bindposes = d.Bindposes; }
+                um.SetTriangles(p.Tris, 0);
+                um.RecalculateBounds();
+                Material mat = p.Material >= 0 && p.Material < materials.Count ? materials[p.Material] : materials[0];
+                var holder = new GameObject(um.name);
+                holder.transform.SetParent(root.transform, false);
+                if (joints != null)
+                {
+                    var smr = holder.AddComponent<SkinnedMeshRenderer>();
+                    smr.sharedMesh = um;
+                    smr.bones = joints;
+                    smr.rootBone = joints[0];
+                    smr.sharedMaterial = mat;
+                    smr.updateWhenOffscreen = true;
+                }
+                else
+                {
+                    holder.AddComponent<MeshFilter>().sharedMesh = um;
+                    holder.AddComponent<MeshRenderer>().sharedMaterial = mat;
+                }
+            }
+            model.Height = d.Height;
+            model.Root = root;
+        }
+
+        /// <summary>One primitive as compact single-submesh mesh data (only the vertices its triangles use).</summary>
+        private static GlbData.Prim ParsePrim(Glb g, object prim, Dictionary<string, object> attrs, bool skinned, string name)
         {
             float[] idx = ReadFloats(g, MiniJson.Int(prim, "indices")!.Value, 1);
             int pos = MiniJson.Int(attrs, "POSITION")!.Value;
             Vector3[] allV = ToVec3(ReadFloats(g, pos, 3));
             Vector3[]? allN = MiniJson.Has(attrs, "NORMAL") ? ToVec3(ReadFloats(g, MiniJson.Int(attrs, "NORMAL")!.Value, 3)) : null;
             float[]? allUv = MiniJson.Has(attrs, "TEXCOORD_0") ? ReadFloats(g, MiniJson.Int(attrs, "TEXCOORD_0")!.Value, 2) : null;
-            BoneWeight[]? allW = joints != null && MiniJson.Has(attrs, "JOINTS_0") && MiniJson.Has(attrs, "WEIGHTS_0") ? Weights(g, attrs, allV.Length) : null;
+            BoneWeight[]? allW = skinned && MiniJson.Has(attrs, "JOINTS_0") && MiniJson.Has(attrs, "WEIGHTS_0") ? Weights(g, attrs, allV.Length) : null;
 
             // Remap to the vertices this primitive uses.
             var remap = new Dictionary<int, int>();
@@ -393,27 +508,16 @@ namespace CursedAppleCuriosities.Deadlock
             }
             for (int k = 0; k < tris.Length; k += 3) { int t = tris[k + 1]; tris[k + 1] = tris[k + 2]; tris[k + 2] = t; } // reverse winding
 
-            var um = new Mesh { name = name, indexFormat = UnityEngine.Rendering.IndexFormat.UInt32 };
-            var verts = new Vector3[used.Count];
-            for (int k = 0; k < used.Count; k++) verts[k] = allV[used[k]];
-            um.vertices = verts;
-            if (allN != null) { var n = new Vector3[used.Count]; for (int k = 0; k < used.Count; k++) n[k] = allN[used[k]]; um.normals = n; }
+            var p = new GlbData.Prim { Name = name, Tris = tris, V = new Vector3[used.Count] };
+            for (int k = 0; k < used.Count; k++) p.V[k] = allV[used[k]];
+            if (allN != null) { p.N = new Vector3[used.Count]; for (int k = 0; k < used.Count; k++) p.N[k] = allN[used[k]]; }
             if (allUv != null)
             {
-                var uvs = new Vector2[used.Count];
-                for (int k = 0; k < used.Count; k++) uvs[k] = new Vector2(allUv[used[k] * 2], 1f - allUv[used[k] * 2 + 1]); // glTF UV origin is top-left
-                um.uv = uvs;
+                p.Uv = new Vector2[used.Count];
+                for (int k = 0; k < used.Count; k++) p.Uv[k] = new Vector2(allUv[used[k] * 2], 1f - allUv[used[k] * 2 + 1]); // glTF UV origin is top-left
             }
-            if (allW != null)
-            {
-                var w = new BoneWeight[used.Count];
-                for (int k = 0; k < used.Count; k++) w[k] = allW[used[k]];
-                um.boneWeights = w;
-                um.bindposes = bindposes;
-            }
-            um.SetTriangles(tris, 0);
-            um.RecalculateBounds();
-            return um;
+            if (allW != null) { p.W = new BoneWeight[used.Count]; for (int k = 0; k < used.Count; k++) p.W[k] = allW[used[k]]; }
+            return p;
         }
 
         /// <summary>

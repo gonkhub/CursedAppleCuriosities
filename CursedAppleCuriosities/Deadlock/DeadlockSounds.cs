@@ -34,6 +34,7 @@ namespace CursedAppleCuriosities.Deadlock
             public DeadlockSound Row = null!;
             public Vector3 Pos;
             public Transform? Follow;
+            public bool Followed; // started on an object: Unity's null check turns true once it is destroyed
             public float Until = float.MaxValue;
             public float Gain = 1f;
         }
@@ -152,7 +153,11 @@ namespace CursedAppleCuriosities.Deadlock
             for (int i = Active.Count - 1; i >= 0; i--)
             {
                 Playing p = Active[i];
-                if (p.Voice.Finished || p.Voice.Stopped || Time.time > p.Until) { p.Voice.Stopped = true; Active.RemoveAt(i); continue; }
+                // A loop whose object is gone or switched off ends with it. Without this, an owner that never called
+                // Stop (destroyed some other way, pooled, or a scene change) left the loop droning at the spot it was
+                // last seen until its timer ran out: up to an hour for buff loops (playtest 2026-10-12, multiplayer too).
+                bool orphan = p.Voice.Loop && p.Followed && (p.Follow == null || !p.Follow.gameObject.activeInHierarchy);
+                if (p.Voice.Finished || p.Voice.Stopped || orphan || Time.time > p.Until) { p.Voice.Stopped = true; Active.RemoveAt(i); continue; }
                 if (p.Follow != null) p.Pos = p.Follow.position + Vector3.up;
                 float gain = p.Row.Volume * p.Gain * _volume * (unfocused ? 0f : 1f), pan = 0f;
                 if (hasListener)
@@ -189,7 +194,7 @@ namespace CursedAppleCuriosities.Deadlock
         {
             var voice = new DeadlockVoice { Clip = clip, Loop = loop };
             if (row.PitchJitter > 0f) voice.Pitch = 1.0 + Random.Range(-row.PitchJitter, row.PitchJitter);
-            var p = new Playing { Voice = voice, Row = row, Pos = pos, Follow = follow != null ? follow.transform : null };
+            var p = new Playing { Voice = voice, Row = row, Pos = pos, Follow = follow != null ? follow.transform : null, Followed = follow != null };
             if (row.VolumeJitter > 0f) p.Gain = 1f - Random.Range(0f, row.VolumeJitter);
             if (seconds > 0f) p.Until = Time.time + seconds;
             Active.Add(p);

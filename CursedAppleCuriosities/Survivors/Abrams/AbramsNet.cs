@@ -111,7 +111,8 @@ namespace CursedAppleCuriosities.Survivors.Abrams
             if (!NetworkServer.active || Attacker == null) return;
             var body = Attacker.GetComponent<CharacterBody>();
             if (body == null) return;
-            DamageTypeCombo type = Kind == AbramsHitKind.Melee ? DamageSource.Secondary : Kind == AbramsHitKind.Charge ? DamageSource.Utility : DamageSource.Special;
+            // Heavy Melee and Seismic Impact are both Special skills now; only Shoulder Charge is Utility.
+            DamageTypeCombo type = Kind == AbramsHitKind.Charge ? DamageSource.Utility : DamageSource.Special;
             float dealt = 0f;
             for (int i = 0; i < Targets.Length; i++)
             {
@@ -139,18 +140,27 @@ namespace CursedAppleCuriosities.Survivors.Abrams
     public class AbramsReleaseMessage : INetMessage
     {
         public GameObject? Attacker;
+        public bool Wall;
         public float Stun;
         public Vector3 Fling;
 
-        public void Serialize(NetworkWriter w) { w.Write(Attacker); w.Write(Stun); w.Write(Fling); }
-        public void Deserialize(NetworkReader r) { Attacker = r.ReadGameObject(); Stun = r.ReadSingle(); Fling = r.ReadVector3(); }
+        public void Serialize(NetworkWriter w) { w.Write(Attacker); w.Write(Wall); w.Write(Stun); w.Write(Fling); }
+        public void Deserialize(NetworkReader r) { Attacker = r.ReadGameObject(); Wall = r.ReadBoolean(); Stun = r.ReadSingle(); Fling = r.ReadVector3(); }
 
         public void OnReceived()
         {
             if (!NetworkServer.active || Attacker == null) return;
             var body = Attacker.GetComponent<CharacterBody>();
+            if (body == null) return;
+            bool crit = Wall && body.RollCrit();
             foreach (AbramsCarry c in AbramsCarry.All.ToArray())
-                if (c != null && c.By == body) c.Release(Stun, Fling);
+            {
+                if (c == null || c.By != body) continue;
+                // Slammed into a wall: every carried enemy takes the wall damage (user 2026-10-12), then is pinned and stunned.
+                var hc = c.GetComponent<HealthComponent>();
+                if (Wall && hc != null && hc.alive) AbramsNet.Hit(body, hc, AbramsData.ChargeWallDamage * body.damage, crit, Vector3.zero, DamageSource.Utility);
+                c.Release(Stun, Fling);
+            }
         }
     }
 

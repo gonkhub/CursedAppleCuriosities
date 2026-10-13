@@ -1,5 +1,56 @@
 # Changelog
 
+## 1.5.0 (unreleased)
+- New survivor: **Viscous**. His **Goo Ball** rolls him up into a bowling ball that bowls through enemies. **Splatter**
+  bounces a ball of goo that bursts three times; alt **Puddle Punch** launches everything off any surface, him included.
+  **The Cube** encases an ally (tap) or himself (hold): invulnerable, then faster with quicker stamina.
+- New survivor: **Celeste**. She moves like Lash (more stamina, two air jumps and air dashes) and falls slowly. **Carny Life** throws
+  arcing blades of light that curve onto enemies and bounce off walls. **Light Eater** marks enemies: your blades hit them harder and
+  heal you. Alt **Radiant Daggers**: aim, then call down a beam of light that strengthens you for every enemy it hits, with no cap.
+  **Dazzling Trick** raises a barrier prism that bursts and stuns enemies if it breaks. **Shining Wonder**: hold, then release a
+  slow orb of light that chases the nearest enemy and bounces between enemies close together.
+- **Viscous**: the Goo Ball is **Heavy** (like Loader's punches): 250% plus 30% per m/s of speed, rolling or falling, and takes 50% less damage while rolling.
+- New skins: **Mint** Celeste, **Coral** Vyper, **Blue** Viscous.
+- **Kinetic Dash**: dash-jumping (Deadlock heroes) triggers it too, as in Deadlock.
+- Fixed: Abrams' **Heavy Melee** now counts as his Special (Ethereal Shift's bonus and other Special effects apply).
+- Viscous and Celeste show items on their bodies.
+- Shorter skill descriptions for Seven, Vyper, Grey Talon, Victor, Viscous and Celeste.
+- Fixed: Viscous' lobby cube no longer stays forever if you switch survivor during his intro.
+- Fixed: in multiplayer, **Siphon Bullets**' stolen max health now shows for every player, not only the host.
+- Fixed: while Viscous rolls, hits land on the whole Goo Ball (his hitbox was still his standing size).
+- New survivor: **Victor**.
+  **Pain Battery** charges only from damage you take, then fires a fan of shocking bolts that heal you for
+  each enemy hit. **Jumpstart** costs some health, then heals back more than it took and speeds you up.
+  **Aura of Suffering** hurts everything around you, and you, harder the longer it runs. Passive
+  **Shocking Reanimation**: once every 90 seconds (and again each new stage), dying knocks you down instead, and you get back up with
+  half your health and a stunning blast.
+- Each survivor has its own colour on the character select screen.
+- New artifact: **Artifact of the Goose**. Every player starts the run holding a random Goose Egg.
+- **Goose Eggs**: each egg now matures on its own. Two players holding the same kind of egg no longer share one timer, and an egg you swap out keeps its own progress on the ground.
+- **Frenzy**: the bonus now lasts 5 s at its strongest after you heal back above the threshold.
+- **Sprint Boots**: also regenerate +1 health per second (+0.5 per stack) while out of danger.
+
+## 1.4.0
+- New interactable: the **Cursed Broker**, a rare shrine (stage 3 onward, or any stage after looping).
+  Curse one non-lunar item (whites included): it and every copy you hold or find later become roughly twice as strong, but you
+  take a harsh penalty to one specific thing (a skill's damage, a cooldown, gravity, healing...)
+  for the rest of the run. Each player may curse once per broker; hover an item in its menu, or a
+  cursed item in your inventory, to see exactly what is improved and what it costs.
+
+## 1.3.0
+- New survivor: **Grey Talon**. His bow fires slow, very long range arrows (full damage out to
+  150m). **Charged Shot**: draw and hold a zoomed shot, then loose a large arrow that pierces
+  everything for 800%. **Rain of Arrows**: leap high and glide while every shot splits into 5
+  arrows (cancel the leap with jump to keep your speed; you can air dash while gliding).
+  **Guided Owl**: steer your owl into enemies for 2500%, detonate it early with Primary; you are
+  invulnerable and unseen while steering and for 2s after. Each boss it kills makes it stronger.
+- Grey Talon has a character-select entrance: his owl crashes into the pedestal.
+- Seven, Vyper and Grey Talon show items on their bodies.
+- **Abrams**: Shoulder Charge's hit is 50% (was 250%), but slamming enemies into a wall deals
+  300% to every enemy carried.
+- **Goose Eggs** take 5 minutes per stack (was 2:30).
+- Fixed: items Commando wears mirrored (one of the Ifrit horns, and others) now mirror on Abrams too.
+
 ## 1.2.5
 - New survivors: **Seven** (Cold Calculus, Lightning Ball / Static Charge, Power Surge,
   Storm Cloud) and **Vyper** (The Rattler, Screwjab Dagger, Lethal Venom, Petrifying Bola,

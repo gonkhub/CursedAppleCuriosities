@@ -1,0 +1,32 @@
+using CursedAppleCuriosities.Deadlock;
+using UnityEngine;
+
+namespace CursedAppleCuriosities.Survivors.Viscous
+{
+    /// <summary>
+    /// Viscous on the shared Deadlock model layer. His gun is part of his hand (weapon_bone_R under hand_R), so no HandIK.
+    /// His model carries the Goo Ball too (mesh group "inflated", renderers inflated_N), hidden except while he rolls
+    /// (ViscousBallLook). His colours are in his base-colour textures (flat greens), which the loader keeps.
+    /// Item displays fitted by tools/itempass (ViscousItemDisplays).
+    /// </summary>
+    public static class ViscousModel
+    {
+        public static readonly DeadlockHeroDef Def = new DeadlockHeroDef
+        {
+            Hero = ViscousData.Hero,
+            DisplayName = "Viscous",
+            DlModel = ViscousData.DlModel,
+            ModelHeightScale = ViscousData.ModelHeightScale * ViscousData.BallHeightFix,
+            BaseSpeed = ViscousData.BaseSpeed,
+            MuzzleBone = ViscousData.MuzzleBone,
+            MuzzleName = ViscousSurvivor.MuzzleName,
+            Anims = ViscousData.Anims,
+            RootLocked = ViscousData.Locked,
+            // Blue Viscous (skin 1): his green goo turned blue.
+            Skins = new[] { new DeadlockSkin { Id = "blue1", Recolor = DeadlockSkin.HueShift(70f, 170f, 95f) } },
+            ItemAnchors = ViscousItemDisplays.Anchors,
+        };
+
+        public static void Play(GameObject bodyObject, string state) => DeadlockModelSwap.Play(bodyObject, state);
+    }
+}

@@ -57,9 +57,10 @@ namespace CursedAppleCuriosities.Items
 
         public static float RadiusMultiplier(CharacterBody? body)
         {
-            if (_def == null || body == null || body.inventory == null) return 1f;
+            float curse = Broker.CursePenalties.RadiusFactor(body); // a Cursed Broker range penalty shrinks it
+            if (_def == null || body == null || body.inventory == null) return curse;
             int count = body.inventory.GetItemCountEffective(_def);
-            return count > 0 ? 1f + RadiusPerStack * count : 1f;
+            return (count > 0 ? 1f + RadiusPerStack * count : 1f) * curse;
         }
     }
 }

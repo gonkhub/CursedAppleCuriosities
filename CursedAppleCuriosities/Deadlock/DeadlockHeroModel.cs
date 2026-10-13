@@ -22,7 +22,8 @@ namespace CursedAppleCuriosities.Deadlock
         public string? MuzzleBone;
         public string MuzzleName = "";
 
-        /// <summary>State, Deadlock clip, loop, next state ("locomotion", "hold", a state, or "" for loops), layer ("full" / "additive").</summary>
+        /// <summary>State, Deadlock clip, loop, next state ("locomotion", "hold", a state, or "" for loops), layer ("full" / "additive" /
+        /// "delta": a full clip played as an overlay, as its motion from its first frame).</summary>
         public (string State, string Clip, bool Loop, string Next, string Layer)[] Anims = Array.Empty<(string, string, bool, string, string)>();
         /// <summary>
         /// Clips whose own travel is removed (root lock): Deadlock moves heroes with these animations, RoR2
@@ -53,6 +54,8 @@ namespace CursedAppleCuriosities.Deadlock
         public Dictionary<string, Color>? MaterialTints;
         /// <summary>Self-lit materials by glTF material name: flat colour that glows (e.g. Seven's Storm Cloud skeleton, blue_illum, made orange).</summary>
         public Dictionary<string, Color>? MaterialGlows;
+        /// <summary>Extra skins, in skin order after the default (skin index 1, 2...): recolours of the hero's textures.</summary>
+        public DeadlockSkin[] Skins = Array.Empty<DeadlockSkin>();
 
         public string Sound(string key) => Hero + "_" + key;
         public bool IsRootLocked(string state) => RootLocked.Contains(state) || state.StartsWith("sprint_") || state.Contains(".sprint_");
@@ -66,6 +69,55 @@ namespace CursedAppleCuriosities.Deadlock
 
         public DeadlockInstall.ModelRequest ModelRequest() =>
             new DeadlockInstall.ModelRequest { Hero = Hero, DlModel = DlModel, Clips = ClipNames(), HideMeshes = HideMeshes };
+    }
+
+    /// <summary>
+    /// A hero skin made by recolouring the base-colour textures (Deadlock ships no alternate colours to load). Recolor
+    /// edits RGBA pixels in place and says whether it changed any; it runs once per texture on the preloader thread and
+    /// the result is cached under Id, so bump Id when the recolour changes.
+    /// </summary>
+    public class DeadlockSkin
+    {
+        public string Id = "";
+        public Func<byte[], bool> Recolor = _ => false;
+
+        /// <summary>
+        /// Turns hues between fromLo and fromHi degrees by shift degrees (feathered over 15 degrees at each end),
+        /// leaving greys (saturation under minSat) alone. Rotated about the grey axis, so brightness is kept.
+        /// </summary>
+        public static Func<byte[], bool> HueShift(float fromLo, float fromHi, float shift, float minSat = 0.12f) => px =>
+        {
+            const float Feather = 15f;
+            bool changed = false;
+            var mats = new Dictionary<int, (float, float, float)>(); // rotation by whole-degree amount
+            for (int i = 0; i < px.Length; i += 4)
+            {
+                int r = px[i], g = px[i + 1], b = px[i + 2];
+                int max = Math.Max(r, Math.Max(g, b)), min = Math.Min(r, Math.Min(g, b));
+                if (max == 0 || max - min < minSat * max) continue;
+                float d = max - min, h;
+                if (max == r) h = 60f * ((g - b) / d);
+                else if (max == g) h = 60f * ((b - r) / d + 2f);
+                else h = 60f * ((r - g) / d + 4f);
+                if (h < 0f) h += 360f;
+                float w = Mathf.Clamp01((h - (fromLo - Feather)) / Feather) * Mathf.Clamp01(((fromHi + Feather) - h) / Feather);
+                if (w <= 0f) continue;
+                int deg = Mathf.RoundToInt(shift * w);
+                if (deg == 0) continue;
+                if (!mats.TryGetValue(deg, out var m))
+                {
+                    float c = Mathf.Cos(deg * Mathf.Deg2Rad), sn = Mathf.Sin(deg * Mathf.Deg2Rad);
+                    m = (c + (1f - c) / 3f, (1f - c) / 3f - Mathf.Sqrt(1f / 3f) * sn, (1f - c) / 3f + Mathf.Sqrt(1f / 3f) * sn);
+                    mats[deg] = m;
+                }
+                (float a0, float a1, float a2) = m; // rotation about (1,1,1): rows are cyclic shifts of (a0, a1, a2)
+                px[i] = (byte)Mathf.Clamp(Mathf.RoundToInt(a0 * r + a1 * g + a2 * b), 0, 255);
+                px[i + 1] = (byte)Mathf.Clamp(Mathf.RoundToInt(a2 * r + a0 * g + a1 * b), 0, 255);
+                px[i + 2] = (byte)Mathf.Clamp(Mathf.RoundToInt(a1 * r + a2 * g + a0 * b), 0, 255);
+                changed = true;
+            }
+            return changed;
+        };
     }
 
     public static class DeadlockHeroes
@@ -96,6 +148,26 @@ namespace CursedAppleCuriosities.Deadlock
             m.DisableKeyword("FORCE_SPEC");
             return m;
         }
+
+        /// <summary>
+        /// The material for one of a model's glTF materials: the registered hero's tints and glows applied (a model key
+        /// with no hero registered, e.g. Grey Talon's owl, gets the plain material). One recipe per model key, so the
+        /// model loads the same whoever asks for it first.
+        /// </summary>
+        public static Material HeroMaterial(string key, string name, Texture2D? tex)
+        {
+            DeadlockHeroDef? def = Get(key);
+            Material m = MakeMaterial(def != null ? def.DisplayName : key, name, tex);
+            if (def?.MaterialTints != null && def.MaterialTints.TryGetValue(name, out Color tint)) m.color = tint;
+            if (def?.MaterialGlows != null && def.MaterialGlows.TryGetValue(name, out Color glow))
+            {
+                m.mainTexture = null; // the colour comes from the glow, not the original (blue) texture
+                m.color = glow;
+                if (m.HasProperty("_EmColor")) m.SetColor("_EmColor", glow);
+                if (m.HasProperty("_EmPower")) m.SetFloat("_EmPower", 6f);
+            }
+            return m;
+        }
     }
 
     /// <summary>
@@ -110,9 +182,15 @@ namespace CursedAppleCuriosities.Deadlock
         public bool IsDisplay;
 
         private DeadlockHeroDef? _def;
+        private GlbModel? _template;
+        private Material[] _baseMaterials = Array.Empty<Material>();
+        private int _skin;
         private CharacterModel? _model;
         private CharacterBody? _body;
         private GameObject? _hero;
+
+        /// <summary>The attached Deadlock model (null until it loads, or on the stand-in).</summary>
+        public GameObject? HeroObject => _hero;
         private CharacterModel.RendererInfo[] _heroInfos = Array.Empty<CharacterModel.RendererInfo>();
         private readonly List<Renderer> _hidden = new List<Renderer>();
         private float _nextTry;
@@ -126,7 +204,7 @@ namespace CursedAppleCuriosities.Deadlock
         {
             _model = GetComponent<CharacterModel>();
             var skins = GetComponent<ModelSkinController>();
-            if (skins != null) skins.onSkinApplied += _ => Reassert();
+            if (skins != null) skins.onSkinApplied += i => { _skin = i; ApplySkinMaterials(); Reassert(); };
         }
 
         private void Start()
@@ -147,8 +225,8 @@ namespace CursedAppleCuriosities.Deadlock
 
         private void Update()
         {
-            // First launch: the model may still be converting. Keep trying for a few minutes, then give up.
-            if (_hero == null && _tries < 200 && Time.unscaledTime >= _nextTry) { _nextTry = Time.unscaledTime + 1f; TryAttach(); }
+            // The model may still be converting (first launch) or preloading. Keep trying for a few minutes, then give up.
+            if (_hero == null && _tries < 3000 && Time.unscaledTime >= _nextTry) { _nextTry = Time.unscaledTime + 0.1f; TryAttach(); }
         }
 
         private void TryAttach()
@@ -156,19 +234,7 @@ namespace CursedAppleCuriosities.Deadlock
             if (_def == null) return;
             _tries++;
             DeadlockHeroDef def = _def;
-            GlbModel? template = DeadlockInstall.Model(def.Hero, (name, tex) =>
-            {
-                Material m = DeadlockHeroes.MakeMaterial(def.DisplayName, name, tex);
-                if (def.MaterialTints != null && def.MaterialTints.TryGetValue(name, out Color tint)) m.color = tint;
-                if (def.MaterialGlows != null && def.MaterialGlows.TryGetValue(name, out Color glow))
-                {
-                    m.mainTexture = null; // the colour comes from the glow, not the original (blue) texture
-                    m.color = glow;
-                    if (m.HasProperty("_EmColor")) m.SetColor("_EmColor", glow);
-                    if (m.HasProperty("_EmPower")) m.SetFloat("_EmPower", 6f);
-                }
-                return m;
-            });
+            GlbModel? template = DeadlockInstall.Model(def.Hero);
             if (template == null)
             {
                 // Say why the hero is the stand-in, to their own player only (or in the lobby).
@@ -219,6 +285,12 @@ namespace CursedAppleCuriosities.Deadlock
                 });
             }
             _heroInfos = infos.ToArray();
+            _template = template;
+            _baseMaterials = new Material[_heroInfos.Length];
+            for (int i = 0; i < _heroInfos.Length; i++) _baseMaterials[i] = _heroInfos[i].defaultMaterial;
+            var msc = GetComponent<ModelSkinController>();
+            if (msc != null) _skin = msc.currentSkinIndex;
+            ApplySkinMaterials();
 
             // The muzzle on the hero's gun, findable by the gun state. ChildLocators are locked after load (AddChild
             // throws): the body reserves the slot at build time and it is pointed at the bone here.
@@ -239,6 +311,21 @@ namespace CursedAppleCuriosities.Deadlock
             try { Reassert(); }
             catch (Exception e) { CursedAppleCuriositiesPlugin.Logger?.LogWarning($"{Tag} renderers: " + e); }
             CursedAppleCuriositiesPlugin.Logger?.LogInfo($"{Tag} Deadlock model attached ({(IsDisplay ? "display" : "body")}, {_heroInfos.Length} renderers, scale {scale:0.00})");
+        }
+
+        /// <summary>The hero's materials for the current skin (the default skin, or an unknown index, gets the base ones).</summary>
+        private void ApplySkinMaterials()
+        {
+            if (_hero == null || _template == null) return;
+            Dictionary<Material, Material>? swap = _skin >= 1 && _skin - 1 < _template.SkinMaterials.Count ? _template.SkinMaterials[_skin - 1] : null;
+            for (int i = 0; i < _heroInfos.Length; i++)
+            {
+                Material m = _baseMaterials[i];
+                if (swap != null && swap.TryGetValue(m, out Material sm)) m = sm;
+                _heroInfos[i].defaultMaterial = m;
+                if (_heroInfos[i].renderer != null) _heroInfos[i].renderer.sharedMaterial = m;
+            }
+            if (_model != null) _model.forceUpdate = true;
         }
 
         /// <summary>After any skin is applied (it sets the stand-in's renderers), make the hero's renderers the model's again.</summary>
@@ -436,7 +523,12 @@ namespace CursedAppleCuriosities.Deadlock
         }
 
         private class Row { public string State = "", Clip = "", Next = "", Layer = ""; public bool Loop; }
-        private class Layer { public Row Row = null!; public AnimClip Clip = null!; public float T; public bool Valid; }
+        private class Layer
+        {
+            public Row Row = null!; public AnimClip Clip = null!; public float T; public bool Valid;
+            /// <summary>This frame: how far the pelvis lock pulled the pelvis back, in the cloth points' frame (see ClothLockShift).</summary>
+            public Vector3 ClothShift;
+        }
 
         private DeadlockHeroDef _def = null!;
         private CharacterBody? _body;
@@ -499,9 +591,34 @@ namespace CursedAppleCuriosities.Deadlock
         public void Play(string id)
         {
             if (_clips == null || !_states.TryGetValue(id, out Row row)) return;
-            if (row.Layer == "additive") { SetLayer(_over, row); _overWeight = Mathf.Max(_overWeight, 0.01f); }
+            // An ability cast mid-slide plays over the slide pose (Deadlock masks casts to the upper body): as a full
+            // pose it stood the hero up while the body kept sliding.
+            bool overSlide = Sliding && !row.Loop && !IsMovement(id) && _states.ContainsKey("slide");
+            if (row.Layer == "additive" || row.Layer == "delta" || overSlide)
+            {
+                SetLayer(_over, overSlide && row.Layer == "full" ? new Row { State = row.State, Clip = row.Clip, Next = row.Next, Layer = "delta" } : row);
+                _overWeight = Mathf.Max(_overWeight, 0.01f);
+                if (overSlide && _cur.Row.State != "slide_start") Switch("slide", 0.1f);
+            }
             else Switch(id, 0.08f);
         }
+
+        private EntityStateMachine? _bodyMachine;
+
+        /// <summary>The body is in a Deadlock slide (the Body state machine runs on every client).</summary>
+        private bool Sliding
+        {
+            get
+            {
+                if (_body == null) return false;
+                if (_bodyMachine == null) _bodyMachine = EntityStateMachine.FindByCustomName(_body.gameObject, "Body");
+                return _bodyMachine != null && _bodyMachine.state is EntityStates.CursedApple.Deadlock.DeadlockSlide;
+            }
+        }
+
+        /// <summary>Movement states that take the whole body even mid-slide (the slide's own, jumps out of it, dashes, death).</summary>
+        private static bool IsMovement(string id) =>
+            id.StartsWith("slide") || id.StartsWith("dash") || id.EndsWith("jump") || id == "in_air" || id == "falling" || id == "land" || id == "hard_land" || id == "death";
 
         /// <summary>Only while just moving around (doesn't cut into an ability), e.g. a jump or landing.</summary>
         private void PlaySoft(string id)
@@ -589,11 +706,23 @@ namespace CursedAppleCuriosities.Deadlock
             _wasGrounded = grounded;
 
             string loco = Locomotion(out float scale);
+            // Whatever ends mid-slide (a full-body pose from before it, a loop rule) goes back to the slide, not a standing run.
+            if (grounded && Sliding && _states.ContainsKey("slide") && id != "slide_start" && (IsLocomotion(id) || !_cur.Row.Loop && _cur.T >= _cur.Clip.Length))
+            {
+                Switch("slide", 0.15f);
+                return 1f;
+            }
             if (!_cur.Row.Loop && _cur.T >= _cur.Clip.Length)
             {
                 string next = _cur.Row.Next;
                 float holdFor = _def.HoldSeconds != null ? _def.HoldSeconds(id) : 3f; // held last frame
-                if (next == "hold") { if (_stateTime > holdFor) Switch(loco, 0.2f); }
+                if (next == "hold")
+                {
+                    // A held pose can end early by the hero's rule too (Grey Talon holds a jump pose until he lands).
+                    string? held = _def.LoopRule?.Invoke(new Ctx(id, loco, grounded, _groundedFor, _airTime, _stateTime));
+                    if (held != null) { if (!Switch(held, 0.1f)) Switch(loco, 0.1f); }
+                    else if (_stateTime > holdFor) Switch(loco, 0.2f);
+                }
                 else if (!Switch(next == "locomotion" ? loco : next, 0.15f)) Switch(loco, 0.15f); // never freeze on a missing clip
                 return 1f;
             }
@@ -632,7 +761,7 @@ namespace CursedAppleCuriosities.Deadlock
             if (dt <= 0f) return;
             if (_clips == null)
             {
-                if (Time.unscaledTime >= _nextClipTry) { _nextClipTry = Time.unscaledTime + 2f; TryClips(); }
+                if (Time.unscaledTime >= _nextClipTry) { _nextClipTry = Time.unscaledTime + 0.1f; TryClips(); }
                 if (_clips == null) return;
             }
             // Velocity from how the model actually moved: right for remote players too.
@@ -719,6 +848,8 @@ namespace CursedAppleCuriosities.Deadlock
         private void Apply()
         {
             float w = _prev.Valid ? Mathf.SmoothStep(0f, 1f, _fade) : 1f;
+            _cur.ClothShift = ClothLockShift(_cur);
+            if (_prev.Valid) _prev.ClothShift = ClothLockShift(_prev);
             foreach (AnimTrack tr in _cur.Clip.Tracks)
             {
                 if (!_bones.TryGetValue(tr.Bone, out Transform bone)) continue;
@@ -735,7 +866,9 @@ namespace CursedAppleCuriosities.Deadlock
                     // Root-level bones carry the converter's axis turn instead of an offset, and Source 2 cloth points
                     // ($cloth_*, Abrams' coat) a reference pose: read those relative to the clip's first frame, or the
                     // pose is added on top and the coat stretches.
-                    bool cloth = tr.Bone.StartsWith("$cloth", StringComparison.Ordinal);
+                    // A "delta" overlay is a full pose clip (Grey Talon's shoot_idle has no additive version): its motion
+                    // relative to its own first frame goes on top, like the cloth.
+                    bool cloth = tr.Bone.StartsWith("$cloth", StringComparison.Ordinal) || _over.Row.Layer == "delta";
                     if (hasR && ut.SampleRot(_over.T, out Quaternion ur))
                     {
                         if (cloth || Quaternion.Angle(Quaternion.identity, ut.Rot![0]) > 45f) ur = Quaternion.Inverse(ut.Rot![0]) * ur;
@@ -761,7 +894,27 @@ namespace CursedAppleCuriosities.Deadlock
         {
             if (!t.SamplePos(l.T, out p)) return false;
             if (t.Bone == "pelvis" && t.Pos != null && t.Pos.Length > 0 && _def.IsRootLocked(l.Row.State)) { p.x = t.Pos[0].x; p.z = t.Pos[0].z; }
+            else if (l.ClothShift != Vector3.zero && t.Bone.StartsWith("$cloth", StringComparison.Ordinal)) p -= l.ClothShift;
             return true;
+        }
+
+        /// <summary>
+        /// The pelvis lock pins the pelvis at its first-frame spot, but cloth points ($cloth_*, off the model root) carry
+        /// the pelvis's lead over root_motion in a locked clip (Celeste's dash: 0.6 m mid-dash): they ran ahead of her
+        /// body and snapped back, as Abrams' coat once did. They are pulled back by the same amount, turned into their
+        /// frame (root_motion's resting turn: GlbLoader moved them into it).
+        /// </summary>
+        private Vector3 ClothLockShift(Layer l)
+        {
+            if (!l.Valid || !_def.IsRootLocked(l.Row.State)) return Vector3.zero;
+            AnimTrack? pelvis = Find(l.Clip, "pelvis");
+            if (pelvis == null || pelvis.Pos == null || pelvis.Pos.Length == 0 || !pelvis.SamplePos(l.T, out Vector3 pp)) return Vector3.zero;
+            Vector3 d = new Vector3(pp.x - pelvis.Pos[0].x, 0f, pp.z - pelvis.Pos[0].z);
+            if (d.sqrMagnitude < 1e-6f) return Vector3.zero;
+            AnimTrack? root = Find(l.Clip, "root_motion");
+            Quaternion turn = root != null && root.Rot != null && root.Rot.Length > 0 ? root.Rot[0]
+                : _bones.TryGetValue("root_motion", out Transform rb) ? rb.localRotation : Quaternion.identity;
+            return turn * d;
         }
 
         /// <summary>Bend the spine toward where the player aims (Deadlock clips only aim straight ahead).</summary>

@@ -38,6 +38,9 @@ ab_v = ab_v[: len(ab_dom)]
 cmd_reg = np.array([cmd_region(cmd_names[i]) or "" for i in cmd_dom])
 ab_reg_cache = {}
 ab_reg = np.array([ab_reg_cache.setdefault(i, ab_region(ab_bones["names"][i]) or "") for i in ab_dom])
+# Hair hanging below the neck (Grey Talon's braids) is head-weighted but isn't head: it stretched the head region to his chest.
+_head_floor = HEROES[HERO].get("head_floor")
+if _head_floor is not None: ab_reg[(ab_reg == "head") & (ab_v[:, 1] < H["neck_0"][1, 3] + _head_floor)] = ""
 
 def bone_pos(m): return np.asarray(m)[:3, 3]
 
@@ -140,6 +143,7 @@ def ab_surface_region(bone):
         b = ab_bones["parent"].get(b)
     return None
 ab_surf = np.array([ab_reg_cache.setdefault(("s", i), ab_surface_region(ab_bones["names"][i]) or "") for i in ab_dom])
+if _head_floor is not None: ab_surf[(ab_surf == "head") & (ab_v[:, 1] < H["neck_0"][1, 3] + _head_floor)] = ""
 
 
 def surface_set(region):

@@ -5,8 +5,25 @@ import numpy as np
 HERE = os.path.dirname(os.path.abspath(__file__))
 D = os.path.join(HERE, "data")
 HERO = os.environ.get("HERO", "abrams")  # which hero the pass is for
-HEROES = {"abrams": {"scale": 1.2, "hide": []}, "lash": {"scale": 1.08, "hide": ["sparkles"]}}
-GLB = os.path.join(os.environ["USERPROFILE"], "AppData", "LocalLow", "Hopoo Games, LLC", "Risk of Rain 2", "CursedApple", "deadlock", "models", HERO, HERO + ".glb")
+# scale = <Hero>Data.ModelHeightScale before the playtest multiplier; hide = meshes the hero hides; skip = body parts items
+# don't snap to (held guns); glb = the converted model's file name in the cache.
+HEROES = {"abrams": {"scale": 1.2, "hide": [], "skip": ("gun_model", "book_model")},
+          "lash": {"scale": 1.08, "hide": ["sparkles"], "skip": ("gun_model", "book_model")},
+          "seven": {"scale": 1.08, "hide": ["skeleton"], "skip": (".gun_",), "glb": "gigawatt_prisoner"},  # skeleton = Storm Cloud look
+          # Seven without his halo headgear: face items (glasses, eyes) fitted to his face instead of the halo's rim.
+          "seven_bare": {"scale": 1.08, "hide": ["skeleton"], "fit_hide": ["headgear"], "skip": (".gun_",), "glb": "gigawatt_prisoner", "dir": "seven"},
+          # Grey Talon: items skip his bow and the owl on his arm; reload props are hidden as in the game.
+          "greytalon": {"scale": 1.08, "hide": ["archer_clip_inhand_model", "archer_quiverclips_anim_model"], "fit_hide": ["owl_bodygroup"],
+                        "skip": (".archer_bow_model_", ".archer_clip_inbow_model_"), "glb": "archer", "head_floor": 0.05, "name": "GreyTalon"},  # braids hang to his chest
+          "vyper": {"scale": 1.08, "hide": [], "skip": (".gun_",), "glb": "viper"},
+          # Victor (hero_frank): items skip his gun (a separate "weapon" mesh off root_motion).
+          "victor": {"scale": 1.15, "hide": [], "skip": (".weapon_",), "glb": "frank"},
+          # Viscous: his Goo Ball ("inflated", hidden unless rolling) still sizes him in the game (BallHeightFix), so it counts
+          # for height only; the outline shell isn't fitted to; items skip his gun.
+          "viscous": {"scale": 1.2 * 2.94 / 2.45, "hide": [], "fit_hide": ["inflated", "bodyoutline"], "skip": (".gun_",)},
+          # Celeste (hero_unicorn): items skip her baton; the horn glow is a see-through shell over the horn.
+          "celeste": {"scale": 1.08, "hide": [], "fit_hide": ["unicorn_hornglow"], "skip": (".unicorn_baton_a_",), "glb": "unicorn"}}
+GLB = os.environ.get("HERO_GLB") or os.path.join(os.environ["USERPROFILE"], "AppData", "LocalLow", "Hopoo Games, LLC", "Risk of Rain 2", "CursedApple", "deadlock", "models", HEROES[HERO].get("dir", HERO), HEROES[HERO].get("glb", HERO) + ".glb")
 BLENDER = r"C:\Program Files\Blender Foundation\Blender 5.1\blender.exe"
 
 def qmul(a, b):
@@ -41,6 +58,7 @@ def mat_euler(R):  # rotation matrix -> Unity euler (inverse of euler_q), degree
 
 def decompose(m):  # 4x4 -> pos, rotation matrix, scale (no shear assumed)
     s = np.linalg.norm(m[:3, :3], axis=0)
+    if np.linalg.det(m[:3, :3]) < 0: s[0] = -s[0]  # a mirrored display (Commando uses negative x scale): keep the mirror in the scale
     return m[:3, 3].copy(), m[:3, :3] / s, s
 
 def apply(m, v): return (np.c_[v, np.ones(len(v))] @ np.asarray(m).T)[:, :3]

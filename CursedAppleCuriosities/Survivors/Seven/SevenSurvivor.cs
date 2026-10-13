@@ -24,7 +24,10 @@ namespace CursedAppleCuriosities.Survivors.Seven
         public const string Token = "CURSEDAPPLE_SEVEN_";
         public const string BodyName = "CursedAppleSevenBody";
         public const string MuzzleName = "SevenMuzzle";
-        public static readonly Color Color = new Color(0.4f, 0.7f, 1f); // electric blue (lobby / UI)
+        public static readonly Color Color = new Color(1f, 0.55f, 0.15f); // character select / UI: orange (user, 2026-10-12)
+        /// <summary>Skin icon in the hero's own palette (prison orange, dark grey, canvas, his electric blue), not the stand-in's.</summary>
+        private static Sprite DefaultSkinIcon => _defaultSkinIcon ??= Kit.SkinIcon(new Color(0.85f, 0.45f, 0.15f), new Color(0.24f, 0.24f, 0.24f), new Color(0.75f, 0.67f, 0.5f), new Color(0.2f, 0.3f, 0.85f));
+        private static Sprite? _defaultSkinIcon;
         /// <summary>Seven's lightning is orange (user): his effects are recoloured to this hue.</summary>
         public const float Hue = 0.07f;
         public static readonly Color Orange = Color.HSVToRGB(Hue, 0.85f, 1f);
@@ -58,6 +61,7 @@ namespace CursedAppleCuriosities.Survivors.Seven
             CreateSkills();
             BodyPrefab = CreateBody();
             DisplayPrefab = CreateDisplay();
+            SevenItemDisplays.Register();
             CreateSurvivor();
             AddLanguage();
             SevenNet.Register();
@@ -211,7 +215,7 @@ namespace CursedAppleCuriosities.Survivors.Seven
             Kit.MuteStandIn(body, model.gameObject, SevenData.Hero);
             var children = model.GetComponent<ChildLocator>();
             if (children != null && children.FindChild(MuzzleName) == null) children.AddChild(MuzzleName, model);
-            Kit.OwnSkin(model.gameObject, "skinCursedAppleSevenDEFAULT", Token + "SKIN_DEFAULT");
+            Kit.OwnSkin(model.gameObject, "skinCursedAppleSevenDEFAULT", Token + "SKIN_DEFAULT", DefaultSkinIcon);
 
             ContentAddition.AddBody(body);
             return body;
@@ -228,7 +232,7 @@ namespace CursedAppleCuriosities.Survivors.Seven
                 swap.HeroKey = SevenData.Hero;
                 swap.IsDisplay = true;
                 cm.gameObject.AddComponent<SevenStormLook>(); // keeps the Storm Cloud skeleton hidden in the lobby
-                Kit.OwnSkin(cm.gameObject, "skinCursedAppleSevenDISPLAY", Token + "SKIN_DEFAULT");
+                Kit.OwnSkin(cm.gameObject, "skinCursedAppleSevenDISPLAY", Token + "SKIN_DEFAULT", DefaultSkinIcon);
             }
             display.AddComponent<SevenDisplayIntro>();
             return display;
@@ -290,17 +294,16 @@ namespace CursedAppleCuriosities.Survivors.Seven
             LanguageAPI.Add(Token + "SKIN_DEFAULT", "Default");
             LanguageAPI.Add(Token + "DESCRIPTION",
                 "Seven is a condemned occultist who laughed his way out of his own execution.<color=#CCD3E0>\n\n" +
-                "< ! > Lightning Ball crawls while it shocks: throw it into a crowd and let it work.\n\n" +
-                "< ! > Power Surge runs alongside everything: start it, then keep your bursts on target to chain lightning through the pack.\n\n" +
-                "< ! > Storm Cloud reaches the whole map by the end, but only what Seven can see takes damage. Float somewhere with a view.</color>\n");
+                "< ! > Throw Lightning Ball into a crowd: it slows down to keep shocking them.\n\n" +
+                "< ! > During Power Surge, keep your bursts on target to chain lightning through the pack.\n\n" +
+                "< ! > Storm Cloud only hurts what Seven can see. Float somewhere with a view.</color>\n");
             LanguageAPI.Add(Token + "OUTRO", "..and so he left, laughing.");
             LanguageAPI.Add(Token + "FAILURE", "..and so he vanished, the storm finally spent.");
             LanguageAPI.Add(Token + "LORE", "No ward could hold him, and no planet will either.");
 
             LanguageAPI.Add(Token + "PASSIVE_NAME", "Electric Current");
             LanguageAPI.Add(Token + "PASSIVE_DESC",
-                "Seven <style=cIsUtility>sprints automatically</style> out of combat, and can <style=cIsUtility>slide</style>, <style=cIsUtility>dash</style> and <style=cIsUtility>air jump</style>. " +
-                "During <style=cIsUtility>Power Surge</style> he keeps sprinting while he fights: only <style=cIsHealth>taking damage</style> stops it.");
+                "Sprints automatically out of combat; dash, air jump and slide. During <style=cIsUtility>Power Surge</style> he keeps sprinting until hit.");
 
             LanguageAPI.Add(Token + "GUN_NAME", "Cold Calculus");
             LanguageAPI.Add(Token + "GUN_DESC",
@@ -308,25 +311,20 @@ namespace CursedAppleCuriosities.Survivors.Seven
 
             LanguageAPI.Add(Token + "BALL_NAME", "Lightning Ball");
             LanguageAPI.Add(Token + "BALL_DESC",
-                $"Launch a slow ball of lightning that deals <style=cIsDamage>{D(SevenData.BallDps)} damage per second</style> to every enemy within {SevenData.BallRadius:0.#}m. " +
-                "It <style=cIsUtility>slows down</style> while shocking enemies and sticks to walls.");
+                $"Throw a slow ball of lightning that <style=cIsUtility>shocks</style> nearby enemies for <style=cIsDamage>{D(SevenData.BallDps)} damage per second</style>. It sticks to walls.");
 
             LanguageAPI.Add(Token + "STATIC_NAME", "Static Charge");
             LanguageAPI.Add(Token + "STATIC_DESC",
-                $"Lock onto an enemy and charge them. After <style=cIsUtility>{SevenData.StaticDelay:0.#}s</style> it <style=cIsDamage>stuns</style> everything within {SevenData.StaticRadius:0}m of them " +
-                $"for {SevenData.StaticStun:0.#}s and deals <style=cIsDamage>{D(SevenData.StaticDamage)} damage</style>.");
+                $"Charge an enemy you target. After {SevenData.StaticDelay:0.#}s, deal <style=cIsDamage>{D(SevenData.StaticDamage)} damage</style> and <style=cIsDamage>stun</style> everything near them for {SevenData.StaticStun:0.#}s.");
 
             LanguageAPI.Add(Token + "SURGE_NAME", "Power Surge");
             LanguageAPI.Add(Token + "SURGE_DESC",
-                $"For <style=cIsUtility>{SevenData.SurgeDuration:0}s</style>, gain <style=cIsUtility>+{SevenData.SurgeMoveSpeed:0.#} m/s movement speed</style>, and each burst that hits " +
-                $"<style=cIsDamage>chains lightning</style> through up to {SevenData.SurgeChainCount} enemies, starting at <style=cIsDamage>{D(SevenData.SurgeChainDamage)}</style> " +
-                $"and growing by <style=cIsDamage>{D(SevenData.SurgeChainGrowth)}</style> per jump.");
+                $"For <style=cIsUtility>{SevenData.SurgeDuration:0}s</style>, gain <style=cIsUtility>+{SevenData.SurgeMoveSpeed:0.#} m/s</style> and your bursts <style=cIsDamage>chain lightning</style> through up to {SevenData.SurgeChainCount} enemies for <style=cIsDamage>{D(SevenData.SurgeChainDamage)}</style>, growing each jump.");
 
             LanguageAPI.Add(Token + "STORM_NAME", "Storm Cloud");
             LanguageAPI.Add(Token + "STORM_DESC",
-                $"<style=cIsUtility>Float</style> and channel a storm for <style=cIsUtility>{SevenData.StormChannel:0}s</style> that grows until it covers <style=cIsDamage>the whole map</style>, " +
-                $"dealing <style=cIsDamage>{D(SevenData.StormDpsStart)}</style> damage per second, rising to <style=cIsDamage>{D(SevenData.StormDpsEnd)}</style> as it grows, to every enemy you can see. " +
-                $"Press Primary once to call a <style=cIsDamage>Lightning Strike</style> for {D(SevenData.StrikeDamage)} damage that knocks enemies away.");
+                $"<style=cIsUtility>Float</style> and channel a storm for <style=cIsUtility>{SevenData.StormChannel:0}s</style> that grows to cover <style=cIsDamage>the whole map</style>, dealing <style=cIsDamage>{D(SevenData.StormDpsStart)}-{D(SevenData.StormDpsEnd)} damage per second</style> to every enemy you can see. " +
+                $"Primary calls a <style=cIsDamage>Lightning Strike</style> for {D(SevenData.StrikeDamage)}.");
         }
     }
 

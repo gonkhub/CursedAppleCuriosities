@@ -35,8 +35,9 @@ namespace CursedAppleCuriosities.Survivors.Vyper
             SlideFrictionGrace = 1f,           // Deadlock m_flFlatGroundFrictionGraceTime 0.6; longer by playtest
             SlideUphillLoss = 0f,
             SlideDistanceBonus = 0.15f,        // SlideScale 15
-            // Even more slippery than Deadlock (playtest): flat ground and slight inclines barely slow her.
-            SlideFriction = 0.4f,              // heroes 1.2 (Lash's playtested value)
+            // Slippery (playtest): slight inclines barely slow her.
+            SlideFriction = 0.8f,              // heroes 1.2; the user played her at 1.2 (cfg), then picked 0.8
+            SlideTurnFriction = 0.5f,          // half the friction while she steers: carving keeps her speed (playtest)
             SlideFrictionSlope = 0.1f,         // Deadlock 0.15
             // Lash's playtested controls, kept for every hero
             WallJumpUp = 22f,

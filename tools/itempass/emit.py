@@ -2,9 +2,9 @@
 # every rule override (by group key and rule index, checked against Commando's original attach point).
 import json, sys, os
 from rig import D
-from rig import HERO
+from rig import HERO, HEROES
 fit = json.load(open(D + (f"/{HERO}_fit_final.json" if os.path.exists(D + f"/{HERO}_fit_final.json") else f"/{HERO}_fit.json")))
-NAME = HERO.capitalize()
+NAME = HEROES[HERO].get("name", HERO.capitalize())
 orig = {g["key"]: g for g in json.load(open(D + "/rules.json"))}
 OUT = sys.argv[1]
 def f(x): s = f"{x:.5f}".rstrip("0").rstrip("."); return (s if s not in ("-0", "") else "0") + "F"

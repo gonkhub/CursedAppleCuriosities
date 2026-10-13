@@ -11,6 +11,7 @@ using RoR2;
 using RoR2.Skills;
 using UnityEngine;
 using UnityEngine.AddressableAssets;
+using Kit = CursedAppleCuriosities.Deadlock.DeadlockSurvivorKit;
 
 namespace CursedAppleCuriosities.Survivors.Lash
 {
@@ -25,7 +26,10 @@ namespace CursedAppleCuriosities.Survivors.Lash
         public const string Token = "CURSEDAPPLE_LASH_";
         public const string BodyName = "CursedAppleLashBody";
         public const string MuzzleName = "LashMuzzle";
-        public static readonly Color Color = new Color(0.71f, 0.55f, 1f); // violet #B48CFF
+        public static readonly Color Color = new Color(0.55f, 0.8f, 1f); // character select / UI: light blue (user, 2026-10-12)
+        /// <summary>Skin icon in the hero's own palette (skin, dark leather, brown, the blue accent), not the stand-in's.</summary>
+        private static Sprite DefaultSkinIcon => _defaultSkinIcon ??= Kit.SkinIcon(new Color(0.8f, 0.6f, 0.46f), new Color(0.28f, 0.2f, 0.17f), new Color(0.5f, 0.33f, 0.24f), new Color(0.15f, 0.45f, 0.8f));
+        private static Sprite? _defaultSkinIcon;
 
         public static GameObject? BodyPrefab, DisplayPrefab;
         public static SurvivorDef? Survivor;
@@ -195,7 +199,7 @@ namespace CursedAppleCuriosities.Survivors.Lash
             // Reserve the muzzle slot now: ChildLocators can't grow after load. It points at the glove once Lash is on.
             var locatorChildren = model.GetComponent<ChildLocator>();
             if (locatorChildren != null && locatorChildren.FindChild(MuzzleName) == null) locatorChildren.AddChild(MuzzleName, model);
-            OwnSkin(model.gameObject, "DEFAULT");
+            Kit.OwnSkin(model.gameObject, "skinCursedAppleLashDEFAULT", Token + "SKIN_DEFAULT", DefaultSkinIcon);
 
             BiggerCamera(body);
             ContentAddition.AddBody(body);
@@ -225,21 +229,10 @@ namespace CursedAppleCuriosities.Survivors.Lash
                 var swap = cm.gameObject.AddComponent<DeadlockModelSwap>();
                 swap.HeroKey = LashData.Hero;
                 swap.IsDisplay = true;
-                OwnSkin(cm.gameObject, "DISPLAY");
+                Kit.OwnSkin(cm.gameObject, "skinCursedAppleLashDISPLAY", Token + "SKIN_DEFAULT", DefaultSkinIcon);
             }
             display.AddComponent<LashDisplayIntro>();
             return display;
-        }
-
-        /// <summary>Lash's own copy of Commando's default skin (sharing Commando's SkinDef would mix up skin indices).</summary>
-        private static void OwnSkin(GameObject model, string suffix)
-        {
-            var msc = model.GetComponent<ModelSkinController>();
-            if (msc == null || msc.skins == null || msc.skins.Length == 0) return;
-            SkinDef skin = UnityEngine.Object.Instantiate(msc.skins[0]);
-            skin.name = "skinCursedAppleLash" + suffix;
-            skin.nameToken = Token + "SKIN_DEFAULT"; // rootObject stays Commando's: the skin's transform paths are built from it
-            msc.skins = new[] { skin };
         }
 
         private static void CreateSurvivor()

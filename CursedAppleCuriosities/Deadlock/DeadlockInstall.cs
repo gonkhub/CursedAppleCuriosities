@@ -50,7 +50,14 @@ namespace CursedAppleCuriosities.Deadlock
         private static readonly HashSet<string> FailedModels = new HashSet<string>();
         private static readonly Dictionary<string, string> ModelNotes = new Dictionary<string, string>(); // hero -> why there's no model (yet)
         private static readonly Dictionary<string, GlbModel> LoadedModels = new Dictionary<string, GlbModel>();
-        private static readonly Dictionary<string, Dictionary<string, AnimClip>> LoadedClips = new Dictionary<string, Dictionary<string, AnimClip>>();
+        private static readonly Dictionary<string, Dictionary<string, AnimClip>> LoadedClips = new Dictionary<string, Dictionary<string, AnimClip>>(); // locked: the preloader fills it
+
+        // Preloading: a background thread reads each converted model (textures decoded) and its clips; the main thread
+        // turns a read model into Unity objects a step at a time (Pump), so picking a hero no longer freezes the game.
+        private static readonly Dictionary<string, GlbData> ParsedModels = new Dictionary<string, GlbData>(); // locked
+        private static readonly Dictionary<string, (GlbModel Model, IEnumerator<bool> Steps)> Building = new Dictionary<string, (GlbModel, IEnumerator<bool>)>();
+        private static volatile string? _wanted;      // asked for before it was ready: preloaded next
+        private static volatile bool _convertingDone;
 
         private static void Log(string s) => CursedAppleCuriositiesPlugin.Logger?.LogInfo("[Deadlock] " + s);
         private static void Warn(string s) => CursedAppleCuriositiesPlugin.Logger?.LogWarning("[Deadlock] " + s);
@@ -70,6 +77,11 @@ namespace CursedAppleCuriosities.Deadlock
         public static void WantSound(string vpkPrefix) { if (!WantedSounds.Contains(vpkPrefix)) WantedSounds.Add(vpkPrefix); }
         public static void WantIcon(string vtexPath) { if (!WantedIcons.Contains(vtexPath)) WantedIcons.Add(vtexPath); }
         public static void WantModel(ModelRequest m) => WantedModels.Add(m);
+        /// <summary>A resource the converter should print as text, once (e.g. a particle snapshot's points), read with <see cref="Dump"/>.</summary>
+        public static void WantDump(string vpkPath) { if (!WantedDumps.Contains(vpkPath)) WantedDumps.Add(vpkPath); }
+
+        private static readonly List<string> WantedDumps = new List<string>();
+        private static readonly Dictionary<string, string> ReadyDumps = new Dictionary<string, string>(); // vpk path -> cached text file
 
         /// <summary>One background thread: copy sounds and icons, then convert any model not cached yet.</summary>
         public static void Start()
@@ -85,7 +97,128 @@ namespace CursedAppleCuriosities.Deadlock
                     try { ConvertModel(m, converter); }
                     catch (Exception e) { lock (FailedModels) FailedModels.Add(m.Hero); Note(m.Hero, "couldn't be converted from Deadlock (see LogOutput.log)"); Warn($"model {m.Hero}: {e.Message}"); }
                 }
+                _convertingDone = true;
+                foreach (string d in WantedDumps)
+                {
+                    try { DumpResource(d, converter); }
+                    catch (Exception e) { Warn($"dump {d}: {e.Message}"); }
+                }
             }) { IsBackground = true, Name = "CursedApple Deadlock reader" }.Start();
+            if (ShowModels == null || ShowModels.Value)
+                new System.Threading.Thread(Preload) { IsBackground = true, Name = "CursedApple Deadlock preloader", Priority = System.Threading.ThreadPriority.BelowNormal }.Start();
+        }
+
+        /// <summary>
+        /// Preloader thread: every hero's model and clips, as soon as each is converted (cached ones at once), so they're
+        /// ready before anyone picks the hero. One asked for early (_wanted) goes first. Runs until the converting is done
+        /// and everything converted has been read.
+        /// </summary>
+        private static void Preload()
+        {
+            var doneModels = new HashSet<string>();
+            var doneClips = new Dictionary<string, string>(); // hero -> clips file read
+            while (true)
+            {
+                ModelRequest? pick = null;
+                string? modelFile = null, clipsFile = null;
+                string? wanted = _wanted;
+                foreach (ModelRequest m in WantedModels)
+                {
+                    string? mf, cf;
+                    lock (ReadyModels) ReadyModels.TryGetValue(m.Hero, out mf);
+                    lock (ReadyClips) ReadyClips.TryGetValue(m.Hero, out cf);
+                    if (doneModels.Contains(m.Hero)) mf = null;
+                    if (cf != null && doneClips.TryGetValue(m.Hero, out string had) && had == cf) cf = null;
+                    if (mf == null && cf == null) continue;
+                    if (pick == null || m.Hero == wanted) { pick = m; modelFile = mf; clipsFile = cf; }
+                    if (m.Hero == wanted) break;
+                }
+                if (pick == null)
+                {
+                    if (_convertingDone) break;
+                    System.Threading.Thread.Sleep(250);
+                    continue;
+                }
+                if (wanted != null && pick.Hero != wanted) _wanted = null; // nothing left to read for it
+                var watch = Stopwatch.StartNew();
+                if (modelFile != null)
+                {
+                    doneModels.Add(pick.Hero);
+                    try
+                    {
+                        GlbData d = GlbLoader.Parse(modelFile, new HashSet<string>(pick.HideMeshes), DeadlockHeroes.Get(pick.Hero)?.Skins);
+                        lock (ParsedModels) ParsedModels[pick.Hero] = d;
+                        Log($"model for {pick.Hero} read in {watch.ElapsedMilliseconds} ms");
+                    }
+                    catch (Exception e)
+                    {
+                        lock (FailedModels) FailedModels.Add(pick.Hero);
+                        Note(pick.Hero, "failed to load (see LogOutput.log)");
+                        Warn($"model {pick.Hero} failed to load: {e}");
+                    }
+                }
+                else
+                {
+                    doneClips[pick.Hero] = clipsFile!;
+                    Dictionary<string, AnimClip> clips;
+                    try { clips = GlbLoader.LoadClips(clipsFile!); Log($"animations for {pick.Hero} loaded: {clips.Count} clips in {watch.ElapsedMilliseconds} ms"); }
+                    catch (Exception e) { clips = new Dictionary<string, AnimClip>(); Warn($"animations {pick.Hero} failed to load: {e}"); }
+                    lock (LoadedClips) LoadedClips[pick.Hero] = clips;
+                }
+            }
+        }
+
+        /// <summary>
+        /// Main thread, every frame: turn read models into Unity objects a few milliseconds at a time (a texture upload or
+        /// a mesh per step), so it never shows as a hitch.
+        /// </summary>
+        public static void Pump()
+        {
+            if (ParsedModels.Count == 0 && Building.Count == 0) return; // unlocked peek: at worst a frame late
+            var watch = Stopwatch.StartNew();
+            while (watch.ElapsedMilliseconds < 4)
+            {
+                string? hero = NextToBuild();
+                if (hero == null || !Step(hero)) return;
+            }
+        }
+
+        private static string? NextToBuild()
+        {
+            foreach (string h in Building.Keys) return h;
+            lock (ParsedModels) foreach (string h in ParsedModels.Keys) return h;
+            return null;
+        }
+
+        /// <summary>One build step for the hero; false when it has nothing to build (not read yet, or done).</summary>
+        private static bool Step(string hero)
+        {
+            if (!Building.TryGetValue(hero, out var b))
+            {
+                GlbData? d;
+                lock (ParsedModels) { if (ParsedModels.TryGetValue(hero, out d)) ParsedModels.Remove(hero); }
+                if (d == null) return false;
+                var model = new GlbModel();
+                b = (model, GlbLoader.Build(d, (name, tex) => DeadlockHeroes.HeroMaterial(hero, name, tex), model).GetEnumerator());
+                Building[hero] = b;
+            }
+            bool more;
+            try { more = b.Steps.MoveNext(); }
+            catch (Exception e)
+            {
+                Building.Remove(hero);
+                lock (FailedModels) FailedModels.Add(hero);
+                Note(hero, "failed to load (see LogOutput.log)");
+                Warn($"model {hero} failed to build: {e}");
+                return true;
+            }
+            if (!more)
+            {
+                Building.Remove(hero);
+                LoadedModels[hero] = b.Model;
+                Log($"model for {hero} loaded: {b.Model.Bones.Count} bones, height {b.Model.Height:0.00}");
+            }
+            return true;
         }
 
         private static string DefaultConverter()
@@ -125,48 +258,28 @@ namespace CursedAppleCuriosities.Deadlock
             return null;
         }
 
-        /// <summary>The hero's model template once converted (null until then, when unavailable, or switched off).</summary>
-        public static GlbModel? Model(string hero, Func<string, Texture2D?, Material> makeMaterial)
+        /// <summary>
+        /// The hero's model template once converted and loaded (null until then, when unavailable, or switched off). Models
+        /// preload in the background from launch; one already read is finished on the spot (only uploads left, no freeze),
+        /// and one asked for before it was read is read next.
+        /// </summary>
+        public static GlbModel? Model(string hero)
         {
             if (ShowModels != null && !ShowModels.Value) return null;
-            lock (FailedModels) if (FailedModels.Contains(hero)) return null;
             if (LoadedModels.TryGetValue(hero, out GlbModel m)) return m;
-            string? file;
-            lock (ReadyModels) ReadyModels.TryGetValue(hero, out file);
-            if (file == null) return null;
-            try
-            {
-                var hide = new HashSet<string>();
-                foreach (ModelRequest r in WantedModels) if (r.Hero == hero) foreach (string s in r.HideMeshes) hide.Add(s);
-                m = GlbLoader.Load(file, makeMaterial, hide);
-                LoadedModels[hero] = m;
-                Log($"model for {hero} loaded: {m.Bones.Count} bones, height {m.Height:0.00}");
-                return m;
-            }
-            catch (Exception e)
-            {
-                lock (FailedModels) FailedModels.Add(hero);
-                Note(hero, "failed to load (see LogOutput.log)");
-                Warn($"model {hero} failed to load: {e}");
-                return null;
-            }
+            lock (FailedModels) if (FailedModels.Contains(hero)) return null;
+            while (Step(hero) && !LoadedModels.ContainsKey(hero)) { }
+            if (LoadedModels.TryGetValue(hero, out m)) return m;
+            _wanted = hero;
+            return null;
         }
 
-        /// <summary>The hero's animation clips by name (null until converted or when unavailable).</summary>
+        /// <summary>The hero's animation clips by name (null until converted and read, or when unavailable).</summary>
         public static Dictionary<string, AnimClip>? Clips(string hero)
         {
-            if (LoadedClips.TryGetValue(hero, out var clips)) return clips;
-            string? file;
-            lock (ReadyClips) ReadyClips.TryGetValue(hero, out file);
-            if (file == null) return null;
-            try
-            {
-                clips = GlbLoader.LoadClips(file);
-                Log($"animations for {hero} loaded: {clips.Count} clips");
-            }
-            catch (Exception e) { clips = new Dictionary<string, AnimClip>(); Warn($"animations {hero} failed to load: {e}"); }
-            LoadedClips[hero] = clips;
-            return clips;
+            lock (LoadedClips) if (LoadedClips.TryGetValue(hero, out var clips)) return clips;
+            lock (ReadyClips) if (ReadyClips.ContainsKey(hero)) _wanted = hero;
+            return null;
         }
 
         /// <summary>Cached MP3 files for a sound prefix (empty until extracted or when unavailable).</summary>
@@ -414,6 +527,48 @@ namespace CursedAppleCuriosities.Deadlock
                 }
                 else Warn($"{m.Hero}: animation conversion produced nothing (model stays in its bind pose)");
             }
+        }
+
+        /// <summary>
+        /// The converter's text dump of one resource (all blocks), cached as a .txt next to the models. Read-only on Deadlock,
+        /// never while it runs, like the model conversion.
+        /// </summary>
+        private static void DumpResource(string vpkPath, string converter)
+        {
+            string file = Path.Combine(CacheDir, "dumps", vpkPath.Replace('/', '_') + ".txt");
+            if (File.Exists(file)) { lock (ReadyDumps) ReadyDumps[vpkPath] = file; return; }
+            string? citadel = CitadelDir();
+            if (citadel == null || DeadlockRunning() || !File.Exists(converter)) return;
+            Directory.CreateDirectory(Path.GetDirectoryName(file));
+            var psi = new ProcessStartInfo(converter, $"-i \"{Path.Combine(citadel, "pak01_dir.vpk")}\" -f \"{vpkPath}\" -a")
+            { UseShellExecute = false, CreateNoWindow = true, RedirectStandardOutput = true, RedirectStandardError = true };
+            string text;
+            using (Process p = Process.Start(psi))
+            {
+                p.ErrorDataReceived += (o, e) => { };
+                p.BeginErrorReadLine();
+                text = p.StandardOutput.ReadToEnd();
+                p.WaitForExit(60 * 1000);
+            }
+            if (text.Length < 100) { Warn($"dump {vpkPath}: nothing printed"); return; }
+            File.WriteAllText(file + ".part", text);
+            if (File.Exists(file)) File.Delete(file);
+            File.Move(file + ".part", file);
+            lock (ReadyDumps) ReadyDumps[vpkPath] = file;
+            Log($"dumped {vpkPath}");
+        }
+
+        /// <summary>The cached text dump of a resource asked for with <see cref="WantDump"/> (null until it exists).</summary>
+        public static string? Dump(string vpkPath)
+        {
+            string? file;
+            lock (ReadyDumps) ReadyDumps.TryGetValue(vpkPath, out file);
+            if (file == null && CacheDir.Length > 0)
+            {
+                string guess = Path.Combine(CacheDir, "dumps", vpkPath.Replace('/', '_') + ".txt");
+                if (File.Exists(guess)) file = guess;
+            }
+            return file != null ? File.ReadAllText(file) : null;
         }
 
         /// <summary>Run the converter into a temporary file, renamed when complete (a cut-short run never looks cached).</summary>

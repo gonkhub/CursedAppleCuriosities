@@ -5,24 +5,29 @@ using UnityEngine;
 namespace CursedAppleCuriosities.Survivors.Vyper
 {
     /// <summary>
-    /// Vyper's character-select entrance: she Slithers in from off the side of the screen along the floor, slowing onto
-    /// the pedestal, then gets up turning to face the camera.
+    /// Vyper's character-select entrance: she Slithers in from the back right of the view (behind where she ends up
+    /// facing, a little to screen right: user), along the floor toward the camera, slowing onto the pedestal, then gets
+    /// up turning to face the camera.
     /// </summary>
     public class VyperDisplayIntro : DeadlockDisplayIntro
     {
-        private const float StartDistance = 10f; // metres to the side: off the edge of the lobby camera
+        private const float StartDistance = 10f; // metres back from the pedestal
+        private const float RightShare = 0.5f;   // how far toward screen right the start sits, per metre back
         private const float Slide = 0.8f;        // seconds to the pedestal, slowing down
         private const float TurnBack = 0.35f;    // seconds to face the camera while getting up
 
         protected override IEnumerator Run()
         {
-            // She comes from the display's right (screen left), sliding head first toward its left.
-            Vector3 side = HomeRotation * Vector3.right;
+            // The display faces the camera: its back is away from the view, its left is screen right. She starts back and
+            // to screen right and slides head first toward the pedestal, so she faces down her path (yaw from the display).
+            Vector3 local = new Vector3(-RightShare, 0f, -1f).normalized;
+            Vector3 side = HomeRotation * local;
+            float yaw = Mathf.Atan2(-local.x, -local.z) * Mathf.Rad2Deg;
             Move(side * StartDistance);
-            Face(-90f);
+            Face(yaw);
             yield return null; // the Deadlock model attaches on its first frame
             Move(side * StartDistance);
-            Face(-90f);
+            Face(yaw);
             yield return new WaitForSeconds(0.1f);
 
             Play("slide_start");
@@ -42,7 +47,7 @@ namespace CursedAppleCuriosities.Survivors.Vyper
             DeadlockSounds.Play("vyper_slide_exit", Home);
             for (float t = 0f; t < TurnBack; t += Time.deltaTime)
             {
-                Face(Mathf.SmoothStep(-90f, 0f, t / TurnBack));
+                Face(Mathf.SmoothStep(yaw, 0f, t / TurnBack));
                 yield return null;
             }
         }

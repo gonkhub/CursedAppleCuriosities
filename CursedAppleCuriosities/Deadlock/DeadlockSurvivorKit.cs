@@ -47,15 +47,57 @@ namespace CursedAppleCuriosities.Deadlock
             return slot;
         }
 
-        /// <summary>The hero's own copy of the stand-in's default skin (sharing its SkinDef would mix up skin indices).</summary>
-        public static void OwnSkin(GameObject model, string skinName, string nameToken)
+        /// <summary>
+        /// The hero's own copies of the stand-in's default skin (sharing its SkinDef would mix up skin indices): the
+        /// default, then any extra skins. They only differ in name and icon here; the look is the hero def's Skins,
+        /// which DeadlockModelSwap applies by skin index.
+        /// </summary>
+        public static void OwnSkin(GameObject model, string skinName, string nameToken, UnityEngine.Sprite? icon = null, params (string Name, string Token, UnityEngine.Sprite Icon)[] extra)
         {
             var msc = model.GetComponent<ModelSkinController>();
             if (msc == null || msc.skins == null || msc.skins.Length == 0) return;
-            SkinDef skin = UnityEngine.Object.Instantiate(msc.skins[0]);
+            SkinDef standIn = msc.skins[0];
+            var skins = new SkinDef[1 + extra.Length];
+            skins[0] = CopySkin(standIn, skinName, nameToken, icon);
+            for (int i = 0; i < extra.Length; i++) skins[i + 1] = CopySkin(standIn, extra[i].Name, extra[i].Token, extra[i].Icon);
+            msc.skins = skins;
+        }
+
+        private static SkinDef CopySkin(SkinDef standIn, string skinName, string nameToken, UnityEngine.Sprite? icon)
+        {
+            SkinDef skin = UnityEngine.Object.Instantiate(standIn);
             skin.name = skinName;
             skin.nameToken = nameToken; // rootObject stays the stand-in's: the skin's transform paths are built from it
-            msc.skins = new[] { skin };
+            if (icon != null) skin.icon = icon;
+            return skin;
+        }
+
+        /// <summary>
+        /// A skin icon in RoR2's style: a disc split into four wedges (top, right, bottom, left) by thin dark lines,
+        /// ringed in the same dark colour. Hero icons use the hero's own palette instead of the stand-in's.
+        /// </summary>
+        public static UnityEngine.Sprite SkinIcon(Color top, Color right, Color bottom, Color left)
+        {
+            const int Size = 128;
+            Color line = new Color(0.11f, 0.11f, 0.12f);
+            var tex = new Texture2D(Size, Size, TextureFormat.RGBA32, false) { wrapMode = TextureWrapMode.Clamp, name = "texCursedAppleSkinIcon" };
+            var px = new Color[Size * Size];
+            float c = (Size - 1) / 2f, outer = Size / 2f - 1f, ring = outer - 7f;
+            for (int y = 0; y < Size; y++)
+                for (int x = 0; x < Size; x++)
+                {
+                    float dx = x - c, dy = y - c, r = Mathf.Sqrt(dx * dx + dy * dy);
+                    Color col;
+                    if (r >= ring) col = line;
+                    else if (Mathf.Abs(Mathf.Abs(dx) - Mathf.Abs(dy)) < 2.2f) col = line; // the diagonals between wedges
+                    else if (Mathf.Abs(dy) > Mathf.Abs(dx)) col = dy > 0 ? top : bottom;    // texture rows run bottom-up
+                    else col = dx > 0 ? right : left;
+                    col.a = Mathf.Clamp01(outer + 0.5f - r); // anti-aliased edge
+                    px[y * Size + x] = col;
+                }
+            tex.SetPixels(px);
+            tex.Apply();
+            return UnityEngine.Sprite.Create(tex, new Rect(0, 0, Size, Size), new Vector2(0.5f, 0.5f));
         }
 
         private static readonly FieldInfo NetMachines = typeof(NetworkStateMachine).GetField("stateMachines", BindingFlags.NonPublic | BindingFlags.Public | BindingFlags.Instance);
@@ -261,6 +303,19 @@ namespace CursedAppleCuriosities.Deadlock
         /// </summary>
         /// <param name="steer">Keep pushing it along its facing every tick (lets the behaviour change its speed, as Lightning Ball's
         /// crawl does). Off: launched once and left to fly (Vyper's bola).</param>
+        /// <summary>Another component on the object still [RequireComponent]s this one: remove it on a later pass (Unity logs an error otherwise).</summary>
+        private static bool Required(GameObject go, Component c)
+        {
+            foreach (Component other in go.GetComponents<Component>())
+            {
+                if (other == null || other == c) continue;
+                foreach (RequireComponent rc in other.GetType().GetCustomAttributes(typeof(RequireComponent), true))
+                    if (rc.m_Type0 != null && rc.m_Type0.IsInstanceOfType(c) || rc.m_Type1 != null && rc.m_Type1.IsInstanceOfType(c) || rc.m_Type2 != null && rc.m_Type2.IsInstanceOfType(c))
+                        return true;
+            }
+            return false;
+        }
+
         public static GameObject? CloneProjectile(GameObject? source, string name, Type behaviour, float speed, float lifetime, bool gravity, bool triggers, bool steer = true)
         {
             if (source == null) return null;
@@ -273,7 +328,7 @@ namespace CursedAppleCuriosities.Deadlock
                     // ApplyTorqueOnStart (Commando's grenade) spins it on launch: with the facing steering the velocity, it corkscrewed.
                     bool keep = b is RoR2.Projectile.ProjectileController || b is RoR2.Projectile.ProjectileSimple || b is RoR2.Projectile.ProjectileDamage ||
                                 b is RoR2.Projectile.ProjectileNetworkTransform || b.GetType().Namespace != "RoR2.Projectile" && b.GetType().Name != "ApplyTorqueOnStart";
-                    if (!keep) UnityEngine.Object.DestroyImmediate(b);
+                    if (!keep && !Required(p, b)) UnityEngine.Object.DestroyImmediate(b);
                 }
             var simple = p.GetComponent<RoR2.Projectile.ProjectileSimple>() ?? p.AddComponent<RoR2.Projectile.ProjectileSimple>();
             simple.desiredForwardSpeed = speed;

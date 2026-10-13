@@ -4,9 +4,10 @@ A BepInEx plugin for **Risk of Rain 2** (Survivors of the Void, build 912) that 
 items and equipment **adapted from Deadlock's item catalogue**. The name is homage: Deadlock's
 map is the "Cursed Apple" and items are bought from a "curiosity shop."
 
-**State:** builds clean (0 errors), **31 items + 14 equipment**, 4 survivors (Lash, Abrams, Seven, Vyper). **v1.0.0** released
-2026-10-11; **v1.2.5** packaged 2026-10-12 for friends (local import; tag `v1.2.5` on main). New work happens on branch `1.3` (version 1.3.0). The user has
-playtested most post-1.0 work.
+**State:** builds clean (0 errors), **31 items + 14 equipment**, 8 survivors (Lash, Abrams, Seven, Vyper, Grey Talon, Victor, Viscous, Celeste). **v1.0.0** released
+2026-10-11; **v1.2.5** packaged 2026-10-12 for friends (tag `v1.2.5` on main); **v1.3.0** finished 2026-10-12 on branch `1.3`
+(tag `v1.3.0`, not packaged); **v1.4.0** (Cursed Broker, not yet playtested) finished 2026-10-12 on branch `1.4` (tag `v1.4.0`,
+not packaged). New work happens on branch `1.5` (version 1.5.0). The user playtests as we go.
 
 ---
 
@@ -69,7 +70,7 @@ read it before touching tiers, buffs, pickups, or minion interactions.
 
 ---
 
-## Roster (31 items + 9 equipment)
+## Roster (31 items + 14 equipment)
 
 ### White (Tier 1)
 | Item | Mechanic | Art |
@@ -78,7 +79,7 @@ read it before touching tiers, buffs, pickups, or minion interactions.
 | Kinetic Dash | Utility skill → +20%/stack fire rate for 6s | ✅ |
 | Intensifying Magazine | Sustained basic-attack fire ramps damage up to +45% (+30%/stack) over 3s | ✅ |
 | Restorative Shot | Every 3s, next hit heals 3% max HP (+3%/stack) | ✅ |
-| Sprint Boots | While sprinting, ramp to +25% move speed (+12%/stack) over 6s; resets on stop | ✅ |
+| Sprint Boots | While sprinting, ramp to +25% move speed (+12%/stack) over 6s; resets on stop; +1 hp/s (+0.5/stack) out of danger, flat (user, 1.5.0) | ✅ |
 | Battle Vest | Above 75% HP → +20%/stack bonus damage | ✅ |
 | Mystic Shot | Every 3s, next hit deals a 100% (+100%/stack) base-damage bonus burst | ✅ |
 | Mystic Expansion | +30%/stack radius AND range (doubled from 15%, 2026-10-12). BlastAttacks (hook `BlastAttack.Fire`; their effects grow to match, projectile explosions via `ProjectileExplosion.DetonateServer`), and everything that calls `MysticExpansion.RadiusMultiplier(body)`: Siphon Life, Seismic Impact, Death Slam (impact, lock-on area, throw distance), Grapple range, Heavy Melee reach, Shoulder Charge width, Torment Pulse, Spirit Burn, Heroic/Hunter's Aura, Colossus slow, Ricochet, Lifestrike/Spirit Snatch "close" range, Long Range window (slides closer), Focus Lens/Cultist reach, Majestic Leap distance. Vanilla (`MysticExpansionReach.cs`): Ukulele, Tesla, N'kuhanna, Razorwire, Focus Crystal (IL), Warbanner (level-up AND teleporter)/Fungus/Rachis/Pauldron/cripple wards, Frost Relic ward, Faraday Spur zone (IL); Focus Crystal ring grown client-side (`MysticIndicatorScale`). Torment Pulse draws a faint red range ring (local player). New custom AoEs/ranges must call it too. Not playtested. | ✅ |
@@ -104,7 +105,7 @@ read it before touching tiers, buffs, pickups, or minion interactions.
 |---|---|---|
 | Lucky Shot | On a CRIT, hyperbolic ~29% chance to strike a second crit | ✅ |
 | Siphon Bullets | On hit, steal 1% of damage dealt as bonus max HP (cap 10%×stacks of enemy max HP per enemy). Stolen HP lost when that enemy dies. | ✅ |
-| Frenzy | Smooth ramp below 50% HP (+8%/stack window): up to +40% dmg / +50% atk / +25% move at brink | ✅ |
+| Frenzy | Smooth ramp below 50% HP (+8%/stack window): up to +40% dmg / +50% atk / +25% move at brink; holds its peak 5 s after healing back above (user, 1.5.0) | ✅ |
 | Spellslinger | Non-primary skill → a stack (max 10, +10/copy): +10% atk speed and 4% shorter cooldowns each (`cooldownMultAdd`, capped at 50%); decays after 5s. Buffed 2026-10-12 (was 6 stacks, +7%, 3s). | ✅ |
 | Spellbreaker | Block 200+ dmg hit by 75%, 30s cd (-50%/stack) | ✅ |
 | Healing Tempo | Reworked 2026-10-12 (option B, "overheal → Tempo"): +25% healing received (+10%/stack, regen too). Every 10% max HP of non-regen overheal (the game's own `HealthComponent.onCharacterOverhealServer`, same figure Aegis uses) = 1 Tempo stack: +10% atk / +6% move each, max 4 (+2/stack), decays 1/s after 7s without overheal. Stats read the synced buff count (fixes the old version giving non-host players nothing). Deadlock proc/end sounds + Energized visual. Personal only, the old 30m ally aura is gone. Not playtested. | ✅ |
@@ -128,7 +129,7 @@ read it before touching tiers, buffs, pickups, or minion interactions.
 |---|---|---|
 | Counterspell | 25s cd. Ward 2s → fully negate next non-DoT hit + heal 8% maxHP | ✅ |
 | Colossus | 35s cd. 8s: grow 1.75×, 65% dmg resist, slow enemies in 20m, -30% move speed | ✅ |
-| Goose Eggs (Grey/Green/Red/Golden/Void) | `GoldenGooseEgg.cs` (`GooseEgg` base). Consumed on use, -10% dmg while held. +1 stack per 2:30 held, uncapped, starts at 0 (activating at 0 does nothing). Per stack: Grey 15 whites, Green 5 greens, Red 1 red, Golden 2 boss items, Void 2 void items (Void Cradle's `dtVoidChest`). Progress per egg kind, run-wide. Only Grey is droppable; every drop table rolls it into a weighted egg (45/27/12/8/8, config). Holding Void, picking up another egg absorbs it as +1 stack (`GenericPickupController.AttemptGrant`). Icons: golden art recoloured. All eggs priced white in the Catalog. | ✅ |
+| Goose Eggs (Grey/Green/Red/Golden/Void) | `GoldenGooseEgg.cs` (`GooseEgg` base). Consumed on use, -10% dmg while held. +1 stack per 5:00 held, uncapped, starts at 0 (activating at 0 does nothing). Per stack: Grey 15 whites, Green 5 greens, Red 1 red, Golden 2 boss items, Void 2 void items (Void Cradle's `dtVoidChest`). Progress per individual egg (1.5.0): `GooseEggProgress` on the inventory per equipment location while held, `GooseEggPickupProgress` on the pickup when swapped out (carried in the `AttemptGrant` hook); a recycled egg starts fresh. Only Grey is droppable; every drop table rolls it into a weighted egg (45/27/12/8/8, config). Holding Void, picking up another egg absorbs it as +1 stack (`GenericPickupController.AttemptGrant`). Icons: golden art recoloured. All eggs priced white in the Catalog. | ✅ |
 | Blood Tribute | Toggle (1s cd). While active: drain 5% max HP/s + -50% healing received, but +100% attack speed / +50% move speed. | ✅ |
 | Ethereal Shift | 45s cd. 3s invulnerable (HiddenInvincibility) + Cloak, frozen in place (`CharacterMotor.UpdateVelocity` zeroed) and no skills (`SkillSilence`); then Special-source damage +100% for 8s (`DamageSource.Special`). Not playtested. | ✅ |
 | Refresher | 80s cd. `SkillLocator.ResetSkills()` (networked to the owning client). Not playtested. | ✅ |
@@ -163,6 +164,15 @@ same on a stand-in model.
   `%LocalLow%\Hopoo Games, LLC\Risk of Rain 2\CursedApple\deadlock`), `GlbLoader` (one renderer per
   primitive so `CharacterModel` overlays work), `MiniJson` (RoR2 has no Newtonsoft), `DeadlockSounds`
   (Unity AudioSource, follows RoR2 master×SFX volume).
+- **Hero preloading (no freeze on picking a hero):** a "preloader" thread reads every `WantModel` model (`GlbLoader.Parse`:
+  plain data, no Unity objects) and its clips as soon as each is converted. The main thread builds them a few ms per frame
+  (`DeadlockInstall.Pump` from the plugin's `Update`, via `GlbLoader.Build`). `DeadlockInstall.Model(key)` never blocks.
+  It returns null until the model is read (the caller retries; stand-in meanwhile), then finishes the remaining uploads at
+  once. `HeroTextures` decodes base-colour PNGs off-thread (its own PNG decoder), mipmaps them and compresses them to
+  DXT1/DXT5. The result is cached as `<png>.cac`, so later launches only read it; this is 8× less VRAM than LoadImage's
+  RGBA32. Materials come from one recipe per model key, `DeadlockHeroes.HeroMaterial` (the def's tints and glows).
+  Background-thread rule: Parse/LoadClips may only use managed code or Unity natives marked `IsThreadSafe`
+  (Quaternion.Inverse/Slerp, Matrix4x4.Inverse are).
 - `Survivors/Lash/` — **Lash** (`CursedAppleLashBody`). Commando's rig cloned as the stand-in (hurtboxes,
   camera, item display bones); `LashModelSwap` puts the Deadlock model on top and makes its renderers the
   `CharacterModel`'s; `LashAnimator` plays his Deadlock clips (anim table in `LashData`).
@@ -177,7 +187,9 @@ same on a stand-in model.
   Lash: `Survivors/Lash/LashIntro.cs` Ground Strikes onto the pedestal from 30 m (gs_drop/gs_dive, gs_land, impact sound,
   Loader slam effect). The select VO waits for the intro to end (`DeadlockModelSwap.PlaySelectVoice` at the pedestal).
   Seven: `SevenIntro.cs` sinks from 7 m in the Storm Cloud float over 2.6 s, 5 bolts around the pedestal, storm_end on landing.
-  Vyper: `VyperIntro.cs` slides in from 10 m off the side (turned to her travel), getup turning to face the camera.
+  His float clips spin his pelvis (storm_end -75 -> -9 deg in 0.4 s: an awkward spin on landing, user): the intro counter-turns the display to
+  keep his hip line across the screen through the landing, then eases back.
+  Vyper: `VyperIntro.cs` slides in from 10 m back and to screen right (user: behind her final facing), getup turning to face the camera.
   Seven/Vyper not playtested. **Abrams has no intro on purpose** (user: his head clipping off the top of the screen is funny).
 - **Shared Deadlock movement** (`Deadlock/DeadlockMovement.cs`) for every Deadlock hero:
   `DeadlockMovementProfile` (numbers, Deadlock defaults; sound ids `{Hero}_jump`, `_dash`, `_vo_effort`, `_slide`...;
@@ -192,6 +204,11 @@ same on a stand-in model.
     0.30-0.55 s (seconds, not a share: a share halved it on Lash's short dash). A ground dash always lasts 0.68 s:
     Lash's 10 m burst takes 0.3 s, then eases to a run (`GroundDashTotalSeconds`, `GroundDashTailDecay`).
     Works off a ledge mid-dash (coyote) without spending air jumps.
+  - **Down-dash** (user 2026-10-12): double-tap the slide key in the air (`DownDashDoubleTap` 0.3 s, second tap airborne) =
+    half a stamina pip, +10 m/s downward, horizontal kept. Stamina (`DeadlockMover.Pips`) is a float now; a refill adds a whole pip;
+    the HUD shows half bars. `DeadlockMover.TryDownDash(motor)` is called by DeadlockMain and Viscous' GooBall state.
+  - **Air control boost** (user): any `TrySpend` while airborne (air jump, air dash, down-dash, Grey Talon's glide dash) sets
+    `AirBoost` until landing: `AirSteer` accel x`AirControlBoost` (1.35); Goo Ball's air turn rate too.
   - Ground Strike interrupts Grapple and Death Slam's hold (the throw fires at once). Grounded Ground Strike = no hop.
   - Numbers + config in `LashData` (`[Lash]` section).
   - Server work (Flog damage+heal, Death Slam lift/throw/impact) goes through R2API.Networking messages in `LashNet`.
@@ -254,7 +271,15 @@ same on a stand-in model.
     (not `fire/NN`), Static Charge = cast + loop only, Storm Cloud = `gigawatt_storm_cloud_*` (not `a4_storm_cloud`), never `a3_voltage_drain`
     or `seven_spark`. Vyper all approved; her gun is layered (`VyperGunAudio`: first / mid / tail + release). Vyper has no Deadlock footstep,
     dash or landing sounds: silent for now. **Rule: pitch any new Deadlock sound to the user before wiring it.**
-  - Pending: ping VO (pitch first), Static Charge detonation sound (proc not approved), item display pass (tools/itempass) for both, Petrify stone visual, camera/scale playtest,
+  - Pain Battery ready glow (user): `VictorWireGlow` draws the left-arm barbed wire green while the battery is full. Deadlock: ability
+    m_FullyChargedParticle `frank_shock_target_ready_buff` -> `_trace` child -> snapshot `barbed_wire_l_fx_model.vsnap` (76 points, each on one
+    arm/hand bone, rope colour 157,203,114). The snapshot is dumped once as text by the converter (`DeadlockInstall.WantDump`/`Dump`, cache
+    `dumps/`), points mapped Deadlock (x,y,z) in -> (-y, z, x) * 0.0254 m in GlbLoader's root space, bound by `RestInRoot`.
+  - Reanimation charge-up + intro: `VictorReassembly` plays Deadlock's `frank_hover_death_anim_fx_model` (clip _02 = parts fly together,
+    then its hover hold) in place of his model while he's down; `ability_reanimation` is only the get-up.
+  - Item displays fitted 2026-10-12 (`SevenItemDisplays.cs`, `VyperItemDisplays.cs`; tools/itempass README). Abrams' 9 mirrored rules fixed; the
+    user's dev cfg had `[Abrams - Debug] Fitted Item Anchors = false` (old automatic anchors), set back to true.
+  - Pending: ping VO + Static Charge detonation sound (pitched: `sound_review/ping_review.html`), Petrify stone visual check, camera/scale playtest,
     Seven's sleeve/waist cloth bones (watch for an Abrams-style coat bug), writing review (subtitles/descriptions are drafts).
   - Seven's runs bake their travel into the pelvis (a sibling of root_motion, not a child): he ran ahead and snapped back.
     `GlbLoader.RemoveRootTravel` now takes the horizontal root travel out of root_motion's siblings when the pelvis follows it
@@ -276,8 +301,157 @@ same on a stand-in model.
 
 ---
 
+- `Survivors/GreyTalon/` — **Grey Talon** (`CursedAppleGreyTalonBody`, Deadlock `hero_orion`, model `models/heroes_staging/archer/archer`,
+  icons `archer_*`, VO `sounds/vo/orion`). Built 2026-10-12, **never launched**. Kit is the user's (memory `grey-talon-design`):
+  - M1 Bow: 300% hitscan, 0.6 s, 600 m reach; falloff only past 150 m (to 50% at 300 m). During Rain of Arrows: 5-arrow fan, +13% each.
+  - M2 Charged Shot: draw 0.5 s, hold with M1 or M2, zoomed over-shoulder camera, walk at Deadlock's 1.5 m/s; release = Lynx Archer arrow
+    (DLC4) x2.5, 203 m/s, pierces every enemy (`GreyTalonChargedArrow` sweeps its path), 800%, no falloff. 6 s cd.
+  - Utility Rain of Arrows: 0.2 s, launch 27.5 m/s at 60 deg, 4 s glide (fall <= 0.64 m/s, drift 6.6 m/s), jump cancels. 8 s cd.
+  - Special Guided Owl: 1.5 s cast, then the owl flies on the owner's client (`GreyTalonOwl`) steered by look (110 deg/s), 15 -> 36 m/s
+    while forward is held, bursts on touch or on Primary (12 m, 2500%, 0.75 s stun); camera = `ICameraStateProvider` override that keeps the
+    player's look rotation and only moves the position behind the owl. Jump releases it. Grey Talon is HiddenInvincibility + Cloak +
+    SkillSilence while steering. Boss kills: +20% owl damage each, whole run (`GreyTalonOwlTrophies` on the master, shown as a buff).
+    125 s cd (Deadlock's, user wanted it very long). The owl model is Deadlock's `archer_guided_arrow` (converted as `greytalon_owl`)
+    inside the Engi harpoon ghost; others see a ghost from position messages. The perched owl (`owl_bodygroup`) hides while it flies.
+  - Sounds approved by the user except Rain of Arrows' cast (silent). Item displays fitted (`GreyTalonItemDisplays.cs`; itempass
+    `head_floor` keeps his braids out of the head region). Owl on his arm hidden; blast is green (Captain airstrike + omni, recoloured).
+  - Playtest changes (2026-10-12): Rain of Arrows leaps at 45 m/s along 60 deg with no gravity, stops dead at 10 m, then glides;
+    jump during the rise keeps the speed (the press is swallowed: `DeadlockMover.SuppressJumpUntil`); air dash works in the glide; one
+    fan's repeat hits on an enemy deal 50%. Charged Shot hit radius 1.5 m, Lynx arrow ghost + trail. Owl 2500%, cruises 6 m/s,
+    Primary detonates it, 2 s invulnerable grace after. Slide friction 1.2. Bow shot uses the new "delta" overlay layer (shoot_idle
+    is a full pose); `GlbLoader` no longer removes root travel twice from cloth (his skirt).
+  - Lobby intro `GreyTalonIntro.cs`: the owl dives onto the pedestal and he stands in the blast.
+  - Shared change: a held ("hold") one-shot now also asks the hero's LoopRule (his jump pose ends on landing; his set has no in-air loop).
+  - Pending: ping VO, Rain of Arrows cast sound, dash pose/sound sync in multiplayer (the in-glide dash plays locally only), writing review.
+
+- `Survivors/Victor/` — **Victor** (`CursedAppleVictorBody`, Deadlock `hero_frank`, model `models/heroes_wip/frank/frank` but AnimGraph2 clips
+  in `frank/clips`, icons `frank_*`, VO `sounds/vo/frank`, movement foley under `victor`). Prototyped 2026-10-12 on branch `1.5`, **built, never
+  launched**. Kit and rules are the user's (memory `victor-design`); Vyper's file shape (Data / Model / States / Net / Survivor).
+  - M1 Memento Mori: 75% hitscan, spins up 0.198 -> 0.171 s between shots (Deadlock spin rates), layered gun sound (windup/first/main/mech; no tail, user).
+  - M2 Pain Battery (`VictorBatterySkillDef`): ready only when full. Charge = synced buff stacks 0..100 filled by `onServerDamageDealt` on
+    Victor (damage taken to health, shield or barrier, measured in his TakeDamage hook; his own Aura/Jumpstart included;
+    20% of max health fills it, user). 0.35 s wind-up, 7 bolts in a 40 deg fan (28 m,
+    sphere-cast, walls stop them), each enemy once for 500%, and each enemy hit heals 15% of missing health (Deadlock T3, built in).
+  - Utility Jumpstart: costs 15% current health (non-lethal, bypasses armor/block), heals 2x that (at least 10% max) over 4.5 s on a linearly
+    fading rate (`VictorJumpstart`), +3 m/s fading in 10 buff steps. 2 charges (user), 12 s each.
+  - Special Aura of Suffering (toggle, user): own "Aura" state machine (he keeps shooting); stays on until Special again or he dies (going down
+    to Reanimation counts); 2 s cooldown after it ends. Server `VictorAura` ticks every 0.25 s: enemies within 8 m take 100% -> 600%/s over 8 s, then holds (Special source, proc 0.5, crits rolled, `OnHitEnemy`/`OnHitAll`, so on-hit, lifesteal, on-kill, Ethereal Shift's special
+    bonus all apply), Victor takes 1.1% -> 5% max health/s (same ramp) and can die of it. Mystic Expansion widens it. Radius shown by `VictorAuraFx` as Abrams' Siphon Life ring (user, after the
+    Focus Crystal terrain indicator never rendered): grey, terrain-hugging, Mystic Expansion radius.
+  - Passive Shocking Reanimation (`VictorRevive`): while ready, hits on Victor are NonLethal; one that leaves him at 1 health starts it:
+    slow wave (125% fading over 3 s, 36 m: user doubled Deadlock's 18), 3 s HiddenInvincibility + Reanimating buff (SkillSilence; the owner's body machine enters
+    `Reanimate`), then up at 50% health with a 1000% blast + 1.5 s stun. 90 s cooldown on the master (`VictorReviveClock`, user), shown as a
+    cooldown buff; a respawn on the same stage keeps it, a new stage resets it (user).
+  - VFX green (user), recoloured with `Kit.Recoloured` at hue 0.33; UI colour grey-green. Sounds picked by me (user: no review pass needed).
+  - Lobby intro `VictorIntro.cs` (user: Shocking Reanimation): his parts reassemble on the pedestal (3 s), he gets up; no lightning strikes (user).
+  - Item displays fitted 2026-10-12 (`VictorItemDisplays.cs`, `HERO=victor`; items skip his `weapon` mesh). Chance Doll sits in his hip.
+  - Not done yet: ping VO, Deadlock's ability upgrades beyond the T3 heal.
+
+- `Survivors/Viscous/` — **Viscous** (`CursedAppleViscousBody`, Deadlock `hero_viscous`, model `models/heroes_staging/viscous/viscous`, Kelvin's
+  skeleton, AnimGraph1 clip names like Abrams; in the air and his ability overlays use Kelvin's AnimGraph2 clips by path,
+  `models/heroes_staging/kelvin_v2/clip/...`, which his own model exports: Deadlock's live Viscous runs hero_*+kelvin graphs). Goo Ball
+  playtested OK 2026-10-12 (user); full kit added the same day and playtested by the user that evening:
+  - M1 Goo Gun (0.21 s) / alt **Goo Glob** (Deadlock alt fire: 38 m/s, 0.2 gravity, 350% burst 3.56 m, 1.26 s). M2 **Splatter** (user: 3 bursts,
+    500% each, 5 m) / alt **Puddle Punch** (user: 700%, 40 m aim, 4 m, launches enemies, allies (landing guarded) and Viscous himself, who
+    gets x3 air control for 2.5 s via `DeadlockMover.BoostAirControl`). Utility **The Cube** (own "Cube" machine: tap = ally under the
+    crosshair with Tricorn reticle, nobody = refund; hold 0.3 s = self; 3 s x Duration Extender, invulnerable, held in place (UpdateVelocity
+    hook + rootMotion zeroed), SkillSilence, 5%/s heal, jump breaks out after 1 s; then `PostCubeBuff` 8 s: +2.5 m/s and stamina x1/0.7 via
+    `DeadlockMover.RegenMultipliers`). Cube drawn by `ViscousCubeHost` with Deadlock's `viscous_cube` model (green box until converted).
+  - Globs = `ViscousGlob` on a CrocoSpit clone; bursts are BlastAttacks so Mystic Expansion's hook widens them (effect spawned at base radius
+    so the hook grows it); ghost scaled by Mystic Expansion. Punch radius/range, cube range, ball size all take Mystic Expansion (user).
+  - Splatter/Punch/Cube castable while rolling (Deadlock CastWhileRolling). Ball steers with WASD relative to the camera, else the crosshair (user).
+  - Lobby intro (user): he stands in the cube for its 3 s, it pops, then his select line. The cube and its sound go away with the display if it is swapped mid-intro.
+  - Playtest 2 (user, 2026-10-12): Kelvin clip names must be SHORT in the anim table (`GlbLoader` keys clips by the last path part;
+    the converter matches short names too); full paths silently fell back to the run in the air. Goo Glob: no gravity, splats at
+    Deadlock range 25.4 m, Splatter's burst effect (Beetle spit burst had a stray ring). Splatter ignores enemies (IgnoreCollision on
+    contact), bounces x2 (restitution 1.3, min 12 m/s). Puddle Punch: hold to aim (ring + arrow preview, local LineRenderers), release
+    to punch. It goes on any surface the crosshair hits (floor, slope, wall, ceiling; the ring lies flat on it) and throws
+    everything straight out of it, along the normal (user); the area is a cylinder standing out of the surface. Cube: slippery (keeps momentum, 0.15/s
+    friction, slides downhill, hits shove it). Cube cast cleanses (Util.CleanseBody: debuffs, DoTs, stun); inside, hits deal 0 damage
+    but are NOT rejected, so on-hit debuffs land and DoTs tick normally (user); no fall damage in the cube or the Goo Ball
+    (OnCharacterHitGroundServer hooks), and the next landing is guarded if either ends mid-air. Goo Ball jump 22 m/s, cooldown 20 s (user's cfg hand-edited, backup `.bak-viscous`).
+  - Goo Ball = Deadlock `viscous_goo_bowling_ball`: 0.55 s curl (`rolling_goo`), then 11 s rolling (own `GooBall` Body state, owner moves it via
+    rootMotion): 11.4 m/s, Primary held = 20.3 m/s (accel 15.2, decel 1.27 m/s2), steers to the crosshair 110/50 deg/s, walls bounce it
+    (sphere cast 0.45 m smaller than the 1.4 m ball, so curbs roll over; 65% speed kept, 0.1 s no steering), jump + 1 double jump (12.7 m/s),
+    1.8 m hit radius (Mystic Expansion), 250% + Heavy (user: Loader's rule, +30% per m/s of speed), 0.5 s stun, 10 m/s knock, each enemy every 1.2 s; it rolls through normal enemies.
+    Bosses (user): double damage, no stun, the ball freezes dead 0.3 s (`BossFreeze`, roll timer paused) then bounces off as off a wall.
+    Down-dash works in the ball too (shared movement). 50% resist (user; Deadlock 35%) = armor via
+    the synced `BallBuff`. Special again ends it; cooldown 40 s starts when it ends. Camera pulled back x1.5 and up 1.2 m.
+  - The ball is his own model's hidden mesh group `inflated` (renderers `inflated_N`, skinned to `inflated_center`, radius 1.51 model units).
+    `ViscousBallLook` (body + display, runs after the animator) swaps body/gun/outline for it while the Body state is `GooBall`, and puts
+    `inflated_center` at foot + radius, scaled to the radius (1.4 m x Mystic Expansion), rolled from the body's real motion (works for remote players).
+  - Model height quirk: the loader scales by the tallest vertex, which is the ball's helmet (2.94 m) not him (2.45 m): `BallHeightFix`.
+  - The hurtbox becomes the ball's sphere while he rolls (`ViscousBallHurtbox`, 2026-10-12; checked with the self-test `probe`). Item displays fitted 2026-10-12 (`ViscousItemDisplays.cs`; the ball and outline
+    shell count for height only). Skin: Blue.
+
+- `Survivors/Celeste/` — **Celeste** (`CursedAppleCelesteBody`, Deadlock `hero_unicorn`, model `models/heroes_wip/unicorn/unicorn`,
+  AnimGraph2 clips in `unicorn/clips`, icons `unicorn_*`, VO `sounds/vo/unicorn`). Built 2026-10-12 while the user was away,
+  then tuned by the user in playtest the same evening (memory `celeste-design`). All numbers are `[Celeste]` config knobs.
+  - Movement (user): Lash's extras: 5 stamina, 2 air jumps, 2 air dashes of 14 m; her innate low gravity (-25%, +44% air control).
+    Air-dash pose holds 0.8 s before the in-air loop.
+  - M1 Carny Life: a blade every 0.58 s, 120% (user: a light poke), 75 m/s, always drops 18 m/s2 and loses airspeed after 20 m,
+    homes gently onto an enemy within 22.5 deg of its flight, one bounce off the world, no ricochet; ghost 0.45x, light blue-violet
+    (`CelesteDagger` on a Bandit shiv clone).
+  - M2 Light Eater: 0.3 s (she hangs in the air; in the air the flare plays over her in-air pose), 70 deg cone 10 m, 400%, marks 8 s
+    (mark shown over the enemy): +180% per blade hit on marked enemies and 18% of all her damage to them heals her. Alt Radiant Daggers:
+    hold to preview (ring + beam marker), release to cast, like Puddle Punch; beam onto the aimed spot (30 m), 1.4 s, 600% in 8 m (a tall
+    cylinder), +7% damage per enemy hit (Radiance: uncapped, one counter, 30 s from the latest hit).
+  - Utility Dazzling Trick: 20% max HP barrier, 4 s window (Lunar Golem shell visual); the hit that takes the barrier to 0 bursts
+    it: 500% in 14 m + 1.75 s stun (user; Deadlock silences).
+  - Special Shining Wonder: hold to aim (slow fall), release: orb (Artifact shell's seeking flare, given SolarFlareGhost, 0.8x) at
+    18 m/s (user: a floating ball of light), chases the nearest enemy through walls, 1000% + 32% slow per hit, 8 bounces within 7 m of
+    the enemy it hit (or off her prism, which tops the prism back up), lingers 3.25 s for a target circling what it last hit.
+  - Every radius takes Mystic Expansion; mark/slow/prism durations take Duration Extender. Her light is pink (Hue 0.9, her hair);
+    projectiles blue-violet (Hue 0.72). Soft purple glow: self-lit horn shell (`unicorn_glow`) and a faint chest light (`CelesteGlow`).
+  - VO by Deadlock's mapping: power3 = Shining Wonder, power4 = Radiant Daggers.
+  - Her model exports no `shoot_idle`/`ability_luminous_flux`: `shoot_idle_start` and `ability_radiant_daggers_stand_idle` stand in.
+  - Lobby intro (user): she ground-dashes in from the back right, as Vyper slides in (`dash_ground`), then turns to the camera. Item displays fitted (`CelesteItemDisplays.cs`). Skin: Mint.
+  - Deadlock animator: in root-locked clips her cloth points are pulled back with the pinned pelvis (her skirt used to run ahead in the dash).
+
+## Self-test (playtesting without the user, 2026-10-12)
+
+- `Testing/SelfTest.cs`: launch with `--cac-selftest <script.txt>` and the game plays a script: `run <Body>` (title -> lobby ->
+  run, leaves the drop pod), `wait`, `cmd <console command>` (DebugToolkit's too), `hold/tap/press/release <button>`, `move x y [s]`,
+  `aim enemy|yaw pitch|off`, `slide 1|0`, `setskill <slot> <SkillDef name>` (live body only, the saved loadout is untouched),
+  `shot <name>` (screen), `portrait <name> <yaw> [zoom] [height]` (the body alone on a flat background), `log`, `quit`.
+  PNGs land next to the script. Every line is logged `[SelfTest]`, plus a load clock until the title screen. Without the
+  argument nothing runs.
+- Profile **Curiosities Selftest** (`C:\r2heimman\RiskOfRain2\profiles`): R2API, DebugToolkit, Risk Of Options and the fix mods
+  (MiscFixes, VFiX, WolfFixes, GildedChunkSpamFix: without them the game hangs at 33% loading). Copy the built DLL into its
+  `Unknown-CursedAppleCuriosities` folder, then `steam.exe -applaunch 632360 --doorstop-enabled true --doorstop-target-assembly
+  "<profile>\BepInEx\core\BepInEx.Preloader.dll" --cac-selftest <script>`.
+- Load time measured: ~150 s launch to title on that profile, 148 s with the mod removed. The mod costs ~4 s (plugin Awake 3.7 s:
+  items 1.0 s, equipment 0.2 s, survivors ~0.2 s each, Risk Of Options page ~0.9 s). The rest is the game and VFiX's dither pass (37 s).
+  Icons are now decoded once per file and the pickup card GLB parsed once.
+- `spawn_ai Lemurian` matches the allied Devoted Lemurian: use `LemurianMaster`.
+
 ## Recent changes (since last handoff)
 
+- **Playtest pass (user, 2026-10-12 evening):** Celeste retuned (movement, Carny Life, Light Eater, Radiant Daggers preview, uncapped
+  Radiance, Dazzling Trick stuns, slower homing Shining Wonder, purple glow, VO mapping; see Survivors above); Viscous Goo Ball is Heavy
+  (250% + 30% per m/s) with 50% resist; Viscous' lobby cube is cleaned up mid-intro; shorter skill descriptions for the six newer heroes;
+  projectile clones strip components without the startup 'Can't remove' error; Siphon Bullets' stolen max HP synced to clients.
+- **Autonomous session (2026-10-12, user away):** self-test harness (above); Celeste; item displays for Viscous and Celeste
+  (`tools/itempass`, `HERO=viscous|celeste`, plus `allview.py`); skins Mint Celeste / Coral Vyper / Blue Viscous; Kinetic Dash
+  triggers on dash-jumps (Deadlock's own trigger; `KineticDashJumpMessage` from the dashing client); Abrams' Heavy Melee hits are
+  Special-source (were still Secondary from before it moved to the special slot). All eight heroes, every alt skill, all mod items
+  at once and all 10 equipment ran in the self-test with no exceptions from the mod.
+- **Character select colours (user, 2026-10-12):** each survivor's `Color` (body colour + SurvivorDef primary colour): Lash light blue,
+  Abrams dark blue, Seven orange, Vyper yellowish green, Grey Talon dark green, Victor greyish green.
+- **Victor (1.5.0, prototyped 2026-10-12, tuned in the user's playtests).** Sixth survivor; see Survivors above and memory `victor-design`.
+
+- **Cursed Broker (1.4.0, built 2026-10-12, NOT playtested).** `Broker/`: `CursedBroker` (Shrine of Order clone with its
+  purchase stripped and a `PickupPickerController` + Command picker panel; symbol tinted purple; spawned in
+  `SceneDirector.onPostPopulateSceneServer`, 20% per stage from stage 3 or after a loop, config `[Cursed Broker]`),
+  `CurseRules` (per-item Mult/Add on the effective stack count + improvement text; full table in
+  `docs/CursedBrokerAudit.md`, regenerate with `tools/gen_curse_audit.py`; any non-lunar tier incl. white),
+  `CursePenalties` (26 narrow penalties, rolled per item when a player first opens a broker, cached per broker+player), `CurseLedger` (per-master curse list, server-owned, mirrored by `CurseLedgerMessage`; IL hook on
+  `Inventory.UpdateEffectiveItemStacks`; HUD shows real copy counts, purple glow, curse tooltip; Dio's/Larva revive twice).
+  Range/Duration penalties feed `MysticExpansion.RadiusMultiplier` / `DurationExtender.Multiplier`.
+  Debug: `cac_broker_stage3 [scene]` (skip to a stage 3 with a guaranteed broker), `cac_broker_spawn` (one next to you);
+  registered through `[assembly: HG.Reflection.SearchableAttribute.OptIn]`. Config `Debug - Spawn Every Stage`.
+
+- **Abrams Shoulder Charge (2026-10-12, user):** scoop 250% -> 50%; a wall slam deals 300% (`ChargeWallDamage`) to every carried enemy.
 - **2026-10-12 balance/bug pass (built, not playtested).** Arctic Blast 75 s / 12 m; Cultist Sacrifice 120 s; Torment Pulse
   base range 12 m; Toxic Bullets UI; Lash: Flog removed, Ground Strike 300%, Grapple 6 s, Death Slam fixes (above), model
   ×1.25 (camera +0.4 m, ×1.15 distance); Abrams: Heavy Melee → special (1500%), Seismic → special alt, Charge 250%, Resilience 50% + 10 armor, model ×1.5
@@ -300,98 +474,5 @@ same on a stand-in model.
   Checked and left alone: Frenzy and Sprint Boots (the tracker runs on every machine from synced health or
   sprint state), Glass Cannon, Heroic Aura, Radiant Regen, Blood Tribute, Trophy Collector, Inhibitor and
   Cultist Sacrifice (already buff-driven), Fortitude and Goose Egg (inventory only), and survivors (they have no stat hooks).
-  **Known leftovers:** Siphon Bullets (max HP from a float tracker) is still server-only (Spirit Snatch no
-  longer has a stat hook since its barrier rework). Max health is applied on the server, so gameplay is right,
-  but the client's HUD max HP misses the bonus. A float value needs a network message or a
-  scaled hidden buff to fix. **Needs a 2-player playtest:** check the client gets the bonus on all four items.
-
-- **Curiosity Catalog rework (2026-10-10, untested in-game).** Replaced the persistent per-stage
-  3-cube shop with a single shop that **drops when the teleporter event completes**
-  (`onTeleporterChargedGlobal` → wait for `bossGroup.enabled == false`). The drop is a real
-  `PickupDroplet` tagged with `CuriosityShopDroplet`; an `On.PickupDropletController.CreatePickup`
-  hook swaps its landing pickup for the shop cube. All three tiers are merged into one picker;
-  `CuriosityPickerMarker` now holds parallel `Pickups`/`BaseCosts` arrays. Purchases no longer
-  destroy/respawn the cube: `SubmitChoice` charges gold and calls `SetOptionsServer` to re-grey
-  unaffordable options. Removed config `[Curiosity Catalog] Teleporter Offset (m)` and the
-  `Stage.Start` spawn.
-- **v0.9.1 — Critical config-crash fix.** A config key with an apostrophe
-  (`"Hunter's Aura - ..."`) threw `ArgumentException` (BepInEx forbids `= \n \t \ " ' [ ]` in
-  section/key names) **inside `HuntersAura.Init`**, which aborted the whole plugin `Awake`:
-  `ModItemDefs`/`ModEquipmentDefs` never populated → catalog `BuildOptions` empty → **shop never
-  spawned**, and every item iterated after Hunter's Aura failed to register. Fix: removed the
-  apostrophe (`"Hunters Aura - ..."`). Also hardened `InitItems/InitEquipments/InitArtifacts`
-  with per-item try/catch so one failed item can no longer take down the entire mod.
-  **Lesson:** never put `= \n \t \ " ' [ ]` in a `config.Bind` section or key.
-  Also: shop teleporter offset reduced 10m → 6m (configurable: `[Curiosity Catalog] Teleporter Offset (m)`).
-- **v0.9.0 — Config + balance reworks.**
-  - **Config system** added (tier-grouped, headline knobs only) — see Architecture › Config.
-  - **Blood Tribute** nerfed: move speed +100% → **+50%**, and now also **-50% healing received**
-    while active (new `On.HealthComponent.Heal` hook gated on the active buff).
-  - **Trophy Collector** reworked: gold is **flat per Trophy** (dropped the per-item-count gold
-    multiplier); each copy now raises the **Trophy cap** instead (`TrophyCapBase` 1 +
-    `TrophyCapPerStack` 1 per item). Payout clamps to the cap if copies are dropped.
-  - **Curiosity Catalog**: shopping is now **holder-only** (gated in `GetContextString`,
-    `OnInteractionBegin`, `SubmitChoice` via `HoldsCatalog`); block predicate now keys off
-    `costType == Money` so **printers/scrappers are allowed** while multishops are still blocked.
-- **Siphon Bullets** — fully reworked. Old: timer-based HP from damage dealt. New: steal 1% of
-  enemy max HP per hit; per-enemy cap = 10% × stacks; stolen HP is removed when that enemy dies.
-  Per-enemy tracking via `Dictionary<HealthComponent, float>` on `SiphonBulletsTracker`; 2s
-  cleanup pass removes despawned enemies.
-- **Juggernaut** — deleted entirely (file, csproj icon entry, CuriosityCatalog red-price override).
-- **Toxic Bullets** — nerfed DotDpsPercent 0.02f → 0.01f (2% → 1% max HP/s).
-- **Trophy Collector** — fixed: trophy cap is always `MaxStacksPerItem` (14), NOT `14 × itemCount`.
-- **Curiosity Catalog** — new Lunar item. Spawns 3 CommandCube-based persistent terminals at the
-  teleporter each stage. Prices locked at stage-start (`GetDifficultyScaledCost` called once,
-  stored in `CuriosityPickerMarker`). Blocks chests and multishops; allows lunar pods.
-- **Blood Tribute** — new Equipment. Toggle: drains HP/s, doubles atk+move speed.
-- **Curiosity Catalog repricing** — base costs re-anchored to base-game guaranteed-tier
-  chests (white 30, green 75, red 400 vs. Legendary Chest's 400) so early reds aren't a
-  piñata. Pricing changed from locked-at-stage-start to **live per-purchase scaling**
-  (`ScaledCost` → `Run.GetDifficultyScaledCost`, cost = base × coeff^1.25) — lingering to
-  farm a cleared stage steadily raises prices, rewarding a teleporter rush. Marker stores
-  `BaseCost` (was `Cost`). Counterspell routed to the green tab.
-
----
-
-## Pending / next work
-
-**Release packaging (1.0.0):**
-- `package-only.ps1` writes zip entries with `/` (Compress-Archive on Windows PowerShell wrote `\`).
-- Player docs: `packaging\README.md` / `CHANGELOG.md` (CHANGELOG backfilled from the old dist zips).
-- A full Release build shows ~55 pre-existing warnings (nullable CS86xx, obsolete RoR2 APIs CS0618); not errors.
-- Untested in-game at release: Abrams, the Catalog drop shop, Mystic Expansion, Inhibitor, Ethereal Shift,
-  Refresher, Arctic Blast, Cultist Sacrifice, Focus Lens.
-
-**Art:**
-- Every item and equipment has a wired, embedded 128px icon. The Curiosity Catalog's (1.0.0) is the
-  Deadlock Graphical Library's "(Gradient) MARK_Filled" mark, cropped and resized; the source PNG is
-  gitignored in `Resources\`. With an icon it also gets the ground icon-card model.
-- To add art: drop `icon_x.png` (128px) in `Resources\`, add `<EmbeddedResource>` line to csproj,
-  add `protected override string IconFileName => "icon_x.png";` to the item class.
-- Stray asset: `Resources\icon_juggernaut.png` is an orphan (Juggernaut was deleted; not embedded,
-  not referenced). Safe to delete whenever — kept for now in case the art gets reused.
-
-**Curiosity Catalog tab mapping:**
-- All items naturally go to their tier (Tier1→white, Tier2→green, Tier3/Lunar/unknown→red).
-- `Spirit Burn` (VoidTier2) is in `_redPriceOverrides` → prices as red.
-- Equipment tabs: Golden Goose Egg → white, Blood Tribute → green, Counterspell → green, everything else → red.
-
-**World pickup models (2026-10-10):**
-- Every item and equipment with an icon shows a spinning icon card on the ground / multishop terminal:
-  `Resources\model_card.glb` (converted from battlevest.fbx), textured per item with its own icon at load
-  time by `Items\PickupModels.cs` (`ModelFileName` on `ItemBase`/`EquipmentBase`, default `PickupModels.IconCard`).
-  It avoids the two old blockers: clones Commando's opaque material (from-scratch hgstandard is see-through)
-  and pads mesh bounds to a cube (PickupDisplay scales by bounds volume). Confirmed working for Battle Vest.
-- A bespoke model: `blender -b --factory-startup -P tools\fbx_to_glb.py -- in.fbx CursedAppleCuriosities\Resources\model_x.glb`,
-  add the `<EmbeddedResource>` line, and `protected override string? ModelFileName => "model_x.glb";`.
-  Items without an icon (Curiosity Catalog) get no model.
-
----
-
-## Design direction
-
-Adapt Deadlock's catalogue while filling **under-served RoR2 niches** (avoid more raw
-damage/attack-speed — the early roster was gun-heavy). Use Deadlock's three trees (Weapon /
-Vitality / Spirit) and **actives → RoR2 equipment**. The "cursed" theme maps naturally onto
-RoR2 lunar items (power + downside), e.g. Glass Cannon. When researching Deadlock items, web
-search is available; adapt mechanics faithfully but write original RoR2-style descriptions.
+  **Siphon Bullets** (2026-10-12): the stolen max HP travels as a hidden stacking buff (`CursedApple_SiphonStolenHealth`, 1 stack per HP),
+  so clients see it too (self-tested single player: 95 -> 99 while hitting golems, back to 95 when they died).

@@ -34,11 +34,14 @@ parts = []
 top = 0.0
 for n in j["nodes"]:
     if "mesh" not in n: continue
-    if j["meshes"][n["mesh"]].get("name", "").split(".")[-1] in HEROES[HERO]["hide"]: continue
+    mesh = j["meshes"][n["mesh"]].get("name", "").split(".")[-1]
+    # The game sizes the hero by every mesh it shows; "fit_hide" meshes still count for height but get no items.
+    if mesh in HEROES[HERO]["hide"]: continue
     for pi, prim in enumerate(j["meshes"][n["mesh"]]["primitives"]):
         v = acc(prim["attributes"]["POSITION"]) * [-1, 1, 1]
         tri = acc(prim["indices"]).astype(int).reshape(-1, 3)
         top = max(top, v[:, 1].max())
+        if mesh in HEROES[HERO].get("fit_hide", ()): continue
         parts.append((f"{j['meshes'][n['mesh']].get('name', 'm')}_{pi}", v, tri))
 
 # DeadlockModelSwap.TryAttach: face the frame's forward (hips left->right along +X), feet on the ground, scaled to height.

@@ -30,7 +30,6 @@ namespace CursedAppleCuriosities.Survivors.Lash
             AirDashMetres = 16f,          // heroes 8 m; doubled by playtest
             GroundDashSeconds = 0.3f,     // the 10 m burst (Deadlock 0.68): quick enough to dodge projectiles, by playtest;
                                           // then it eases to a run until 0.68 s, keeping Deadlock's 0.3-0.55 s dash-jump window
-            SlideFriction = 1.2f,         // Deadlock 0.8; more by playtest
             WallJumpUp = 22f,             // Deadlock 13.3; much stronger by playtest
             WallJumpPowerMin = 0.6f,      // a chained wall jump within 1.25 s (Deadlock 0.2)
         };

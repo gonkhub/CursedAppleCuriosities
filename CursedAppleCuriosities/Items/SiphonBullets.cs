@@ -32,8 +32,22 @@ namespace CursedAppleCuriosities.Items
         public static float StealPerHitPercent;          // fraction of damage dealt stolen per hit
         public static float MaxStealPercent;             // cap per enemy per stack (of enemy max HP)
 
+        /// <summary>
+        /// Hidden: one stack per point of stolen max HP. The tracker lives on the server; every client recalculates its own
+        /// body's max HP, so the total travels as this synced buff (a client's HUD used to miss the bonus).
+        /// </summary>
+        public static BuffDef? StolenHealthBuff;
+
         public override void Init(ConfigFile config)
         {
+            StolenHealthBuff = ScriptableObject.CreateInstance<BuffDef>();
+            StolenHealthBuff.name = "CursedApple_SiphonStolenHealth";
+            StolenHealthBuff.canStack = true;
+            StolenHealthBuff.isHidden = true;
+            StolenHealthBuff.isDebuff = false;
+            StolenHealthBuff.iconSprite = CreatePlaceholderSprite(Color.red);
+            ContentAddition.AddBuffDef(StolenHealthBuff);
+
             StealPerHitPercent = config.Bind("Red", "Siphon Bullets - Steal Fraction Of Damage", 0.01f,
                 "Bonus max HP stolen per hit as a fraction of the damage dealt.").Value;
             MaxStealPercent = config.Bind("Red", "Siphon Bullets - Cap Per Enemy Per Stack", 0.10f,
@@ -93,10 +107,9 @@ namespace CursedAppleCuriosities.Items
         private void GetStatCoefficients(CharacterBody sender, RecalculateStatsAPI.StatHookEventArgs args)
         {
             // Unity null checks (?. misses destroyed objects, e.g. a body torn down between stages).
-            if (sender == null || sender.inventory == null || ItemDef == null) return;
+            if (sender == null || sender.inventory == null || ItemDef == null || StolenHealthBuff == null) return;
             if (sender.inventory.GetItemCountEffective(ItemDef) <= 0) return;
-            var tracker = sender.GetComponent<SiphonBulletsTracker>();
-            if (tracker != null) args.baseHealthAdd += tracker.TotalStolen;
+            args.baseHealthAdd += sender.GetBuffCount(StolenHealthBuff); // synced: right on every machine
         }
     }
 
@@ -131,13 +144,13 @@ namespace CursedAppleCuriosities.Items
             if (toSteal <= 0f) return;
 
             _stolen[victimHC] = current + toSteal;
-            _body?.RecalculateStats();
+            Sync();
         }
 
         public void OnEnemyDied(HealthComponent victimHC)
         {
             if (!_stolen.Remove(victimHC)) return;
-            _body?.RecalculateStats();
+            Sync();
             ClampCurrentHP();
         }
 
@@ -154,8 +167,22 @@ namespace CursedAppleCuriosities.Items
 
             if (toRemove.Count == 0) return;
             foreach (var hc in toRemove) _stolen.Remove(hc);
-            _body?.RecalculateStats();
+            Sync();
             ClampCurrentHP();
+        }
+
+        /// <summary>Server: the stolen total, whole points, into the synced buff (setting it marks stats dirty).</summary>
+        private void Sync()
+        {
+            if (_body == null || !NetworkServer.active || SiphonBullets.StolenHealthBuff == null) return;
+            _body.SetBuffCount(SiphonBullets.StolenHealthBuff.buffIndex, Mathf.RoundToInt(TotalStolen));
+            _body.RecalculateStats();
+        }
+
+        private void OnDestroy()
+        {
+            if (_body != null && NetworkServer.active && SiphonBullets.StolenHealthBuff != null)
+                _body.SetBuffCount(SiphonBullets.StolenHealthBuff.buffIndex, 0);
         }
 
         private void ClampCurrentHP()

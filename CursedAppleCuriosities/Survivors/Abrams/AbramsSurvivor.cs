@@ -23,7 +23,12 @@ namespace CursedAppleCuriosities.Survivors.Abrams
         public const string Token = "CURSEDAPPLE_ABRAMS_";
         public const string BodyName = "CursedAppleAbramsBody";
         public const string MuzzleName = "AbramsMuzzle";
-        public static readonly Color Color = new Color(1f, 0.35f, 0.24f); // ember #FF5A3C
+        public static readonly Color Color = new Color(0.15f, 0.27f, 0.7f); // character select / UI: dark blue (user, 2026-10-12)
+        /// <summary>Skin icon in the hero's own palette (his blue coat, leather, the book's gold, slate trousers), not the stand-in's.</summary>
+        private static Sprite DefaultSkinIcon => _defaultSkinIcon ??= Kit.SkinIcon(new Color(0.18f, 0.29f, 0.58f), new Color(0.45f, 0.27f, 0.15f), new Color(0.78f, 0.68f, 0.45f), new Color(0.25f, 0.27f, 0.32f));
+        private static Sprite? _defaultSkinIcon;
+        private static Sprite GreenSkinIcon => _greenSkinIcon ??= Kit.SkinIcon(new Color(0.2f, 0.52f, 0.26f), new Color(0.45f, 0.27f, 0.15f), new Color(0.78f, 0.68f, 0.45f), new Color(0.2f, 0.3f, 0.24f));
+        private static Sprite? _greenSkinIcon;
 
         public static GameObject? BodyPrefab, DisplayPrefab;
         public static SurvivorDef? Survivor;
@@ -185,14 +190,14 @@ namespace CursedAppleCuriosities.Survivors.Abrams
             body.AddComponent<AbramsResilience>();
             DeadlockMovement.Apply(body, AbramsData.Movement); // stamina, dashes, jumps, slide
 
-            // Model: Abrams goes on top of the stand-in; one skin (a copy of Commando's default) so the lobby has one.
+            // Model: Abrams goes on top of the stand-in; his skins are copies of Commando's default (the look is AbramsModel's).
             Transform model = body.GetComponent<ModelLocator>().modelTransform;
             model.gameObject.AddComponent<DeadlockModelSwap>().HeroKey = AbramsData.Hero;
             Kit.MuteStandIn(body, model.gameObject, AbramsData.Hero);
             // Reserve the muzzle slot now: ChildLocators can't grow after load. It points at the gun once Abrams is on.
             var children = model.GetComponent<ChildLocator>();
             if (children != null && children.FindChild(MuzzleName) == null) children.AddChild(MuzzleName, model);
-            Kit.OwnSkin(model.gameObject, "skinCursedAppleAbramsDEFAULT", Token + "SKIN_DEFAULT");
+            Kit.OwnSkin(model.gameObject, "skinCursedAppleAbramsDEFAULT", Token + "SKIN_DEFAULT", DefaultSkinIcon, ("skinCursedAppleAbramsGREEN", Token + "SKIN_GREEN", GreenSkinIcon));
 
             BigCamera(body);
             ContentAddition.AddBody(body);
@@ -223,7 +228,7 @@ namespace CursedAppleCuriosities.Survivors.Abrams
                 var swap = cm.gameObject.AddComponent<DeadlockModelSwap>();
                 swap.HeroKey = AbramsData.Hero;
                 swap.IsDisplay = true;
-                Kit.OwnSkin(cm.gameObject, "skinCursedAppleAbramsDISPLAY", Token + "SKIN_DEFAULT");
+                Kit.OwnSkin(cm.gameObject, "skinCursedAppleAbramsDISPLAY", Token + "SKIN_DEFAULT", DefaultSkinIcon, ("skinCursedAppleAbramsDISPLAYGREEN", Token + "SKIN_GREEN", GreenSkinIcon));
             }
             return display;
         }
@@ -281,6 +286,7 @@ namespace CursedAppleCuriosities.Survivors.Abrams
             LanguageAPI.Add(Token + "NAME", "Abrams");
             LanguageAPI.Add(Token + "SUBTITLE", "The Bull of the Cursed Apple");
             LanguageAPI.Add(Token + "SKIN_DEFAULT", "Default");
+            LanguageAPI.Add(Token + "SKIN_GREEN", "Green");
             LanguageAPI.Add(Token + "DESCRIPTION",
                 "Abrams is a hard-boiled detective who settles his cases up close.<color=#CCD3E0>\n\n" +
                 "< ! > Get close: your shotgun's pellets fall off fast with range.\n\n" +
@@ -314,7 +320,7 @@ namespace CursedAppleCuriosities.Survivors.Abrams
             LanguageAPI.Add(Token + "CHARGE_NAME", "Shoulder Charge");
             LanguageAPI.Add(Token + "CHARGE_DESC",
                 $"<style=cIsUtility>Charge</style> where you aim, speeding up as you go. Enemies hit take <style=cIsDamage>{D(AbramsData.ChargeDamage)} damage</style> and are <style=cIsUtility>carried</style> along. " +
-                $"Slam them into a wall to <style=cIsDamage>stun</style> them for {AbramsData.ChargeWallStun:0.#}s.");
+                $"Slam them into a wall for <style=cIsDamage>{D(AbramsData.ChargeWallDamage)} damage</style> and a <style=cIsDamage>stun</style> of {AbramsData.ChargeWallStun:0.#}s.");
 
             LanguageAPI.Add(Token + "SEISMIC_NAME", "Seismic Impact");
             LanguageAPI.Add(Token + "SEISMIC_DESC",

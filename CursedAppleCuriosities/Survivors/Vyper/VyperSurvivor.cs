@@ -22,7 +22,12 @@ namespace CursedAppleCuriosities.Survivors.Vyper
         public const string Token = "CURSEDAPPLE_VYPER_";
         public const string BodyName = "CursedAppleVyperBody";
         public const string MuzzleName = "VyperMuzzle";
-        public static readonly Color Color = new Color(0.55f, 0.85f, 0.3f); // venom green
+        public static readonly Color Color = new Color(0.72f, 0.9f, 0.22f); // character select / UI: yellowish green (user, 2026-10-12)
+        /// <summary>Skin icon in the hero's own palette (lime scales, black, gold, white), not the stand-in's.</summary>
+        private static Sprite DefaultSkinIcon => _defaultSkinIcon ??= Kit.SkinIcon(new Color(0.55f, 0.75f, 0.2f), new Color(0.1f, 0.1f, 0.1f), new Color(0.86f, 0.78f, 0.24f), new Color(0.88f, 0.88f, 0.84f));
+        private static Sprite? _defaultSkinIcon;
+        private static Sprite CoralSkinIcon => _coralSkinIcon ??= Kit.SkinIcon(new Color(0.85f, 0.38f, 0.28f), new Color(0.1f, 0.1f, 0.1f), new Color(0.86f, 0.78f, 0.24f), new Color(0.88f, 0.88f, 0.84f));
+        private static Sprite? _coralSkinIcon;
 
         public static GameObject? BodyPrefab, DisplayPrefab, DaggerProjectile, BolaProjectile;
         public static SurvivorDef? Survivor;
@@ -55,6 +60,7 @@ namespace CursedAppleCuriosities.Survivors.Vyper
             CreateSkills();
             BodyPrefab = CreateBody();
             DisplayPrefab = CreateDisplay();
+            VyperItemDisplays.Register();
             CreateSurvivor();
             AddLanguage();
             VyperNet.Register();
@@ -163,7 +169,7 @@ namespace CursedAppleCuriosities.Survivors.Vyper
             Kit.MuteStandIn(body, model.gameObject, VyperData.Hero);
             var children = model.GetComponent<ChildLocator>();
             if (children != null && children.FindChild(MuzzleName) == null) children.AddChild(MuzzleName, model);
-            Kit.OwnSkin(model.gameObject, "skinCursedAppleVyperDEFAULT", Token + "SKIN_DEFAULT");
+            Kit.OwnSkin(model.gameObject, "skinCursedAppleVyperDEFAULT", Token + "SKIN_DEFAULT", DefaultSkinIcon, ("skinCursedAppleVyperCORAL", Token + "SKIN_CORAL", CoralSkinIcon));
 
             ContentAddition.AddBody(body);
             return body;
@@ -179,7 +185,7 @@ namespace CursedAppleCuriosities.Survivors.Vyper
                 var swap = cm.gameObject.AddComponent<DeadlockModelSwap>();
                 swap.HeroKey = VyperData.Hero;
                 swap.IsDisplay = true;
-                Kit.OwnSkin(cm.gameObject, "skinCursedAppleVyperDISPLAY", Token + "SKIN_DEFAULT");
+                Kit.OwnSkin(cm.gameObject, "skinCursedAppleVyperDISPLAY", Token + "SKIN_DEFAULT", DefaultSkinIcon, ("skinCursedAppleVyperDISPLAYCORAL", Token + "SKIN_CORAL", CoralSkinIcon));
             }
             display.AddComponent<VyperDisplayIntro>();
             return display;
@@ -238,6 +244,7 @@ namespace CursedAppleCuriosities.Survivors.Vyper
             LanguageAPI.Add(Token + "NAME", "Vyper");
             LanguageAPI.Add(Token + "SUBTITLE", "The Escape Artist");
             LanguageAPI.Add(Token + "SKIN_DEFAULT", "Default");
+            LanguageAPI.Add(Token + "SKIN_CORAL", "Coral");
             LanguageAPI.Add(Token + "DESCRIPTION",
                 "Vyper has broken out of every prison in the tri-state area. This one's just bigger.<color=#CCD3E0>\n\n" +
                 "< ! > Stack Screwjab Daggers on one target: each dagger hits and slows harder than the last.\n\n" +
@@ -249,30 +256,23 @@ namespace CursedAppleCuriosities.Survivors.Vyper
 
             LanguageAPI.Add(Token + "PASSIVE_NAME", "Slither");
             LanguageAPI.Add(Token + "PASSIVE_DESC",
-                "Your <style=cIsUtility>slide</style> goes further, keeps its speed up hills, and turns twice as fast. " +
-                $"The Rattler fires <style=cIsDamage>{VyperData.GunSlideFireRate * 100f:0}% faster</style> while sliding. " +
-                $"Vyper has <style=cIsUtility>{VyperData.Movement.StaminaPips} stamina</style>, <style=cIsUtility>sprints automatically</style> out of combat, and can <style=cIsUtility>dash</style> and <style=cIsUtility>air jump</style>.");
+                $"Slides further and turns faster, and The Rattler fires <style=cIsDamage>{VyperData.GunSlideFireRate * 100f:0}% faster</style> while sliding. <style=cIsUtility>{VyperData.Movement.StaminaPips} stamina</style>.");
 
             LanguageAPI.Add(Token + "GUN_NAME", "The Rattler");
             LanguageAPI.Add(Token + "GUN_DESC",
-                $"Spray bullets for <style=cIsDamage>{D(VyperData.GunDamage)} damage</style> each, very fast.");
+                $"Spray bullets for <style=cIsDamage>{D(VyperData.GunDamage)} damage</style> each.");
 
             LanguageAPI.Add(Token + "DAGGER_NAME", "Screwjab Dagger");
             LanguageAPI.Add(Token + "DAGGER_DESC",
-                $"Throw a dagger for <style=cIsDamage>{D(VyperData.DaggerDamage)} damage</style> that <style=cIsUtility>slows</style> by {D(VyperData.DaggerSlow)}. " +
-                $"Each dagger already in the target adds <style=cIsDamage>{D(VyperData.DaggerStackDamage)} damage</style> and {D(VyperData.DaggerSlowPerStack)} slow, <style=cIsDamage>without limit</style>. " +
-                $"Holds <style=cIsUtility>{VyperData.DaggerCharges} charges</style>.");
+                $"Throw a dagger for <style=cIsDamage>{D(VyperData.DaggerDamage)} damage</style> that <style=cIsUtility>slows</style>. Each dagger already in the target adds <style=cIsDamage>+{D(VyperData.DaggerStackDamage)}</style> and more slow. <style=cIsUtility>{VyperData.DaggerCharges} charges</style>.");
 
             LanguageAPI.Add(Token + "VENOM_NAME", "Lethal Venom");
             LanguageAPI.Add(Token + "VENOM_DESC",
-                $"Inject a nearby enemy. After <style=cIsUtility>{VyperData.VenomDelay:0}s</style> the venom deals <style=cIsDamage>{D(VyperData.VenomMinDamage)}</style> damage, " +
-                $"rising to <style=cIsDamage>{D(VyperData.VenomMaxDamage)}</style> the more health the target is missing. Ignores <style=cIsUtility>Petrify</style>.");
+                $"Poison a nearby enemy. After {VyperData.VenomDelay:0}s, it takes <style=cIsDamage>{D(VyperData.VenomMinDamage)}-{D(VyperData.VenomMaxDamage)} damage</style>, more the less health it has.");
 
             LanguageAPI.Add(Token + "BOLA_NAME", "Petrifying Bola");
             LanguageAPI.Add(Token + "BOLA_DESC",
-                $"Throw a bola that explodes for <style=cIsDamage>{D(VyperData.BolaDamage)} damage</style> within {VyperData.BolaRadius:0}m and <style=cIsUtility>petrifies</style> everything caught " +
-                $"for {VyperData.PetrifySeconds:0.#}s: they can't act and <style=cIsHealth>block all damage</style> except Lethal Venom. A direct hit deals <style=cIsDamage>{D(VyperData.BolaDirectDamage)}</style> more. " +
-                "Bosses are only stunned briefly.");
+                $"Throw a bola that explodes for <style=cIsDamage>{D(VyperData.BolaDamage)} damage</style> and <style=cIsUtility>petrifies</style> enemies for {VyperData.PetrifySeconds:0.#}s: they can't act or take damage, except from Lethal Venom.");
         }
     }
 

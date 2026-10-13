@@ -4,14 +4,21 @@ using CursedAppleCuriosities.Artifacts;
 using CursedAppleCuriosities.Deadlock;
 using CursedAppleCuriosities.Items;
 using CursedAppleCuriosities.Survivors.Abrams;
+using CursedAppleCuriosities.Survivors.Celeste;
+using CursedAppleCuriosities.Survivors.GreyTalon;
 using CursedAppleCuriosities.Survivors.Lash;
 using CursedAppleCuriosities.Survivors.Seven;
+using CursedAppleCuriosities.Survivors.Victor;
+using CursedAppleCuriosities.Survivors.Viscous;
 using CursedAppleCuriosities.Survivors.Vyper;
 using RoR2;
 using System;
 using System.Collections.Generic;
 using System.Linq;
 using System.Reflection;
+
+// Lets the game's console find this assembly's [ConCommand]s (the Cursed Broker debug commands).
+[assembly: HG.Reflection.SearchableAttribute.OptIn]
 
 namespace CursedAppleCuriosities
 {
@@ -38,10 +45,15 @@ namespace CursedAppleCuriosities
         private readonly List<EquipmentBase> _equipments = new List<EquipmentBase>();
         private readonly List<ArtifactBase>  _artifacts  = new List<ArtifactBase>();
 
+        // Preloaded hero models become Unity objects a few milliseconds per frame.
+        private void Update() => DeadlockInstall.Pump();
+
         private void Awake()
         {
             Instance = this;
             Logger = base.Logger;
+            var clock = System.Diagnostics.Stopwatch.StartNew();
+            Testing.SelfTest.TryStart(gameObject);
 
             // Strip any ItemRelationshipProvider with a null relationshipType before it reaches
             // ItemCatalog.SetItemRelationships, which throws ArgumentNullException on null keys.
@@ -79,9 +91,15 @@ namespace CursedAppleCuriosities
             };
 
             InitItems();
+            Logger.LogInfo($"  items done at {clock.ElapsedMilliseconds} ms");
             InitEquipments();
+            Logger.LogInfo($"  equipment done at {clock.ElapsedMilliseconds} ms");
             InitArtifacts();
             InitSurvivors();
+            Logger.LogInfo($"  survivors done at {clock.ElapsedMilliseconds} ms");
+
+            try { Broker.CursedBroker.Init(Config); Logger.LogInfo("  + [Interactable] Cursed Broker"); }
+            catch (Exception e) { Logger.LogError($"  ! [Interactable] Cursed Broker failed to init: {e}"); }
 
             // Populate the sets used by CuriosityShop to filter drop tables.
             foreach (var item in _items)
@@ -94,7 +112,7 @@ namespace CursedAppleCuriosities
             try { ModSettings.TryRegister(Config, ItemBase.LoadEmbeddedIcon("icon_curiositycatalog.png")); }
             catch (Exception e) { Logger.LogError($"  ! Settings page failed: {e}"); }
 
-            Logger.LogInfo($"{PluginInfo.PLUGIN_NAME} v{PluginInfo.PLUGIN_VERSION} loaded.");
+            Logger.LogInfo($"{PluginInfo.PLUGIN_NAME} v{PluginInfo.PLUGIN_VERSION} loaded in {clock.ElapsedMilliseconds} ms.");
         }
 
         /// <summary>
@@ -105,41 +123,29 @@ namespace CursedAppleCuriosities
         {
             DeadlockInstall.Bind(Config);
             DeadlockSounds.Ensure(gameObject);
-            try
+            var heroes = new (string Name, Action<BepInEx.Configuration.ConfigFile, UnityEngine.GameObject> Init)[]
             {
-                LashSurvivor.Init(Config, gameObject);
-                Logger?.LogInfo("  + [Survivor] Lash");
-            }
-            catch (Exception e)
+                ("Lash", LashSurvivor.Init),
+                ("Abrams", AbramsSurvivor.Init),
+                ("Seven", SevenSurvivor.Init),
+                ("Vyper", VyperSurvivor.Init),
+                ("Grey Talon", GreyTalonSurvivor.Init),
+                ("Victor", VictorSurvivor.Init),
+                ("Viscous", ViscousSurvivor.Init),
+                ("Celeste", CelesteSurvivor.Init),
+            };
+            foreach (var hero in heroes)
             {
-                Logger?.LogError($"  ! [Survivor] Lash failed to init: {e}");
-            }
-            try
-            {
-                AbramsSurvivor.Init(Config, gameObject);
-                Logger?.LogInfo("  + [Survivor] Abrams");
-            }
-            catch (Exception e)
-            {
-                Logger?.LogError($"  ! [Survivor] Abrams failed to init: {e}");
-            }
-            try
-            {
-                SevenSurvivor.Init(Config, gameObject);
-                Logger?.LogInfo("  + [Survivor] Seven");
-            }
-            catch (Exception e)
-            {
-                Logger?.LogError($"  ! [Survivor] Seven failed to init: {e}");
-            }
-            try
-            {
-                VyperSurvivor.Init(Config, gameObject);
-                Logger?.LogInfo("  + [Survivor] Vyper");
-            }
-            catch (Exception e)
-            {
-                Logger?.LogError($"  ! [Survivor] Vyper failed to init: {e}");
+                var clock = System.Diagnostics.Stopwatch.StartNew();
+                try
+                {
+                    hero.Init(Config, gameObject);
+                    Logger?.LogInfo($"  + [Survivor] {hero.Name} ({clock.ElapsedMilliseconds} ms)");
+                }
+                catch (Exception e)
+                {
+                    Logger?.LogError($"  ! [Survivor] {hero.Name} failed to init: {e}");
+                }
             }
             foreach (var eq in _equipments) // registered before the reader starts so it copies them
             {
@@ -220,6 +226,6 @@ namespace CursedAppleCuriosities
     {
         public const string PLUGIN_GUID = "com.cursedapple.curiosities";
         public const string PLUGIN_NAME = "Cursed Apple Curiosities";
-        public const string PLUGIN_VERSION = "1.2.5";
+        public const string PLUGIN_VERSION = "1.5.0";
     }
 }

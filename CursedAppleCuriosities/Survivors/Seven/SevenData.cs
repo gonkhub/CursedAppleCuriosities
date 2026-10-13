@@ -31,7 +31,6 @@ namespace CursedAppleCuriosities.Survivors.Seven
             // Electric Current (user): during Power Surge he sprints through his own shooting; only getting hurt stops it.
             SprintInCombat = body => SevenSurvivor.SurgeBuff != null && body.HasBuff(SevenSurvivor.SurgeBuff),
             // Lash's playtested controls, kept for every hero
-            SlideFriction = 1.2f,
             WallJumpUp = 22f,
             WallJumpPowerMin = 0.6f,
         };

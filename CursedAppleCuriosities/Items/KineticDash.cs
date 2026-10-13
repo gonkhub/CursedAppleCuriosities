@@ -1,5 +1,7 @@
 using BepInEx.Configuration;
 using R2API;
+using R2API.Networking;
+using R2API.Networking.Interfaces;
 using RoR2;
 using UnityEngine;
 using UnityEngine.Networking;
@@ -11,9 +13,9 @@ namespace CursedAppleCuriosities.Items
         public override string ItemName => "Kinetic Dash";
         public override string ItemLangTokenName => "KINETICDASH";
 
-        public override string ItemPickupDesc => "Using your utility skill increases attack speed.";
+        public override string ItemPickupDesc => "Using your utility skill or dash-jumping increases attack speed.";
         public override string ItemFullDescription =>
-            $"Using your <style=cIsUtility>utility skill</style> grants " +
+            $"Using your <style=cIsUtility>utility skill</style> or <style=cIsUtility>dash-jumping</style> grants " +
             $"<style=cIsDamage>+{AttackSpeedPerStack * 100:0}% attack speed</style> " +
             $"<style=cStack>(+{AttackSpeedPerStack * 100:0}% per stack)</style> " +
             $"for <style=cIsUtility>{BuffDuration}s</style>.";
@@ -46,7 +48,30 @@ namespace CursedAppleCuriosities.Items
             CreateLang();
             CreateItem();
             Hooks();
+            NetworkingAPI.RegisterMessageType<KineticDashJumpMessage>();
         }
+
+        /// <summary>
+        /// A Deadlock hero's dash-jump (Deadlock's own Kinetic Dash triggers on it). Runs on the dashing player's machine:
+        /// the buff is the server's, so a client asks for it.
+        /// </summary>
+        public static void OnDashJump(CharacterBody body)
+        {
+            if (body == null) return;
+            if (NetworkServer.active) Grant(body);
+            else new KineticDashJumpMessage { Body = body.gameObject }.Send(NetworkDestination.Server);
+        }
+
+        internal static void Grant(CharacterBody body)
+        {
+            if (body.inventory == null || Instance?.ItemDef == null) return;
+            if (body.inventory.GetItemCountEffective(Instance.ItemDef) <= 0) return;
+            var tracker = body.GetComponent<KineticDashTracker>() ?? body.gameObject.AddComponent<KineticDashTracker>();
+            tracker.OnUtilityUsed(body);
+        }
+
+        private static KineticDash? Instance;
+        public KineticDash() => Instance = this;
 
         public override void Hooks()
         {
@@ -102,6 +127,19 @@ namespace CursedAppleCuriosities.Items
             if (count <= 0) return;
 
             args.attackSpeedMultAdd += AttackSpeedPerStack * count;
+        }
+    }
+
+    public class KineticDashJumpMessage : INetMessage
+    {
+        public GameObject? Body;
+        public void Serialize(NetworkWriter w) => w.Write(Body);
+        public void Deserialize(NetworkReader r) => Body = r.ReadGameObject();
+        public void OnReceived()
+        {
+            if (!NetworkServer.active || Body == null) return;
+            var body = Body.GetComponent<CharacterBody>();
+            if (body != null) KineticDash.Grant(body);
         }
     }
 

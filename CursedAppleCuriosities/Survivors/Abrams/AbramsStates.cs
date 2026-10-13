@@ -357,6 +357,7 @@ namespace EntityStates.CursedApple.Abrams
                 AbramsNet.ToServer(new AbramsReleaseMessage
                 {
                     Attacker = gameObject,
+                    Wall = _wall,
                     Stun = _wall ? AbramsData.ChargeWallStun : AbramsData.ChargeBumpStun,
                     Fling = _wall ? Vector3.zero : _dir * _speed * 0.5f + Vector3.up * 4f,
                 });

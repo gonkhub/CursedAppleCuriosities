@@ -10,9 +10,10 @@ namespace CursedAppleCuriosities.Items
 {
     /// <summary>
     /// The Goose Egg family: one equipment per yield (Grey → whites, Green → greens, Red → reds, Golden → boss items,
-    /// Void → void items). Each egg gains a stack every 2:30 while held, uncapped; activate to hatch every stack's
-    /// worth (nothing happens at 0 stacks). -10% damage while held. Progress is per egg kind for the whole run, so a
-    /// dropped egg keeps it.
+    /// Void → void items). Each egg gains a stack every 5:00 (config) while held, uncapped; activate to hatch every
+    /// stack's worth (nothing happens at 0 stacks). -10% damage while held. Progress belongs to each individual egg:
+    /// kept per equipment slot while held (<see cref="GooseEggProgress"/>) and carried on the pickup when the egg is
+    /// swapped out (<see cref="GooseEggPickupProgress"/>), so a dropped egg keeps its own.
     /// Eggs share one slot in the drop pool: only the Grey Egg is droppable, and every drop table rolls it into a
     /// weighted egg. Holding a Void Egg, picking up any other egg feeds it a stack instead ("corruption").
     /// </summary>
@@ -28,9 +29,7 @@ namespace CursedAppleCuriosities.Items
 
         public int PerStack;
         public float DropWeight;
-        public float Accumulated;           // seconds held this run (or Void stacks fed in)
         public BuffDef? StackBuff;
-        private float _lastTick = -1f;
 
         public static float SecondsPerStack;
         public static float DamagePenalty;
@@ -38,7 +37,7 @@ namespace CursedAppleCuriosities.Items
         public static readonly Dictionary<EquipmentDef, GooseEgg> ByDef = new Dictionary<EquipmentDef, GooseEgg>();
         public static GooseEgg? Grey, Void;
 
-        public int Stacks => Mathf.FloorToInt(Accumulated / Mathf.Max(1f, SecondsPerStack));
+        public static int StacksFor(float seconds) => Mathf.FloorToInt(seconds / Mathf.Max(1f, SecondsPerStack));
         public static bool IsEgg(EquipmentDef? def) => def != null && ByDef.ContainsKey(def);
 
         public override string PickupDesc => $"Lower your damage while held. Matures over time; hatch it for {YieldText}.";
@@ -57,7 +56,7 @@ namespace CursedAppleCuriosities.Items
         {
             if (All.Count == 0)
             {
-                SecondsPerStack = config.Bind("Equipment", "Goose Eggs - Seconds Per Stack", 150f,
+                SecondsPerStack = config.Bind("Equipment", "Goose Eggs - Seconds Per Stack", 300f, // 150 at first; 5 min by playtest
                     "Seconds an egg must be held to gain a stack.").Value;
                 DamagePenalty = config.Bind("Equipment", "Goose Eggs - Damage Penalty", 0.10f,
                     "Damage reduction while any egg is held.").Value;
@@ -117,20 +116,14 @@ namespace CursedAppleCuriosities.Items
 
         public override void Hooks() { } // shared hooks: HookShared, once for the whole family
 
-        /// <summary>Server: advance this egg once per physics step, however many bodies hold it.</summary>
-        public void Tick()
-        {
-            if (Time.fixedTime == _lastTick) return;
-            _lastTick = Time.fixedTime;
-            Accumulated += Time.fixedDeltaTime;
-        }
-
         public override bool OnUse(EquipmentSlot slot)
         {
             if (!NetworkServer.active) return false;
             var body = slot?.characterBody;
             if (body?.inventory == null) return false;
-            int stacks = Stacks;
+            Inventory inventory = body.inventory;
+            EquipmentLocation location = inventory.activeEquipmentLocation;
+            int stacks = StacksFor(GooseEggProgress.For(inventory).Get(location));
             if (stacks <= 0) return false; // not ready: keep the egg, no cooldown
 
             SpawnItems(body, stacks * PerStack);
@@ -138,8 +131,7 @@ namespace CursedAppleCuriosities.Items
             EquipmentFx.Effect("RoR2/Base/BonusGoldPackOnKill/MoneyPackPickupEffect.prefab", body.corePosition, body.radius * 2f);
             EquipmentFx.Effect("RoR2/Base/Common/VFX/LevelUpEffect.prefab", body.corePosition, body.radius);
 
-            body.inventory.SetEquipmentIndex(EquipmentIndex.None);
-            Accumulated = 0f;
+            inventory.SetEquipmentIndex(EquipmentIndex.None, in location);
             return true;
         }
 
@@ -207,7 +199,6 @@ namespace CursedAppleCuriosities.Items
                 if (sender.inventory != null && IsEgg(EquipmentCatalog.GetEquipmentDef(sender.inventory.currentEquipmentIndex)))
                     args.damageMultAdd -= DamagePenalty;
             };
-            Run.onRunStartGlobal += _ => { foreach (GooseEgg e in All) e.Accumulated = 0f; };
             On.RoR2.GenericPickupController.AttemptGrant += AttemptGrant;
 
             // One egg slot in the pool: whatever table drops the Grey Egg, it becomes a weighted egg.
@@ -233,34 +224,59 @@ namespace CursedAppleCuriosities.Items
         private static PickupIndex Roll(PickupIndex p, Xoroshiro128Plus rng)
         {
             if (Grey?.EquipmentDef == null || p == PickupIndex.none || p != PickupCatalog.FindPickupIndex(Grey.EquipmentDef.equipmentIndex)) return p;
+            GooseEgg? egg = PickWeighted(rng);
+            return egg?.EquipmentDef != null ? PickupCatalog.FindPickupIndex(egg.EquipmentDef.equipmentIndex) : p;
+        }
+
+        /// <summary>A random egg by the configured drop weights (null if every weight is 0).</summary>
+        public static GooseEgg? PickWeighted(Xoroshiro128Plus rng)
+        {
             float total = 0f;
             foreach (GooseEgg e in All) total += Mathf.Max(0f, e.DropWeight);
+            if (total <= 0f) return null;
             float roll = rng.nextNormalizedFloat * total;
             foreach (GooseEgg e in All)
             {
                 roll -= Mathf.Max(0f, e.DropWeight);
-                if (roll < 0f && e.EquipmentDef != null) return PickupCatalog.FindPickupIndex(e.EquipmentDef.equipmentIndex);
+                if (roll < 0f && e.EquipmentDef != null) return e;
             }
-            return p;
+            return null;
         }
 
-        /// <summary>Holding a Void Egg, another egg is absorbed into it as one stack instead of being picked up.</summary>
+        /// <summary>
+        /// Carries each egg's own progress across a pickup: the incoming egg brings the pickup's progress into the slot,
+        /// and the equipment swapped out leaves that slot's progress on the pickup. Holding a Void Egg, another egg is
+        /// absorbed into it as one stack instead of being picked up.
+        /// </summary>
         private static void AttemptGrant(On.RoR2.GenericPickupController.orig_AttemptGrant orig, GenericPickupController self, CharacterBody body)
         {
-            if (NetworkServer.active && Void?.EquipmentDef != null && body != null && body.inventory != null
-                && body.inventory.currentEquipmentIndex == Void.EquipmentDef.equipmentIndex)
+            PickupDef? def = PickupCatalog.GetPickupDef(self.pickupIndex);
+            if (!NetworkServer.active || body == null || body.inventory == null || def == null || def.equipmentIndex == EquipmentIndex.None)
             {
-                PickupDef? def = PickupCatalog.GetPickupDef(self.pickupIndex);
-                EquipmentDef? eq = def != null ? EquipmentCatalog.GetEquipmentDef(def.equipmentIndex) : null;
-                if (eq != null && eq != Void.EquipmentDef && IsEgg(eq))
-                {
-                    Void.Accumulated += SecondsPerStack;
-                    EquipmentFx.Effect("RoR2/Base/Common/VFX/LevelUpEffect.prefab", body.corePosition, body.radius);
-                    UnityEngine.Object.Destroy(self.gameObject);
-                    return;
-                }
+                orig(self, body);
+                return;
             }
+            Inventory inventory = body.inventory;
+            GooseEggProgress progress = GooseEggProgress.For(inventory);
+            EquipmentDef? incoming = EquipmentCatalog.GetEquipmentDef(def.equipmentIndex);
+
+            if (Void?.EquipmentDef != null && inventory.currentEquipmentIndex == Void.EquipmentDef.equipmentIndex
+                && incoming != Void.EquipmentDef && IsEgg(incoming))
+            {
+                EquipmentLocation active = inventory.activeEquipmentLocation;
+                progress.Set(active, progress.Get(active) + SecondsPerStack);
+                EquipmentFx.Effect("RoR2/Base/Common/VFX/LevelUpEffect.prefab", body.corePosition, body.radius);
+                UnityEngine.Object.Destroy(self.gameObject);
+                return;
+            }
+
+            // The same location the game's own equipment grant picks.
+            EquipmentLocation location = inventory.FindBestEquipmentLocationOrCurrent(in Inventory.EquipmentLocationQueryArgs.defaultPickup);
+            float outgoing = progress.Get(location);
+            float carried = GooseEggPickupProgress.Get(self);
             orig(self, body);
+            if (inventory.GetEquipmentIndex(in location) == def.equipmentIndex) progress.Set(location, carried);
+            if (self != null) GooseEggPickupProgress.Set(self, outgoing); // the swapped-out equipment now lies on this pickup
         }
 
         private static void OnInventoryChanged(On.RoR2.CharacterBody.orig_OnInventoryChanged orig, CharacterBody self)
@@ -334,20 +350,26 @@ namespace CursedAppleCuriosities.Items
             " <style=cIsVoid>Corrupts all Goose Eggs</style>: while you hold it, other eggs you pick up are absorbed as a stack.";
     }
 
-    /// <summary>Server: ticks the held egg and shows its stacks as a buff.</summary>
+    /// <summary>Server: matures the egg in the holder's active equipment slot and shows its stacks as a buff.</summary>
     public class GooseEggTracker : MonoBehaviour
     {
         public GooseEgg? Egg;
         private CharacterBody _body = null!;
+        private GooseEggProgress? _progress;
         private int _shown = -1;
 
         private void Awake() => _body = GetComponent<CharacterBody>();
 
         private void FixedUpdate()
         {
-            if (!NetworkServer.active || Egg == null) return;
-            Egg.Tick();
-            int stacks = Egg.Stacks;
+            Inventory? inventory = _body.inventory;
+            if (!NetworkServer.active || Egg?.EquipmentDef == null || inventory == null) return;
+            EquipmentLocation location = inventory.activeEquipmentLocation;
+            if (inventory.GetEquipmentIndex(in location) != Egg.EquipmentDef.equipmentIndex) return;
+            _progress ??= GooseEggProgress.For(inventory);
+            float seconds = _progress.Get(location) + Time.fixedDeltaTime;
+            _progress.Set(location, seconds);
+            int stacks = GooseEgg.StacksFor(seconds);
             if (stacks == _shown || Egg.StackBuff == null || Egg.StackBuff.buffIndex == BuffIndex.None) return;
             _shown = stacks;
             _body.SetBuffCount(Egg.StackBuff.buffIndex, stacks);
@@ -357,6 +379,56 @@ namespace CursedAppleCuriosities.Items
         {
             if (_body == null || Egg?.StackBuff == null || Egg.StackBuff.buffIndex == BuffIndex.None) return;
             _body.SetBuffCount(Egg.StackBuff.buffIndex, 0);
+        }
+    }
+
+    /// <summary>Server: how long each egg in this inventory has matured, per equipment location (slot, set).</summary>
+    public class GooseEggProgress : MonoBehaviour
+    {
+        private readonly Dictionary<(uint, uint), (EquipmentIndex egg, float seconds)> _eggs = new Dictionary<(uint, uint), (EquipmentIndex, float)>();
+        private Inventory _inventory = null!;
+
+        public static GooseEggProgress For(Inventory inventory)
+        {
+            var progress = inventory.GetComponent<GooseEggProgress>();
+            if (progress == null)
+            {
+                progress = inventory.gameObject.AddComponent<GooseEggProgress>();
+                progress._inventory = inventory;
+            }
+            return progress;
+        }
+
+        /// <summary>Seconds matured by the egg now at this location (0 if the entry belongs to equipment since replaced).</summary>
+        public float Get(in EquipmentLocation location) =>
+            _eggs.TryGetValue((location.slot, location.set), out var e) && e.egg == _inventory.GetEquipmentIndex(in location) ? e.seconds : 0f;
+
+        public void Set(in EquipmentLocation location, float seconds) =>
+            _eggs[(location.slot, location.set)] = (_inventory.GetEquipmentIndex(in location), seconds);
+    }
+
+    /// <summary>Server: the progress of an egg lying on the ground, left by whoever swapped it out.</summary>
+    public class GooseEggPickupProgress : MonoBehaviour
+    {
+        private EquipmentIndex _egg = EquipmentIndex.None;
+        private float _seconds;
+
+        private static EquipmentIndex EquipmentOf(GenericPickupController pickup) =>
+            PickupCatalog.GetPickupDef(pickup.pickupIndex)?.equipmentIndex ?? EquipmentIndex.None;
+
+        /// <summary>0 for a fresh egg, or if the pickup has since become something else (e.g. recycled).</summary>
+        public static float Get(GenericPickupController pickup)
+        {
+            var p = pickup.GetComponent<GooseEggPickupProgress>();
+            return p != null && p._egg == EquipmentOf(pickup) ? p._seconds : 0f;
+        }
+
+        public static void Set(GenericPickupController pickup, float seconds)
+        {
+            var p = pickup.GetComponent<GooseEggPickupProgress>();
+            if (p == null) p = pickup.gameObject.AddComponent<GooseEggPickupProgress>();
+            p._egg = EquipmentOf(pickup);
+            p._seconds = seconds;
         }
     }
 }
