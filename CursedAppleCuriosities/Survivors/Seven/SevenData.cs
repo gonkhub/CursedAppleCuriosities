@@ -66,7 +66,7 @@ namespace CursedAppleCuriosities.Survivors.Seven
         // ---- secondary (alt): Static Charge (Deadlock's v2: strike a unit or a spot) ----
         public static float StaticDamage = 4f;
         public static float StaticCooldown = 12f;       // Deadlock 42
-        public const float StaticRange = 96f;           // Deadlock AbilityCastRange 16, tripled, then doubled in 2.0 (user); grows with Mystic Expansion
+        public const float StaticRange = 48f;           // Deadlock AbilityCastRange 16, tripled (user); grows with Mystic Expansion
         public const float StaticConeDeg = 20f;         // Deadlock m_flTargetingConeAngle
         public const float StaticDelay = 3.5f;          // Deadlock ShockDelay (user: keep it)
         public static float StaticStun = 3f;            // Deadlock 0.9 s; 3 s by design (user)
