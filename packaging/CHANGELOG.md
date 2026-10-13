@@ -10,6 +10,7 @@
 - **Celeste**: **Light Eater** flashes a purple cone showing exactly what it reaches.
 - **Celeste**: **Shining Wonder** drifts slower (12 m/s, was 18) and waits up to 6 s for a new target (was 3.25).
 - Deadlock heroes start sprinting 1 second after last taking damage or attacking (was RoR2's 5 seconds out of combat).
+- **Seven**: sprinting while shooting during **Power Surge**, he runs with his gun up instead of his out-of-combat sprint.
 
 ## 1.6.0
 - Fixed: **Cursed Broker** cooldown penalties (all skills, Secondary, Utility, Special) now actually lengthen your cooldowns.

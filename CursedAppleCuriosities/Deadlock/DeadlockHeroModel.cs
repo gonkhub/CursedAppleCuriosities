@@ -593,6 +593,7 @@ namespace CursedAppleCuriosities.Deadlock
         /// <summary>Play a state, crossfading a full-body one over <paramref name="blend"/> seconds (a lobby intro's slow settle).</summary>
         public void Play(string id, float blend)
         {
+            if (id == "shoot") _lastShot = Time.time;
             if (_clips == null || !_states.TryGetValue(id, out Row row)) return;
             // An ability cast mid-slide plays over the slide pose (Deadlock masks casts to the upper body): as a full
             // pose it stood the hero up while the body kept sliding.
@@ -663,6 +664,10 @@ namespace CursedAppleCuriosities.Deadlock
         private bool Grounded => _body == null || _body.characterMotor == null || _body.characterMotor.isGrounded;
         private bool Dead => _body != null && _body.healthComponent != null && !_body.healthComponent.alive;
 
+        /// <summary>Time.time of the last "shoot" (every client plays it): sprinting while shooting runs the gun-up run instead.</summary>
+        private float _lastShot = -10f;
+        private const float ShootRunHold = 0.4f;
+
         private string Locomotion(out float speedScale)
         {
             speedScale = 1f;
@@ -674,13 +679,17 @@ namespace CursedAppleCuriosities.Deadlock
             else
             {
                 float move = _body != null ? Mathf.Max(1f, _body.moveSpeed) : _def.BaseSpeed;
-                speedScale = Mathf.Clamp(v.magnitude / move, 0.5f, 1.8f);
                 Vector3 fwd = _frame.forward;
                 fwd.y = 0f;
                 float angle = Vector3.SignedAngle(fwd, v, Vector3.up);
                 string[] dirs = { "n", "ne", "e", "se", "s", "sw", "w", "nw" };
                 string dir = dirs[((Mathf.RoundToInt(angle / 45f) % 8) + 8) % 8];
-                bool sprint = _body != null && _body.isSprinting && dir != "s" && dir != "se" && dir != "sw";
+                bool sprinting = _body != null && _body.isSprinting;
+                // Sprinting while shooting (Seven's Power Surge, user): his gun-up run, sped up to the sprint's pace.
+                bool shooting = sprinting && Time.time - _lastShot < ShootRunHold;
+                if (shooting && _body!.sprintingSpeedMultiplier > 0f) move /= _body.sprintingSpeedMultiplier;
+                speedScale = Mathf.Clamp(v.magnitude / move, 0.5f, 1.8f);
+                bool sprint = sprinting && !shooting && dir != "s" && dir != "se" && dir != "sw";
                 id = (sprint ? "sprint_" : "run_") + dir;
             }
             // A hero's locomotion set (Abrams runs differently while Siphon Life drains).
