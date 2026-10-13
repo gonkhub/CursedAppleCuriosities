@@ -76,7 +76,7 @@ namespace CursedAppleCuriosities.Survivors.Celeste
         public const float RadianceSeconds = 30f;        // Deadlock BuffDuration
 
         // ---- utility: Dazzling Trick (Deadlock: a 100 barrier for 4 s; broken = 14 m burst, half the barrier as damage, a 1.75 s silence: a stun here, user) ----
-        public static float PrismBarrier = 0.2f;         // share of max health (Deadlock CombatBarrier 100 of 690 health)
+        public static float PrismBarrier = 0.3f;         // share of max health (Deadlock CombatBarrier 100 of 690 health; 20% until 2.0, user)
         public const float PrismSeconds = 4f;            // Deadlock MaxLifetime
         public static float PrismDamage = 5f;            // the burst when it breaks
         public static float PrismRadius = 14f;           // Deadlock ExplodeRadius
