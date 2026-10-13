@@ -51,8 +51,9 @@ namespace CursedAppleCuriosities.Survivors.GreyTalon
         public static float ChargedCooldown = 6f;       // Deadlock 17
         public const float ChargeTime = 0.5f;           // Deadlock AbilityCastDelay: drawn after this, then held
         public const float ChargedMoveSpeed = 1.5f;     // Deadlock ChannelMoveSpeed 1.5 m/s while drawing and holding
-        public const float ChargedSpeed = 203.2f;       // Deadlock m_flBulletSpeed 8000 hu/s
-        public static float ChargedRadius = 1.5f;       // wider than Deadlock's 24 hu (0.61 m) (user)
+        public const float ChargedSpeed = 406.4f;       // Deadlock m_flBulletSpeed 8000 hu/s (203 m/s), doubled (user, 2.0)
+        public static float ChargedRadius = 3f;         // wider than Deadlock's 24 hu (0.61 m) (user; 1.5 until 2.0). Enemies only: walls stop it at ChargedWallRadius
+        public const float ChargedWallRadius = 0.3f;    // m: the arrow's own thickness against terrain, so a fat hitbox doesn't snag the floor
         public const float ChargedRange = 600f;         // Deadlock 10000 hu; no falloff (user)
         public const float ChargedDrop = 3f;            // m/s2 (Deadlock gravity scale 0.3)
         // Camera while drawn (Deadlock CameraHeightOffset 20 hu, CameraHorizontalOffset 15 hu): over the right shoulder, zoomed.

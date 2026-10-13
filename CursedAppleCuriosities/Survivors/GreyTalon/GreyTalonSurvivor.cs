@@ -136,21 +136,30 @@ namespace CursedAppleCuriosities.Survivors.GreyTalon
             GameObject? source = pc.ghostPrefab != null ? pc.ghostPrefab : TryLoad<GameObject>("RoR2/DLC4/LynxArcher/LynxArcherArrowGhost.prefab", "RoR2/DLC1/Railgunner/RailgunnerPistolProjectileGhost.prefab");
             if (source == null) return p;
             GameObject ghost = source.InstantiateClone("CursedAppleGreyTalonChargedArrowGhost", false);
-            ghost.transform.localScale *= 2.5f;
+            ghost.transform.localScale *= 4f; // 2.5 until 2.0 (user: more obvious)
             // A long bright streak behind it (user: a tracer for the arrow), in the Huntress snipe tracer's material.
             Material? streak = TracerEffect != null && TracerEffect.GetComponentInChildren<LineRenderer>(true) is LineRenderer line ? line.sharedMaterial : null;
             if (streak != null)
             {
                 var trail = ghost.AddComponent<TrailRenderer>();
                 trail.sharedMaterial = streak;
-                trail.time = 0.25f;
-                trail.startWidth = 0.5f;
+                trail.time = 0.45f;
+                trail.startWidth = 1.6f;
                 trail.endWidth = 0f;
                 trail.minVertexDistance = 0.5f;
                 trail.numCapVertices = 2;
                 trail.startColor = new Color(0.7f, 0.85f, 1f, 1f);
                 trail.endColor = new Color(0.7f, 0.85f, 1f, 0f);
             }
+            // A light that travels with it, so it reads in daylight and lights up what it passes.
+            var glow = new GameObject("ChargedGlow");
+            glow.transform.SetParent(ghost.transform, false);
+            Light light = glow.AddComponent<Light>();
+            light.type = LightType.Point;
+            light.color = new Color(0.6f, 0.8f, 1f);
+            light.range = 12f;
+            light.intensity = 6f;
+            light.shadows = LightShadows.None;
             pc.ghostPrefab = ghost;
             return p;
         }
