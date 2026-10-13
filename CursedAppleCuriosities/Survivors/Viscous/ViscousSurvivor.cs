@@ -316,7 +316,7 @@ namespace CursedAppleCuriosities.Survivors.Viscous
 
             LanguageAPI.Add(Token + "BALL_NAME", "Goo Ball");
             LanguageAPI.Add(Token + "BALL_DESC",
-                $"<style=cIsDamage>Heavy</style>. Roll as a goo ball for <style=cIsUtility>{ViscousData.BallDuration:0}s</style>, dealing <style=cIsDamage>{D(ViscousData.BallDamage)} damage</style> (+{D(ViscousData.BallHeavyDamage)} per m/s) and <style=cIsUtility>stunning</style> enemies in your way. " +
+                $"<style=cIsDamage>Heavy</style>. Roll as a goo ball for <style=cIsUtility>{ViscousData.BallDuration:0}s</style>, dealing <style=cIsDamage>{D(ViscousData.BallDamage)} damage</style> (+{D(ViscousData.BallHeavyDamage)} per m/s, more the bigger the ball) and <style=cIsUtility>stunning</style> enemies in your way. " +
                 $"Hold Primary to roll faster. Take <style=cIsUtility>{ViscousData.BallResist * 100f:0}% less damage</style> while rolling.");
         }
     }

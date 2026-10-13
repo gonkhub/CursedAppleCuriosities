@@ -337,6 +337,11 @@ namespace EntityStates.CursedApple.Viscous
             var normal = new List<GameObject>();
             var bosses = new List<GameObject>();
             Vector3 dir = _dir;
+            // Heavy (Loader's punch): the faster the ball is going at impact, rolling or falling, the harder it hits; and a
+            // bigger ball (Mystic Expansion) hits harder in step with its size (user, 2.0). Speed is read before a rebound.
+            float vy = characterMotor != null ? characterMotor.velocity.y : 0f;
+            float speed = Mathf.Sqrt(_speed * _speed + vy * vy);
+            float coeff = (ViscousData.BallDamage + ViscousData.BallHeavyDamage * speed) * (R / ViscousData.BallRadius);
             foreach (HurtBox h in Shared.Enemies(center, radius, GetTeam()))
             {
                 HealthComponent hc = h.healthComponent;
@@ -348,10 +353,6 @@ namespace EntityStates.CursedApple.Viscous
                 Vector3 away = Shared.Flat(center - h.transform.position, -_dir);
                 if (Vector3.Dot(_dir, away) < 0f) BounceOff(away, h.transform.position, impact: true);
             }
-            // Heavy (Loader's punch): the faster the ball is going, rolling or falling, the harder it hits.
-            float vy = characterMotor != null ? characterMotor.velocity.y : 0f;
-            float speed = Mathf.Sqrt(_speed * _speed + vy * vy);
-            float coeff = ViscousData.BallDamage + ViscousData.BallHeavyDamage * speed;
             if (normal.Count > 0)
                 ViscousNet.ToServer(new ViscousHitMessage
                 {
