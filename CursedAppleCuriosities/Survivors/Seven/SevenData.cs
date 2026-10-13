@@ -70,7 +70,7 @@ namespace CursedAppleCuriosities.Survivors.Seven
         public const float StaticConeDeg = 20f;         // Deadlock m_flTargetingConeAngle
         public const float StaticDelay = 3.5f;          // Deadlock ShockDelay (user: keep it)
         public static float StaticStun = 3f;            // Deadlock 0.9 s; 3 s by design (user)
-        public static float StaticRadius = 5f;          // Deadlock ShockRadius; grows with Mystic Expansion
+        public static float StaticRadius = 10f;         // Deadlock ShockRadius 5, doubled in 2.0 (user); grows with Mystic Expansion
 
         // ---- utility: Power Surge ----
         public static float SurgeCooldown = 30f;        // Deadlock 50; 12 s gave near-permanent uptime (playtest)
