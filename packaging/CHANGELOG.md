@@ -9,6 +9,8 @@
   exactly 1% of the enemy's max health per second per stack, ignoring armor.
 - **Colossus**: other players now see you grow (the growth only showed on the host).
 - **Hunter's Aura**: holders no longer interfere with each other; an enemy takes the strongest aura on it.
+- **Cursed Broker**: a cursed **Hunter's Aura** now doubles its damage amplification (it was tripling it, and its tooltip
+  promised a wider aura that never happened).
 - **Counterspell**: a blocked hit is fully rejected, so its debuffs and on-hit effects don't land either.
 - **Trophy Collector**: gold per Trophy scales with difficulty (like chest prices). Trophies are cleared whenever you leave a
   stage, not only when the teleporter charges, so leftover gold can always be turned into XP.

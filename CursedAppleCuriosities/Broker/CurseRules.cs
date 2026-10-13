@@ -234,7 +234,7 @@ namespace CursedAppleCuriosities.Broker
             ["ITEM_CURSEDAPPLE_BURSTFIRE"]     = new CurseRule(2, 0, "Burst Fire's speed bonuses are doubled."),
             ["ITEM_CURSEDAPPLE_HEROICAURA"]    = new CurseRule(2, 0, "Heroic Aura's damage reduction and attack speed are doubled."),
             ["ITEM_CURSEDAPPLE_TORMENTPULSE"]  = new CurseRule(2, 1, "Torment Pulse hits twice the targets at much longer range."),
-            ["ITEM_CURSEDAPPLE_HUNTERSAURA"]   = new CurseRule(2, 1, "Hunter's Aura is wider and triples against bigger groups."),
+            ["ITEM_CURSEDAPPLE_HUNTERSAURA"]   = new CurseRule(2, 0, "Hunter's Aura's damage amplification is doubled."), // linear per copy; range doesn't stack
             ["ITEM_CURSEDAPPLE_LIFESTRIKE"]    = new CurseRule(2, 1, "Lifestrike heals twice as much per hit."),
             ["ITEM_CURSEDAPPLE_FORTITUDE"]     = new CurseRule(2, 0, "Fortitude's health and regeneration are doubled."),
             ["ITEM_CURSEDAPPLE_RADIANTREGEN"]  = new CurseRule(2, 0, "Radiant Regen's Radiance cap is doubled."),
