@@ -1,5 +1,13 @@
 # Changelog
 
+## 1.9.0
+- Updating from an older version: your config file keeps the values it already has, so the Goose Egg change below only
+  applies if you reset **Goose Eggs - Damage Penalty** to its default (or delete the config file).
+- **Seven**: **Storm Cloud** always reaches full strength in 7 seconds. Extra duration (e.g. from duration-extending items)
+  now only adds time at full damage and size, instead of stretching the ramp-up. Its lightning strikes each enemy twice as
+  often, for half as much per bolt.
+- **Goose Eggs**: holding an egg now costs -25% damage (was -10%).
+
 ## 1.8.0
 - Updating from an older version: your config file keeps the values it already has, so balance changes from past
   updates (including the ones below) only apply to settings you reset to their defaults, or if you delete

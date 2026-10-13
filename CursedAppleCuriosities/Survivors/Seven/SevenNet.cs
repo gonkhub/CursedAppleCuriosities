@@ -350,11 +350,12 @@ namespace CursedAppleCuriosities.Survivors.Seven
             if (!_on || !NetworkServer.active) return;
             if (_body == null || _body.healthComponent == null || !_body.healthComponent.alive || SevenSurvivor.StormBuff == null || !_body.HasBuff(SevenSurvivor.StormBuff)) { _on = false; return; }
             _age += Time.fixedDeltaTime;
-            float dps = SevenData.StormDps(Mathf.Clamp01(_age / (SevenData.StormChannel * DurationExtender.Multiplier(_body)))) * _body.damage;
+            // The ramp always takes the base channel; extra duration (Duration Extender) is spent at full output.
+            float dps = SevenData.StormDps(Mathf.Clamp01(_age / SevenData.StormChannel)) * _body.damage;
             Strays(dps);
-            // Enemies are gathered 10 times a second; each is struck when its own clock comes round.
+            // Enemies are gathered 20 times a second; each is struck when its own clock comes round.
             _tick += Time.fixedDeltaTime;
-            if (_tick < 0.1f) return;
+            if (_tick < 0.05f) return;
             _tick = 0f;
             Vector3 eye = _body.corePosition + Vector3.up * 1f;
             foreach (HealthComponent hc in SevenNet.EnemiesIn(_body.corePosition, Radius, _body.teamComponent.teamIndex))
@@ -383,7 +384,7 @@ namespace CursedAppleCuriosities.Survivors.Seven
                 Vector3 sky = _body.corePosition + new Vector3(off.x, 20f, off.y);
                 if (!Physics.Raycast(sky, Vector3.down, out RaycastHit ground, 80f, LayerIndex.world.mask, QueryTriggerInteraction.Ignore)) continue;
                 SevenNet.Effect(SevenSurvivor.BoltEffect, ground.point, SevenData.StormStrayRadius);
-                float dmg = dps * SevenData.StormStrikeGap;
+                float dmg = dps * SevenData.StormStrayHit;
                 bool crit = _body.RollCrit();
                 foreach (HealthComponent hc in SevenNet.EnemiesIn(ground.point, SevenData.StormStrayRadius * MysticExpansion.RadiusMultiplier(_body), _body.teamComponent.teamIndex))
                     SevenNet.Hit(_body, hc, hc.body != null && hc.body.isChampion ? dmg * SevenData.StormBossScale : dmg, crit, Vector3.zero, DamageSource.Special, SevenData.StormProc);

@@ -11,7 +11,7 @@ namespace CursedAppleCuriosities.Items
     /// <summary>
     /// The Goose Egg family: one equipment per yield (Grey → whites, Green → greens, Red → reds, Golden → boss items,
     /// Void → void items). Each egg gains a stack every 5:00 (config) while held, uncapped; activate to hatch every
-    /// stack's worth (nothing happens at 0 stacks). -10% damage while held. Progress belongs to each individual egg:
+    /// stack's worth (nothing happens at 0 stacks). -25% damage while held. Progress belongs to each individual egg:
     /// kept per equipment slot while held (<see cref="GooseEggProgress"/>) and carried on the pickup when the egg is
     /// swapped out (<see cref="GooseEggPickupProgress"/>), so a dropped egg keeps its own.
     /// Eggs share one slot in the drop pool: only the Grey Egg is droppable, and every drop table rolls it into a
@@ -58,7 +58,7 @@ namespace CursedAppleCuriosities.Items
             {
                 SecondsPerStack = config.Bind("Equipment", "Goose Eggs - Seconds Per Stack", 300f, // 150 at first; 5 min by playtest
                     "Seconds an egg must be held to gain a stack.").Value;
-                DamagePenalty = config.Bind("Equipment", "Goose Eggs - Damage Penalty", 0.10f,
+                DamagePenalty = config.Bind("Equipment", "Goose Eggs - Damage Penalty", 0.25f,
                     "Damage reduction while any egg is held.").Value;
             }
             PerStack = config.Bind("Equipment", $"{EquipmentName} - Items Per Stack", DefaultPerStack,
