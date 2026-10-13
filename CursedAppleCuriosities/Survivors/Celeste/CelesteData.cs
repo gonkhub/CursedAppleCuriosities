@@ -46,8 +46,8 @@ namespace CursedAppleCuriosities.Survivors.Celeste
         public const float DaggerCycle = 0.58f;          // Deadlock m_flCycleTime
         public const float DaggerSpeed = 60f;            // a little faster than Deadlock's 50 m/s (user: 75 was too fast)
         public const float DaggerDrop = 18f;             // m/s2, homing or not: an arc (user)
-        public const float DaggerDragFrom = 15f;         // metres flown before it starts losing airspeed (user)
-        public const float DaggerStopAt = 45f;           // by here its forward speed has eased all the way out and it only drops (user: gradual, not steep)
+        public const float DaggerDragFrom = 10f;         // metres flown before it starts losing airspeed (user; 15, then earlier so it is already slowing at 20 m)
+        public const float DaggerStopAt = 90f;           // by here its forward speed has eased all the way out and it only drops (user: gradual, not steep; 45, doubled)
         public const float DaggerHomeConeDeg = 22.5f;    // Deadlock: homes onto an enemy within ~45 deg of its flight
         public const float DaggerHomeRange = 45f;
         public const float DaggerTurnDegPerSec = 150f;  // gentle, so the arc shows

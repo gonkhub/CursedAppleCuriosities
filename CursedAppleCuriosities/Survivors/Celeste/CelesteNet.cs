@@ -385,13 +385,13 @@ namespace CursedAppleCuriosities.Survivors.Celeste
                     v = Vector3.RotateTowards(v, to.normalized * v.magnitude, CelesteData.DaggerTurnDegPerSec * Mathf.Deg2Rad * Time.fixedDeltaTime, 0f);
                 }
                 v += Vector3.down * CelesteData.DaggerDrop * Time.fixedDeltaTime; // always falls: an arc (user)
-                // Past 15 m it loses airspeed (user): its forward speed eases out along a smooth curve to nothing at 45 m
-                // (gentlest as it nears the stop), while gravity keeps pulling.
+                // Past 10 m it loses airspeed (user): its forward speed falls off evenly with distance to nothing at 90 m, so
+                // it's already visibly slower by 20 m and creeps out gently near the stop, while gravity keeps pulling.
                 Vector3 flat = new Vector3(v.x, 0f, v.z);
                 if (_launchFlat < 0f) _launchFlat = flat.magnitude;
                 _flown += flat.magnitude * Time.fixedDeltaTime;
                 float ease = Mathf.InverseLerp(CelesteData.DaggerDragFrom, CelesteData.DaggerStopAt, _flown);
-                float cap = _launchFlat * (1f - Mathf.SmoothStep(0f, 1f, ease));
+                float cap = _launchFlat * (1f - ease);
                 if (flat.magnitude > cap)
                 {
                     flat = flat.sqrMagnitude > 1e-6f ? flat.normalized * cap : Vector3.zero;
