@@ -79,7 +79,7 @@ namespace CursedAppleCuriosities.Survivors.GreyTalon
         // ---- special: Guided Owl (user: 1200%, steered; very long cooldown; untargetable while casting) ----
         public static float OwlDamage = 25f;            // user: 1200% -> 2500% (Deadlock Damage 230 +0.94x spirit)
         public const float OwlExecute = 0.75f;          // a blast dealing more than this share of the target's current health (with shield and barrier) kills it (user, 1.7)
-        public static float OwlBossBonus = 0.2f;        // owl damage per boss it killed, whole run (user; Deadlock: +8 spirit per kill)
+        public static float OwlBossBonus = 0.1f;        // owl damage per boss, elite or miniboss it killed, whole run (user: 20% bosses only until 2.0; Deadlock: +8 spirit per kill)
         public static float OwlCooldown = 125f;         // Deadlock's own, kept (user: very very long)
         public const float OwlCastDelay = 1.5f;         // Deadlock AbilityCastDelay
         public const float OwlFlight = 20f;             // Deadlock AbilityChannelTime
@@ -112,7 +112,7 @@ namespace CursedAppleCuriosities.Survivors.GreyTalon
             RainRepeatHit = c.Bind(Section, "Rain of Arrows - Repeat Hit Damage", RainRepeatHit, "Damage multiplier for each further arrow of one 5-arrow shot that hits the same enemy.").Value;
             RainDuration = c.Bind(Section, "Rain of Arrows - Glide", RainDuration, "Seconds of glide and split arrows.").Value;
             OwlDamage = c.Bind(Section, "Guided Owl - Damage", OwlDamage, "Damage coefficient of the owl's blast.").Value;
-            OwlBossBonus = c.Bind(Section, "Guided Owl - Boss Kill Bonus", OwlBossBonus, "Extra owl damage for each boss it has killed this run (0.2 = +20%).").Value;
+            OwlBossBonus = c.Bind(Section, "Guided Owl - Boss Kill Bonus", OwlBossBonus, "Extra owl damage for each boss, elite or miniboss it has killed this run (0.1 = +10%).").Value;
             OwlRadius = c.Bind(Section, "Guided Owl - Radius", OwlRadius, "Metres.").Value;
             OwlCooldown = c.Bind(Section, "Guided Owl - Cooldown", OwlCooldown, "Seconds.").Value;
             OwlSpeed = c.Bind(Section, "Guided Owl - Cruise Speed", OwlSpeed, "Metres per second without forward held (it speeds up to 36 while forward is held).").Value;

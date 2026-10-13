@@ -54,6 +54,10 @@ namespace CursedAppleCuriosities.Survivors.GreyTalon
         }
 
         /// <summary>Enemies of a team whose hurtboxes touch a sphere (one per body).</summary>
+        /// <summary>Kills that grow the Guided Owl: bosses, champions, elites and minibosses (the Halcyonite, the Halcyon Shrine's guardian) (user, 2.0).</summary>
+        public static bool IsTrophy(CharacterBody? b) =>
+            b != null && (b.isChampion || b.isBoss || b.isElite || b.bodyIndex == BodyCatalog.FindBodyIndex("HalcyoniteBody"));
+
         public static List<HealthComponent> EnemiesIn(Vector3 center, float radius, TeamIndex team)
         {
             var list = new List<HealthComponent>();
@@ -190,7 +194,7 @@ namespace CursedAppleCuriosities.Survivors.GreyTalon
             int bossKills = 0;
             foreach (HealthComponent hc in GreyTalonNet.EnemiesIn(Point, radius, body.teamComponent.teamIndex))
             {
-                bool boss = hc.body != null && (hc.body.isChampion || hc.body.isBoss);
+                bool boss = GreyTalonNet.IsTrophy(hc.body);
                 Vector3 away = GreyTalonNet.Core(hc) - Point;
                 float before = hc.combinedHealth;
                 GreyTalonNet.Hit(body, hc, damage, Crit, (away.sqrMagnitude > 0.01f ? away.normalized : Vector3.up) * 1200f, DamageSource.Special, 1f);
@@ -204,12 +208,12 @@ namespace CursedAppleCuriosities.Survivors.GreyTalon
             {
                 trophies.Kills += bossKills;
                 trophies.Show(body);
-                CursedAppleCuriositiesPlugin.Logger?.LogInfo($"[GreyTalon] owl killed {bossKills} boss(es): {trophies.Kills} this run, owl damage x{1f + GreyTalonData.OwlBossBonus * trophies.Kills:0.##}");
+                CursedAppleCuriositiesPlugin.Logger?.LogInfo($"[GreyTalon] owl killed {bossKills} boss(es)/elite(s)/miniboss(es): {trophies.Kills} this run, owl damage x{1f + GreyTalonData.OwlBossBonus * trophies.Kills:0.##}");
             }
         }
     }
 
-    /// <summary>Server, on the player's master: bosses the Guided Owl has killed this run (each makes it stronger: user).</summary>
+    /// <summary>Server, on the player's master: bosses, elites and minibosses the Guided Owl has killed this run (each makes it stronger: user).</summary>
     public class GreyTalonOwlTrophies : MonoBehaviour
     {
         public int Kills;
