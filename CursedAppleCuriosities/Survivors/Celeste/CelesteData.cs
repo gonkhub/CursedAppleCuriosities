@@ -44,10 +44,10 @@ namespace CursedAppleCuriosities.Survivors.Celeste
         public static float DaggerDamage = 2.2f;
         public const float DaggerCycle = 0.58f;          // Deadlock m_flCycleTime
         public const float DaggerSpeed = 50f;            // Deadlock m_flBulletSpeed 1968.5 hu/s
-        public const float DaggerDrop = 3f;              // m/s2 (Deadlock gravity scale 0.2 of its 15 m/s2 bullet gravity): a shallow arc
+        public const float DaggerDrop = 9f;              // m/s2, homing or not: a shallow arc (user; Deadlock gravity scale 0.2)
         public const float DaggerHomeConeDeg = 22.5f;    // Deadlock: homes onto an enemy within ~45 deg of its flight
         public const float DaggerHomeRange = 45f;
-        public const float DaggerTurnDegPerSec = 300f;
+        public const float DaggerTurnDegPerSec = 150f;  // gentle, so the arc shows
         public const float DaggerBounceKeep = 0.7f;      // speed kept by its one bounce off the world
         public static float DaggerRicochet = 0.6f;       // share of the hit a ricochet deals to a second enemy close by
         public const float DaggerRicochetRange = 10f;

@@ -353,11 +353,11 @@ namespace CursedAppleCuriosities.Survivors.Celeste
                 if (!_looked && _age > 0.04f) { _looked = true; _target = FindTarget(v); }
                 if (_target != null && _target.alive)
                 {
-                    // Home: turn toward the target, faster the closer it is.
+                    // Home: turn toward the target (gently, so the arc still shows).
                     Vector3 to = CelesteNet.Core(_target) - transform.position;
                     v = Vector3.RotateTowards(v, to.normalized * v.magnitude, CelesteData.DaggerTurnDegPerSec * Mathf.Deg2Rad * Time.fixedDeltaTime, 0f);
                 }
-                else v += Vector3.down * CelesteData.DaggerDrop * Time.fixedDeltaTime;
+                v += Vector3.down * CelesteData.DaggerDrop * Time.fixedDeltaTime; // always falls: a shallow arc (user)
             }
             _rb.velocity = v;
             if (v.sqrMagnitude > 0.01f) transform.rotation = Quaternion.LookRotation(v);

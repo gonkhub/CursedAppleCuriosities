@@ -31,6 +31,7 @@ namespace CursedAppleCuriosities.Survivors.Celeste
         private static Sprite? _defaultSkinIcon;
         private static Sprite MintSkinIcon => _mintSkinIcon ??= Kit.SkinIcon(new Color(0.6f, 0.93f, 0.82f), new Color(0.27f, 0.19f, 0.15f), new Color(0.24f, 0.55f, 0.5f), new Color(0.86f, 0.72f, 0.64f));
         private static Sprite? _mintSkinIcon;
+        public const float ProjectileHue = 0.72f; // her blades and orb: light blue-violet (user)
         public const float Hue = 0.9f;       // her light is pink, as her hair
 
         public static GameObject? BodyPrefab, DisplayPrefab, DaggerProjectile, OrbProjectile;
@@ -80,8 +81,8 @@ namespace CursedAppleCuriosities.Survivors.Celeste
             BeamEffect = Kit.Recoloured(TryLoad<GameObject>("RoR2/Base/Lightning/LightningStrikeImpact.prefab"), "CursedAppleCelesteBeam", Hue, effect: true);
             ShatterEffect = Kit.Recoloured(TryLoad<GameObject>("RoR2/Base/Captain/CaptainTazerNova.prefab"), "CursedAppleCelesteShatter", Hue, effect: true);
             BreakEffect = TryLoad<GameObject>("RoR2/Base/Common/VFX/ShieldBreakEffect.prefab");
-            OrbHitEffect = Kit.Recoloured(TryLoad<GameObject>("RoR2/Base/ArtifactShell/ExplosionSolarFlare.prefab", "RoR2/Base/Common/VFX/OmniImpactVFXSlash.prefab"), "CursedAppleCelesteOrbHit", Hue, effect: true);
-            RicochetTracer = Kit.Recoloured(TryLoad<GameObject>("RoR2/Base/Commando/TracerCommandoDefault.prefab"), "CursedAppleCelesteRicochet", Hue, effect: true);
+            OrbHitEffect = Kit.Recoloured(TryLoad<GameObject>("RoR2/Base/ArtifactShell/ExplosionSolarFlare.prefab", "RoR2/Base/Common/VFX/OmniImpactVFXSlash.prefab"), "CursedAppleCelesteOrbHit", ProjectileHue, effect: true);
+            RicochetTracer = Kit.Recoloured(TryLoad<GameObject>("RoR2/Base/Commando/TracerCommandoDefault.prefab"), "CursedAppleCelesteRicochet", ProjectileHue, effect: true);
             Material? laser = TryLoad<Material>("RoR2/Base/Common/VFX/matLaserPointerBeam.mat");
             LineMaterial = laser != null ? new Material(laser) : null;
             if (LineMaterial != null) // the laser material ignores line colours: tint it pink
@@ -129,7 +130,7 @@ namespace CursedAppleCuriosities.Survivors.Celeste
             DaggerProjectile = Kit.CloneProjectile(
                 TryLoad<GameObject>("RoR2/Base/Bandit2/Bandit2ShivProjectile.prefab", "RoR2/Base/Characters/Bandit2/Skills/Bandit2ShivProjectile.prefab"),
                 "CursedAppleCelesteBlade", typeof(CelesteDagger), CelesteData.DaggerSpeed, CelesteData.DaggerLifetime + 0.5f, gravity: false, triggers: false, steer: false);
-            RecolourGhost(DaggerProjectile, "CursedAppleCelesteBladeGhost", 1.2f);
+            RecolourGhost(DaggerProjectile, "CursedAppleCelesteBladeGhost", 0.45f); // much smaller (user)
             // Shining Wonder: the Artifact shell's seeking solar flare, steered by CelesteOrb (it passes through everything).
             OrbProjectile = Kit.CloneProjectile(
                 TryLoad<GameObject>("RoR2/Base/ArtifactShell/ArtifactShellSeekingSolarFlare.prefab", "RoR2/Base/Mage/MageLightningBombProjectile.prefab"),
@@ -137,14 +138,14 @@ namespace CursedAppleCuriosities.Survivors.Celeste
             var orbPc = OrbProjectile != null ? OrbProjectile.GetComponent<RoR2.Projectile.ProjectileController>() : null;
             if (orbPc != null && orbPc.ghostPrefab == null) // the seeking flare draws itself: give it the flare's own ghost
                 orbPc.ghostPrefab = TryLoad<GameObject>("RoR2/Base/ArtifactShell/SolarFlareGhost.prefab", "RoR2/Base/Mage/MageLightningBombGhost.prefab");
-            RecolourGhost(OrbProjectile, "CursedAppleCelesteOrbGhost", 1.6f);
+            RecolourGhost(OrbProjectile, "CursedAppleCelesteOrbGhost", 0.8f);    // smaller (user)
         }
 
         private static void RecolourGhost(GameObject? projectile, string name, float scale)
         {
             var pc = projectile != null ? projectile.GetComponent<RoR2.Projectile.ProjectileController>() : null;
             if (pc == null || pc.ghostPrefab == null) return;
-            GameObject? ghost = Kit.Recoloured(pc.ghostPrefab, name, Hue, effect: false);
+            GameObject? ghost = Kit.Recoloured(pc.ghostPrefab, name, ProjectileHue, effect: false);
             if (ghost == null) return;
             ghost.transform.localScale *= scale;
             pc.ghostPrefab = ghost;
