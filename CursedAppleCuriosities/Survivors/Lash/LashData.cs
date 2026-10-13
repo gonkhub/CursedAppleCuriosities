@@ -83,10 +83,11 @@ namespace CursedAppleCuriosities.Survivors.Lash
         public static int DeathSlamMaxTargets = 6;
         public const float DeathSlamPull = 0.6f;        // Deadlock BoostTime 1 s; faster by playtest
         public const float DeathSlamHang = 0.3f;        // 0.6 at first; faster by playtest
-        // The throw always waits for every lifted enemy to reach Lash (user, 1.7): far ones are capped at DeathSlamLiftMaxSpeed.
+        // The throw always waits for every lifted enemy to reach Lash (user, 1.7); the pull now gets them there in time anyway.
         public const float DeathSlamArrived = 1.5f;     // m from its hold spot (server)
         public const float DeathSlamWaitMax = 5f;       // s: a backstop for an enemy that can't get there (stuck on terrain)
-        public const float DeathSlamLiftMaxSpeed = 35f; // m/s cap on the pull up (uncapped, it shot big fliers through ceilings)
+        public const float DeathSlamHoldSpeed = 35f;    // m/s: once up, held beside Lash as he drifts. The pull itself is uncapped (1.7, user):
+                                                        // it covers any distance in DeathSlamPull; the hold spot is kept under ceilings
         public const float DeathSlamFlightMax = 8f;     // s: a throw that never hits terrain by then is checked for the void
         public static float DeathSlamThrow = 28f;       // max throw distance, m (Deadlock 14; doubled by playtest)
         public const float DeathSlamSpeed = 40.6f;

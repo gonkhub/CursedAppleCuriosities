@@ -337,9 +337,14 @@ namespace CursedAppleCuriosities.Survivors.Lash
             float t = Time.time - _started;
             if (_phase == Phase.Lift)
             {
-                Vector3 to = HoldSpot() - _body.transform.position;
-                float speed = Mathf.Max(4f, to.magnitude / Mathf.Max(0.05f, LashData.DeathSlamPull - t));
-                Move(to, Mathf.Min(speed, LashData.DeathSlamLiftMaxSpeed));
+                // The pull takes DeathSlamPull whatever the distance (user, 1.7: from the skybox too): speed is what's left
+                // over the time left, uncapped. Whatever terrain held back is put in place when the time is up.
+                Vector3 spot = HoldSpot();
+                Vector3 to = spot - _body.transform.position;
+                float left = LashData.DeathSlamPull - t;
+                if (left > Time.fixedDeltaTime) Move(to, Mathf.Max(4f, to.magnitude / left));
+                else if (to.magnitude > LashData.DeathSlamArrived) Snap(spot);
+                else Move(to, LashData.DeathSlamHoldSpeed);
                 if (_pendingGroup != null && !Rising) { Throw(_pendingGroup, _pendingLand); return; }
                 if (t > _limit) Destroy(this);
                 return;
@@ -364,6 +369,14 @@ namespace CursedAppleCuriosities.Survivors.Lash
             if (_body.master != null) _body.master.TrueKill(killer, killer, oob);
             else hc.Suicide(killer, killer, oob);
             Destroy(this);
+        }
+
+        /// <summary>Straight to a spot, through anything in the way (the hold spot itself is kept clear of ceilings).</summary>
+        private void Snap(Vector3 spot)
+        {
+            if (_motor != null) { _motor.Motor.SetPosition(spot); _motor.velocity = Vector3.zero; }
+            else if (_rb != null && !_rb.isKinematic) { _rb.position = spot; _rb.velocity = Vector3.zero; }
+            else transform.position = spot;
         }
 
         private void Move(Vector3 to, float maxSpeed)
