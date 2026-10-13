@@ -71,7 +71,7 @@ namespace CursedAppleCuriosities.Interactables
                 "Spawn the Soul Urn: carry it to the teleporter in time, without taking damage, for a pile of items.").Value;
             SpawnChance = config.Bind(S, "Spawn Chance", 0.3f, "Chance that a Soul Urn appears on any stage (0.3 = 30%).").Value;
             TimeLimit = config.Bind(S, "Time Limit", 30f, "Seconds to reach the teleporter after picking the urn up.").Value;
-            MinTeleporterDistance = config.Bind(S, "Min Teleporter Distance", 60f,
+            MinTeleporterDistance = config.Bind(S, "Min Teleporter Distance", 180f, // 60 until 2.0 (user)
                 "The urn always spawns at least this far (m) from the teleporter.").Value;
             MaxTeleporterDistance = config.Bind(S, "Max Teleporter Distance", 160f,
                 "The urn prefers to spawn within this distance (m) of the teleporter, so it can be delivered in time. Further out only when the map has no room closer.").Value;
