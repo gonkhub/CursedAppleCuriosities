@@ -369,7 +369,7 @@ same on a stand-in model.
     to punch. It goes on any surface the crosshair hits (floor, slope, wall, ceiling; the ring lies flat on it) and throws
     everything straight out of it, along the normal (user); the area is a cylinder standing out of the surface. Cube: slippery (keeps momentum, 0.15/s
     friction, slides downhill, hits shove it). Cube cast cleanses (Util.CleanseBody: debuffs, DoTs, stun); inside, hits deal 0 damage
-    but are NOT rejected, so on-hit debuffs land and DoTs tick normally (user); no fall damage in the cube or the Goo Ball
+    but are NOT rejected, so on-hit debuffs land and DoTs keep ticking, for 0 damage while cubed (user, 1.6.0); no fall damage in the cube or the Goo Ball
     (OnCharacterHitGroundServer hooks). Out of them he takes fall damage (user, 1.6.0): no landing guard when the ball or his own
     cube ends mid-air, or after punching himself up (allies keep theirs). Goo Ball jump 22 m/s, cooldown 32 s (1.6.0, user; was 20) (user's cfg hand-edited, backup `.bak-viscous`).
   - Goo Ball = Deadlock `viscous_goo_bowling_ball`: 0.55 s curl (`rolling_goo`), then 11 s rolling (own `GooBall` Body state, owner moves it via

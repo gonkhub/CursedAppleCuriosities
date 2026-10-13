@@ -26,10 +26,12 @@ namespace CursedAppleCuriosities.Survivors.Viscous
             if (ViscousSurvivor.CubeBuff != null) SkillSilence.Register(ViscousSurvivor.CubeBuff);
             On.RoR2.HealthComponent.TakeDamage += (orig, self, info) =>
             {
-                if (ViscousSurvivor.CubeBuff != null && self.body != null && self.body.HasBuff(ViscousSurvivor.CubeBuff) && info.dotIndex == DotController.DotIndex.None)
+                if (ViscousSurvivor.CubeBuff != null && self.body != null && self.body.HasBuff(ViscousSurvivor.CubeBuff) && info.dotIndex != DotController.DotIndex.None)
+                    info.damage = 0f; // DoTs keep ticking inside the cube (and after it) but do no damage while it lasts (user)
+                else if (ViscousSurvivor.CubeBuff != null && self.body != null && self.body.HasBuff(ViscousSurvivor.CubeBuff))
                 {
                     // Hits do no damage, but still land (user): not rejected, so their on-hit debuffs and DoTs reach the
-                    // one inside, and DoTs (dotIndex set) tick through the cube normally.
+                    // one inside; nothing inside the cube takes damage, DoT ticks included.
                     info.damage = 0f;
                     // Deadlock: hits still shove the cube around (it's slippery). The motor's owner applies it.
                     if (info.force.sqrMagnitude > 0.01f && self.body.characterMotor != null)
