@@ -1,6 +1,33 @@
 # Changelog
 
-## 1.7.0 (unreleased)
+## 1.8.0
+- Updating from an older version: your config file keeps the values it already has, so balance changes from past
+  updates (including the ones below) only apply to settings you reset to their defaults, or if you delete
+  `BepInEx/config/com.cursedapple.curiosities.cfg` before starting the game.
+- **Abrams**: **Heavy Melee** lunges about 10 m (was 6).
+- New red item: **Lightning Scroll**. The first time your special skill hits an enemy, a purple bolt of lightning strikes it
+  3 seconds later for 500% damage (+250% per stack) and stuns it for 2 seconds.
+- The mod's content is now an **expansion** you can switch off in the lobby, next to the base game's expansions. Off: none of
+  its items, equipment or artifacts drop or can be given, and no Cursed Broker appears. Its survivors can still be played.
+- **Toxic Bullets**: the poison is now credited to you, so poison kills pay gold and XP and trigger on-kill effects. It deals
+  exactly 1% of the enemy's max health per second per stack, ignoring armor.
+- **Colossus**: other players now see you grow (the growth only showed on the host).
+- **Hunter's Aura**: holders no longer interfere with each other; an enemy takes the strongest aura on it.
+- **Cursed Broker**: a cursed **Hunter's Aura** now doubles its damage amplification (it was tripling it, and its tooltip
+  promised a wider aura that never happened).
+- **Counterspell**: a blocked hit is fully rejected, so its debuffs and on-hit effects don't land either.
+- **Trophy Collector**: gold per Trophy scales with difficulty (like chest prices). Trophies are cleared whenever you leave a
+  stage, not only when the teleporter charges, so leftover gold can always be turned into XP.
+- **Burst Fire**: only hits from your primary skill trigger it.
+- **Radiant Regen**: only secondary, utility and special skills count. The cast heal is 5% of max health (5 s cooldown) and each
+  Radiance stack regenerates 1% of max health per second.
+- **Long Range**: boosts the hit itself instead of dealing a separate hit.
+- **Tankbuster**: 5% of the enemy's max health (+2.5% per stack), was 10% (+5%).
+- **Spirit Burn**: burns for 60% damage per second per stack. It was described as 35% but actually dealt about 9%.
+
+## 1.7.0
+- Survivors now release one at a time: this package has **Lash**, **Abrams** and **Seven**. The other heroes from
+  earlier notes come back in later releases.
 - **Seven**: his gun's tracer is a thin beam of lightning instead of a thick laser.
 - **Seven**: **Storm Cloud** starts 30 m wide (was 10) and strikes every enemy it can see with a bolt of lightning about
   four times a second, each proccing fully (was 0.3), for less damage overall (100-600% per second, was 150-990%). Stray bolts
@@ -8,19 +35,13 @@
 - Wall jumps (every Deadlock hero) lose height when spammed: each one within a second of the last is 60% as high as the one
   before. Waiting a full second, an air jump, an air dash or landing restores full height.
 - Wall jumps: the first is free, each one after it costs half a stamina until you land or air jump/air dash.
-- **Celeste**: **Light Eater** flashes a faint purple cone showing exactly what it reaches.
-- **Celeste**: **Shining Wonder** drifts slower (12 m/s, was 18) and waits up to 6 s for a new target (was 3.25). Cooldown 25 s (was 40).
 - Deadlock heroes start sprinting 1 second after last taking damage or attacking (was RoR2's 5 seconds out of combat).
 - **Seven**: sprinting while shooting during **Power Surge**, he runs with his gun up instead of his out-of-combat sprint.
 - **Seven**: **Lightning Ball** slows the enemies it shocks by 80% while they're inside it (and half a second after).
-- **Celeste**: 4 stamina (was 5).
-- **Celeste**: **Carny Life** blades are thrown a little higher (4 degrees above the crosshair).
 - **Majestic Leap**: leaps 50% higher, and its cooldown is halved (22.5 s, was 45).
 - **Lash**: **Death Slam** pulls enemies up to him in the same time from any distance (from the skybox too), and always waits
   until every lifted enemy is up beside him before throwing.
-- Every Deadlock hero but Vyper is 5% smaller.
-- **Grey Talon**: **Charged Shot** deals 1000% (was 800%). His bow hits weak points (like Railgunner's: x1.5).
-- **Grey Talon**: **Guided Owl** executes anything its blast takes more than 75% of the remaining health from.
+- Every Deadlock hero is 5% smaller.
 - **Cursed Broker** spawns: 10% on any stage, 50% on stage 3 of every loop, and 50% each visit to the Bazaar Between Time
   (once one has appeared there, not again until the next loop). No longer guaranteed on stage 4.
 - **Goose Eggs** don't mature while the run timer is stopped (the Bazaar Between Time and other places it pauses).

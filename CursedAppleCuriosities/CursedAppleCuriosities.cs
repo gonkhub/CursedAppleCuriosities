@@ -90,6 +90,8 @@ namespace CursedAppleCuriosities
                 return orig(self, equipmentDef);
             };
 
+            try { CuriositiesExpansion.Init(); } // before items: their defs require it
+            catch (Exception e) { Logger.LogError($"  ! Expansion failed to init: {e}"); }
             InitItems();
             Logger.LogInfo($"  items done at {clock.ElapsedMilliseconds} ms");
             InitEquipments();
@@ -136,6 +138,11 @@ namespace CursedAppleCuriosities
             };
             foreach (var hero in heroes)
             {
+                if (!IsReleased(hero.Name))
+                {
+                    Logger?.LogInfo($"  - [Survivor] {hero.Name} (not in this release)");
+                    continue;
+                }
                 var clock = System.Diagnostics.Stopwatch.StartNew();
                 try
                 {
@@ -153,6 +160,21 @@ namespace CursedAppleCuriosities
                 catch (Exception e) { Logger?.LogError($"  ! [Equipment] {eq.EquipmentName} sounds failed: {e}"); }
             }
             DeadlockInstall.Start();
+        }
+
+        /// <summary>
+        /// Survivors ship one at a time: Release builds (the Thunderstore package) register only these.
+        /// Debug builds (development) register every hero.
+        /// </summary>
+        private static readonly string[] ReleasedSurvivors = { "Lash", "Abrams", "Seven" };
+
+        private static bool IsReleased(string hero)
+        {
+#if DEBUG
+            return true;
+#else
+            return Array.IndexOf(ReleasedSurvivors, hero) >= 0;
+#endif
         }
 
         private void InitEquipments()
@@ -226,6 +248,6 @@ namespace CursedAppleCuriosities
     {
         public const string PLUGIN_GUID = "com.cursedapple.curiosities";
         public const string PLUGIN_NAME = "Cursed Apple Curiosities";
-        public const string PLUGIN_VERSION = "1.7.0";
+        public const string PLUGIN_VERSION = "1.8.0";
     }
 }

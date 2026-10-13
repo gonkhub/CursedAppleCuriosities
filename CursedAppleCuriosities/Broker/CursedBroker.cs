@@ -178,7 +178,7 @@ namespace CursedAppleCuriosities.Broker
         private static void OnPostPopulateScene(SceneDirector director)
         {
             Run? run = Run.instance;
-            if (!Enabled || !NetworkServer.active || run == null || _card == null || DirectorCore.instance == null) return;
+            if (!Enabled || !CuriositiesExpansion.Enabled || !NetworkServer.active || run == null || _card == null || DirectorCore.instance == null) return;
             bool forced = _forceNextStage;
             _forceNextStage = false;
             if (!forced && !StageEligible(run)) return;
@@ -211,7 +211,7 @@ namespace CursedAppleCuriosities.Broker
         private static void OnServerStageBegin(Stage stage)
         {
             Run? run = Run.instance;
-            if (!Enabled || run == null || _prefab == null || _card == null) return;
+            if (!Enabled || !CuriositiesExpansion.Enabled || run == null || _prefab == null || _card == null) return;
             SceneDef? scene = SceneCatalog.GetSceneDefForCurrentScene();
             if (scene == null || scene.cachedName != "bazaar") return;
             // Rolled per visit (seeded by the stage count, so each visit has its own roll).

@@ -51,6 +51,7 @@ namespace CursedAppleCuriosities.Items
             EquipmentDef.appearsInMultiPlayer   = true;
             EquipmentDef.isLunar          = false;
             EquipmentDef.isBoss           = false;
+            EquipmentDef.requiredExpansion = CuriositiesExpansion.Def;
             EquipmentDef.pickupIconSprite = CreateIcon();
 #pragma warning disable CS0618 // obsolete, but CreatePickupDef still reads it (see ItemBase)
             if (ModelFileName != null && EquipmentDef.pickupIconSprite != null)

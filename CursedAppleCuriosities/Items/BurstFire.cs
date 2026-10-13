@@ -11,9 +11,9 @@ namespace CursedAppleCuriosities.Items
         public override string ItemName => "Burst Fire";
         public override string ItemLangTokenName => "BURSTFIRE";
 
-        public override string ItemPickupDesc => "Landing hits briefly increases movement and attack speed.";
+        public override string ItemPickupDesc => "Hitting with your primary skill briefly increases movement and attack speed.";
         public override string ItemFullDescription =>
-            $"Landing a hit grants " +
+            $"Hitting an enemy with your <style=cIsDamage>primary skill</style> grants " +
             $"<style=cIsUtility>+{MoveSpeedBonusPerStack * 100:0}% movement speed</style> and " +
             $"<style=cIsDamage>+{AttackSpeedBonusPerStack * 100:0}% attack speed</style> " +
             $"<style=cStack>(+{MoveSpeedBonusPerStack * 100:0}% and +{AttackSpeedBonusPerStack * 100:0}% per stack)</style> " +
@@ -68,6 +68,7 @@ namespace CursedAppleCuriosities.Items
 
             if (!NetworkServer.active) return;
             if (damageInfo == null || damageInfo.procCoefficient <= 0f) return;
+            if (((DamageSource)damageInfo.damageType & DamageSource.Primary) == 0) return; // primary fire only (user, 1.8)
             if (damageInfo.attacker == null) return;
 
             var attackerBody = damageInfo.attacker.GetComponent<CharacterBody>();

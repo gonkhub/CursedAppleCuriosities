@@ -60,7 +60,7 @@ namespace CursedAppleCuriosities.Survivors.Abrams
         public const float MeleePointBlank = 2f;        // enemies this close (surface) are hit whatever the angle
         public const float MeleeLunge = 4f;             // m/s forward drift during the wind-up
         public const float MeleeLungeSpeed = 32f;       // m/s: the punch itself lunges...
-        public const float MeleeLungeTime = 0.2f;       // ...for this long (~6 m), stopping at the first enemy it reaches
+        public const float MeleeLungeTime = 0.3f;       // ...for this long (~10 m; 0.2 s / ~6 m before 1.8, user), stopping at the first enemy it reaches
         public const float MeleeRecover = 0.3f;
 
         // ---- utility: Shoulder Charge ----

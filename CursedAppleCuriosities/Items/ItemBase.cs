@@ -63,6 +63,7 @@ namespace CursedAppleCuriosities.Items
             // ResolveTier() from an On.ItemTierCatalog.Init hook, once the catalog exists.
             ItemDef.tags = ItemTags;
             ItemDef.canRemove = CanRemove;
+            ItemDef.requiredExpansion = CuriositiesExpansion.Def; // off in the lobby = never drops or given
 
             // 2D pickup icon (inventory bar, logbook, multishop list, pickup ping).
             ItemDef.pickupIconSprite = IconFileName != null ? LoadEmbeddedIcon(IconFileName) : null;

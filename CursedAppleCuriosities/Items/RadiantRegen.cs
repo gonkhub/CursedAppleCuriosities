@@ -12,17 +12,17 @@ namespace CursedAppleCuriosities.Items
         public override string ItemName => "Radiant Regen";
         public override string ItemLangTokenName => "RADIANTREGEN";
 
-        public override string ItemPickupDesc => "Using skills heals you. Skill hits build health regeneration.";
+        public override string ItemPickupDesc => "Using non-primary skills heals you. Their hits build health regeneration.";
         public override string ItemFullDescription =>
-            $"Using a skill heals for <style=cIsHealing>{HealPerStack:0} HP</style> " +
+            $"Using a <style=cIsUtility>secondary, utility or special skill</style> heals you for " +
+            $"<style=cIsHealing>{HealFraction * 100:0.#}% of your maximum health</style> " +
             $"<style=cIsUtility>({BurstCooldown:0}s cooldown)</style>. " +
-            $"Skill hits on <style=cIsDamage>unique enemies</style> grant a stack of " +
+            $"Their hits on <style=cIsDamage>unique enemies</style> grant a stack of " +
             $"<style=cIsHealing>Radiance</style> " +
             $"(max <style=cIsUtility>{MaxStacksPerItem}</style>" +
             $"<style=cStack> +{MaxStacksPerItem} per stack</style>), " +
-            $"each providing <style=cIsHealing>{RegenPerStack:0} HP/s</style> " +
-            $"<style=cStack>(+{RegenPerStack:0} HP/s per stack of this item)</style>. " +
-            $"Any skill hit refreshes the buff duration.";
+            $"each regenerating <style=cIsHealing>{RegenFraction * 100:0.#}% of your maximum health per second</style>. " +
+            $"Any of their hits refreshes the buff duration.";
 
         public override string ItemLore => "Take care of yourself. That's not a request.";
 
@@ -30,9 +30,9 @@ namespace CursedAppleCuriosities.Items
         public override ItemTag[] ItemTags => new[] { ItemTag.Healing };
         protected override string IconFileName => "icon_radiantregen.png";
 
-        public static float HealPerStack;
+        public static float HealFraction;   // of max health, on a non-primary skill cast
         public const float BurstCooldown  = 5f;
-        public static float RegenPerStack;
+        public static float RegenFraction;  // of max health per second, per Radiance stack
         public const float BuffDuration   = 8f;
         public const int   MaxStacksPerItem = 6;
 
@@ -49,10 +49,11 @@ namespace CursedAppleCuriosities.Items
             RadiantBuffDef.buffColor = color;
             ContentAddition.AddBuffDef(RadiantBuffDef);
 
-            HealPerStack = config.Bind("Green", "Radiant Regen - Skill Burst Heal", 20f,
-                "Flat HP healed when you use a skill (on cooldown).").Value;
-            RegenPerStack = config.Bind("Green", "Radiant Regen - Regen Per Radiance Per Stack", 2f,
-                "HP/s per Radiance stack, per copy of the item.").Value;
+            // New keys in 1.8: the old ones were flat HP (20 and 2), which would read as 2000% here.
+            HealFraction = config.Bind("Green", "Radiant Regen - Skill Cast Heal Percent", 0.05f,
+                "Share of max health healed when you use a secondary, utility or special skill (5 s cooldown).").Value;
+            RegenFraction = config.Bind("Green", "Radiant Regen - Regen Percent Per Radiance", 0.01f,
+                "Share of max health regenerated per second by each Radiance stack.").Value;
             CreateLang();
             CreateItem();
             StaticItemDef = ItemDef;
@@ -73,9 +74,8 @@ namespace CursedAppleCuriosities.Items
             if (RadiantBuffDef == null || sender.inventory == null) return;
             int buffs = sender.GetBuffCount(RadiantBuffDef.buffIndex);
             if (buffs <= 0) return;
-            int itemCount = sender.inventory.GetItemCountEffective(ItemDef);
-            if (itemCount <= 0) return;
-            args.baseRegenAdd += buffs * RegenPerStack * itemCount;
+            if (sender.inventory.GetItemCountEffective(ItemDef) <= 0) return;
+            args.baseRegenAdd += buffs * RegenFraction * sender.maxHealth; // more copies raise the Radiance cap instead
         }
 
         private void OnInventoryChanged(On.RoR2.CharacterBody.orig_OnInventoryChanged orig, CharacterBody self)
@@ -97,6 +97,7 @@ namespace CursedAppleCuriosities.Items
             orig(self, skill);
             if (!NetworkServer.active) return;
             if ((self.inventory?.GetItemCountEffective(ItemDef) ?? 0) <= 0) return;
+            if (self.skillLocator != null && skill == self.skillLocator.primary) return; // non-primary skills only (user, 1.8)
             self.GetComponent<RadiantRegenTracker>()?.TriggerBurstHeal();
         }
 
@@ -108,6 +109,8 @@ namespace CursedAppleCuriosities.Items
             if (!NetworkServer.active) return;
             if (damageInfo?.attacker == null || victim == null) return;
             if (damageInfo.procCoefficient <= 0f) return; // ignore passive/item ticks
+            const DamageSource Skills = DamageSource.Secondary | DamageSource.Utility | DamageSource.Special;
+            if (((DamageSource)damageInfo.damageType & Skills) == 0) return; // non-primary skill hits only (user, 1.8)
 
             var attackerBody = damageInfo.attacker.GetComponent<CharacterBody>();
             if (attackerBody?.inventory == null) return;
@@ -134,7 +137,7 @@ namespace CursedAppleCuriosities.Items
             if (_burstCooldown > 0f || _body?.healthComponent == null) return;
             if (RadiantRegen.StaticItemDef == null || _body.inventory == null) return;
             if (_body.inventory.GetItemCountEffective(RadiantRegen.StaticItemDef) <= 0) return;
-            _body.healthComponent.Heal(RadiantRegen.HealPerStack, default, false);
+            _body.healthComponent.Heal(_body.maxHealth * RadiantRegen.HealFraction, default);
             _burstCooldown = RadiantRegen.BurstCooldown;
         }
 

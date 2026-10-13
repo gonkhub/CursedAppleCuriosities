@@ -1,8 +1,8 @@
 {
   "name": "CursedAppleCuriosities",
-  "version_number": "1.7.0",
+  "version_number": "1.8.0",
   "website_url": "",
-  "description": "Items, equipment, an artifact, a cursed shrine and eight survivors adapted from Deadlock: Lash, Abrams, Seven, Vyper, Grey Talon, Victor, Viscous and Celeste.",
+  "description": "Items, equipment, two artifacts, a cursed shrine and survivors (Lash, Abrams, Seven) adapted from Deadlock, as an expansion you can toggle in the lobby.",
   "dependencies": [
     "RiskofThunder-RoR2BepInExPack-1.43.0",
     "RiskofThunder-R2API_Core-5.3.0",

@@ -108,9 +108,11 @@ namespace CursedAppleCuriosities.Items
                     if (HealFraction > 0f)
                         self.body.healthComponent?.Heal(self.body.maxHealth * HealFraction, default(ProcChainMask));
 
-                    // Fully negate this instance.
-                    damageInfo.damage = 0f;
-                    damageInfo.force  = Vector3.zero;
+                    // Fully negate this instance: rejected, like Tougher Times' block, so its on-hit effects
+                    // (debuffs, burns, elite effects) don't land either.
+                    damageInfo.damage   = 0f;
+                    damageInfo.force    = Vector3.zero;
+                    damageInfo.rejected = true;
                 }
             }
 

@@ -114,11 +114,11 @@ namespace CursedAppleCuriosities.Items
             float dps    = DotDpsPercent * itemCount;
             var tracker  = victimBody.GetComponent<ToxicPoisonTracker>();
             if (tracker != null)
-                tracker.Refresh(dps);
+                tracker.Refresh(dps, attackerBody.gameObject);
             else
             {
                 tracker = victimBody.gameObject.AddComponent<ToxicPoisonTracker>();
-                tracker.Initialize(dps);
+                tracker.Initialize(dps, attackerBody.gameObject);
             }
 
             if (ToxicWeakenedBuffDef != null)
@@ -139,22 +139,28 @@ namespace CursedAppleCuriosities.Items
 
     public class ToxicPoisonTracker : MonoBehaviour
     {
+        private const float TickInterval = 0.25f;
+
         private CharacterBody _body;
+        private GameObject? _attacker; // credited with the damage: kills pay gold and XP and count as theirs
         private float _dpsPercent;
         private float _remaining;
+        private float _tick;
 
         private void Awake() => _body = GetComponent<CharacterBody>();
 
-        public void Initialize(float dpsPercent)
+        public void Initialize(float dpsPercent, GameObject attacker)
         {
+            _attacker   = attacker;
             _dpsPercent = dpsPercent;
             _remaining  = ToxicBullets.DotDuration * DurationExtender.Current; // started inside the attacker's on-hit scope
             if (ToxicBullets.ToxicDoTBuffDef != null && _body != null)
                 _body.AddBuff(ToxicBullets.ToxicDoTBuffDef);
         }
 
-        public void Refresh(float dpsPercent)
+        public void Refresh(float dpsPercent, GameObject attacker)
         {
+            if (dpsPercent >= _dpsPercent) _attacker = attacker; // the strongest poison's owner gets the credit
             _dpsPercent = Mathf.Max(_dpsPercent, dpsPercent);
             _remaining  = Mathf.Max(_remaining, ToxicBullets.DotDuration * DurationExtender.Current);
         }
@@ -162,14 +168,25 @@ namespace CursedAppleCuriosities.Items
         private void FixedUpdate()
         {
             if (!NetworkServer.active || _body?.healthComponent == null) return;
+            float step = Mathf.Min(Time.fixedDeltaTime, Mathf.Max(0f, _remaining));
             _remaining -= Time.fixedDeltaTime;
-            if (_remaining <= 0f) { Destroy(this); return; }
+            _tick      += step;
+            if (_tick >= TickInterval || _remaining <= 0f)
+            {
+                float dmg = _body.maxHealth * _dpsPercent * _tick; // exactly dps% of max health per second, armor ignored
+                _tick = 0f;
+                if (dmg > 0f) Damage(dmg);
+            }
+            if (_remaining <= 0f) Destroy(this);
+        }
 
-            float dmg = _body.maxHealth * _dpsPercent * Time.fixedDeltaTime;
-            if (dmg <= 0f) return;
-
+        private void Damage(float dmg)
+        {
             var di = new DamageInfo();
+            di.attacker         = _attacker;
+            di.inflictor        = _attacker;
             di.damage           = dmg;
+            di.damageType       = DamageType.BypassArmor | DamageType.DoT;
             di.procCoefficient  = 0f;
             di.position         = _body.transform.position;
             di.damageColorIndex = DamageColorIndex.Poison;

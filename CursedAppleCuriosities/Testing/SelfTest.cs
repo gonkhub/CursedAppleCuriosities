@@ -183,6 +183,8 @@ namespace CursedAppleCuriosities.Testing
             switch (p[0].ToLowerInvariant())
             {
                 case "run": return StartRun(p[1]);
+                case "prerun": PreRun.Add(rest); return null; // console command run in the lobby by the next "run"
+                case "vote": PreRunVotes.Add((p[1], p[2])); return null; // lobby rule vote for the next "run", e.g. vote Expansions.CursedAppleCuriosities Off
                 case "wait": return Wait(F(p, 1, 1f));
                 case "cmd":
                     RoR2.Console.instance.SubmitCmd(LocalUserManager.GetFirstLocalUser()?.currentNetworkUser, rest);
@@ -208,6 +210,16 @@ namespace CursedAppleCuriosities.Testing
                     CharacterBody? b = LocalUserManager.GetFirstLocalUser()?.cachedBody;
                     Collider? c = b != null && b.mainHurtBox != null ? b.mainHurtBox.collider : null;
                     Log(b == null ? "probe: no body" : $"probe: maxHP {b.maxHealth:0.#} gravity {b.characterMotor?.gravityScale} jumps {b.maxJumpCount} pips {b.GetComponent<CursedAppleCuriosities.Deadlock.DeadlockMover>()?.Max} foot {b.footPosition} hurtbox {(c != null ? c.bounds.center + " size " + c.bounds.size : "none")} state {EntityStateMachine.FindByCustomName(b.gameObject, "Body")?.state?.GetType().Name} anim {CursedAppleCuriosities.Deadlock.DeadlockModelSwap.AnimatorOf(b.gameObject)?.Current}");
+                    return null;
+                }
+                case "content": // the expansion's state and how many of the mod's items/equipment the run offers
+                {
+                    Run? run = Run.instance;
+                    int items = run == null ? -1 : CursedAppleCuriositiesPlugin.ModItemDefs.Count(d => run.IsItemAvailable(d.itemIndex));
+                    Inventory? inv = LocalUserManager.GetFirstLocalUser()?.cachedBody?.inventory;
+                    int held = inv == null ? -1 : CursedAppleCuriositiesPlugin.ModItemDefs.Sum(d => inv.GetItemCount(d));
+                    int equips = run == null ? -1 : CursedAppleCuriositiesPlugin.ModEquipmentDefs.Count(d => run.IsEquipmentAvailable(d.equipmentIndex));
+                    Log($"content: expansion {(CuriositiesExpansion.Enabled ? "on" : "off")}, items available {items}/{CursedAppleCuriositiesPlugin.ModItemDefs.Count}, equipment {equips}/{CursedAppleCuriositiesPlugin.ModEquipmentDefs.Count}, held {held} mod items, equipment {inv?.currentEquipmentIndex}");
                     return null;
                 }
                 case "log": Log(rest); return null;
@@ -256,6 +268,9 @@ namespace CursedAppleCuriosities.Testing
             yield return new WaitForFixedUpdate();
         }
 
+        private static readonly List<string> PreRun = new List<string>();
+        private static readonly List<(string Rule, string Choice)> PreRunVotes = new List<(string, string)>();
+
         private static IEnumerator StartRun(string bodyName)
         {
             RoR2.Console.instance.SubmitCmd(null, "transition_command \"gamemode ClassicRun; host 0;\"");
@@ -270,6 +285,19 @@ namespace CursedAppleCuriosities.Testing
                 SurvivorDef? sv = SurvivorCatalog.FindSurvivorDefFromBody(BodyCatalog.GetBodyPrefab(body));
                 if (sv != null) user.CmdSetBodyPreference(body);
             }
+            foreach (string c in PreRun) { Log("prerun: " + c); RoR2.Console.instance.SubmitCmd(user, c); }
+            PreRun.Clear();
+            // Votes, as the lobby UI casts them (the rule book is rebuilt from votes, so a console set doesn't stick).
+            PreGameRuleVoteController? voter = user != null ? PreGameRuleVoteController.FindForUser(user) : null;
+            foreach (var (rule, choice) in PreRunVotes)
+            {
+                RuleDef? def = RuleCatalog.FindRuleDef(rule);
+                RuleChoiceDef? c = def?.FindChoice(choice);
+                if (voter == null || def == null || c == null) { Log($"vote: can't vote {rule} {choice}"); continue; }
+                voter.SetVote(def.globalIndex, c.localIndex);
+                Log($"vote: {rule} = {choice}");
+            }
+            PreRunVotes.Clear();
             yield return new WaitForSeconds(3f); // the character select display and its intro
             RoR2.Console.instance.SubmitCmd(user, "pregame_start_run");
             t0 = Time.realtimeSinceStartup;
