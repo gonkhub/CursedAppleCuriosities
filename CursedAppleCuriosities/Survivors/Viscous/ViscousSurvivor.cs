@@ -151,7 +151,7 @@ namespace CursedAppleCuriosities.Survivors.Viscous
             _cube.mustKeyPress = true;
             _cube.cancelSprintingOnActivation = false;
 
-            _ball = Skill<SkillDef>("Ball", typeof(GooBallCast), "Body", ViscousData.BallCooldown, InterruptPriority.PrioritySkill);
+            _ball = Skill<ViscousBallSkillDef>("Ball", typeof(GooBallCast), "Body", ViscousData.BallCooldown, InterruptPriority.PrioritySkill);
             _ball.keywordTokens = new[] { "KEYWORD_HEAVY" }; // RoR2's own Heavy keyword (Loader)
             _ball.mustKeyPress = true;
             _ball.cancelSprintingOnActivation = false;
@@ -313,6 +313,29 @@ namespace CursedAppleCuriosities.Survivors.Viscous
             LanguageAPI.Add(Token + "BALL_DESC",
                 $"<style=cIsDamage>Heavy</style>. Roll as a goo ball for <style=cIsUtility>{ViscousData.BallDuration:0}s</style>, dealing <style=cIsDamage>{D(ViscousData.BallDamage)} damage</style> (+{D(ViscousData.BallHeavyDamage)} per m/s) and <style=cIsUtility>stunning</style> enemies in your way. " +
                 $"Hold Primary to roll faster. Take <style=cIsUtility>{ViscousData.BallResist * 100f:0}% less damage</style> while rolling.");
+        }
+    }
+
+    /// <summary>
+    /// Goo Ball with charges to spare: Special while rolling ends the ball, and that same press (still "just pressed" for
+    /// the next physics ticks) used to roll the next ball at once (user). It can't start while he is a ball, nor in the
+    /// moment after one ends, so the stocked charge waits for a new press.
+    /// </summary>
+    public class ViscousBallSkillDef : SkillDef
+    {
+        private const float Grace = 0.25f;
+        private class EndTime { public float At = -10f; }
+        private static readonly System.Runtime.CompilerServices.ConditionalWeakTable<GameObject, EndTime> Ended =
+            new System.Runtime.CompilerServices.ConditionalWeakTable<GameObject, EndTime>();
+
+        public static void MarkEnded(GameObject body) => Ended.GetOrCreateValue(body).At = Time.time;
+
+        public override bool CanExecute(GenericSkill skillSlot)
+        {
+            GameObject? body = skillSlot.characterBody != null ? skillSlot.characterBody.gameObject : null;
+            if (body != null && (ViscousNet.IsBall(body) || Ended.TryGetValue(body, out EndTime e) && Time.time - e.At < Grace))
+                return false;
+            return base.CanExecute(skillSlot);
         }
     }
 

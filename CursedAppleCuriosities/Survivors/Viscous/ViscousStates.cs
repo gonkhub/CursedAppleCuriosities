@@ -307,6 +307,7 @@ namespace EntityStates.CursedApple.Viscous
 
         public override void OnExit()
         {
+            ViscousBallSkillDef.MarkEnded(gameObject); // the press that ended it can't start the next one
             DeadlockSounds.Stop(_loop);
             DeadlockSounds.Play("viscous_ball_end", transform.position, gameObject);
             if (ViscousSurvivor.SplashEffect != null && characterBody != null)

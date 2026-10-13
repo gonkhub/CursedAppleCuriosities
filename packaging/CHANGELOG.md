@@ -6,6 +6,7 @@
 - **Viscous**: **Puddle Punch** winds up like Deadlock's (its portal shows for a moment before the fist comes out), throws
   harder, and the throw carries: everything punched keeps its full speed for a moment, then flies on without slowing.
 - **Viscous**: **The Cube** fits whoever is inside it (much smaller around Viscous himself).
+- Fixed: with a spare **Goo Ball** charge, ending the ball early no longer rolls the next one at once; the charge is kept.
 - **Celeste**: blades are a little slower and ease out gradually toward the end of their range; they flash where they bounce
   off a surface, and their rings no longer grow in flight.
 - **Celeste**: **Shining Wonder** deals half damage (500%) but bounces three times as often (24), and reaches 15.5 m to its next target again (was 7).
