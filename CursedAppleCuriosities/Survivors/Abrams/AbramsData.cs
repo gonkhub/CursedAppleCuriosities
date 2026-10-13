@@ -140,7 +140,7 @@ namespace CursedAppleCuriosities.Survivors.Abrams
         // Camera: his model is 1.5x, so the stand-in's camera put the crosshair behind his head (playtest).
         public static float CameraHeight = 1.4f;        // metres the camera pivot is raised over Commando's
         public static float CameraDistance = 1.45f;     // times Commando's camera distance
-        public const float ModelHeightScale = 1.2f * 1.5f; // Deadlock 2.3 m tall, then 1.5x by playtest (visual only: hitbox unchanged)
+        public const float ModelHeightScale = 1.2f * 1.5f * 0.95f; // Deadlock 2.3 m tall, then 1.5x by playtest (visual only: hitbox unchanged), then x0.95 (user, 1.7: all but Vyper a little smaller)
         public const string MuzzleBone = "muzzle_fx";
 
         // Deadlock's internal name for Abrams is "bull" (hero_atlas).

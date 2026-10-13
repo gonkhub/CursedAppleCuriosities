@@ -167,7 +167,7 @@ namespace CursedAppleCuriosities.Survivors.Viscous
         // ---- Deadlock assets (read from the player's own install, never shipped) ----
 
         public const string DlModel = "models/heroes_staging/viscous/viscous.vmdl_c";
-        public const float ModelHeightScale = 1.2f * 1.15f; // x1.15 by playtest
+        public const float ModelHeightScale = 1.2f * 1.15f * 0.95f; // x1.15 by playtest, then x0.95 (user, 1.7: all but Vyper a little smaller)
         /// <summary>
         /// His model holds the ball too (mesh group "inflated", 2.94 m to the top of the helmet on it), and the model
         /// height the loader scales by is its tallest vertex: 2.94 instead of his own 2.45. Scaled back up by that much.

@@ -126,7 +126,7 @@ namespace CursedAppleCuriosities.Survivors.Lash
         // ---- Deadlock assets (read from the player's own install, never shipped) ----
 
         public const string DlModel = "models/heroes_wip/lash/lash.vmdl_c";
-        public const float ModelHeightScale = 1.08f * 1.25f * 1.15f; // a little taller than the stand-in's capsule, then x1.25 (playtest: x1.1 still too small), then x1.15 to match Celeste (user)
+        public const float ModelHeightScale = 1.08f * 1.25f * 1.15f * 0.95f; // a little taller than the stand-in's capsule, then x1.25 (playtest: x1.1 still too small), then x1.15 to match Celeste (user), then x0.95 (user, 1.7: all but Vyper a little smaller)
         // Camera: lifted and pulled back a little for the bigger model (Abrams' needed it at x1.5).
         public static float CameraHeight = 0.6f;        // metres the camera pivot is raised over Commando's (0.4; raised with the x1.15 model, like Celeste)
         public static float CameraDistance = 1.25f;     // times Commando's camera distance (1.15; pulled back with the x1.15 model, like Celeste)

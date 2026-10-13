@@ -121,7 +121,7 @@ namespace CursedAppleCuriosities.Survivors.Victor
         // ---- Deadlock assets (read from the player's own install, never shipped) ----
 
         public const string DlModel = "models/heroes_wip/frank/frank.vmdl_c";
-        public const float ModelHeightScale = 1.15f * 1.25f * 1.15f; // a head taller than Lash (Deadlock's Victor is a big man), then x1.15 by playtest
+        public const float ModelHeightScale = 1.15f * 1.25f * 1.15f * 0.95f; // a head taller than Lash (Deadlock's Victor is a big man), then x1.15 by playtest, then x0.95 (user, 1.7: all but Vyper a little smaller)
         public const string MuzzleBone = "muzzle_fx";        // under weapon, off root_motion (HandIK keeps it in his hand)
 
         // Shocking Reanimation's charge-up: Deadlock's separate "body parts" model and its two clips (user: use this, not

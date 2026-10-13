@@ -133,7 +133,7 @@ namespace CursedAppleCuriosities.Survivors.GreyTalon
         public const string DlModel = "models/heroes_staging/archer/archer.vmdl_c";
         public const string OwlKey = "greytalon_owl";
         public const string DlOwlModel = "models/heroes_staging/archer/archer_guided_arrow.vmdl_c";
-        public const float ModelHeightScale = 1.08f * 1.25f; // Lash's size
+        public const float ModelHeightScale = 1.08f * 1.25f * 0.95f; // Lash's size, then x0.95 (user, 1.7: all but Vyper a little smaller)
         public const string MuzzleBone = "muzzle_fx";        // under weapon_hand_L: the bow follows his left hand
         public const string PerchedOwlMesh = "owl_bodygroup"; // the owl on his arm: hidden (user)
 
