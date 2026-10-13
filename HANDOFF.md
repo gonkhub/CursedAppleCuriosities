@@ -400,7 +400,7 @@ same on a stand-in model.
     twice running), lingers 3.25 s for a target.
   - Every radius takes Mystic Expansion; mark/slow/prism durations take Duration Extender. VFX pink (Hue 0.9, her hair).
   - Her model exports no `shoot_idle`/`ability_luminous_flux`: `shoot_idle_start` and `ability_radiant_daggers_stand_idle` stand in.
-  - Lobby intro: Deadlock's `ui_hero_select` flourish. Item displays fitted (`CelesteItemDisplays.cs`). Skin: Mint.
+  - Lobby intro (user): she ground-dashes in from the back right, as Vyper slides in (`dash_ground`), then turns to the camera. Item displays fitted (`CelesteItemDisplays.cs`). Skin: Mint.
 
 ## Self-test (playtesting without the user, 2026-10-12)
 
