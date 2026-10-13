@@ -150,7 +150,7 @@ namespace CursedAppleCuriosities.Survivors.Seven
             {
                 // The orb itself: orange, and bigger (the range sphere around it shows the real reach).
                 GameObject ghost = Kit.Recoloured(pc.ghostPrefab, "CursedAppleSevenLightningBallGhost", Hue, effect: false)!;
-                ghost.transform.localScale *= 1.8f;
+                ghost.transform.localScale *= 2.7f; // 1.8x, then +50% with the radius (1.9)
                 pc.ghostPrefab = ghost;
             }
             return p;

@@ -54,7 +54,7 @@ namespace CursedAppleCuriosities.Survivors.Seven
         // ---- secondary: Lightning Ball ----
         public static float BallDps = 2.5f;             // damage coefficient per second to each enemy inside (Deadlock 75 DPS)
         public static float BallCooldown = 7f;          // Deadlock 26
-        public static float BallRadius = 4.25f;         // Deadlock ShockRadius
+        public static float BallRadius = 6.375f;        // Deadlock ShockRadius 4.25; +50% (user, 1.9)
         public const float BallTick = 0.1f;             // Deadlock TickRate (0.1); RoR2 ticks it at 0.25 to keep procs sane
         public const float BallTickRoR2 = 0.25f;
         public const float BallSpeed = 43.2f;           // Deadlock m_flSpeed 1700 hu/s
