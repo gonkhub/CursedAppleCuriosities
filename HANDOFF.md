@@ -196,7 +196,7 @@ same on a stand-in model.
   an `Anim` hook) → `DeadlockMovement.Apply(body, profile[, mainStateSubclass])` adds a `DeadlockMover` (stamina),
   sets `DeadlockMain` as the Body main state, and registers `DeadlockMain/Dash/Slide` + the stamina HUD once.
   `profile.Bind(config, section)` exposes the player knobs. Includes stamina pips (4.5 s regen, HUD under the
-  crosshair), sprint key = dash, air jumps/dashes (1 pip each), wall jump (spammed ones diminish x0.6 each within 1 s; air jump/air dash/landing restore full height, `DeadlockMover.WallJumpChain`, 1.7 user), slide, out-of-combat sprint (they take fall damage).
+  crosshair), sprint key = dash, air jumps/dashes (1 pip each), wall jump (spammed ones diminish x0.6 each within 1 s; air jump/air dash/landing restore full height, `DeadlockMover.WallJumpChain`, 1.7 user), slide, out-of-combat sprint (1.7, user: starts 1 s after taking damage or using a combat skill, `SprintCalmSeconds`, tracked on the owner's `DeadlockMover.LastHurt/LastAttack` since RoR2's outOfCombat waits 5 s and its stopwatches are private) (they take fall damage).
   - **Dash-jump** (Deadlock): jump in a window late in the ground dash (a share of the dash's duration; the pips
     flash blue) = 2 stamina total, a fixed launch (`DashJumpSpeed` 30 m/s forward, `DashJumpUp` 10.8). A ground
     dash can't be jumped out of otherwise: a press outside the window does nothing, locks the dash-jump out for
@@ -292,8 +292,8 @@ same on a stand-in model.
     (Helfire Tincture's matHelfireRangeIndicator) sized to its real shock radius incl. Mystic Expansion; its orb is orange and 1.8x.
   - Storm Cloud: after the 3 m rise Seven climbs 1 m/s for the channel (user). `SevenStormFx` (every client) draws an orange ground
     ring + see-through dome at the damage edge; radius comes from `SevenData.StormRadius`, the same function the server damages with.
-  - Electric Current (Seven's passive, user): `DeadlockMovementProfile.SprintInCombat` lets a hero sprint on RoR2's outOfDanger
-    (only taking damage resets it) instead of outOfCombat; Seven sets it while Power Surge is up.
+  - Electric Current (Seven's passive, user): `DeadlockMovementProfile.SprintInCombat` lets a hero keep sprinting while attacking
+    (only taking damage resets the 1 s wait); Seven sets it while Power Surge is up.
   - Storm Cloud look (user, as Deadlock's animgraph): `SevenStormLook` hides his whole regular model (`gun|outer_costume|shirt_backfaces|headgear_N` renderers) and shows his skeleton mesh
     (`skeleton_N`, material blue_illum) only while channeling; also on the lobby display (skeleton hidden). `DeadlockHeroDef.MaterialGlows`
     makes blue_illum a flat orange self-lit material.

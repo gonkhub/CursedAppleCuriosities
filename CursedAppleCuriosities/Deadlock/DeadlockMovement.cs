@@ -68,11 +68,12 @@ namespace CursedAppleCuriosities.Deadlock
         public float AirControlBoost = 1.35f;
         // Down-dash (Deadlock): double-tap the slide key in the air for a quick push down. Half a stamina pip (user).
         public float DownDashCost = 0.5f, DownDashSpeed = 10f, DownDashDoubleTap = 0.3f;
-        // Sprint: out of combat and moving, a real RoR2 sprint (sprint items work) building up to Deadlock's ESprintSpeed.
-        public float OutOfCombatSpeed = 2.1f / 7.2f, SprintRampSeconds = 2f;
+        // Sprint: moving and SprintCalmSeconds since last taking damage or using a combat skill (user, 1.7: RoR2's
+        // outOfCombat waits 5 s), a real RoR2 sprint (sprint items work) building up to Deadlock's ESprintSpeed.
+        public float OutOfCombatSpeed = 2.1f / 7.2f, SprintRampSeconds = 2f, SprintCalmSeconds = 1f;
         /// <summary>
-        /// While this is true the hero keeps sprinting in combat (shooting, dealing damage) and only taking damage stops it
-        /// (RoR2's outOfDanger instead of outOfCombat). Seven's Power Surge ("Electric Current").
+        /// While this is true the hero keeps sprinting while attacking and only taking damage stops it. Seven's Power
+        /// Surge ("Electric Current").
         /// </summary>
         public Func<CharacterBody, bool>? SprintInCombat;
 
@@ -92,6 +93,7 @@ namespace CursedAppleCuriosities.Deadlock
             DashJumpWindowOpen = c.Bind(section, "Dash Jump - Window Opens At", DashJumpWindowOpen, "Seconds into a ground dash the dash-jump window opens (Deadlock 0.3). Jumping before it: too early.").Value;
             DashJumpWindowLength = c.Bind(section, "Dash Jump - Window Length", DashJumpWindowLength, "Seconds the dash-jump window stays open (Deadlock 0.25). Jumping after it, still dashing: too late.").Value;
             SprintRampSeconds = c.Bind(section, "Sprint - Build Up Time", SprintRampSeconds, "Seconds for the out-of-combat sprint to build up to full speed.").Value;
+            SprintCalmSeconds = c.Bind(section, "Sprint - Delay After Combat", SprintCalmSeconds, "Seconds after taking damage or attacking before the sprint starts.").Value;
             QuailStaminaRegen = c.Bind(section, "Wax Quail - Stamina Regen", QuailStaminaRegen, "Faster stamina refill per Wax Quail (0.25 = +25% per stack).").Value;
             SlideKeyEntry = c.Bind(section, "Slide Key", new KeyboardShortcut(SlideKey), "Hold on the ground while fast (sprint, dash) or on a downhill slope to slide; hold in the air to slide on landing. Deadlock's crouch.");
             SlideKey = SlideKeyEntry.Value.MainKey;
@@ -172,6 +174,9 @@ namespace CursedAppleCuriosities.Deadlock
         /// <summary>An air jump or air dash: the next wall jump is full height again.</summary>
         public void ResetWallJumps() => WallJumpChain = 0;
         public float SprintRamp;    // 0-1: how far the out-of-combat sprint has built up
+        /// <summary>Time.time this hero last took damage / last used a combat skill (owner's copy): the sprint waits SprintCalmSeconds after either.</summary>
+        public float LastHurt = -10f, LastAttack = -10f;
+        private float _lastHp = -1f;
         public bool DashJumpWindow; // a ground dash's dash-jump window is open (and affordable): the HUD flashes blue
         public string DashJumpMessage = ""; // "too early" / "too late" / "not enough stamina", shown under the pips for a moment
         public float DashJumpMessageTime = -10f;
@@ -186,9 +191,23 @@ namespace CursedAppleCuriosities.Deadlock
         public bool SlideHeld => Input.GetKey(Profile.SlideKeyEntry != null ? Profile.SlideKeyEntry.Value.MainKey : Profile.SlideKey) || Testing.SelfTest.SlideHeld;
 
         private void Awake() => _body = GetComponent<CharacterBody>();
+        private void OnEnable() { if (_body != null) _body.onSkillActivatedAuthority += OnSkillUsed; }
+        private void OnDisable() { if (_body != null) _body.onSkillActivatedAuthority -= OnSkillUsed; }
+        private void OnSkillUsed(GenericSkill skill) { if (skill != null && skill.skillDef != null && skill.skillDef.isCombatSkill) LastAttack = Time.time; }
+
+        /// <summary>Taking damage, seen from health + shield dropping (the server's damage events don't reach a client's owner copy).</summary>
+        private void TrackHurt()
+        {
+            HealthComponent? hc = _body.healthComponent;
+            if (hc == null) return;
+            float hp = hc.health + hc.shield;
+            if (_lastHp >= 0f && hp < _lastHp - 0.01f) LastHurt = Time.time;
+            _lastHp = hp;
+        }
 
         private void FixedUpdate()
         {
+            TrackHurt();
             ParryOnCounterspell();
             // Extra jumps from items (Hopoo Feather...) become stamina pips instead (playtest).
             Max = Profile.StaminaPips + Mathf.Max(0, _body.maxJumpCount - _body.baseJumpCount);
@@ -504,7 +523,8 @@ namespace EntityStates.CursedApple.Deadlock
         /// </summary>
         private void DeadlockSprint()
         {
-            bool calm = characterBody.outOfCombat || P.SprintInCombat != null && P.SprintInCombat(characterBody) && characterBody.outOfDanger;
+            bool unhurt = Time.time - _mover!.LastHurt >= P.SprintCalmSeconds;
+            bool calm = unhurt && (Time.time - _mover.LastAttack >= P.SprintCalmSeconds || P.SprintInCombat != null && P.SprintInCombat(characterBody));
             bool want = calm && inputBank.moveVector.sqrMagnitude > 0.01f;
             float ramp = want ? Mathf.Min(1f, _mover!.SprintRamp + Time.fixedDeltaTime / Mathf.Max(0.01f, P.SprintRampSeconds)) : 0f;
             _mover!.SprintRamp = ramp;
