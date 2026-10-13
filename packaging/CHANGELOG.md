@@ -14,6 +14,7 @@
 - **Seven**: **Lightning Ball** slows the enemies it shocks by 80% while they're inside it (and half a second after).
 - **Celeste**: 4 stamina (was 5).
 - **Majestic Leap**: leaps 50% higher, and its cooldown is halved (22.5 s, was 45).
+- **Goose Eggs** don't mature while the run timer is stopped (the Bazaar Between Time and other places it pauses).
 
 ## 1.6.0
 - Fixed: **Cursed Broker** cooldown penalties (all skills, Secondary, Utility, Special) now actually lengthen your cooldowns.

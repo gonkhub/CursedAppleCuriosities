@@ -367,7 +367,9 @@ namespace CursedAppleCuriosities.Items
             EquipmentLocation location = inventory.activeEquipmentLocation;
             if (inventory.GetEquipmentIndex(in location) != Egg.EquipmentDef.equipmentIndex) return;
             _progress ??= GooseEggProgress.For(inventory);
-            float seconds = _progress.Get(location) + Time.fixedDeltaTime;
+            // Eggs mature on the run's clock: not while it's stopped (the Bazaar, Gilded Coast, between stages...; user, 1.7).
+            bool paused = Run.instance == null || Run.instance.isRunStopwatchPaused;
+            float seconds = _progress.Get(location) + (paused ? 0f : Time.fixedDeltaTime);
             _progress.Set(location, seconds);
             int stacks = GooseEgg.StacksFor(seconds);
             if (stacks == _shown || Egg.StackBuff == null || Egg.StackBuff.buffIndex == BuffIndex.None) return;
