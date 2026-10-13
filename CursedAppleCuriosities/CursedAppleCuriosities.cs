@@ -136,6 +136,11 @@ namespace CursedAppleCuriosities
             };
             foreach (var hero in heroes)
             {
+                if (!IsReleased(hero.Name))
+                {
+                    Logger?.LogInfo($"  - [Survivor] {hero.Name} (not in this release)");
+                    continue;
+                }
                 var clock = System.Diagnostics.Stopwatch.StartNew();
                 try
                 {
@@ -153,6 +158,21 @@ namespace CursedAppleCuriosities
                 catch (Exception e) { Logger?.LogError($"  ! [Equipment] {eq.EquipmentName} sounds failed: {e}"); }
             }
             DeadlockInstall.Start();
+        }
+
+        /// <summary>
+        /// Survivors ship one at a time: Release builds (the Thunderstore package) register only these.
+        /// Debug builds (development) register every hero.
+        /// </summary>
+        private static readonly string[] ReleasedSurvivors = { "Lash", "Abrams", "Seven" };
+
+        private static bool IsReleased(string hero)
+        {
+#if DEBUG
+            return true;
+#else
+            return Array.IndexOf(ReleasedSurvivors, hero) >= 0;
+#endif
         }
 
         private void InitEquipments()

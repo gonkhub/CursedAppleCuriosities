@@ -1,6 +1,8 @@
 # Changelog
 
-## 1.7.0 (unreleased)
+## 1.7.0
+- Survivors now release one at a time: this package has **Lash**, **Abrams** and **Seven**. The other heroes from
+  earlier notes come back in later releases.
 - **Seven**: his gun's tracer is a thin beam of lightning instead of a thick laser.
 - **Seven**: **Storm Cloud** starts 30 m wide (was 10) and strikes every enemy it can see with a bolt of lightning about
   four times a second, each proccing fully (was 0.3), for less damage overall (100-600% per second, was 150-990%). Stray bolts
@@ -8,19 +10,13 @@
 - Wall jumps (every Deadlock hero) lose height when spammed: each one within a second of the last is 60% as high as the one
   before. Waiting a full second, an air jump, an air dash or landing restores full height.
 - Wall jumps: the first is free, each one after it costs half a stamina until you land or air jump/air dash.
-- **Celeste**: **Light Eater** flashes a faint purple cone showing exactly what it reaches.
-- **Celeste**: **Shining Wonder** drifts slower (12 m/s, was 18) and waits up to 6 s for a new target (was 3.25). Cooldown 25 s (was 40).
 - Deadlock heroes start sprinting 1 second after last taking damage or attacking (was RoR2's 5 seconds out of combat).
 - **Seven**: sprinting while shooting during **Power Surge**, he runs with his gun up instead of his out-of-combat sprint.
 - **Seven**: **Lightning Ball** slows the enemies it shocks by 80% while they're inside it (and half a second after).
-- **Celeste**: 4 stamina (was 5).
-- **Celeste**: **Carny Life** blades are thrown a little higher (4 degrees above the crosshair).
 - **Majestic Leap**: leaps 50% higher, and its cooldown is halved (22.5 s, was 45).
 - **Lash**: **Death Slam** pulls enemies up to him in the same time from any distance (from the skybox too), and always waits
   until every lifted enemy is up beside him before throwing.
-- Every Deadlock hero but Vyper is 5% smaller.
-- **Grey Talon**: **Charged Shot** deals 1000% (was 800%). His bow hits weak points (like Railgunner's: x1.5).
-- **Grey Talon**: **Guided Owl** executes anything its blast takes more than 75% of the remaining health from.
+- Every Deadlock hero is 5% smaller.
 - **Cursed Broker** spawns: 10% on any stage, 50% on stage 3 of every loop, and 50% each visit to the Bazaar Between Time
   (once one has appeared there, not again until the next loop). No longer guaranteed on stage 4.
 - **Goose Eggs** don't mature while the run timer is stopped (the Bazaar Between Time and other places it pauses).

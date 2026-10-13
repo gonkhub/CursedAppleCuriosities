@@ -215,7 +215,8 @@
   <!-- ───── Post-build: copy DLL to the dev profile for quick in-game testing ───── -->
   <!-- Curiosities Dev is a clone of Hallowed Concepts Release (the post-DLC profile). The mod sits in Unknown-CursedAppleCuriosities
        there, so the build replaces it in place and there is never a second GUID. Hallowed Concepts Release stays frozen at 1.0.0. -->
-  <Target Name="DeployToProfile" AfterTargets="Build">
+  <!-- Debug only: a Release build registers just the released survivors and must not replace the dev DLL. -->
+  <Target Name="DeployToProfile" AfterTargets="Build" Condition="'$(Configuration)' != 'Release'">
     <MakeDir Directories="$(DevPluginDir)" />
     <Copy SourceFiles="$(TargetPath);$(NLayerDll)" DestinationFolder="$(DevPluginDir)" />
     <!-- Lash Playtest profile (clone of "Alloyed Goonlective super real"): same in-place replacement. -->
