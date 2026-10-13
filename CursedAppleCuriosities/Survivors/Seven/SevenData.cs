@@ -83,11 +83,11 @@ namespace CursedAppleCuriosities.Survivors.Seven
 
         // ---- special: Storm Cloud (Seven floats and channels; the cloud grows to the whole map, user) ----
         // Damage per second follows the cloud's growth (user): Start + (End - Start) * t^3 over the channel, t = 0..1. A target in
-        // the storm the whole 7 s takes 7 * (Start + (End - Start) / 4) = ~1575% (was ~2520% before 1.7: the strikes are weaker
-        // but proc fully, user), dealt as a lightning bolt every StormStrikeGap s (12.5-75% each). The ramp
+        // the storm the whole 7 s takes 7 * (Start + (End - Start) / 4) = ~1925% (~1575% before 2.0, ~2520% before 1.7: the strikes are weaker
+        // but proc fully, user), dealt as a lightning bolt every StormStrikeGap s (12.5-100% each). The ramp
         // always takes the base 7 s: Duration Extender only lengthens the time at full output.
         public static float StormDpsStart = 1.0f;       // (Deadlock 95 DPS flat)
-        public static float StormDpsEnd = 6.0f;
+        public static float StormDpsEnd = 8.0f;          // 600% until 2.0 (user)
         public static float StormDps(float t) => StormDpsStart + (StormDpsEnd - StormDpsStart) * t * t * t;
 
         /// <summary>The storm's radius after channelling for age seconds: 10 m growing (slowly, then fast) to the whole map. Server damage and every client's ring use this.</summary>
