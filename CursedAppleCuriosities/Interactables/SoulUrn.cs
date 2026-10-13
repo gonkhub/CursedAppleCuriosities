@@ -13,7 +13,7 @@ using UnityEngine.Networking;
 namespace CursedAppleCuriosities.Interactables
 {
     /// <summary>
-    /// The Soul Urn (user, 2.0): 20% of stages have one lying on the ground, well away from the teleporter. Pick it up
+    /// The Soul Urn (user, 2.0): 30% of stages have one lying on the ground, well away from the teleporter. Pick it up
     /// and carry it to the teleporter within 30 s without taking damage; getting hit, running out of time or the carrier
     /// dying sends it back to where it spawned. A delivery showers the carrier with items at chest rarity weights,
     /// more the further into the run.
@@ -69,7 +69,7 @@ namespace CursedAppleCuriosities.Interactables
             const string S = "Soul Urn";
             Enabled = config.Bind(S, "Enabled", true,
                 "Spawn the Soul Urn: carry it to the teleporter in time, without taking damage, for a pile of items.").Value;
-            SpawnChance = config.Bind(S, "Spawn Chance", 0.2f, "Chance that a Soul Urn appears on any stage (0.2 = 20%).").Value;
+            SpawnChance = config.Bind(S, "Spawn Chance", 0.3f, "Chance that a Soul Urn appears on any stage (0.3 = 30%).").Value;
             TimeLimit = config.Bind(S, "Time Limit", 30f, "Seconds to reach the teleporter after picking the urn up.").Value;
             MinTeleporterDistance = config.Bind(S, "Min Teleporter Distance", 60f,
                 "The urn always spawns at least this far (m) from the teleporter.").Value;
