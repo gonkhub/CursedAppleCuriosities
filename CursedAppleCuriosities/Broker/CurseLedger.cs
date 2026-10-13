@@ -114,7 +114,14 @@ namespace CursedAppleCuriosities.Broker
                 catch (Exception e) { CursedAppleCuriositiesPlugin.Logger?.LogWarning($"[CursedBroker] Inventory refresh failed: {e}"); }
             }
             CharacterBody? body = _master != null ? _master.GetBody() : null;
-            if (body != null) body.MarkAllStatsDirty();
+            if (body != null)
+            {
+                body.MarkAllStatsDirty();
+                // A skill keeps its final cooldown until its cooldown scale or skill changes; without cooldown items that
+                // never happens, so the cooldown penalties never applied (user). Recompute them now.
+                foreach (GenericSkill skill in body.GetComponents<GenericSkill>())
+                    if (skill != null) skill.RecalculateValues();
+            }
         }
 
         public void Broadcast()
@@ -277,6 +284,7 @@ namespace CursedAppleCuriosities.Broker
                 icon.tooltipProvider.overrideBodyText = Language.GetString(def.pickupToken) + "\n\n" + CurseText(e.Item, e.Penalty, e.Value, offer: false);
                 if (icon.glowImage != null) icon.glowImage.color = new Color(0.69f, 0.42f, 1f, 0.9f);
                 mark.Item = e.Item;
+                mark.ShowOutline();
             }
             else if (mark != null)
             {
@@ -298,6 +306,45 @@ namespace CursedAppleCuriosities.Broker
     public class CursedIconMark : MonoBehaviour
     {
         public ItemIndex Item = ItemIndex.None;
+        private GameObject? _outline;
+
+        private static readonly Color OutlineColor = new Color(0.5f, 0.02f, 0.04f, 1f); // dark red (user)
+        private const float Thickness = 2f;
+
+        /// <summary>A dark-red frame around the icon (user), drawn over it: four thin bars on the icon's edges.</summary>
+        public void ShowOutline()
+        {
+            if (_outline != null) { _outline.transform.SetAsLastSibling(); return; }
+            var rt = transform as RectTransform;
+            if (rt == null) return;
+            _outline = new GameObject("CurseOutline", typeof(RectTransform));
+            var frame = (RectTransform)_outline.transform;
+            frame.SetParent(rt, false);
+            frame.anchorMin = Vector2.zero; frame.anchorMax = Vector2.one;
+            frame.offsetMin = Vector2.zero; frame.offsetMax = Vector2.zero;
+            Bar(frame, new Vector2(0f, 1f), new Vector2(1f, 1f), new Vector2(0f, -Thickness), Vector2.zero); // top
+            Bar(frame, new Vector2(0f, 0f), new Vector2(1f, 0f), Vector2.zero, new Vector2(0f, Thickness));  // bottom
+            Bar(frame, new Vector2(0f, 0f), new Vector2(0f, 1f), Vector2.zero, new Vector2(Thickness, 0f));  // left
+            Bar(frame, new Vector2(1f, 0f), new Vector2(1f, 1f), new Vector2(-Thickness, 0f), Vector2.zero); // right
+            _outline.transform.SetAsLastSibling();
+        }
+
+        private static void Bar(RectTransform parent, Vector2 min, Vector2 max, Vector2 offMin, Vector2 offMax)
+        {
+            var go = new GameObject("Edge", typeof(RectTransform), typeof(UnityEngine.UI.Image));
+            var rt = (RectTransform)go.transform;
+            rt.SetParent(parent, false);
+            rt.anchorMin = min; rt.anchorMax = max;
+            rt.offsetMin = offMin; rt.offsetMax = offMax;
+            var img = go.GetComponent<UnityEngine.UI.Image>();
+            img.color = OutlineColor;
+            img.raycastTarget = false; // the icon keeps its tooltip
+        }
+
+        private void OnDestroy()
+        {
+            if (_outline != null) Destroy(_outline);
+        }
     }
 
     public class CurseLedgerMessage : INetMessage

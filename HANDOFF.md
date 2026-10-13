@@ -460,7 +460,9 @@ same on a stand-in model.
   `docs/CursedBrokerAudit.md`, regenerate with `tools/gen_curse_audit.py`; any non-lunar tier incl. white),
   `CursePenalties` (26 narrow penalties, rolled per item when a player first opens a broker, cached per broker+player), `CurseLedger` (per-master curse list, server-owned, mirrored by `CurseLedgerMessage`; IL hook on
   `Inventory.UpdateEffectiveItemStacks`; HUD shows real copy counts, purple glow, curse tooltip; Dio's/Larva revive twice).
-  Range/Duration penalties feed `MysticExpansion.RadiusMultiplier` / `DurationExtender.Multiplier`.
+  Cooldown penalties: `GenericSkill.CalculateFinalRechargeInterval` hook; the game caches the result until cooldown scale or skill
+  changes, so `CurseLedger.Refresh` calls `RecalculateValues` on the body's skills (1.6.0; before that they never applied). Cursed
+  inventory icons get a dark-red frame (`CursedIconMark.ShowOutline`, user). Range/Duration penalties feed `MysticExpansion.RadiusMultiplier` / `DurationExtender.Multiplier`.
   Debug: `cac_broker_stage3 [scene]` (skip to a stage 3 with a guaranteed broker), `cac_broker_spawn` (one next to you);
   registered through `[assembly: HG.Reflection.SearchableAttribute.OptIn]`. Config `Debug - Spawn Every Stage`.
 

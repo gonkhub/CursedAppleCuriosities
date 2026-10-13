@@ -1,6 +1,8 @@
 # Changelog
 
 ## 1.6.0 (unreleased)
+- Fixed: **Cursed Broker** cooldown penalties (all skills, Secondary, Utility, Special) now actually lengthen your cooldowns.
+- Cursed items have a dark-red outline in your inventory.
 - **Cursed Broker**: always appears on stage 4, and after looping in your first visit to the Bazaar Between Time each loop.
 - **Viscous**: his air jump no longer stretches him out, and his ground dash is his own roll.
 - **Viscous**: **Puddle Punch** winds up like Deadlock's (its portal shows for a moment before the fist comes out), throws
