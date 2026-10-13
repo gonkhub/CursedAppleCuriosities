@@ -1,4 +1,5 @@
 using System;
+using System.Collections.Generic;
 using System.IO;
 using System.Reflection;
 using BepInEx.Configuration;
@@ -24,7 +25,7 @@ namespace CursedAppleCuriosities.Stages.DeadlockMap
         public static ConfigEntry<string>? Sky;
         private static SceneDef? _def;
         private static AssetBundle? _scenes, _assets;
-        internal static Material? BarrierMaterial;
+        internal static Material? BarrierMaterial, GlassMaterial;
 
         private static void Log(string s) => CursedAppleCuriositiesPlugin.Logger?.LogInfo("[DeadlockMap] " + s);
         private static void Warn(string s) => CursedAppleCuriositiesPlugin.Logger?.LogWarning("[DeadlockMap] " + s);
@@ -38,6 +39,7 @@ namespace CursedAppleCuriosities.Stages.DeadlockMap
             _scenes = LoadBundle("cac_stagescenes");
             _assets = LoadBundle("cac_stageassets");
             BarrierMaterial = _assets?.LoadAsset<Material>("matBarrier");
+            GlassMaterial = _assets?.LoadAsset<Material>("matGlass");
 
             LanguageAPI.Add("CURSEDAPPLE_STAGE_SUNKENPLAZA_NAME", "Sunken Plaza");
             LanguageAPI.Add("CURSEDAPPLE_STAGE_SUNKENPLAZA_SUBTITLE", "Archmother's Ward");
@@ -171,7 +173,7 @@ namespace CursedAppleCuriosities.Stages.DeadlockMap
 
             // AI navigation from the geometry (cached after the first time), then the stage's own objects.
             Bounds area = t.Playable;
-            var (ground, air) = NavBuilder.Get(conv.NavFile, conv.Fingerprint ?? "", world.transform, section.Inside, section.NoWalk, area);
+            var (ground, air, spawns) = NavBuilder.Get(conv.NavFile, conv.Fingerprint ?? "", world.transform, section.Inside, section.NoWalk, area);
 
             var info = new GameObject("SceneInfo");
             info.SetActive(false);
@@ -198,7 +200,7 @@ namespace CursedAppleCuriosities.Stages.DeadlockMap
             {
                 var wait = new GameObject("DirectorWhenStageReady");
                 SceneManager.MoveGameObjectToScene(wait, scene);
-                wait.AddComponent<DirectorWhenStageReady>();
+                wait.AddComponent<DirectorWhenStageReady>().Spawns = spawns;
             }
             Log($"Sunken Plaza populated in {watch.ElapsedMilliseconds} ms ({ground.GetNodeCount()} ground / {air.GetNodeCount()} air nodes; " +
                 $"manager: {string.Join(", ", Array.ConvertAll(manager.GetComponentsInChildren<Component>(), c => c.GetType().Name))})");
@@ -207,16 +209,31 @@ namespace CursedAppleCuriosities.Stages.DeadlockMap
         /// <summary>Server: starts the vanilla Director (scene, combat) once Stage.instance exists.</summary>
         private class DirectorWhenStageReady : MonoBehaviour
         {
+            public List<(Vector3 Pos, float Yaw)> Spawns = new List<(Vector3, float)>();
+
             private void Update()
             {
                 if (Stage.instance == null) return;
+                // Our own player spawns (open, roofless, facing a clear view) before the director looks for any.
+                foreach (var (pos, yaw) in Spawns) SpawnPoint.AddSpawnPoint(pos, Quaternion.Euler(0f, yaw, 0f));
                 GameObject director = Instantiate(Addressables.LoadAssetAsync<GameObject>("RoR2/Base/Common/Director.prefab").WaitForCompletion());
                 SceneManager.MoveGameObjectToScene(director, gameObject.scene);
                 SceneDirector? sd = director.GetComponent<SceneDirector>();
-                if (sd != null && sd.teleporterSpawnCard == null)
-                    sd.teleporterSpawnCard = Addressables.LoadAssetAsync<SpawnCard>("RoR2/Base/Teleporters/iscTeleporter.asset").WaitForCompletion();
-                Log("director started (stage ready)");
+                if (sd != null)
+                {
+                    if (sd.teleporterSpawnCard == null)
+                        sd.teleporterSpawnCard = Addressables.LoadAssetAsync<SpawnCard>("RoR2/Base/Teleporters/iscTeleporter.asset").WaitForCompletion();
+                    sd.usePlacedSpawnPoints = Spawns.Count > 0;
+                }
+                SceneDirector.onTeleporterPlaced += LogTeleporter;
+                Log($"director started (stage ready), {Spawns.Count} player spawns placed");
                 Destroy(gameObject);
+            }
+
+            private static void LogTeleporter(SceneDirector sd, GameObject tp)
+            {
+                SceneDirector.onTeleporterPlaced -= LogTeleporter;
+                Log(tp != null ? $"teleporter placed at {tp.transform.position}" : "no teleporter placed");
             }
         }
     }

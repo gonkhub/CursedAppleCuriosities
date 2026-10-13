@@ -41,14 +41,15 @@ public static class BuildStageBundle
         MakeMaterial("Assets/Materials/matBarrier.mat", "CursedApple/Barrier", null);
         MakeMaterial("Assets/Materials/matWorld.mat", "CursedApple/DeadlockWorld", null);
         MakeMaterial("Assets/Materials/matWorldCutout.mat", "CursedApple/DeadlockWorld", "_ALPHATEST_ON");
+        MakeMaterial("Assets/Materials/matGlass.mat", "CursedApple/DeadlockGlass", null);
 
         var scenes = new AssetBundleBuild { assetBundleName = "cac_stagescenes", assetNames = new string[Stages.Length] };
         for (int i = 0; i < Stages.Length; i++) scenes.assetNames[i] = "Assets/Scenes/" + Stages[i] + ".unity";
         var assets = new AssetBundleBuild
         {
             assetBundleName = "cac_stageassets",
-            assetNames = new[] { "Assets/Shaders/Barrier.shader", "Assets/Shaders/DeadlockWorld.shader",
-                "Assets/Materials/matBarrier.mat", "Assets/Materials/matWorld.mat", "Assets/Materials/matWorldCutout.mat" },
+            assetNames = new[] { "Assets/Shaders/Barrier.shader", "Assets/Shaders/DeadlockWorld.shader", "Assets/Shaders/DeadlockGlass.shader",
+                "Assets/Materials/matBarrier.mat", "Assets/Materials/matWorld.mat", "Assets/Materials/matWorldCutout.mat", "Assets/Materials/matGlass.mat" },
         };
         Directory.CreateDirectory("Build");
         BuildPipeline.BuildAssetBundles("Build", new[] { scenes, assets }, BuildAssetBundleOptions.ChunkBasedCompression, BuildTarget.StandaloneWindows64);
@@ -57,6 +58,7 @@ public static class BuildStageBundle
 
     static void MakeMaterial(string path, string shader, string keyword)
     {
+        AssetDatabase.DeleteAsset(path); // rebuilt each time (a new shader may have been added)
         var m = new Material(Shader.Find(shader));
         if (keyword != null) m.EnableKeyword(keyword);
         AssetDatabase.CreateAsset(m, path);

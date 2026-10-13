@@ -237,7 +237,7 @@ namespace CursedAppleMapConvert
               || model.Contains("/entities/"));
 
         // Material flags, as the mod's MapMatFlags.
-        private const byte Cutout = 1, NoRender = 2, DoubleSided = 4, NoCollide = 8, SelfIllum = 16;
+        private const byte Cutout = 1, Translucent = 2, DoubleSided = 4, NoCollide = 8, SelfIllum = 16;
 
         /// <summary>The cache's material index for each of the model's materials (-1 = not drawn at all); converts new textures.</summary>
         private int[] MaterialIndices(Model mm, bool near)
@@ -252,7 +252,7 @@ namespace CursedAppleMapConvert
                 {
                     byte flags = 0;
                     if (info.Cutout) flags |= Cutout | NoCollide;
-                    if (info.Translucent || info.Glass) flags |= NoRender;
+                    if (info.Translucent || info.Glass) flags |= Translucent; // drawn with the glass shader, still solid
                     if (info.DoubleSided) flags |= DoubleSided;
                     if (info.SelfIllum) flags |= SelfIllum;
                     string tex = "";
@@ -303,7 +303,6 @@ namespace CursedAppleMapConvert
                 // Vertex colour RGB tints every Deadlock environment shader that has it (the "simple" and vertex-colour
                 // materials get all their colour from it); alpha is a layer blend weight, not used here.
                 bool paint = p.Color != null;
-                bool seeThrough = info.Translucent || info.Glass;
 
                 // Draws of a merged model share one vertex buffer: transform it once per placement.
                 if (!placed.TryGetValue(p.Pos, out var xf))
@@ -325,7 +324,7 @@ namespace CursedAppleMapConvert
                     V3 cen = (src[a] + src[b] + src[c]) / 3f;
                     bool inside = Inside(cen.X, cen.Y);
                     if (inside && cen.Z < _def.FloorZ) continue;
-                    if (!inside && (cen.Z < BackdropMinZ || seeThrough)) continue;
+                    if (!inside && cen.Z < BackdropMinZ) continue;
                     V3 uc = (u[a] + u[b] + u[c]) / 3f;
                     float size = inside ? ChunkPlay : ChunkBack;
                     var key = (!inside, (int)Math.Floor(uc.X / size), (int)Math.Floor(uc.Z / size));

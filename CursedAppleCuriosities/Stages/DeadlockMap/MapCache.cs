@@ -11,7 +11,7 @@ namespace CursedAppleCuriosities.Stages.DeadlockMap
     {
         None = 0,
         Cutout = 1,
-        NoRender = 2,      // glass, translucent: collides but isn't drawn
+        Translucent = 2,   // glass and other see-through surfaces: drawn with the glass shader, still solid
         DoubleSided = 4,
         NoCollide = 8,
         SelfIllum = 16,

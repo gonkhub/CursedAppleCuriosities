@@ -19,7 +19,7 @@ namespace CursedAppleCuriosities.Stages.DeadlockMap
     public class MapConverter
     {
         /// <summary>Bump when the cache content changes (players then convert again).</summary>
-        public const int PipelineVersion = 2;
+        public const int PipelineVersion = 3;
         private const int MaxMemoryMb = 2000;
 
         public readonly MapSectionDef Def;

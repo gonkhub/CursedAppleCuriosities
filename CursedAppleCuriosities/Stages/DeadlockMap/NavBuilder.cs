@@ -16,7 +16,7 @@ namespace CursedAppleCuriosities.Stages.DeadlockMap
     /// </summary>
     internal static class NavBuilder
     {
-        public const int Version = 1;
+        public const int Version = 3;
         private const float GroundSpacing = 4.5f, AirSpacing = 12f;
         private const float MaxLink = 15f, MaxAirLink = 30f;
         private const float LosRange = 140f;
@@ -30,13 +30,15 @@ namespace CursedAppleCuriosities.Stages.DeadlockMap
             public int[] Forbidden = Array.Empty<int>();
             public readonly List<(int A, int B, float Dist, float Jump, int Hulls, int JumpHulls)> Links = new List<(int, int, float, float, int, int)>();
             public byte[][] Los = Array.Empty<byte[]>();
+            /// <summary>Ground only: where players appear (open, roofless, together), facing their longest clear view.</summary>
+            public readonly List<(Vector3 Pos, float Yaw)> Spawns = new List<(Vector3, float)>();
         }
 
         /// <summary>
         /// The ground and air graphs for the section placed under root (local space = section space). inside tells
         /// whether a point (section space) is in the playable area; noWalk whether it's somewhere nobody may stand.
         /// </summary>
-        public static (NodeGraph Ground, NodeGraph Air) Get(string cacheFile, string fingerprint, Transform root, Func<Vector3, bool> inside, Func<Vector3, bool> noWalk, Bounds area)
+        public static (NodeGraph Ground, NodeGraph Air, List<(Vector3 Pos, float Yaw)> Spawns) Get(string cacheFile, string fingerprint, Transform root, Func<Vector3, bool> inside, Func<Vector3, bool> noWalk, Bounds area)
         {
             Graph? ground = null, air = null;
             string key = fingerprint + ":nav" + Version + ":" + root.localScale.x.ToString("0.###");
@@ -50,7 +52,7 @@ namespace CursedAppleCuriosities.Stages.DeadlockMap
                 Log($"navigation built in {watch.ElapsedMilliseconds} ms: {ground.Pos.Length} ground nodes / {ground.Links.Count} links, {air.Pos.Length} air nodes / {air.Links.Count} links");
                 try { Write(cacheFile, key, ground, air); } catch (Exception e) { Log("couldn't cache navigation: " + e.Message); }
             }
-            return (ToNodeGraph(ground, root), ToNodeGraph(air, root));
+            return (ToNodeGraph(ground, root), ToNodeGraph(air, root), ground.Spawns);
         }
 
         // ---------------------------------------------------------------- ground
@@ -60,6 +62,7 @@ namespace CursedAppleCuriosities.Stages.DeadlockMap
             int mask = LayerIndex.world.mask;
             float s = root.lossyScale.x, step = GroundSpacing;
             var pos = new List<Vector3>();
+            var normals = new List<Vector3>();
             float top = area.max.y + 20f;
             for (float x = area.min.x; x <= area.max.x; x += step)
                 for (float z = area.min.z; z <= area.max.z; z += step)
@@ -75,6 +78,7 @@ namespace CursedAppleCuriosities.Stages.DeadlockMap
                         if (!inside(local) || noWalk(local)) continue;
                         if (Physics.Raycast(hit.point + Vector3.up * 0.1f, Vector3.up, 2.2f, mask, QueryTriggerInteraction.Ignore)) continue; // no headroom
                         pos.Add(hit.point);
+                        normals.Add(hit.normal);
                     }
                 }
             var g = new Graph { Pos = pos.ToArray(), Flags = new byte[pos.Count], Forbidden = new int[pos.Count] };
@@ -90,7 +94,6 @@ namespace CursedAppleCuriosities.Stages.DeadlockMap
                 }
                 bool open = !Physics.Raycast(p + Vector3.up * 0.2f, Vector3.up, 1000f, mask, QueryTriggerInteraction.Ignore);
                 if (open) g.Flags[i] |= (byte)NodeFlags.NoCeiling;
-                if (open && (g.Forbidden[i] & 2) == 0 && Flat(p, 6f, mask)) g.Flags[i] |= (byte)NodeFlags.TeleporterOK;
             }
             var grid = new Dictionary<(int, int), List<int>>();
             for (int i = 0; i < g.Pos.Length; i++) Cell(grid, g.Pos[i], MaxLink).Add(i);
@@ -117,8 +120,127 @@ namespace CursedAppleCuriosities.Stages.DeadlockMap
                     }
                     if (hulls != 0) g.Links.Add((a, b, dist, dy > 1.2f ? dy + 0.5f : 0f, hulls, jumps));
                 }
+            Classify(g, normals, mask);
             g.Los = LineOfSight(g.Pos, Vector3.up * 1.2f, mask);
             return g;
+        }
+
+        /// <summary>
+        /// Where things may spawn, as RoR2 reads it from the node flags. Every node is measured: how open it is (12
+        /// horizontal rays), whether it is under Deadlock's stair clips, how flat it is, and which walkable region it is on.
+        /// <list type="bullet">
+        /// <item>Isolated regions (roof scraps, ledges, statue plinths): nothing spawns there, monsters included.</item>
+        /// <item>Chests and other small interactables: not on stairs, slopes or in cramped corners.</item>
+        /// <item>Shrines (bigger): more room around them.</item>
+        /// <item>Teleporter: roofless, Golem-sized clearance, flat 7 m around, 8 m clear every way (relaxed only if that
+        /// leaves too few spots).</item>
+        /// </list>
+        /// Also picks the player spawns.
+        /// </summary>
+        private static void Classify(Graph g, List<Vector3> normals, int mask)
+        {
+            int n = g.Pos.Length, clipMask = LayerIndex.collideWithCharacterHullOnly.mask;
+            const int rays = 12;
+            const float reach = 30f;
+            var minClear = new float[n];
+            var avgClear = new float[n];
+            var bestYaw = new float[n];
+            var onClip = new bool[n];
+            for (int i = 0; i < n; i++)
+            {
+                Vector3 eye = g.Pos[i] + Vector3.up * 1.0f;
+                float min = reach, sum = 0f, best = -1f;
+                for (int k = 0; k < rays; k++)
+                {
+                    float yaw = k * 360f / rays;
+                    Vector3 dir = Quaternion.Euler(0f, yaw, 0f) * Vector3.forward;
+                    float d = Physics.Raycast(eye, dir, out RaycastHit hit, reach, mask, QueryTriggerInteraction.Ignore) ? hit.distance : reach;
+                    min = Mathf.Min(min, d);
+                    sum += d;
+                    if (d > best) { best = d; bestYaw[i] = yaw; }
+                }
+                minClear[i] = min;
+                avgClear[i] = sum / rays;
+                onClip[i] = Physics.CheckCapsule(g.Pos[i] + Vector3.up * 0.3f, g.Pos[i] + Vector3.up * 1.7f, 0.45f, clipMask, QueryTriggerInteraction.Ignore);
+            }
+
+            // Walkable regions: nodes joined by human-sized links (either way).
+            var adj = new List<int>[n];
+            for (int i = 0; i < n; i++) adj[i] = new List<int>();
+            foreach (var l in g.Links) if ((l.Hulls & 1) != 0) { adj[l.A].Add(l.B); adj[l.B].Add(l.A); }
+            var region = new int[n];
+            for (int i = 0; i < n; i++) region[i] = -1;
+            var sizes = new List<int>();
+            var queue = new Queue<int>();
+            for (int i = 0; i < n; i++)
+            {
+                if (region[i] >= 0) continue;
+                int r = sizes.Count, size = 0;
+                region[i] = r;
+                queue.Enqueue(i);
+                while (queue.Count > 0)
+                {
+                    int a = queue.Dequeue();
+                    size++;
+                    foreach (int b in adj[a]) if (region[b] < 0) { region[b] = r; queue.Enqueue(b); }
+                }
+                sizes.Add(size);
+            }
+            if (n == 0) return;
+            int main = 0;
+            for (int r = 1; r < sizes.Count; r++) if (sizes[r] > sizes[main]) main = r;
+
+            int chests = 0, shrines = 0, tele = 0, isolated = 0;
+            bool TeleOk(int i, float clear, float flatR) =>
+                (g.Flags[i] & (byte)NodeFlags.NoCeiling) != 0 && (g.Forbidden[i] & 2) == 0 && !onClip[i] && region[i] == main
+                && minClear[i] >= clear && normals[i].y >= 0.95f && Flat(g.Pos[i], flatR, mask);
+            for (int i = 0; i < n; i++)
+            {
+                if (region[i] != main) // rooftops and other floors you can't walk to: nothing spawns there (fliers use the air graph)
+                {
+                    g.Flags[i] |= (byte)(NodeFlags.NoCharacterSpawn | NodeFlags.NoChestSpawn | NodeFlags.NoShrineSpawn);
+                    isolated++;
+                    continue;
+                }
+                bool chestOk = !onClip[i] && normals[i].y >= 0.9f && minClear[i] >= 1.0f;
+                bool shrineOk = chestOk && minClear[i] >= 2.0f && avgClear[i] >= 6f;
+                if (chestOk) chests++; else g.Flags[i] |= (byte)NodeFlags.NoChestSpawn;
+                if (shrineOk) shrines++; else g.Flags[i] |= (byte)NodeFlags.NoShrineSpawn;
+                if (TeleOk(i, 8f, 7f)) { g.Flags[i] |= (byte)NodeFlags.TeleporterOK; tele++; }
+            }
+            if (tele < 6)
+                for (int i = 0; i < n; i++)
+                    if ((g.Flags[i] & (byte)NodeFlags.TeleporterOK) == 0 && TeleOk(i, 5f, 5f))
+                    {
+                        g.Flags[i] |= (byte)NodeFlags.TeleporterOK;
+                        tele++;
+                    }
+
+            // Player spawns: the most open roofless spot on the main region, plus up to three good neighbours, all facing
+            // that spot's longest clear view.
+            int bestNode = -1;
+            float bestScore = float.MinValue;
+            for (int i = 0; i < n; i++)
+            {
+                if (region[i] != main || onClip[i] || (g.Flags[i] & (byte)NodeFlags.NoCeiling) == 0 || minClear[i] < 3f) continue;
+                float score = avgClear[i] + minClear[i];
+                if (score > bestScore) { bestScore = score; bestNode = i; }
+            }
+            if (bestNode >= 0)
+            {
+                float yaw = bestYaw[bestNode];
+                g.Spawns.Add((g.Pos[bestNode], yaw));
+                var near = new List<int>();
+                for (int i = 0; i < n; i++)
+                    if (i != bestNode && region[i] == main && !onClip[i] && minClear[i] >= 2f && Mathf.Abs(g.Pos[i].y - g.Pos[bestNode].y) < 1.5f
+                        && (g.Pos[i] - g.Pos[bestNode]).sqrMagnitude < 12f * 12f)
+                        near.Add(i);
+                near.Sort((a, b) => (avgClear[b] + minClear[b]).CompareTo(avgClear[a] + minClear[a]));
+                for (int k = 0; k < near.Count && g.Spawns.Count < 4; k++) g.Spawns.Add((g.Pos[near[k]], yaw));
+            }
+            Log($"spawn rules: {sizes.Count} walkable regions (main {sizes[main]} nodes), {isolated} isolated nodes off-limits, " +
+                $"{chests} chest spots, {shrines} shrine spots, {tele} teleporter spots, {g.Spawns.Count} player spawns" +
+                (bestNode >= 0 ? $" ({avgClear[bestNode]:0} m open on average)" : ""));
         }
 
         /// <summary>A walkable floor under the whole path (no gaps an AI would fall into).</summary>
@@ -273,6 +395,8 @@ namespace CursedAppleCuriosities.Stages.DeadlockMap
                 bw.Write(g.Links.Count);
                 foreach (var l in g.Links) { bw.Write(l.A); bw.Write(l.B); bw.Write(l.Dist); bw.Write(l.Jump); bw.Write(l.Hulls); bw.Write(l.JumpHulls); }
             }
+            bw.Write(ground.Spawns.Count);
+            foreach (var (p, yaw) in ground.Spawns) { bw.Write(p.x); bw.Write(p.y); bw.Write(p.z); bw.Write(yaw); }
             bw.Close();
             if (File.Exists(file)) File.Delete(file);
             File.Move(file + ".part", file);
@@ -296,6 +420,8 @@ namespace CursedAppleCuriosities.Stages.DeadlockMap
                 for (int i = 0; i < links; i++) g.Links.Add((br.ReadInt32(), br.ReadInt32(), br.ReadSingle(), br.ReadSingle(), br.ReadInt32(), br.ReadInt32()));
                 o[k] = g;
             }
+            int spawns = br.ReadInt32();
+            for (int i = 0; i < spawns; i++) o[0].Spawns.Add((new Vector3(br.ReadSingle(), br.ReadSingle(), br.ReadSingle()), br.ReadSingle()));
             return (o[0], o[1]);
         }
     }

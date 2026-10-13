@@ -20,6 +20,14 @@ namespace CursedAppleCuriosities.Stages.DeadlockMap
 
         private static Material? _base;
 
+        /// <summary>Glass: our see-through shader (fresnel edge), the surface's texture and tints.</summary>
+        private static Material MakeGlass(MapMaterial m, Texture2D? tex)
+        {
+            var mat = new Material(SunkenPlazaStage.GlassMaterial) { name = "matDeadlockGlass_" + m.Name };
+            mat.mainTexture = tex;
+            return mat;
+        }
+
         /// <summary>A world material: RoR2's own standard shader (so the map is lit like the game), vertex colours on.</summary>
         public static Material MakeMaterial(MapMaterial m, Texture2D? tex)
         {
@@ -71,7 +79,8 @@ namespace CursedAppleCuriosities.Stages.DeadlockMap
             for (int i = 0; i < mats.Length; i++)
             {
                 MapMaterial m = cache.Materials[i];
-                if ((m.Flags & MapMatFlags.NoRender) != 0) continue;
+                bool glass = (m.Flags & MapMatFlags.Translucent) != 0;
+                if (glass && SunkenPlazaStage.GlassMaterial == null) continue; // no glass shader: leave it undrawn (still solid)
                 Texture2D? tex = null;
                 if (m.Texture.Length > 0 && !textures.TryGetValue(m.Texture, out tex))
                 {
@@ -79,7 +88,7 @@ namespace CursedAppleCuriosities.Stages.DeadlockMap
                     if (td != null) { tex = HeroTextures.Make(td); tex.wrapMode = TextureWrapMode.Repeat; tex.anisoLevel = 4; }
                     textures[m.Texture] = tex;
                 }
-                mats[i] = MakeMaterial(m, tex);
+                mats[i] = glass ? MakeGlass(m, tex) : MakeMaterial(m, tex);
             }
 
             var bake = new List<(Mesh Mesh, GameObject Holder)>();
