@@ -11,7 +11,8 @@ namespace EntityStates.CursedApple.Seven
     // ================= Primary: Cold Calculus =================
 
     /// <summary>
-    /// Seven's gun: 3-round bursts (Deadlock 0.084 s between rounds, 0.2625 s between bursts). No clip or reload. While
+    /// Seven's gun: 3-round bursts (Deadlock 0.084 s between rounds, 0.2625 s between bursts). No clip or reload. A mid-range
+    /// electric gun (user): lightning tracers, recoil that climbs through the burst, a gentle falloff past 20 m. While
     /// Power Surge is up, the first bullet of each burst that hits an enemy sends a shock jumping from it (Deadlock:
     /// "occurs once per burst shot").
     /// </summary>
@@ -39,7 +40,9 @@ namespace EntityStates.CursedApple.Seven
             SevenModel.Play(gameObject, "shoot");
             DeadlockSounds.Play("seven_gun_fire", transform.position, gameObject); // falls back to Commando's shot without Deadlock
             if (SevenSurvivor.MuzzleEffect != null) EffectManager.SimpleMuzzleFlash(SevenSurvivor.MuzzleEffect, gameObject, _muzzle, false);
-            AddRecoil(-0.3f, -0.6f, -0.2f, 0.2f);
+            // Climbing recoil (user, Deadlock's vertical recoil): each round of the burst kicks harder than the last
+            float kick = SevenData.GunRecoilKick * _fired;
+            AddRecoil(-kick, -kick * 1.3f, -0.15f, 0.15f);
             if (isAuthority)
             {
                 Ray aim = GetAimRay();
@@ -62,7 +65,9 @@ namespace EntityStates.CursedApple.Seven
                     isCrit = crit,
                     radius = 0.1f,
                     smartCollision = true,
-                    falloffModel = BulletAttack.FalloffModel.DefaultBullet,
+                    falloffModel = BulletAttack.FalloffModel.None,
+                    // Mid range (user): full damage to 20 m, easing to 60% by 57.5 m
+                    modifyOutgoingDamageCallback = (BulletAttack _, ref BulletAttack.BulletHit hit, DamageInfo info) => info.damage *= SevenData.GunFalloff(hit.distance),
                     damageType = DamageSource.Primary,
                 };
                 if (surging && !_chained)

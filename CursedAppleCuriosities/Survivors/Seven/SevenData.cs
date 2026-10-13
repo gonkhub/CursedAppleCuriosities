@@ -42,6 +42,14 @@ namespace CursedAppleCuriosities.Survivors.Seven
         public static float BurstCycle = 0.2625f;       // Deadlock m_flCycleTime
         public static float GunSpread = 0.35f;
         public const float GunBloomPerShot = 0.1f;
+        // Climbing recoil (user; Deadlock m_VerticallRecoil 0.2, slow recovery): each round of a burst kicks harder than the last.
+        public const float GunRecoilKick = 0.6f;        // vertical kick of the first round; round n kicks n times this
+        // Mid range (user): full damage further out than Lash, and a gentle falloff.
+        public static float GunFalloffStart = 20f;      // Deadlock m_flDamageFalloffStartRange 787 hu
+        public static float GunFalloffEnd = 57.5f;      // Deadlock m_flDamageFalloffEndRange 2264 hu
+        public const float GunFalloffMin = 0.6f;        // Deadlock eases to 10%; gentle here
+
+        public static float GunFalloff(float distance) => DeadlockSurvivorKit.Falloff(distance, GunFalloffStart, GunFalloffEnd, GunFalloffMin);
 
         // ---- secondary: Lightning Ball ----
         public static float BallDps = 2.5f;             // damage coefficient per second to each enemy inside (Deadlock 75 DPS)
@@ -107,6 +115,8 @@ namespace CursedAppleCuriosities.Survivors.Seven
             BaseHealth = c.Bind(Section, "Base Health", BaseHealth, "Seven max health at level 1 (+33 per level).").Value;
             GunDamage = c.Bind(Section, "Gun - Damage", GunDamage, "Damage coefficient per bullet (3-round bursts).").Value;
             BurstCycle = c.Bind(Section, "Gun - Time Between Bursts", BurstCycle, "Seconds after a burst before the next (before attack speed).").Value;
+            GunFalloffStart = c.Bind(Section, "Gun - Falloff Start", GunFalloffStart, "Metres of full damage.").Value;
+            GunFalloffEnd = c.Bind(Section, "Gun - Falloff End", GunFalloffEnd, "Metres where damage reaches its floor (60%).").Value;
             BallDps = c.Bind(Section, "Lightning Ball - Damage Per Second", BallDps, "Damage coefficient per second to every enemy inside the ball.").Value;
             BallRadius = c.Bind(Section, "Lightning Ball - Radius", BallRadius, "Metres.").Value;
             BallCooldown = c.Bind(Section, "Lightning Ball - Cooldown", BallCooldown, "Seconds.").Value;

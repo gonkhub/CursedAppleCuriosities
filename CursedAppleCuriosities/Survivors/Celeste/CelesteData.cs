@@ -56,7 +56,7 @@ namespace CursedAppleCuriosities.Survivors.Celeste
 
         // ---- secondary: Light Eater (Deadlock: 70 deg cone, 10 m, 0.3 s delay, 40 damage; marked 8 s; 15 per bullet; 18% lifesteal) ----
         public static float FlareDamage = 4f;
-        public static float FlareRange = 10f;            // Deadlock AbilityCastRange (Mystic Expansion widens it)
+        public static float FlareRange = 15f;            // Deadlock AbilityCastRange 10 m; 15 by playtest (user). Mystic Expansion widens it
         public const float FlareConeDeg = 35f;           // half of Deadlock's 70 deg TargetingConeAngle
         public const float FlareDelay = 0.3f;            // Deadlock AbilityCastDelay
         public static float FlareCooldown = 7f;          // Deadlock 20

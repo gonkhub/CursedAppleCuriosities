@@ -189,6 +189,14 @@ namespace CursedAppleCuriosities.Deadlock
 
         private static readonly System.Collections.Generic.Dictionary<float, Texture2D> Ramps = new System.Collections.Generic.Dictionary<float, Texture2D>();
 
+        /// <summary>Gun damage falloff: 1 up to <paramref name="start"/> metres, easing (smoothstep) down to <paramref name="min"/> at <paramref name="end"/>.</summary>
+        public static float Falloff(float distance, float start, float end, float min)
+        {
+            if (distance <= start) return 1f;
+            float t = Mathf.Clamp01((distance - start) / Mathf.Max(1f, end - start));
+            return Mathf.Lerp(1f, min, t * t * (3f - 2f * t));
+        }
+
         /// <summary>
         /// A vanilla effect recoloured (a copy: the original is untouched). Most RoR2 VFX take their colour from a remap
         /// ramp texture (_RemapTex), so a tint alone wouldn't do: ramps are replaced by one in the new hue, and tints,

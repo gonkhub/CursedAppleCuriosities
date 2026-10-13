@@ -66,7 +66,10 @@ namespace EntityStates.CursedApple.Lash
 
     // ================= Primary: Lash's gun =================
 
-    /// <summary>Lash's gun: a three-round burst (Deadlock: 0.084 s between bullets, 0.2625 s between bursts).</summary>
+    /// <summary>
+    /// Lash's gun: a three-round burst (Deadlock: 0.084 s between bullets, 0.2625 s between bursts). A close-range gun (user):
+    /// tight, no recoil, falls off hard past 16 m.
+    /// </summary>
     public class FireBurst : BaseSkillState
     {
         private float _interval, _duration;
@@ -90,7 +93,7 @@ namespace EntityStates.CursedApple.Lash
             LashModelSwap.Play(gameObject, "shoot");
             DeadlockSounds.Play("lash_gun_fire", transform.position, gameObject);
             if (LashSurvivor.MuzzleEffect != null) EffectManager.SimpleMuzzleFlash(LashSurvivor.MuzzleEffect, gameObject, _muzzle, false);
-            AddRecoil(-0.3f, -0.6f, -0.2f, 0.2f);
+            // No recoil: Deadlock's Lash gun stays dead flat (user: a tight close-range gun, unlike Seven's climbing one)
             if (isAuthority)
             {
                 Ray aim = GetAimRay();
@@ -111,7 +114,9 @@ namespace EntityStates.CursedApple.Lash
                     isCrit = RollCrit(),
                     radius = 0.1f,
                     smartCollision = true,
-                    falloffModel = BulletAttack.FalloffModel.DefaultBullet,
+                    falloffModel = BulletAttack.FalloffModel.None,
+                    // Short range (user): full damage to 16 m, easing to 35% by 48 m
+                    modifyOutgoingDamageCallback = (BulletAttack _, ref BulletAttack.BulletHit hit, DamageInfo info) => info.damage *= LashData.GunFalloff(hit.distance),
                     damageType = DamageSource.Primary,
                 }.Fire();
             }
