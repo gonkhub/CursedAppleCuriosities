@@ -1,4 +1,3 @@
-using System.Collections.Generic;
 using BepInEx.Configuration;
 using RoR2;
 using UnityEngine;
@@ -6,11 +5,12 @@ using UnityEngine;
 namespace CursedAppleCuriosities.Artifacts
 {
     /// <summary>
-    /// Artifact of the Catalog (user, 2.0; replaces the Curiosity Catalog item and the Artifact of the Curio). Gold is shown
+    /// Artifact of the Catalog (user, 2.0; replaces the Curiosity Catalog item). Gold is shown
     /// as souls, where a basic chest always costs 800 (<see cref="Souls"/>). Each stage's item chests and multishops are
     /// re-tiered when it starts, 40% white / 40% green / 20% red, priced 800 / 3200 / 6400 souls and swapped for that
-    /// tier's vanilla chest (<see cref="SoulChests"/>). Only this mod's items and equipment appear, and the Bazaar
-    /// sells them (<see cref="SoulShop"/>). With the Artifact of Command, opening a chest offers a pick of its tier.
+    /// tier's vanilla chest (<see cref="SoulChests"/>), and the Bazaar sells every Cursed Apple item (<see cref="SoulShop"/>).
+    /// With the Artifact of Command, opening a chest offers a pick of its tier. Mod-only drops are the Artifact of the
+    /// Curio's job (<see cref="CuriosityShop"/>), so the two combine.
     /// </summary>
     public class CatalogArtifact : ArtifactBase
     {
@@ -19,7 +19,7 @@ namespace CursedAppleCuriosities.Artifacts
         public override string ArtifactDescription   =>
             $"Gold becomes souls: a basic chest always costs {Souls.PerChest}. Every stage's chests are re-rolled " +
             $"{WhiteShare * 100:0}% white ({Souls.PerChest * WhiteMult}), {GreenShare * 100:0}% green ({Souls.PerChest * GreenMult}) " +
-            $"and {RedShare * 100:0}% red ({Souls.PerChest * RedMult}). Only Cursed Apple items appear, and the Bazaar sells them.";
+            $"and {RedShare * 100:0}% red ({Souls.PerChest * RedMult}). The Bazaar sells every Cursed Apple item.";
 
         protected override Color EnabledIconColor  => new Color(1f, 0.75f, 0.15f);
         protected override Color DisabledIconColor => new Color(0.35f, 0.35f, 0.35f);
@@ -49,7 +49,6 @@ namespace CursedAppleCuriosities.Artifacts
 
         public override void Hooks()
         {
-            On.RoR2.Run.BuildDropTable += Run_BuildDropTable;
             Souls.Hook();
             SoulChests.Hook();
             SoulShop.Hook();
@@ -61,41 +60,5 @@ namespace CursedAppleCuriosities.Artifacts
             ItemTier.Tier3 => RedMult,
             _ => WhiteMult,
         };
-
-        // ---------------- only this mod's items ----------------
-
-        private static void Run_BuildDropTable(On.RoR2.Run.orig_BuildDropTable orig, Run self)
-        {
-            orig(self);
-            if (!Active) return;
-            // The availability masks too, so Command's picks, printers and anything else asking "is this available" agree.
-            foreach (ItemIndex i in new List<ItemIndex>(ItemsIn(self.availableItems)))
-                if (!CursedAppleCuriositiesPlugin.ModItemDefs.Contains(ItemCatalog.GetItemDef(i))) self.availableItems.Remove(i);
-            foreach (EquipmentIndex e in new List<EquipmentIndex>(EquipmentIn(self.availableEquipment)))
-                if (!CursedAppleCuriositiesPlugin.ModEquipmentDefs.Contains(EquipmentCatalog.GetEquipmentDef(e))) self.availableEquipment.Remove(e);
-            foreach (List<PickupIndex> list in new[] { self.availableTier1DropList, self.availableTier2DropList, self.availableTier3DropList,
-                self.availableLunarItemDropList, self.availableVoidTier1DropList, self.availableVoidTier2DropList, self.availableVoidTier3DropList,
-                self.availableBossDropList, self.availableEquipmentDropList, self.availableLunarEquipmentDropList })
-                list?.RemoveAll(p => !IsModPickup(p));
-        }
-
-        private static IEnumerable<ItemIndex> ItemsIn(ItemMask mask)
-        {
-            for (ItemIndex i = 0; (int)i < ItemCatalog.itemCount; i++) if (mask.Contains(i)) yield return i;
-        }
-
-        private static IEnumerable<EquipmentIndex> EquipmentIn(EquipmentMask mask)
-        {
-            for (EquipmentIndex e = 0; (int)e < EquipmentCatalog.equipmentCount; e++) if (mask.Contains(e)) yield return e;
-        }
-
-        public static bool IsModPickup(PickupIndex pickup)
-        {
-            PickupDef? def = PickupCatalog.GetPickupDef(pickup);
-            if (def == null) return false;
-            if (def.itemIndex != ItemIndex.None) return CursedAppleCuriositiesPlugin.ModItemDefs.Contains(ItemCatalog.GetItemDef(def.itemIndex));
-            if (def.equipmentIndex != EquipmentIndex.None) return CursedAppleCuriositiesPlugin.ModEquipmentDefs.Contains(EquipmentCatalog.GetEquipmentDef(def.equipmentIndex));
-            return true; // coins and the like
-        }
     }
 }

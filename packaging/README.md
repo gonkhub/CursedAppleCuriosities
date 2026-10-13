@@ -5,7 +5,8 @@ Items, equipment and survivors adapted from Deadlock's item shop for Risk of Rai
 - **32 items** across white, green, red, void and lunar tiers
 - **14 equipment**
 - **Artifact of the Catalog**: gold becomes souls, and a basic chest always costs 800. Every stage's chests are
-  re-rolled 40% white (800), 40% green (3200) and 20% red (6400); only this mod's items drop, and the Bazaar sells them
+  re-rolled 40% white (800), 40% green (3200) and 20% red (6400), and the Bazaar sells every item of this mod
+- **Artifact of the Curio**: only this mod's items drop
 - **Artifact of the Goose**: every player starts the run with a random Goose Egg
 - **Cursed Broker**: a rare shrine (10% on any stage, 50% on stage 3 of each loop, and in the Bazaar Between
   Time). Curse one item to make every copy of it about twice as strong, in exchange for a harsh penalty for the
