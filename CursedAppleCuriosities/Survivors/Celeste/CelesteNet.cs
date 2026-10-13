@@ -476,6 +476,9 @@ namespace CursedAppleCuriosities.Survivors.Celeste
         private int _hits;
         private float _flight, _linger, _search, _orbit;
         private bool _lingering;
+        // The current bounce's flight (_leg < 0: none, the first throw flies straight at OrbSpeed).
+        private float _leg = -1f, _speed;
+        private Vector3 _legAim;
         private DeadlockVoice? _hum;
 
         private void Awake()
@@ -507,6 +510,7 @@ namespace CursedAppleCuriosities.Survivors.Celeste
                 {
                     _search = 0.1f;
                     _target = Seek(owner, _hits == 0);
+                    if (_target != null && _leg >= 0f) Retarget(); // its target died mid-flight: it turns onto the next
                 }
                 if (_target == null && (_flight > CelesteData.OrbFlightSeconds || HitsWorld(_rb.velocity * dt))) StartLinger();
             }
@@ -516,17 +520,54 @@ namespace CursedAppleCuriosities.Survivors.Celeste
                 _linger += dt;
                 _search -= dt;
                 if (_search <= 0f) { _search = 0.15f; _target = Next(owner); }
-                if (_target != null) { _lingering = false; _linger = 0f; }
+                if (_target != null) { _lingering = false; _linger = 0f; Launch(); }
                 else if (_linger > CelesteData.OrbLinger) { Expire(); return; }
             }
             if (_target != null)
             {
                 Vector3 to = CelesteNet.Core(_target) - transform.position;
                 float reach = CelesteData.OrbRadius + (_target.body != null ? _target.body.radius : 0.5f);
-                if (to.magnitude <= reach + CelesteData.OrbSpeed * dt) { Strike(owner, _target); return; }
-                _rb.velocity = to.normalized * CelesteData.OrbSpeed; // committed: it flies through walls to its target (user)
+                float speed = _leg >= 0f ? _speed : CelesteData.OrbSpeed;
+                if (to.magnitude <= reach + speed * dt) { Strike(owner, _target); return; }
+                // Committed: it flies through walls to its target (user).
+                _rb.velocity = _leg >= 0f ? Fly(to, dt) : to.normalized * CelesteData.OrbSpeed;
             }
             if (_rb.velocity.sqrMagnitude > 0.01f) transform.rotation = Quaternion.LookRotation(_rb.velocity);
+        }
+
+        /// <summary>Off an enemy (or the prism, or out of its orbit): slow and steep, toward where the target is now.</summary>
+        private void Launch()
+        {
+            if (_target == null || _rb == null) return;
+            _leg = 0f;
+            _speed = CelesteData.OrbLaunchSpeed;
+            _legAim = CelesteNet.Core(_target);
+            Vector3 line = _legAim - transform.position;
+            Vector3 flat = Vector3.ProjectOnPlane(line, Vector3.up);
+            if (flat.sqrMagnitude < 0.01f) flat = Vector3.forward;
+            float pitch = Mathf.Min(80f, Mathf.Atan2(line.y, flat.magnitude) * Mathf.Rad2Deg + CelesteData.OrbLaunchUpDeg);
+            Vector3 dir = Quaternion.AngleAxis(-pitch, Vector3.Cross(Vector3.up, flat.normalized)) * flat.normalized;
+            _rb.velocity = dir * _speed;
+        }
+
+        /// <summary>A new target mid-flight: it keeps its speed and tracks the new one from here.</summary>
+        private void Retarget()
+        {
+            _legAim = CelesteNet.Core(_target!);
+            _leg = Mathf.Max(_leg, CelesteData.OrbArcSeconds);
+        }
+
+        /// <summary>One step of a bounce: arc toward the target's old spot, then track it, faster all the while.</summary>
+        private Vector3 Fly(Vector3 toTarget, float dt)
+        {
+            _leg += dt;
+            _speed = Mathf.Min(CelesteData.OrbMaxSpeed, _speed + CelesteData.OrbAccel * dt);
+            if (toTarget.magnitude < CelesteData.OrbFinalApproach) return toTarget.normalized * _speed;
+            float track = Mathf.Clamp01((_leg - CelesteData.OrbArcSeconds) / CelesteData.OrbTrackSeconds);
+            Vector3 aim = Vector3.Lerp(_legAim, transform.position + toTarget, track) - transform.position;
+            Vector3 dir = _rb!.velocity.sqrMagnitude > 0.01f ? _rb.velocity.normalized : aim.normalized;
+            float turn = Mathf.Lerp(CelesteData.OrbTurnStart, CelesteData.OrbTurnEnd, track) * Mathf.Deg2Rad * dt;
+            return Vector3.RotateTowards(dir, aim.normalized, turn, 0f) * _speed;
         }
 
         private float BounceRange(CharacterBody owner) => CelesteData.OrbBounceRange * MysticExpansion.RadiusMultiplier(owner);
@@ -584,6 +625,7 @@ namespace CursedAppleCuriosities.Survivors.Celeste
         private void StartLinger()
         {
             _lingering = true;
+            _leg = -1f;
             _linger = 0f;
             if (_last != null && _last.body != null)
             {
@@ -611,6 +653,7 @@ namespace CursedAppleCuriosities.Survivors.Celeste
             if (final) { Destroy(gameObject); return; }
             _target = Next(owner);
             if (_target == null) StartLinger();
+            else Launch();
         }
 
         /// <summary>Off Celeste's prism: no damage, the prism restarts, and it counts as a bounce.</summary>
@@ -625,6 +668,7 @@ namespace CursedAppleCuriosities.Survivors.Celeste
             if (_hits > CelesteData.OrbBounces) { Destroy(gameObject); return; }
             _target = Next(owner);
             if (_target == null) StartLinger();
+            else Launch();
         }
 
         private void Expire()

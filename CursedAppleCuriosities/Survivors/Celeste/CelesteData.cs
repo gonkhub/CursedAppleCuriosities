@@ -98,6 +98,17 @@ namespace CursedAppleCuriosities.Survivors.Celeste
         public const float OrbFlightSeconds = 3f;        // without a target it flies on this long, then lingers where it is
         public const float OrbMinHold = 0.35f;           // Deadlock AbilityCastDelay 0.75 is the wind-up; she can release after this
         public const float OrbMaxHold = 6f;              // held this long, it fires by itself
+        // Each bounce (user, 2.0): it launches slowly, steeply up, arcing toward where the next target stood; after a moment
+        // its aim slides onto the target's live position and its turning tightens, and it speeds up the whole way.
+        public const float OrbLaunchSpeed = 6f;          // m/s off the enemy it just hit
+        public const float OrbLaunchUpDeg = 60f;         // above the straight line to the target (capped at 80 deg above level)
+        public const float OrbArcSeconds = 0.35f;        // it follows the arc to the target's old spot this long
+        public const float OrbTrackSeconds = 0.6f;       // then over this long, its aim moves onto the moving target
+        public const float OrbTurnStart = 120f;          // deg/s while arcing ...
+        public const float OrbTurnEnd = 900f;            // ... rising to this once it tracks
+        public const float OrbAccel = 40f;               // m/s2
+        public const float OrbMaxSpeed = 45f;
+        public const float OrbFinalApproach = 4f;        // m: this close, it flies straight at the target
         public const float OrbAimFall = 3f;              // m/s: aiming in the air slows her fall (Deadlock: "slows Celeste's glide")
 
         public static void Bind(ConfigFile c)
