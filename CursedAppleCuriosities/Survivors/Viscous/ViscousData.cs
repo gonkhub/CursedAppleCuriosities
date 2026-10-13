@@ -69,7 +69,7 @@ namespace CursedAppleCuriosities.Survivors.Viscous
         public const float BallKnock = 10.16f;          // Deadlock KnockForce 400 hu/s, as m/s given to the enemy
         public const float BallKnockUp = 6f;            // ...plus a little lift so they leave the ground
         public const float BallRehit = 1.2f;            // Deadlock viscous_ball_damage_prevention: the same enemy again after this
-        public static float BossFreeze = 0.3f;          // user: a boss stops the ball dead this long (hit-stop), then it bounces off as off a wall
+        public static float BossFreeze = 0.6f;          // (0.3 until 2.0) user: a boss stops the ball dead this long (hit-stop), then it bounces off as off a wall
         public static float BossDamageMult = 2f;        // user: bosses (and anything it can't stun) take double, and aren't stunned
         public const float ImpactRebound = 1.35f;       // user: it gains speed off an impact: 1.35x the speed it hit with, at least Go Fast's
         public const float ImpactReboundCap = 3f;       // ...but never above this many times Go Fast speed (chained impacts)
