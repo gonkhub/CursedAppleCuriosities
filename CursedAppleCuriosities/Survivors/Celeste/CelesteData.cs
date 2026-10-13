@@ -83,7 +83,7 @@ namespace CursedAppleCuriosities.Survivors.Celeste
         // ---- special: Shining Wonder (Deadlock: hold to aim, release; 140 damage, 32% slow 1.5 s, 8 bounces within 15.5 m) ----
         public static float OrbDamage = 10f;
         public static int OrbBounces = 8;                // Deadlock MaxBounces (hits after the first)
-        public static float OrbBounceRange = 15.5f;      // Deadlock BounceRadius
+        public static float OrbBounceRange = 7f;         // from the enemy it just hit (user: close; Deadlock BounceRadius 15.5)
         public static float OrbCooldown = 40f;           // Deadlock 160
         public const float OrbSpeed = 18f;               // much slower than Deadlock's 50.8 m/s (user): a floating ball of light
         public const float OrbRadius = 1.65f;            // Deadlock m_flBulletRadius 65 hu
@@ -119,7 +119,7 @@ namespace CursedAppleCuriosities.Survivors.Celeste
             PrismCooldown = c.Bind(Section, "Dazzling Trick - Cooldown", PrismCooldown, "Seconds.").Value;
             OrbDamage = c.Bind(Section, "Shining Wonder - Damage", OrbDamage, "Damage coefficient of each hit.").Value;
             OrbBounces = c.Bind(Section, "Shining Wonder - Bounces", OrbBounces, "Bounces after the first hit.").Value;
-            OrbBounceRange = c.Bind(Section, "Shining Wonder - Bounce Range", OrbBounceRange, "Metres to the next target (the nearest enemy, or Celeste's prism).").Value;
+            OrbBounceRange = c.Bind(Section, "Shining Wonder - Bounce Range", OrbBounceRange, "Metres from the enemy it just hit to the next target (the nearest enemy, or Celeste's prism).").Value;
             OrbCooldown = c.Bind(Section, "Shining Wonder - Cooldown", OrbCooldown, "Seconds.").Value;
         }
 
