@@ -196,7 +196,7 @@ same on a stand-in model.
   an `Anim` hook) → `DeadlockMovement.Apply(body, profile[, mainStateSubclass])` adds a `DeadlockMover` (stamina),
   sets `DeadlockMain` as the Body main state, and registers `DeadlockMain/Dash/Slide` + the stamina HUD once.
   `profile.Bind(config, section)` exposes the player knobs. Includes stamina pips (4.5 s regen, HUD under the
-  crosshair), sprint key = dash, air jumps/dashes (1 pip each), wall jump, slide, out-of-combat sprint (they take fall damage).
+  crosshair), sprint key = dash, air jumps/dashes (1 pip each), wall jump (spammed ones diminish x0.6 each within 1 s; air jump/air dash/landing restore full height, `DeadlockMover.WallJumpChain`, 1.7 user), slide, out-of-combat sprint (they take fall damage).
   - **Dash-jump** (Deadlock): jump in a window late in the ground dash (a share of the dash's duration; the pips
     flash blue) = 2 stamina total, a fixed launch (`DashJumpSpeed` 30 m/s forward, `DashJumpUp` 10.8). A ground
     dash can't be jumped out of otherwise: a press outside the window does nothing, locks the dash-jump out for

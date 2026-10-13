@@ -57,8 +57,9 @@ namespace CursedAppleCuriosities.Deadlock
         public float SlideFrictionGrace = 0f, SlideUphillLoss = 1f, SlideDistanceBonus = 0f;
         /// <summary>Friction while steering the slide (1 = the same as going straight; lower keeps more speed through turns).</summary>
         public float SlideTurnFriction = 1f;
-        // Wall jump
-        public float WallJumpUp = 13.3f, WallJumpOutMax = 7.9f, WallJumpOutMin = 5.7f, WallJumpRecharge = 1.25f, WallJumpPowerMin = 0.2f;
+        // Wall jump. Spammed ones diminish (user, 1.7): each within WallJumpRecharge of the last is WallJumpPowerMin times the one
+        // before (0.6: 100%, 60%, 36%, 22%...). Full height again after WallJumpRecharge s, or at once after an air jump or air dash.
+        public float WallJumpUp = 13.3f, WallJumpOutMax = 7.9f, WallJumpOutMin = 5.7f, WallJumpRecharge = 1f, WallJumpPowerMin = 0.2f;
         // Air: momentum is kept; input steers it at AirAccel (RoR2's own is 20 m/s2 toward a walk), speed above a run bleeds off at AirDrag.
         public float AirAccel = 50f, AirDrag = 3f;
         /// <summary>CharacterMotor.gravityScale (Celeste's innate modifier_hero_gravity: -25%).</summary>
@@ -98,7 +99,7 @@ namespace CursedAppleCuriosities.Deadlock
             AirAccel = c.Bind(section, "Air Control", AirAccel, "How hard you steer in the air (m/s2). Momentum is kept either way.").Value;
             AirControlBoost = c.Bind(section, "Air Control - Boost After Air Moves", AirControlBoost, "Air control multiplier after any move in the air that costs stamina, until you land (1 = none).").Value;
             DownDashSpeed = c.Bind(section, "Down Dash - Speed", DownDashSpeed, "Downward speed added by a down-dash (double-tap the slide key in the air), m/s.").Value;
-            WallJumpUp = c.Bind(section, "Wall Jump - Up Speed", WallJumpUp, $"Upward launch speed off a wall (m/s). Chained wall jumps within {WallJumpRecharge} s start at {WallJumpPowerMin * 100f:0}% of it.").Value;
+            WallJumpUp = c.Bind(section, "Wall Jump - Up Speed", WallJumpUp, $"Upward launch speed off a wall (m/s). Each wall jump within {WallJumpRecharge} s of the last is {WallJumpPowerMin * 100f:0}% of the one before; an air jump or air dash restores full height.").Value;
         }
     }
 
@@ -166,6 +167,10 @@ namespace CursedAppleCuriosities.Deadlock
         private float _lastSlideTap = -10f, _downDashAt = -10f;
         public int AirDashes;
         public float LastWallJump = -10f;
+        /// <summary>Wall jumps chained so far (each within WallJumpRecharge of the last); 0 = the next one is full height.</summary>
+        public int WallJumpChain;
+        /// <summary>An air jump or air dash: the next wall jump is full height again.</summary>
+        public void ResetWallJumps() => WallJumpChain = 0;
         public float SprintRamp;    // 0-1: how far the out-of-combat sprint has built up
         public bool DashJumpWindow; // a ground dash's dash-jump window is open (and affordable): the HUD flashes blue
         public string DashJumpMessage = ""; // "too early" / "too late" / "not enough stamina", shown under the pips for a moment
@@ -188,7 +193,7 @@ namespace CursedAppleCuriosities.Deadlock
             // Extra jumps from items (Hopoo Feather...) become stamina pips instead (playtest).
             Max = Profile.StaminaPips + Mathf.Max(0, _body.maxJumpCount - _body.baseJumpCount);
             if (Pips < 0f || Pips > Max) Pips = Max;
-            if (_body.characterMotor != null && _body.characterMotor.isGrounded) { AirDashes = 0; AirBoost = false; }
+            if (_body.characterMotor != null && _body.characterMotor.isGrounded) { AirDashes = 0; AirBoost = false; WallJumpChain = 0; }
             if (Pips >= Max) { _regen = 0f; return; }
             int quail = _body.inventory != null ? _body.inventory.GetItemCountEffective(RoR2Content.Items.JumpBoost) : 0;
             float rate = 1f + Profile.QuailStaminaRegen * quail; // Wax Quail: faster stamina
@@ -537,7 +542,7 @@ namespace EntityStates.CursedApple.Deadlock
             if (air && _mover!.AirDashes >= P.AirDashesPerAir) return false;
             if (!air && !P.GroundDash) return false;
             if (!_mover!.TrySpend()) return false;
-            if (air) _mover.AirDashes++;
+            if (air) { _mover.AirDashes++; _mover.ResetWallJumps(); }
             Vector3 dir = inputBank.moveVector;
             dir.y = 0f;
             if (dir.sqrMagnitude < 0.01f) dir = FlatAim();
@@ -561,6 +566,7 @@ namespace EntityStates.CursedApple.Deadlock
                 base.ProcessJump();
                 if (characterMotor.jumpCount > jumpsBefore)
                 {
+                    _mover.ResetWallJumps();
                     KeepMomentum(before);
                     if (P.AirJumpScale != 1f) { Vector3 v = characterMotor.velocity; v.y *= P.AirJumpScale; characterMotor.velocity = v; }
                     DeadlockSounds.Play(P.Sound("jump"), transform.position, gameObject);
@@ -598,10 +604,12 @@ namespace EntityStates.CursedApple.Deadlock
             return best < float.MaxValue;
         }
 
-        /// <summary>Deadlock wall jump: up and out, keeping speed along the wall; chained ones are weaker for a while.</summary>
+        /// <summary>Deadlock wall jump: up and out, keeping speed along the wall; spammed ones diminish (see WallJumpPowerMin).</summary>
         private void WallJump(Vector3 normal)
         {
-            float power = Mathf.Lerp(P.WallJumpPowerMin, 1f, Mathf.Clamp01((Time.time - _mover!.LastWallJump) / P.WallJumpRecharge));
+            if (Time.time - _mover!.LastWallJump >= P.WallJumpRecharge) _mover.WallJumpChain = 0;
+            float power = Mathf.Pow(P.WallJumpPowerMin, _mover.WallJumpChain);
+            _mover.WallJumpChain++;
             _mover.LastWallJump = Time.time;
             Vector3 v = characterMotor.velocity;
             Vector3 flat = new Vector3(v.x, 0f, v.z);

@@ -5,6 +5,8 @@
 - **Seven**: **Storm Cloud** starts 30 m wide (was 10) and strikes every enemy it can see with a bolt of lightning about
   four times a second, each proccing fully (was 0.3), for less damage overall (100-600% per second, was 150-990%). Stray bolts
   also fall around Seven, hitting anything near them.
+- Wall jumps (every Deadlock hero) lose height when spammed: each one within a second of the last is 60% as high as the one
+  before. Waiting a full second, an air jump, an air dash or landing restores full height.
 
 ## 1.6.0
 - Fixed: **Cursed Broker** cooldown penalties (all skills, Secondary, Utility, Special) now actually lengthen your cooldowns.

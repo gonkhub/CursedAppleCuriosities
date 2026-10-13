@@ -31,7 +31,7 @@ namespace CursedAppleCuriosities.Survivors.Lash
             GroundDashSeconds = 0.3f,     // the 10 m burst (Deadlock 0.68): quick enough to dodge projectiles, by playtest;
                                           // then it eases to a run until 0.68 s, keeping Deadlock's 0.3-0.55 s dash-jump window
             WallJumpUp = 22f,             // Deadlock 13.3; much stronger by playtest
-            WallJumpPowerMin = 0.6f,      // a chained wall jump within 1.25 s (Deadlock 0.2)
+            WallJumpPowerMin = 0.6f,      // each wall jump within 1 s of the last is 60% of the one before (Deadlock 0.2)
         };
 
         // ---- primary: Lash's gun (3-round burst) ----
