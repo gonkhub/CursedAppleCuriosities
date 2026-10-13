@@ -9,7 +9,7 @@
   before. Waiting a full second, an air jump, an air dash or landing restores full height.
 - Wall jumps: the first is free, each one after it costs half a stamina until you land or air jump/air dash.
 - **Celeste**: **Light Eater** flashes a faint purple cone showing exactly what it reaches.
-- **Celeste**: **Shining Wonder** drifts slower (12 m/s, was 18) and waits up to 6 s for a new target (was 3.25).
+- **Celeste**: **Shining Wonder** drifts slower (12 m/s, was 18) and waits up to 6 s for a new target (was 3.25). Cooldown 25 s (was 40).
 - Deadlock heroes start sprinting 1 second after last taking damage or attacking (was RoR2's 5 seconds out of combat).
 - **Seven**: sprinting while shooting during **Power Surge**, he runs with his gun up instead of his out-of-combat sprint.
 - **Seven**: **Lightning Ball** slows the enemies it shocks by 80% while they're inside it (and half a second after).
