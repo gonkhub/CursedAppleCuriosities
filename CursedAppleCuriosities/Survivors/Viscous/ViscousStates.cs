@@ -125,6 +125,8 @@ namespace EntityStates.CursedApple.Viscous
         private DeadlockVoice? _loop;
         private DeadlockMover? _mover;
         private CameraTargetParams.CameraParamsOverrideHandle _camera;
+        private CharacterCameraParamsData _cameraBase;
+        private float _cameraScale;
 
         private float R => ViscousData.Radius(characterBody); // Mystic Expansion grows the ball (user)
 
@@ -161,12 +163,23 @@ namespace EntityStates.CursedApple.Viscous
             ViscousNet.ToServer(new ViscousBallMessage { Body = gameObject, Rolling = true, Seconds = _duration });
             if (cameraTargetParams != null)
             {
-                // Deadlock pulls the camera up and well back while rolling.
-                CharacterCameraParamsData data = cameraTargetParams.currentCameraParamsData;
-                Vector3 pos = data.idealLocalCameraPos.value;
-                data.idealLocalCameraPos = new Vector3(pos.x, pos.y + 1.2f, pos.z * 1.5f);
-                _camera = cameraTargetParams.AddParamsOverride(new CameraTargetParams.CameraParamsOverrideRequest { cameraParamsData = data, priority = 1f }, 0.5f);
+                _cameraBase = cameraTargetParams.currentCameraParamsData;
+                BallCamera(0.5f);
             }
+        }
+
+        /// <summary>
+        /// Deadlock pulls the camera up and well back while rolling; a bigger ball (Mystic Expansion) pulls it further,
+        /// in step with its radius (user).
+        /// </summary>
+        private void BallCamera(float transition)
+        {
+            _cameraScale = R / ViscousData.BallRadius;
+            if (_camera.isValid) cameraTargetParams.RemoveParamsOverride(_camera, transition);
+            CharacterCameraParamsData data = _cameraBase;
+            Vector3 pos = data.idealLocalCameraPos.value;
+            data.idealLocalCameraPos = new Vector3(pos.x, pos.y + 1.2f * _cameraScale, pos.z * 1.5f * _cameraScale);
+            _camera = cameraTargetParams.AddParamsOverride(new CameraTargetParams.CameraParamsOverrideRequest { cameraParamsData = data, priority = 1f }, transition);
         }
 
         public override void FixedUpdate()
@@ -175,6 +188,7 @@ namespace EntityStates.CursedApple.Viscous
             if (characterBody != null) characterBody.isSprinting = false;
             if (!isAuthority || _ending) return;
             float dt = Time.fixedDeltaTime;
+            if (_camera.isValid && Mathf.Abs(R / ViscousData.BallRadius - _cameraScale) > 0.01f) BallCamera(0.5f); // the ball grew mid-roll
             if (_freezeLeft > 0f)
             {
                 // Boss impact (user): the ball stops dead for a moment, then rolls on with the speed and heading it had.
