@@ -1,6 +1,9 @@
 # Changelog
 
 ## 1.8.0
+- Updating from an older version: your config file keeps the values it already has, so balance changes from past
+  updates (including the ones below) only apply to settings you reset to their defaults, or if you delete
+  `BepInEx/config/com.cursedapple.curiosities.cfg` before starting the game.
 - **Abrams**: **Heavy Melee** lunges about 10 m (was 6).
 - New red item: **Lightning Scroll**. The first time your special skill hits an enemy, a purple bolt of lightning strikes it
   3 seconds later for 500% damage (+250% per stack) and stuns it for 2 seconds.
