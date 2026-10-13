@@ -86,8 +86,12 @@ namespace CursedAppleCuriosities.Survivors.Seven
 
         private static void LoadAssets()
         {
-            TracerEffect = Kit.Recoloured(TryLoad<GameObject>("RoR2/Base/Commando/TracerCommandoDefault.prefab", "RoR2/Base/Characters/Commando/TracerCommandoDefault.prefab"), "CursedAppleSevenTracer", Hue, effect: true);
-            HitEffect = TryLoad<GameObject>("RoR2/Base/Commando/HitsparkCommando.prefab", "RoR2/Base/Characters/Commando/HitsparkCommando.prefab");
+            // Electric bullets (user): Artificer's unused lightning-laser tracer and her lightning sparks, in Seven's hue;
+            // Commando's tracer and hitspark if those are missing
+            TracerEffect = Kit.Recoloured(TryLoad<GameObject>("RoR2/Junk/Characters/Mage/TracerMageLightningLaser.prefab", "RoR2/Junk/Mage/TracerMageLightningLaser.prefab",
+                "RoR2/Base/Commando/TracerCommandoDefault.prefab", "RoR2/Base/Characters/Commando/TracerCommandoDefault.prefab"), "CursedAppleSevenTracer", Hue, effect: true);
+            HitEffect = Kit.Recoloured(TryLoad<GameObject>("RoR2/Base/Common/VFX/Stylized(Omni)/OmniImpactVFXLightning.prefab",
+                "RoR2/Base/Commando/HitsparkCommando.prefab", "RoR2/Base/Characters/Commando/HitsparkCommando.prefab"), "CursedAppleSevenHit", Hue, effect: true);
             MuzzleEffect = Kit.Recoloured(TryLoad<GameObject>("RoR2/Base/Mage/MuzzleflashMageLightning.prefab", "RoR2/Base/Characters/Mage/Skills/MuzzleflashMageLightning.prefab"), "CursedAppleSevenMuzzle", Hue, effect: true);
             StrikeEffect = Kit.Recoloured(TryLoad<GameObject>("RoR2/Base/Lightning/LightningStrikeImpact.prefab", "RoR2/Base/Equipment/Lightning/LightningStrikeImpact.prefab"), "CursedAppleSevenStrike", Hue, effect: true);
             BoltEffect = Kit.Recoloured(TryLoad<GameObject>("RoR2/Base/LightningStrikeOnHit/SimpleLightningStrikeImpact.prefab", "RoR2/Base/Items/LightningStrikeOnHit/SimpleLightningStrikeImpact.prefab"), "CursedAppleSevenBolt", Hue, effect: true);
@@ -217,6 +221,7 @@ namespace CursedAppleCuriosities.Survivors.Seven
             if (children != null && children.FindChild(MuzzleName) == null) children.AddChild(MuzzleName, model);
             Kit.OwnSkin(model.gameObject, "skinCursedAppleSevenDEFAULT", Token + "SKIN_DEFAULT", DefaultSkinIcon);
 
+            Kit.BiggerCamera(body, "ccpCursedAppleSeven", 0.6f, 1.25f); // pivot up (m), distance (x Commando's) for the bigger model
             ContentAddition.AddBody(body);
             return body;
         }

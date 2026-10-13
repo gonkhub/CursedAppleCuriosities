@@ -66,7 +66,10 @@ namespace EntityStates.CursedApple.Lash
 
     // ================= Primary: Lash's gun =================
 
-    /// <summary>Lash's gun: a three-round burst (Deadlock: 0.084 s between bullets, 0.2625 s between bursts).</summary>
+    /// <summary>
+    /// Lash's gun: a three-round burst (Deadlock: 0.084 s between bullets, 0.2625 s between bursts). A close-range gun (user):
+    /// tight, no recoil, falls off hard past 16 m.
+    /// </summary>
     public class FireBurst : BaseSkillState
     {
         private float _interval, _duration;
@@ -90,7 +93,7 @@ namespace EntityStates.CursedApple.Lash
             LashModelSwap.Play(gameObject, "shoot");
             DeadlockSounds.Play("lash_gun_fire", transform.position, gameObject);
             if (LashSurvivor.MuzzleEffect != null) EffectManager.SimpleMuzzleFlash(LashSurvivor.MuzzleEffect, gameObject, _muzzle, false);
-            AddRecoil(-0.3f, -0.6f, -0.2f, 0.2f);
+            // No recoil: Deadlock's Lash gun stays dead flat (user: a tight close-range gun, unlike Seven's climbing one)
             if (isAuthority)
             {
                 Ray aim = GetAimRay();
@@ -111,7 +114,9 @@ namespace EntityStates.CursedApple.Lash
                     isCrit = RollCrit(),
                     radius = 0.1f,
                     smartCollision = true,
-                    falloffModel = BulletAttack.FalloffModel.DefaultBullet,
+                    falloffModel = BulletAttack.FalloffModel.None,
+                    // Short range (user): full damage to 16 m, easing to 35% by 48 m
+                    modifyOutgoingDamageCallback = (BulletAttack _, ref BulletAttack.BulletHit hit, DamageInfo info) => info.damage *= LashData.GunFalloff(hit.distance),
                     damageType = DamageSource.Primary,
                 }.Fire();
             }
@@ -162,9 +167,11 @@ namespace EntityStates.CursedApple.Lash
         public override void OnExit()
         {
             DeadlockSounds.Stop(_loop);
+            if (isAuthority && _grabbed.Count > 0) LashNet.ToServer(new DiveGrabMessage { Attacker = gameObject, Release = true });
             base.OnExit();
         }
 
+        private readonly HashSet<HealthComponent> _grabbed = new HashSet<HealthComponent>();
         private Vector3 _dir;
         private float _startY;
         private Vector3 _lastPos;
@@ -195,17 +202,23 @@ namespace EntityStates.CursedApple.Lash
             characterMotor.velocity = _dir * LashData.GroundStrikeSpeed;
             float moved = (transform.position - _lastPos).magnitude;
             _lastPos = transform.position;
-            bool stuck = fixedAge > 0.15f && moved < LashData.GroundStrikeSpeed * Time.fixedDeltaTime * 0.2f; // a wall or roof
-            // Landing on an enemy ends the dive on contact instead of glancing off its body.
-            bool contact = false;
+            bool stuck = fixedAge > 0.15f && moved < LashData.GroundStrikeSpeed * Time.fixedDeltaTime * 0.2f; // a wall, roof or a big body
+            // Enemies the dive runs into don't stop it (user): airborne ones are dragged down with him (the server
+            // decides who's airborne), grounded ones are just in the strike. It lands only on terrain.
             float step = LashData.GroundStrikeSpeed * Time.fixedDeltaTime + 0.6f;
-            foreach (RaycastHit hit in Physics.SphereCastAll(characterBody.corePosition, 0.7f, _dir, step, LayerIndex.entityPrecise.mask, QueryTriggerInteraction.Collide))
+            foreach (RaycastHit hit in Physics.SphereCastAll(characterBody.corePosition, 0.9f, _dir, step, LayerIndex.entityPrecise.mask, QueryTriggerInteraction.Collide))
             {
                 HurtBox hb = hit.collider.GetComponent<HurtBox>();
-                if (hb != null && hb.healthComponent != null && hb.healthComponent != healthComponent && FriendlyFireManager.ShouldDirectHitProceed(hb.healthComponent, GetTeam()))
-                { contact = true; break; }
+                if (hb == null || hb.healthComponent == null || hb.healthComponent == healthComponent || !FriendlyFireManager.ShouldDirectHitProceed(hb.healthComponent, GetTeam())) continue;
+                if (_grabbed.Add(hb.healthComponent)) LashNet.ToServer(new DiveGrabMessage { Attacker = gameObject, Target = hb.healthComponent.gameObject });
             }
-            if (characterMotor.isGrounded && fixedAge > 0.05f || contact || stuck || fixedAge > 4f)
+            // Terrain reached this tick (walls and slopes too: a sphere at his feet, cast along the dive): he's put on it and
+            // strikes there. Or standing on the world (not on an enemy's back).
+            bool terrain = Physics.SphereCast(characterBody.footPosition + Vector3.up * 0.6f, 0.5f, _dir, out RaycastHit wall, LashData.GroundStrikeSpeed * Time.fixedDeltaTime, LayerIndex.world.mask, QueryTriggerInteraction.Ignore);
+            if (terrain && fixedAge > 0.05f) characterMotor.Motor.SetPosition(transform.position + _dir * wall.distance);
+            Collider ground = characterMotor.Motor.GroundingStatus.GroundCollider;
+            bool onWorld = characterMotor.isGrounded && ground != null && (LayerIndex.world.mask.value & (1 << ground.gameObject.layer)) != 0;
+            if (onWorld && fixedAge > 0.05f || terrain && fixedAge > 0.05f || stuck || fixedAge > 4f)
             {
                 Vector3 fwd = new Vector3(_dir.x, 0f, _dir.z);
                 if (fwd.sqrMagnitude < 0.04f) { fwd = GetAimRay().direction; fwd.y = 0f; } // a straight-down dive waves where you look

@@ -99,17 +99,18 @@ namespace EntityStates.CursedApple.Viscous
     /// <summary>
     /// Puddle Punch (Deadlock viscous_telepunch). Hold Secondary to aim (user): the local player sees where the fist will
     /// come out (a ring flat on whatever surface the crosshair is on, floor, slope, wall or ceiling, the punch's real area
-    /// incl. Mystic Expansion) and an arrow straight out of that surface. Release to punch: 0.3 s later the fist comes out
-    /// there (up to 40 m, Mystic Expansion farther). Everything in front of it is thrown perpendicular to the surface
-    /// (user): enemies take 700% too, allies only fly, bosses don't move. Viscous punching himself flies too, with much
-    /// more air control for a moment (user).
+    /// incl. Mystic Expansion) and an arrow straight out of that surface. Release to punch: the portal telegraphs 0.45 s, then
+    /// 0.3 s later the fist comes out there (Deadlock; on himself no telegraph), up to 40 m (Mystic Expansion farther).
+    /// Everything in front of it is thrown perpendicular to the surface (user): enemies take 700% too, allies only fly,
+    /// bosses don't move. The throw holds its speed for Deadlock's 0.6 s toss, then carries with no braking (user).
+    /// Viscous punching himself flies too, with much more air control and no air drag for a moment (user).
     /// The owner launches himself; the server does everyone else.
     /// </summary>
     public class PuddlePunch : BaseSkillState
     {
         private Vector3 _point, _normal = Vector3.up;
         private bool _released, _punched;
-        private float _releasedAt;
+        private float _releasedAt, _windup;
         private PunchPreview? _preview;
 
         public override void OnEnter()
@@ -153,20 +154,22 @@ namespace EntityStates.CursedApple.Viscous
                 if (inputBank.skill2.down) return;
                 Release();
             }
-            if (!_punched && fixedAge - _releasedAt >= ViscousData.PunchWindup)
+            if (!_punched && fixedAge - _releasedAt >= _windup)
             {
                 _punched = true;
                 bool self = ViscousNet.InPunch(characterBody, _point, _normal);
                 if (self) LaunchSelf();
                 ViscousNet.ToServer(new ViscousPunchMessage { Attacker = gameObject, Point = _point, Normal = _normal, SelfHit = self });
             }
-            if (fixedAge - _releasedAt >= ViscousData.PunchWindup + 0.15f) outer.SetNextStateToMain();
+            if (fixedAge - _releasedAt >= _windup + 0.15f) outer.SetNextStateToMain();
         }
 
         private void Release()
         {
             _released = true;
             _releasedAt = fixedAge;
+            // Deadlock: the portal telegraphs 0.45 s before the fist on others; punching yourself has no telegraph.
+            _windup = ViscousData.PunchWindup + (ViscousNet.InPunch(characterBody, _point, _normal) ? 0f : ViscousData.PunchTelegraph);
             _preview?.Destroy();
             _preview = null;
             ViscousModel.Play(gameObject, "punch");
@@ -179,8 +182,12 @@ namespace EntityStates.CursedApple.Viscous
         {
             characterMotor.Motor.ForceUnground();
             characterMotor.disableAirControlUntilCollision = false;
-            characterMotor.velocity = ViscousNet.PunchLaunch(_normal);
-            GetComponent<DeadlockMover>()?.BoostAirControl(ViscousData.PunchSelfAirControl, ViscousData.PunchSelfAirSeconds);
+            Vector3 v = ViscousNet.PunchLaunch(_normal);
+            characterMotor.velocity = v;
+            PunchToss.Hold(gameObject, v, ViscousData.PunchToss);
+            var mover = GetComponent<DeadlockMover>();
+            mover?.BoostAirControl(ViscousData.PunchSelfAirControl, ViscousData.PunchSelfAirSeconds);
+            mover?.SuspendAirDrag(ViscousData.PunchSelfAirSeconds); // the launch carries (user)
         }
 
         public override void OnExit()

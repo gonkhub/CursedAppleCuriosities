@@ -364,7 +364,8 @@ namespace CursedAppleCuriosities.Survivors.Lash
             LanguageAPI.Add(Token + "GROUNDSTRIKE_NAME", "Ground Strike");
             LanguageAPI.Add(Token + "GROUNDSTRIKE_DESC",
                 $"<style=cIsUtility>Dive</style> where you aim. Land for <style=cIsDamage>{D(LashData.GroundStrikeDamage)} damage</style> " +
-                $"<style=cIsDamage>+{D(LashData.GroundStrikeDamagePerMetre)} per metre fallen</style> in a wave in front of you.");
+                $"<style=cIsDamage>+{D(LashData.GroundStrikeDamagePerMetre)} per metre fallen</style> in a wave in front of you. " +
+                "Airborne enemies you dive into are <style=cIsUtility>dragged down</style> with you.");
 
             LanguageAPI.Add(Token + "GRAPPLE_NAME", "Grapple");
             LanguageAPI.Add(Token + "GRAPPLE_DESC",

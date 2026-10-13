@@ -39,8 +39,14 @@ namespace CursedAppleCuriosities.Survivors.Lash
         public const int BurstCount = 3;
         public const float BurstInterval = 0.084f;      // Deadlock
         public static float BurstCycle = 0.2625f;       // Deadlock
-        public static float GunSpread = 0.35f;          // share of RoR2's spread bloom (1 = Commando-like)
-        public const float GunBloomPerShot = 0.1f;
+        public static float GunSpread = 0.15f;          // share of RoR2's spread bloom (1 = Commando-like); tight, a close-range gun (user)
+        public const float GunBloomPerShot = 0.05f;     // no recoil either: Deadlock's Lash gun has none (Seven's climbs)
+        // Short range (user): full damage to Deadlock's falloff start, easing to GunFalloffMin at its end (Deadlock eases to 10%).
+        public static float GunFalloffStart = 16f;      // Deadlock m_flDamageFalloffStartRange 629.92 hu
+        public static float GunFalloffEnd = 48f;        // Deadlock m_flDamageFalloffEndRange 1889.76 hu
+        public const float GunFalloffMin = 0.35f;
+
+        public static float GunFalloff(float distance) => DeadlockSurvivorKit.Falloff(distance, GunFalloffStart, GunFalloffEnd, GunFalloffMin);
 
         // ---- utility: Ground Strike ----
         public static float GroundStrikeDamage = 3f;
@@ -52,6 +58,9 @@ namespace CursedAppleCuriosities.Survivors.Lash
         public const float GroundStrikeMinHeight = 3f;  // cast lower and Lash hops up first
         public const float GroundStrikeMinAimDeg = 60f; // dive at most this far from straight down
         public static float GroundStrikeSpeed = 90f;  // Deadlock StrikeVelocity 50; faster by playtest
+        // Airborne enemies the dive runs into are dragged down beside Lash and let go in his strike (user)
+        public const float GroundStrikeCarryMax = 5f;      // seconds: safety, the dive ends long before
+        public const float GroundStrikeCarrySpeed = 160f;  // m/s an enemy may be pulled at to keep up with him
 
         // ---- secondary: Grapple ----
         public static float GrappleCooldown = 6f;
@@ -88,6 +97,8 @@ namespace CursedAppleCuriosities.Survivors.Lash
             GunDamage = c.Bind(Section, "Gun - Damage", GunDamage, "Damage coefficient per bullet (3-round bursts).").Value;
             BurstCycle = c.Bind(Section, "Gun - Time Between Bursts", BurstCycle, "Seconds after a burst before the next (before attack speed).").Value;
             GunSpread = c.Bind(Section, "Gun - Spread", GunSpread, "Bullet spread: share of the normal spread bloom (0 = pinpoint).").Value;
+            GunFalloffStart = c.Bind(Section, "Gun - Falloff Start", GunFalloffStart, "Metres of full damage.").Value;
+            GunFalloffEnd = c.Bind(Section, "Gun - Falloff End", GunFalloffEnd, "Metres where damage reaches its floor (35%).").Value;
             GroundStrikeDamage = c.Bind(Section, "Ground Strike - Damage", GroundStrikeDamage, "Damage coefficient on landing, before fall height.").Value;
             GroundStrikeDamagePerMetre = c.Bind(Section, "Ground Strike - Damage Per Metre", GroundStrikeDamagePerMetre, "Extra damage coefficient per metre fallen (first 25 m).").Value;
             GroundStrikeSpeed = c.Bind(Section, "Ground Strike - Dive Speed", GroundStrikeSpeed, "Metres per second.").Value;
@@ -111,10 +122,10 @@ namespace CursedAppleCuriosities.Survivors.Lash
         // ---- Deadlock assets (read from the player's own install, never shipped) ----
 
         public const string DlModel = "models/heroes_wip/lash/lash.vmdl_c";
-        public const float ModelHeightScale = 1.08f * 1.25f; // a little taller than the stand-in's capsule, then x1.25 (playtest: x1.1 still too small)
+        public const float ModelHeightScale = 1.08f * 1.25f * 1.15f; // a little taller than the stand-in's capsule, then x1.25 (playtest: x1.1 still too small), then x1.15 to match Celeste (user)
         // Camera: lifted and pulled back a little for the bigger model (Abrams' needed it at x1.5).
-        public static float CameraHeight = 0.4f;        // metres the camera pivot is raised over Commando's
-        public static float CameraDistance = 1.15f;     // times Commando's camera distance
+        public static float CameraHeight = 0.6f;        // metres the camera pivot is raised over Commando's (0.4; raised with the x1.15 model, like Celeste)
+        public static float CameraDistance = 1.25f;     // times Commando's camera distance (1.15; pulled back with the x1.15 model, like Celeste)
         public const string MuzzleBone = "muzzle_fx";     // Lash's gun is his glove
 
         public const string IconPortrait = "panorama/images/heroes/lash_sm_psd.vtex_c";

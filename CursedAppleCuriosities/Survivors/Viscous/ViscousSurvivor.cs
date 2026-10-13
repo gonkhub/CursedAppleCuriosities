@@ -24,6 +24,9 @@ namespace CursedAppleCuriosities.Survivors.Viscous
     {
         public const string Token = "CURSEDAPPLE_VISCOUS_";
         public const string BodyName = "CursedAppleViscousBody";
+
+        /// <summary>Is this body Viscous (the survivor, not an ally he cubed)?</summary>
+        public static bool Is(CharacterBody? body) => body != null && body.name.StartsWith(BodyName, System.StringComparison.Ordinal);
         public const string MuzzleName = "ViscousMuzzle";
         public static readonly Color Color = new Color(0.38f, 0.75f, 0.4f); // his goo green (Deadlock viscous_body)
         /// <summary>Skin icon in the hero's own palette (goo greens and his dark outline), not the stand-in's.</summary>
@@ -151,7 +154,7 @@ namespace CursedAppleCuriosities.Survivors.Viscous
             _cube.mustKeyPress = true;
             _cube.cancelSprintingOnActivation = false;
 
-            _ball = Skill<SkillDef>("Ball", typeof(GooBallCast), "Body", ViscousData.BallCooldown, InterruptPriority.PrioritySkill);
+            _ball = Skill<ViscousBallSkillDef>("Ball", typeof(GooBallCast), "Body", ViscousData.BallCooldown, InterruptPriority.PrioritySkill);
             _ball.keywordTokens = new[] { "KEYWORD_HEAVY" }; // RoR2's own Heavy keyword (Loader)
             _ball.mustKeyPress = true;
             _ball.cancelSprintingOnActivation = false;
@@ -201,6 +204,7 @@ namespace CursedAppleCuriosities.Survivors.Viscous
             if (children != null && children.FindChild(MuzzleName) == null) children.AddChild(MuzzleName, model);
             Kit.OwnSkin(model.gameObject, "skinCursedAppleViscousDEFAULT", Token + "SKIN_DEFAULT", DefaultSkinIcon, ("skinCursedAppleViscousBLUE", Token + "SKIN_BLUE", BlueSkinIcon));
 
+            Kit.BiggerCamera(body, "ccpCursedAppleViscous", 0.5f, 1.2f); // pivot up (m), distance (x Commando's) for the bigger model
             ContentAddition.AddBody(body);
             return body;
         }
@@ -316,6 +320,29 @@ namespace CursedAppleCuriosities.Survivors.Viscous
         }
     }
 
+    /// <summary>
+    /// Goo Ball with charges to spare: Special while rolling ends the ball, and that same press (still "just pressed" for
+    /// the next physics ticks) used to roll the next ball at once (user). It can't start while he is a ball, nor in the
+    /// moment after one ends, so the stocked charge waits for a new press.
+    /// </summary>
+    public class ViscousBallSkillDef : SkillDef
+    {
+        private const float Grace = 0.25f;
+        private class EndTime { public float At = -10f; }
+        private static readonly System.Runtime.CompilerServices.ConditionalWeakTable<GameObject, EndTime> Ended =
+            new System.Runtime.CompilerServices.ConditionalWeakTable<GameObject, EndTime>();
+
+        public static void MarkEnded(GameObject body) => Ended.GetOrCreateValue(body).At = Time.time;
+
+        public override bool CanExecute(GenericSkill skillSlot)
+        {
+            GameObject? body = skillSlot.characterBody != null ? skillSlot.characterBody.gameObject : null;
+            if (body != null && (ViscousNet.IsBall(body) || Ended.TryGetValue(body, out EndTime e) && Time.time - e.At < Grace))
+                return false;
+            return base.CanExecute(skillSlot);
+        }
+    }
+
     /// <summary>The guns hold their fire while he is a ball: Primary is the ball's "Go Fast" then.</summary>
     public class ViscousGunSkillDef : SkillDef
     {
@@ -340,7 +367,7 @@ namespace CursedAppleCuriosities.Survivors.Viscous
         {
             yield return null; // the Deadlock model attaches on its first frame
             yield return null;
-            _cube = ViscousCubes.MakeVisual(2.4f * Scale);
+            _cube = ViscousCubes.MakeVisual(ViscousCubes.FitSize(gameObject, GetComponentInChildren<CharacterModel>()) ?? 2.4f * Scale);
             _cube.transform.SetPositionAndRotation(Home, HomeRotation);
             DeadlockSounds.Play("viscous_cube_cast", Home);
             _loop = DeadlockSounds.Loop("viscous_cube_loop", _cube, ViscousData.CubeDuration + 0.5f);

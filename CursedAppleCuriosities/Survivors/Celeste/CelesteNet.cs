@@ -359,7 +359,7 @@ namespace CursedAppleCuriosities.Survivors.Celeste
         private HealthComponent? _target;
         private bool _bounced, _done, _looked;
         private Vector3 _lastVel;
-        private float _age, _flown;
+        private float _age, _flown, _launchFlat = -1f;
 
         private void Awake()
         {
@@ -385,12 +385,17 @@ namespace CursedAppleCuriosities.Survivors.Celeste
                     v = Vector3.RotateTowards(v, to.normalized * v.magnitude, CelesteData.DaggerTurnDegPerSec * Mathf.Deg2Rad * Time.fixedDeltaTime, 0f);
                 }
                 v += Vector3.down * CelesteData.DaggerDrop * Time.fixedDeltaTime; // always falls: an arc (user)
-                // Past 20 m it loses airspeed (user): its forward speed fades while gravity keeps pulling.
-                _flown += v.magnitude * Time.fixedDeltaTime;
-                if (_flown > CelesteData.DaggerDragFrom)
+                // Past 10 m it loses airspeed (user): its forward speed falls off evenly with distance to nothing at 90 m, so
+                // it's already visibly slower by 20 m and creeps out gently near the stop, while gravity keeps pulling.
+                Vector3 flat = new Vector3(v.x, 0f, v.z);
+                if (_launchFlat < 0f) _launchFlat = flat.magnitude;
+                _flown += flat.magnitude * Time.fixedDeltaTime;
+                float ease = Mathf.InverseLerp(CelesteData.DaggerDragFrom, CelesteData.DaggerStopAt, _flown);
+                float cap = _launchFlat * (1f - ease);
+                if (flat.magnitude > cap)
                 {
-                    float keep = Mathf.Exp(-CelesteData.DaggerDrag * Time.fixedDeltaTime);
-                    v = new Vector3(v.x * keep, v.y, v.z * keep);
+                    flat = flat.sqrMagnitude > 1e-6f ? flat.normalized * cap : Vector3.zero;
+                    v = new Vector3(flat.x, v.y, flat.z);
                 }
             }
             _rb.velocity = v;
@@ -442,6 +447,12 @@ namespace CursedAppleCuriosities.Survivors.Celeste
             transform.position += n * 0.2f;
             _looked = false; // look for a new target along the bounce
             EquipmentFx.Sound("celeste_gun_impact", transform.position);
+            // A small burst of her light where it bounced (user: show where and what happened).
+            if (CelesteSurvivor.BounceEffect != null)
+                EffectManager.SpawnEffect(CelesteSurvivor.BounceEffect, new EffectData
+                {
+                    origin = transform.position - n * 0.2f, rotation = Quaternion.LookRotation(n), scale = 1f,
+                }, true);
         }
     }
 

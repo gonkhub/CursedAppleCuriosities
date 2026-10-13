@@ -119,14 +119,30 @@ namespace EntityStates.CursedApple.Viscous
     public class GooBall : BaseSkillState
     {
         private Vector3 _dir, _lastPos;
-        private float _speed, _duration, _steerPause, _stalledFor, _freezeLeft;
-        private bool _airJumped, _ending;
+        private float _speed, _duration, _steerPause, _stalledFor, _freezeLeft, _reboundLeft;
+        private bool _airJumped, _ending, _cubed;
         private readonly Dictionary<HealthComponent, float> _nextHit = new Dictionary<HealthComponent, float>();
         private DeadlockVoice? _loop;
         private DeadlockMover? _mover;
         private CameraTargetParams.CameraParamsOverrideHandle _camera;
+        private CharacterCameraParamsData _cameraBase;
+        private float _cameraScale;
 
         private float R => ViscousData.Radius(characterBody); // Mystic Expansion grows the ball (user)
+
+        /// <summary>
+        /// Move speed items (and slows) scale the ball's speeds (user): his move speed over his base, sprinting divided out
+        /// so it doesn't count twice.
+        /// </summary>
+        private float SpeedScale
+        {
+            get
+            {
+                float speed = characterBody.moveSpeed;
+                if (characterBody.isSprinting && characterBody.sprintingSpeedMultiplier > 0f) speed /= characterBody.sprintingSpeedMultiplier;
+                return Mathf.Clamp(speed / Mathf.Max(0.1f, characterBody.baseMoveSpeed), 0.25f, 10f);
+            }
+        }
         private Vector3 Center => characterBody.footPosition + Vector3.up * R;
 
         public override void OnEnter()
@@ -141,18 +157,29 @@ namespace EntityStates.CursedApple.Viscous
             if (!isAuthority) return;
             _dir = Shared.Flat(GetAimRay().direction, characterDirection.forward);
             Vector3 v = characterMotor.velocity;
-            _speed = Mathf.Max(ViscousData.BallSpeed, new Vector3(v.x, 0f, v.z).magnitude); // never slower than its roll; a running start carries over
+            _speed = Mathf.Max(ViscousData.BallSpeed * SpeedScale, new Vector3(v.x, 0f, v.z).magnitude); // never slower than its roll; a running start carries over
             _lastPos = transform.position;
             characterMotor.disableAirControlUntilCollision = false;
             ViscousNet.ToServer(new ViscousBallMessage { Body = gameObject, Rolling = true, Seconds = _duration });
             if (cameraTargetParams != null)
             {
-                // Deadlock pulls the camera up and well back while rolling.
-                CharacterCameraParamsData data = cameraTargetParams.currentCameraParamsData;
-                Vector3 pos = data.idealLocalCameraPos.value;
-                data.idealLocalCameraPos = new Vector3(pos.x, pos.y + 1.2f, pos.z * 1.5f);
-                _camera = cameraTargetParams.AddParamsOverride(new CameraTargetParams.CameraParamsOverrideRequest { cameraParamsData = data, priority = 1f }, 0.5f);
+                _cameraBase = cameraTargetParams.currentCameraParamsData;
+                BallCamera(0.5f);
             }
+        }
+
+        /// <summary>
+        /// Deadlock pulls the camera up and well back while rolling; a bigger ball (Mystic Expansion) pulls it further,
+        /// in step with its radius (user).
+        /// </summary>
+        private void BallCamera(float transition)
+        {
+            _cameraScale = R / ViscousData.BallRadius;
+            if (_camera.isValid) cameraTargetParams.RemoveParamsOverride(_camera, transition);
+            CharacterCameraParamsData data = _cameraBase;
+            Vector3 pos = data.idealLocalCameraPos.value;
+            data.idealLocalCameraPos = new Vector3(pos.x, pos.y + 1.2f * _cameraScale, pos.z * 1.5f * _cameraScale);
+            _camera = cameraTargetParams.AddParamsOverride(new CameraTargetParams.CameraParamsOverrideRequest { cameraParamsData = data, priority = 1f }, transition);
         }
 
         public override void FixedUpdate()
@@ -161,6 +188,7 @@ namespace EntityStates.CursedApple.Viscous
             if (characterBody != null) characterBody.isSprinting = false;
             if (!isAuthority || _ending) return;
             float dt = Time.fixedDeltaTime;
+            if (_camera.isValid && Mathf.Abs(R / ViscousData.BallRadius - _cameraScale) > 0.01f) BallCamera(0.5f); // the ball grew mid-roll
             if (_freezeLeft > 0f)
             {
                 // Boss impact (user): the ball stops dead for a moment, then rolls on with the speed and heading it had.
@@ -173,6 +201,32 @@ namespace EntityStates.CursedApple.Viscous
                 _stalledFor = 0f;
                 return;
             }
+            // Cubed inside the ball (user): the ball lets go. Its speed and heading become real momentum and The Cube's
+            // frictionless slide carries him; no steering, jumps, hits or casts. When the cube ends, the ball takes over
+            // again from wherever the slide left him. The roll's own time keeps running.
+            if (ViscousSurvivor.CubeBuff != null && characterBody.HasBuff(ViscousSurvivor.CubeBuff))
+            {
+                if (!_cubed)
+                {
+                    _cubed = true;
+                    Vector3 cv = characterMotor.velocity;
+                    characterMotor.velocity = _dir * _speed + Vector3.up * cv.y;
+                }
+                characterMotor.moveDirection = Vector3.zero;
+                _lastPos = transform.position;
+                _stalledFor = 0f;
+                if (fixedAge >= _duration) { _ending = true; outer.SetNextStateToMain(); }
+                return;
+            }
+            if (_cubed)
+            {
+                _cubed = false;
+                Vector3 slid = characterMotor.velocity;
+                slid.y = 0f;
+                _speed = slid.magnitude;
+                if (slid.sqrMagnitude > 0.01f) _dir = slid.normalized;
+            }
+
             bool grounded = characterMotor.isGrounded;
             if (grounded) _airJumped = false;
 
@@ -208,8 +262,13 @@ namespace EntityStates.CursedApple.Viscous
                 Vector3 want = keys.sqrMagnitude > 0.01f ? keys.normalized : Shared.Flat(GetAimRay().direction, _dir);
                 _dir = Shared.Flat(Vector3.RotateTowards(_dir, want, turn, 0f), _dir);
             }
-            float target = inputBank.skill1.down ? ViscousData.BallFastSpeed : ViscousData.BallSpeed;
-            _speed = _speed < target ? Mathf.Min(target, _speed + ViscousData.BallAccel * dt) : Mathf.Max(target, _speed - ViscousData.BallDecel * dt);
+            bool fast = inputBank.skill1.down;
+            float target = (fast ? ViscousData.BallFastSpeed : ViscousData.BallSpeed) * SpeedScale;
+            // Above the target: holding Primary it sheds speed slowly (Deadlock); let go and it brakes to the slow roll
+            // quickly (user), except just after an impact rebound.
+            _reboundLeft -= dt;
+            float decel = _reboundLeft > 0f ? 0f : fast ? ViscousData.BallDecel : ViscousData.BallBrake; // a rebound keeps all its speed for a moment
+            _speed = _speed < target ? Mathf.Min(target, _speed + ViscousData.BallAccel * dt) : Mathf.Max(target, _speed - decel * dt);
 
             Bounce(dt);
             characterDirection.forward = _dir;
@@ -247,25 +306,30 @@ namespace EntityStates.CursedApple.Viscous
             _lastPos = transform.position;
             moved.y = 0f;
             _stalledFor = moved.magnitude < _speed * dt * 0.25f ? _stalledFor + dt : 0f;
-            if (fixedAge > 0.2f && _stalledFor > 0.12f)
+            if (fixedAge > 0.2f && _stalledFor > 0.12f && _reboundLeft <= 0f) // not right after an impact (the freeze reads as a stall)
             {
                 _stalledFor = 0f;
                 BounceOff(-_dir, center + _dir * R);
             }
         }
 
-        private void BounceOff(Vector3 normal, Vector3 point)
+        private void BounceOff(Vector3 normal, Vector3 point, bool impact = false)
         {
             _dir = Shared.Flat(Vector3.Reflect(_dir, normal), -_dir);
-            _speed *= ViscousData.BallElasticity;
+            // Off a wall it loses speed; off an impact (after the freeze) it rebounds fast (user): at least Go Fast speed.
+            float fastSpeed = ViscousData.BallFastSpeed * SpeedScale;
+            _speed = impact
+                ? Mathf.Min(Mathf.Max(_speed * ViscousData.ImpactRebound, fastSpeed), fastSpeed * ViscousData.ImpactReboundCap)
+                : _speed * ViscousData.BallElasticity;
+            if (impact) _reboundLeft = ViscousData.BallReboundHold; // counts down after the freeze (the freeze skips this)
             _steerPause = ViscousData.BallWallPause;
             ViscousNet.ToServer(new ViscousFxMessage { Kind = ViscousFxKind.Wall, Point = point, Normal = normal });
         }
 
         /// <summary>
         /// Enemies the ball touches, each once per 1.2 s. Normal enemies: rolled through, stunned and knocked away.
-        /// A boss (user): the ball stops dead for a moment (BossFreeze), the boss takes double damage and no stun,
-        /// and the ball comes off it as off a wall.
+        /// A boss, or anything it can't stun (user): the ball stops dead for a moment (BossFreeze), the target takes
+        /// double damage instead of a stun, and the ball rebounds off it fast.
         /// </summary>
         private void Contact()
         {
@@ -280,10 +344,10 @@ namespace EntityStates.CursedApple.Viscous
                 if (hc == null || !hc.alive) continue;
                 if (_nextHit.TryGetValue(hc, out float at) && fixedAge < at) continue;
                 _nextHit[hc] = fixedAge + ViscousData.BallRehit;
-                if (!ViscousNet.Immovable(hc.body)) { normal.Add(hc.gameObject); continue; }
+                if (!ViscousNet.BallImpact(hc.body)) { normal.Add(hc.gameObject); continue; }
                 bosses.Add(hc.gameObject);
                 Vector3 away = Shared.Flat(center - h.transform.position, -_dir);
-                if (Vector3.Dot(_dir, away) < 0f) BounceOff(away, h.transform.position);
+                if (Vector3.Dot(_dir, away) < 0f) BounceOff(away, h.transform.position, impact: true);
             }
             // Heavy (Loader's punch): the faster the ball is going, rolling or falling, the harder it hits.
             float vy = characterMotor != null ? characterMotor.velocity.y : 0f;
@@ -307,6 +371,7 @@ namespace EntityStates.CursedApple.Viscous
 
         public override void OnExit()
         {
+            ViscousBallSkillDef.MarkEnded(gameObject); // the press that ended it can't start the next one
             DeadlockSounds.Stop(_loop);
             DeadlockSounds.Play("viscous_ball_end", transform.position, gameObject);
             if (ViscousSurvivor.SplashEffect != null && characterBody != null)

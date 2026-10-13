@@ -45,13 +45,15 @@ namespace CursedAppleCuriosities.Survivors.Viscous
 
         // ---- special: Goo Ball (Deadlock viscous_goo_bowling_ball) ----
         public static float BallDuration = 11f;         // Deadlock AbilityDuration
-        public static float BallCooldown = 20f;         // Deadlock 150 (user: half of the first 40)
+        public static float BallCooldown = 32f;         // Deadlock 150 (user: 40 -> 20 -> 32)
         public const float BallCastDelay = 0.55f;       // Deadlock AbilityCastDelay: he curls up, then is the ball
         public const float BallCancelGrace = 0.3f;      // Special again after this ends it early (Deadlock: ability button cancels)
         public static float BallSpeed = 11.43f;         // Deadlock m_flDefaultBallSpeed 450 hu/s
         public static float BallFastSpeed = 20.32f;     // Deadlock m_flFastBallSpeed 800 hu/s, while Primary is held ("Go Fast")
         public const float BallAccel = 15.24f;          // Deadlock m_flSpeedAccel 600 hu/s2: up to the speed it should have
-        public const float BallDecel = 1.27f;           // Deadlock m_flSpeedDeccel 50 hu/s2: a fast ball sheds speed slowly
+        public const float BallDecel = 1.27f;           // Deadlock m_flSpeedDeccel 50 hu/s2: a fast ball sheds speed slowly (while Primary is held)
+        public const float BallBrake = 14f;             // user: let go of Primary and it drops back to its slow roll quickly
+        public const float BallReboundHold = 1.5f;      // an impact rebound keeps all its speed this long (no brake, no decel, no stall bounce)
         public const float BallTurn = 110f;             // Deadlock m_flTurnRatio, deg/s toward where he looks
         public const float BallAirTurn = 50f;           // Deadlock m_flAirTurnRatio
         public const float BallElasticity = 0.65f;      // Deadlock m_flElasticity: speed kept off a wall
@@ -68,7 +70,9 @@ namespace CursedAppleCuriosities.Survivors.Viscous
         public const float BallKnockUp = 6f;            // ...plus a little lift so they leave the ground
         public const float BallRehit = 1.2f;            // Deadlock viscous_ball_damage_prevention: the same enemy again after this
         public static float BossFreeze = 0.3f;          // user: a boss stops the ball dead this long (hit-stop), then it bounces off as off a wall
-        public static float BossDamageMult = 2f;        // user: bosses take double, and aren't stunned
+        public static float BossDamageMult = 2f;        // user: bosses (and anything it can't stun) take double, and aren't stunned
+        public const float ImpactRebound = 1.35f;       // user: it gains speed off an impact: 1.35x the speed it hit with, at least Go Fast's
+        public const float ImpactReboundCap = 3f;       // ...but never above this many times Go Fast speed (chained impacts)
         public static float BallResist = 0.5f;         // damage taken while rolling (Deadlock BulletResist/TechResist 35%; 50% by the user)
 
         /// <summary>The ball's radius on this body: Mystic Expansion makes it bigger (user); it is drawn, bounced and hit with this.</summary>
@@ -96,11 +100,13 @@ namespace CursedAppleCuriosities.Survivors.Viscous
         // ---- secondary alt: Puddle Punch (Deadlock viscous_telepunch; user: 700%, launches everything, Viscous too) ----
         public static float PunchDamage = 7f;           // user
         public static float PunchRange = 40f;           // Deadlock AbilityCastRange (Mystic Expansion: farther)
-        public static float PunchRadius = 4f;           // Deadlock Radius (Mystic Expansion: wider)
+        public static float PunchRadius = 5f;           // Deadlock Radius 4 m, x1.25 (user; Mystic Expansion: wider)
         public const float PunchHalfHeight = 5.5f;      // Deadlock PunchHalfHeight
-        public static float PunchUp = 34f;              // user: sends most things flying, straight out of the surface (was 26; Deadlock TossSpeed 625 hu/s = 16 m/s)
+        public static float PunchUp = 38f;              // user: sends most things flying, straight out of the surface (was 26, 34, 42 (a touch much); Deadlock TossSpeed 625 hu/s = 16 m/s)
         public const float PunchUpBias = 0.15f;         // user: a little upward tilt on every punch (a wall throws ~8.5 deg up)
         public const float PunchWindup = 0.3f;          // Deadlock m_flWindupTime 0.2 + m_flAttackTime 0.1
+        public const float PunchTelegraph = 0.45f;      // Deadlock m_flEnemyPortalTelegraphTime: the portal shows this long first (m_flSelfPortalTelegraphTime 0: a self-punch is quick)
+        public static float PunchToss = 0.6f;           // Deadlock TossDuration: the launch speed is held this long (no gravity, no braking), then flies on
         public static float PunchCooldown = 7f;         // Deadlock 24
         public static float PunchSelfAirControl = 3f;   // user: much more air control after punching himself (Deadlock PunchFriendlyAirControl)
         public const float PunchSelfAirSeconds = 2.5f;
@@ -146,6 +152,7 @@ namespace CursedAppleCuriosities.Survivors.Viscous
             PunchRange = c.Bind(Section, "Puddle Punch - Range", PunchRange, "Metres to where the fist comes up (Mystic Expansion: farther).").Value;
             PunchRadius = c.Bind(Section, "Puddle Punch - Radius", PunchRadius, "Metres (Mystic Expansion widens it).").Value;
             PunchUp = c.Bind(Section, "Puddle Punch - Launch", PunchUp, "Speed everything punched is thrown at, straight out of the surface, m/s (bosses don't move).").Value;
+            PunchToss = c.Bind(Section, "Puddle Punch - Toss Duration", PunchToss, "Seconds everything punched keeps the full launch speed (no gravity, no braking) before it falls; after that it keeps its momentum until it hits something.").Value;
             PunchCooldown = c.Bind(Section, "Puddle Punch - Cooldown", PunchCooldown, "Seconds.").Value;
             PunchSelfAirControl = c.Bind(Section, "Puddle Punch - Self Air Control", PunchSelfAirControl, "Air control multiplier for a moment after punching himself into the air.").Value;
             CubeDuration = c.Bind(Section, "The Cube - Duration", CubeDuration, "Seconds (Duration Extender lengthens it). Jump breaks out after 1 s.").Value;
@@ -160,7 +167,7 @@ namespace CursedAppleCuriosities.Survivors.Viscous
         // ---- Deadlock assets (read from the player's own install, never shipped) ----
 
         public const string DlModel = "models/heroes_staging/viscous/viscous.vmdl_c";
-        public const float ModelHeightScale = 1.2f;
+        public const float ModelHeightScale = 1.2f * 1.15f; // x1.15 by playtest
         /// <summary>
         /// His model holds the ball too (mesh group "inflated", 2.94 m to the top of the helmet on it), and the model
         /// height the loader scales by is its tallest vertex: 2.94 instead of his own 2.45. Scaled back up by that much.
@@ -181,6 +188,7 @@ namespace CursedAppleCuriosities.Survivors.Viscous
         public const string CubeKey = "viscous_cube";
         public const string DlCubeModel = "models/abilities/viscous_cube.vmdl_c";
         public const float CubeModelHeight = 2.14f;
+        public const float CubeMargin = 1.1f;           // the cube's side over the target's tallest or widest extent (user: proportionate)
 
         /// <summary>
         /// State, Deadlock clip, loop, next state, layer. Viscous uses Kelvin's skeleton and AnimGraph1 clip names (as
@@ -204,14 +212,15 @@ namespace CursedAppleCuriosities.Survivors.Viscous
             ("sprint_s", "sprint_run_s", true, "", "full"), ("sprint_sw", "sprint_run_sw", true, "", "full"),
             ("sprint_w", "sprint_run_w", true, "", "full"), ("sprint_nw", "sprint_run_nw", true, "", "full"),
             ("jump", "jump_start", false, "in_air", "full"),
-            ("air_jump", "jump_start_short", false, "in_air", "full"),
+            // jump_start_short (Abrams' air jump) is posed on a bigger skeleton: limbs 30-50% longer, pelvis 0.5 m higher (user: he stretched).
+            ("air_jump", K + "jump_ground", false, "in_air", "full"),
             ("wall_jump", "wall_jump", false, "in_air", "full"),
             // In the air: Kelvin's AnimGraph2 loops, which Deadlock's live Viscous plays (his graphs are hero_*+kelvin). The
             // jump_upwards_loop / jump_downwards_loop in his own list are the ones Abrams uses (playtest: "Abrams' in-air animation").
             ("in_air", K + "in_air_loop_apex", true, "", "full"),
             ("falling", K + "in_air_down", true, "", "full"),
             ("land", "jump_landing", false, "locomotion", "additive"),
-            ("dash_ground", "primary_airdash", false, "locomotion", "full"),
+            ("dash_ground", K + "dash_ground", false, "locomotion", "full"),                   // Kelvin's ground roll, as Deadlock's Viscous (user)
             ("dash_air_forward", "primary_airdash", false, "in_air", "full"),
             ("dash_air_back", "primary_airdash_bkward", false, "in_air", "full"),
             ("dash_air_left", "primary_airdash_left", false, "in_air", "full"),

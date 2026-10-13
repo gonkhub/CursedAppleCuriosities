@@ -1,6 +1,29 @@
 # Changelog
 
-## 1.5.0 (unreleased)
+## 1.6.0 (unreleased)
+- Fixed: **Cursed Broker** cooldown penalties (all skills, Secondary, Utility, Special) now actually lengthen your cooldowns.
+- Cursed items have a dark-red outline in your inventory.
+- **Cursed Broker**: always appears on stage 4, and after looping in your first visit to the Bazaar Between Time each loop.
+- **Viscous**: his air jump no longer stretches him out, and his ground dash is his own roll.
+- **Viscous**: **Puddle Punch** winds up like Deadlock's (its portal shows for a moment before the fist comes out), throws
+  harder over a 25% wider area (5 m), and the throw carries: everything punched keeps its full speed for a moment, then flies on without slowing.
+- **Viscous**: **The Cube** fits whoever is inside it (much smaller around Viscous himself).
+- **Viscous**: **Goo Ball** cooldown 32 s (was 20). Anything it can't stun now gets the boss treatment (double damage, a
+  dramatic freeze), and the ball rebounds off them faster than it hit, keeping that speed for a moment.
+- **Viscous**: the **Goo Ball** drops back to its slow roll quickly when you let go of Primary.
+- **Viscous**: move speed items (and slows) now change how fast the **Goo Ball** rolls.
+- **Viscous** takes fall damage again whenever he isn't in the Goo Ball or The Cube (landing after popping out mid-air,
+  or after Puddle Punching himself).
+- **Viscous**: cubing yourself while in the **Goo Ball** stops the ball's control: the cube slides on with the ball's speed,
+  and the ball picks up from there when the cube ends.
+- Fixed: damage over time (burn, poison...) no longer hurts anyone inside **The Cube**; it still sticks and resumes after.
+- Fixed: with a spare **Goo Ball** charge, ending the ball early no longer rolls the next one at once; the charge is kept.
+- **Celeste**: blades are a little slower and ease out gradually toward the end of their range; they flash where they bounce
+  off a surface, and their rings no longer grow in flight.
+- **Celeste**: **Shining Wonder** deals half damage (500%) but bounces three times as often (24), and reaches 15.5 m to its next target again (was 7).
+- **Celeste**: shorter air dashes (10 m, was 14) and higher air jumps.
+
+## 1.5.0
 - New survivor: **Viscous**. His **Goo Ball** rolls him up into a bowling ball that bowls through enemies. **Splatter**
   bounces a ball of goo that bursts three times; alt **Puddle Punch** launches everything off any surface, him included.
   **The Cube** encases an ally (tap) or himself (hold): invulnerable, then faster with quicker stamina.

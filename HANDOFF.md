@@ -7,7 +7,7 @@ map is the "Cursed Apple" and items are bought from a "curiosity shop."
 **State:** builds clean (0 errors), **31 items + 14 equipment**, 8 survivors (Lash, Abrams, Seven, Vyper, Grey Talon, Victor, Viscous, Celeste). **v1.0.0** released
 2026-10-11; **v1.2.5** packaged 2026-10-12 for friends (tag `v1.2.5` on main); **v1.3.0** finished 2026-10-12 on branch `1.3`
 (tag `v1.3.0`, not packaged); **v1.4.0** (Cursed Broker, not yet playtested) finished 2026-10-12 on branch `1.4` (tag `v1.4.0`,
-not packaged). New work happens on branch `1.5` (version 1.5.0). The user playtests as we go.
+not packaged); **v1.5.0** (Viscous, Celeste, Victor) merged to main 2026-10-12 (tag `v1.5.0`, PR #1). New work happens on branch `1.6` (version 1.6.0). The user playtests as we go.
 
 ---
 
@@ -352,14 +352,16 @@ same on a stand-in model.
   `models/heroes_staging/kelvin_v2/clip/...`, which his own model exports: Deadlock's live Viscous runs hero_*+kelvin graphs). Goo Ball
   playtested OK 2026-10-12 (user); full kit added the same day and playtested by the user that evening:
   - M1 Goo Gun (0.21 s) / alt **Goo Glob** (Deadlock alt fire: 38 m/s, 0.2 gravity, 350% burst 3.56 m, 1.26 s). M2 **Splatter** (user: 3 bursts,
-    500% each, 5 m) / alt **Puddle Punch** (user: 700%, 40 m aim, 4 m, launches enemies, allies (landing guarded) and Viscous himself, who
+    500% each, 5 m) / alt **Puddle Punch** (user: 700%, 40 m aim, 5 m (1.6.0, user; Deadlock 4), launches enemies, allies (landing guarded) and Viscous himself, who
     gets x3 air control for 2.5 s via `DeadlockMover.BoostAirControl`). Utility **The Cube** (own "Cube" machine: tap = ally under the
     crosshair with Tricorn reticle, nobody = refund; hold 0.3 s = self; 3 s x Duration Extender, invulnerable, held in place (UpdateVelocity
     hook + rootMotion zeroed), SkillSilence, 5%/s heal, jump breaks out after 1 s; then `PostCubeBuff` 8 s: +2.5 m/s and stamina x1/0.7 via
-    `DeadlockMover.RegenMultipliers`). Cube drawn by `ViscousCubeHost` with Deadlock's `viscous_cube` model (green box until converted).
+    `DeadlockMover.RegenMultipliers`). Cube drawn by `ViscousCubeHost` with Deadlock's `viscous_cube` model (green box until converted), sized to the
+    target (user, 1.6.0): `ViscousCubes.FitSize`, the bounds of its CharacterModel's drawn meshes, tallest/widest side x1.1.
   - Globs = `ViscousGlob` on a CrocoSpit clone; bursts are BlastAttacks so Mystic Expansion's hook widens them (effect spawned at base radius
     so the hook grows it); ghost scaled by Mystic Expansion. Punch radius/range, cube range, ball size all take Mystic Expansion (user).
-  - Splatter/Punch/Cube castable while rolling (Deadlock CastWhileRolling). Ball steers with WASD relative to the camera, else the crosshair (user).
+  - Splatter/Punch/Cube castable while rolling (Deadlock CastWhileRolling). Cubed in the ball (user, 1.6.0): the ball lets go, its speed
+    becomes momentum for the cube's slide (no steering, jumps, hits, casts), and takes back over from the slide when the cube ends. Ball steers with WASD relative to the camera, else the crosshair (user).
   - Lobby intro (user): he stands in the cube for its 3 s, it pops, then his select line. The cube and its sound go away with the display if it is swapped mid-intro.
   - Playtest 2 (user, 2026-10-12): Kelvin clip names must be SHORT in the anim table (`GlbLoader` keys clips by the last path part;
     the converter matches short names too); full paths silently fell back to the run in the air. Goo Glob: no gravity, splats at
@@ -368,13 +370,16 @@ same on a stand-in model.
     to punch. It goes on any surface the crosshair hits (floor, slope, wall, ceiling; the ring lies flat on it) and throws
     everything straight out of it, along the normal (user); the area is a cylinder standing out of the surface. Cube: slippery (keeps momentum, 0.15/s
     friction, slides downhill, hits shove it). Cube cast cleanses (Util.CleanseBody: debuffs, DoTs, stun); inside, hits deal 0 damage
-    but are NOT rejected, so on-hit debuffs land and DoTs tick normally (user); no fall damage in the cube or the Goo Ball
-    (OnCharacterHitGroundServer hooks), and the next landing is guarded if either ends mid-air. Goo Ball jump 22 m/s, cooldown 20 s (user's cfg hand-edited, backup `.bak-viscous`).
+    but are NOT rejected, so on-hit debuffs land and DoTs keep ticking, for 0 damage while cubed (user, 1.6.0); no fall damage in the cube or the Goo Ball
+    (OnCharacterHitGroundServer hooks). Out of them he takes fall damage (user, 1.6.0): no landing guard when the ball or his own
+    cube ends mid-air, or after punching himself up (allies keep theirs). Goo Ball jump 22 m/s, cooldown 32 s (1.6.0, user; was 20) (user's cfg hand-edited, backup `.bak-viscous`).
   - Goo Ball = Deadlock `viscous_goo_bowling_ball`: 0.55 s curl (`rolling_goo`), then 11 s rolling (own `GooBall` Body state, owner moves it via
-    rootMotion): 11.4 m/s, Primary held = 20.3 m/s (accel 15.2, decel 1.27 m/s2), steers to the crosshair 110/50 deg/s, walls bounce it
+    rootMotion): 11.4 m/s, Primary held = 20.3 m/s (both x his move speed over base, sprint divided out; user, 1.6.0) (accel 15.2, decel 1.27 m/s2 while Primary is held; let go and it brakes at 14 m/s2, except 1.5 s after an impact rebound; user, 1.6.0), steers to the crosshair 110/50 deg/s, walls bounce it
     (sphere cast 0.45 m smaller than the 1.4 m ball, so curbs roll over; 65% speed kept, 0.1 s no steering), jump + 1 double jump (12.7 m/s),
     1.8 m hit radius (Mystic Expansion), 250% + Heavy (user: Loader's rule, +30% per m/s of speed), 0.5 s stun, 10 m/s knock, each enemy every 1.2 s; it rolls through normal enemies.
-    Bosses (user): double damage, no stun, the ball freezes dead 0.3 s (`BossFreeze`, roll timer paused) then bounces off as off a wall.
+    Bosses and anything it can't stun (`ViscousNet.BallImpact`: champion, BeetleQueen hull, no SetStateOnHurt or
+    !canBeStunned; user): double damage, no stun, the ball freezes dead 0.3 s (`BossFreeze`, roll timer paused) then rebounds faster
+    (1.35x its speed, at least Go Fast's, capped at 3x Go Fast; kept in full for 1.5 s, no stall bounce meanwhile; walls keep 65%).
     Down-dash works in the ball too (shared movement). 50% resist (user; Deadlock 35%) = armor via
     the synced `BallBuff`. Special again ends it; cooldown 40 s starts when it ends. Camera pulled back x1.5 and up 1.2 m.
   - The ball is his own model's hidden mesh group `inflated` (renderers `inflated_N`, skinned to `inflated_center`, radius 1.51 model units).
@@ -387,9 +392,11 @@ same on a stand-in model.
 - `Survivors/Celeste/` — **Celeste** (`CursedAppleCelesteBody`, Deadlock `hero_unicorn`, model `models/heroes_wip/unicorn/unicorn`,
   AnimGraph2 clips in `unicorn/clips`, icons `unicorn_*`, VO `sounds/vo/unicorn`). Built 2026-10-12 while the user was away,
   then tuned by the user in playtest the same evening (memory `celeste-design`). All numbers are `[Celeste]` config knobs.
-  - Movement (user): Lash's extras: 5 stamina, 2 air jumps, 2 air dashes of 14 m; her innate low gravity (-25%, +44% air control).
+  - Movement (user): Lash's extras: 5 stamina, 2 air jumps (1.25x the ground jump's speed, `AirJumpScale`), 2 air dashes of 10 m;
+    her innate low gravity (-25%, +44% air control).
     Air-dash pose holds 0.8 s before the in-air loop.
-  - M1 Carny Life: a blade every 0.58 s, 120% (user: a light poke), 75 m/s, always drops 18 m/s2 and loses airspeed after 20 m,
+  - M1 Carny Life: a blade every 0.58 s, 120% (user: a light poke), 60 m/s, always drops 18 m/s2; its forward speed eases out from 15 m
+    to nothing at 45 m (smoothstep, user: gradual), a blue-violet spark where it bounces, the shiv's own swing rings shrunk and held at size,
     homes gently onto an enemy within 22.5 deg of its flight, one bounce off the world, no ricochet; ghost 0.45x, light blue-violet
     (`CelesteDagger` on a Bandit shiv clone).
   - M2 Light Eater: 0.3 s (she hangs in the air; in the air the flare plays over her in-air pose), 70 deg cone 10 m, 400%, marks 8 s
@@ -399,7 +406,7 @@ same on a stand-in model.
   - Utility Dazzling Trick: 20% max HP barrier, 4 s window (Lunar Golem shell visual); the hit that takes the barrier to 0 bursts
     it: 500% in 14 m + 1.75 s stun (user; Deadlock silences).
   - Special Shining Wonder: hold to aim (slow fall), release: orb (Artifact shell's seeking flare, given SolarFlareGhost, 0.8x) at
-    18 m/s (user: a floating ball of light), chases the nearest enemy through walls, 1000% + 32% slow per hit, 8 bounces within 7 m of
+    18 m/s (user: a floating ball of light), chases the nearest enemy through walls, 500% + 32% slow per hit, 24 bounces (user) within 15.5 m (Deadlock's; user, was 7) of
     the enemy it hit (or off her prism, which tops the prism back up), lingers 3.25 s for a target circling what it last hit.
   - Every radius takes Mystic Expansion; mark/slow/prism durations take Duration Extender. Her light is pink (Hue 0.9, her hair);
     projectiles blue-violet (Hue 0.72). Soft purple glow: self-lit horn shell (`unicorn_glow`) and a faint chest light (`CelesteGlow`).
@@ -427,6 +434,11 @@ same on a stand-in model.
 
 ## Recent changes (since last handoff)
 
+- **1.6.0 (branch `1.6`, 2026-10-12, user's list):** Cursed Broker guaranteed on stage 4 and in each later loop's first Bazaar;
+  Viscous air jump = Kelvin `jump_ground` (`jump_start_short` is posed on Abrams' bigger skeleton: limbs 30-50% long) and ground dash =
+  Kelvin's `dash_ground` roll; Puddle Punch windup 0.3 s + Deadlock's 0.45 s enemy portal telegraph (self-punch none), launch 38 m/s (42 was a touch much, user) held
+  for Deadlock's 0.6 s toss (`PunchToss`), then `disableAirControlUntilCollision` (others) / no air drag 2.5 s (himself,
+  `DeadlockMover.SuspendAirDrag`); Celeste blade/orb/movement changes (see Survivors). Not playtested yet.
 - **Playtest pass (user, 2026-10-12 evening):** Celeste retuned (movement, Carny Life, Light Eater, Radiant Daggers preview, uncapped
   Radiance, Dazzling Trick stuns, slower homing Shining Wonder, purple glow, VO mapping; see Survivors above); Viscous Goo Ball is Heavy
   (250% + 30% per m/s) with 50% resist; Viscous' lobby cube is cleaned up mid-intro; shorter skill descriptions for the six newer heroes;
@@ -442,12 +454,15 @@ same on a stand-in model.
 
 - **Cursed Broker (1.4.0, built 2026-10-12, NOT playtested).** `Broker/`: `CursedBroker` (Shrine of Order clone with its
   purchase stripped and a `PickupPickerController` + Command picker panel; symbol tinted purple; spawned in
-  `SceneDirector.onPostPopulateSceneServer`, 20% per stage from stage 3 or after a loop, config `[Cursed Broker]`),
+  `SceneDirector.onPostPopulateSceneServer`, 20% per stage from stage 3 or after a loop, always on stage 4 of the first loop, and (1.6.0, user)
+  in the first Bazaar visit of each later loop (`Stage.onServerStageBegin`, near the Newt's shop terminal), config `[Cursed Broker]`),
   `CurseRules` (per-item Mult/Add on the effective stack count + improvement text; full table in
   `docs/CursedBrokerAudit.md`, regenerate with `tools/gen_curse_audit.py`; any non-lunar tier incl. white),
   `CursePenalties` (26 narrow penalties, rolled per item when a player first opens a broker, cached per broker+player), `CurseLedger` (per-master curse list, server-owned, mirrored by `CurseLedgerMessage`; IL hook on
   `Inventory.UpdateEffectiveItemStacks`; HUD shows real copy counts, purple glow, curse tooltip; Dio's/Larva revive twice).
-  Range/Duration penalties feed `MysticExpansion.RadiusMultiplier` / `DurationExtender.Multiplier`.
+  Cooldown penalties: `GenericSkill.CalculateFinalRechargeInterval` hook; the game caches the result until cooldown scale or skill
+  changes, so `CurseLedger.Refresh` calls `RecalculateValues` on the body's skills (1.6.0; before that they never applied). Cursed
+  inventory icons get a dark-red frame (`CursedIconMark.ShowOutline`, user). Range/Duration penalties feed `MysticExpansion.RadiusMultiplier` / `DurationExtender.Multiplier`.
   Debug: `cac_broker_stage3 [scene]` (skip to a stage 3 with a guaranteed broker), `cac_broker_spawn` (one next to you);
   registered through `[assembly: HG.Reflection.SearchableAttribute.OptIn]`. Config `Debug - Spawn Every Stage`.
 

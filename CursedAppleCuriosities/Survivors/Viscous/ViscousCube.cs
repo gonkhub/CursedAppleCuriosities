@@ -26,10 +26,12 @@ namespace CursedAppleCuriosities.Survivors.Viscous
             if (ViscousSurvivor.CubeBuff != null) SkillSilence.Register(ViscousSurvivor.CubeBuff);
             On.RoR2.HealthComponent.TakeDamage += (orig, self, info) =>
             {
-                if (ViscousSurvivor.CubeBuff != null && self.body != null && self.body.HasBuff(ViscousSurvivor.CubeBuff) && info.dotIndex == DotController.DotIndex.None)
+                if (ViscousSurvivor.CubeBuff != null && self.body != null && self.body.HasBuff(ViscousSurvivor.CubeBuff) && info.dotIndex != DotController.DotIndex.None)
+                    info.damage = 0f; // DoTs keep ticking inside the cube (and after it) but do no damage while it lasts (user)
+                else if (ViscousSurvivor.CubeBuff != null && self.body != null && self.body.HasBuff(ViscousSurvivor.CubeBuff))
                 {
                     // Hits do no damage, but still land (user): not rejected, so their on-hit debuffs and DoTs reach the
-                    // one inside, and DoTs (dotIndex set) tick through the cube normally.
+                    // one inside; nothing inside the cube takes damage, DoT ticks included.
                     info.damage = 0f;
                     // Deadlock: hits still shove the cube around (it's slippery). The motor's owner applies it.
                     if (info.force.sqrMagnitude > 0.01f && self.body.characterMotor != null)
@@ -143,13 +145,43 @@ namespace CursedAppleCuriosities.Survivors.Viscous
                 body.ClearTimedBuffs(cube);
                 while (body.HasBuff(cube)) body.RemoveBuff(cube);
             }
-            if (body.characterMotor != null && !body.characterMotor.isGrounded)
-                DeadlockFallGuard.ProtectNextLanding(body.gameObject, 8f); // the cube ended mid-air: that landing is safe too
+            // The cube ended mid-air: an ally's landing is safe too. Viscous takes fall damage whenever he isn't in the cube or ball (user).
+            if (body.characterMotor != null && !body.characterMotor.isGrounded && !ViscousSurvivor.Is(body))
+                DeadlockFallGuard.ProtectNextLanding(body.gameObject, 8f);
             if (ViscousSurvivor.PostCubeBuff != null)
                 using (DurationExtender.Exact()) body.AddTimedBuff(ViscousSurvivor.PostCubeBuff, e.PostSeconds);
             EquipmentFx.Sound("viscous_cube_end", body.corePosition, body.gameObject);
             if (ViscousSurvivor.SplashEffect != null)
                 EffectManager.SpawnEffect(ViscousSurvivor.SplashEffect, new EffectData { origin = body.footPosition, scale = 3f }, true);
+        }
+
+        /// <summary>
+        /// The cube's size for whoever is in it (user: proportionate to the target): the box around what is drawn of them,
+        /// their CharacterModel's own renderers (not item displays; Deadlock heroes' meshes keep exact bounds every frame),
+        /// its tallest or widest side plus a margin. Null when nothing is drawn yet.
+        /// </summary>
+        public static float? FitSize(GameObject? root, CharacterModel? model = null)
+        {
+            if (root == null) return null;
+            var renderers = new List<Renderer>();
+            if (model != null && model.baseRendererInfos != null)
+                foreach (CharacterModel.RendererInfo info in model.baseRendererInfos) if (info.renderer != null) renderers.Add(info.renderer);
+            if (!Encapsulate(renderers, out Bounds b) && !Encapsulate(root.GetComponentsInChildren<Renderer>(), out b)) return null;
+            float side = Mathf.Max(b.size.y, Mathf.Max(b.size.x, b.size.z)) * ViscousData.CubeMargin;
+            return Mathf.Clamp(side, 0.8f, 40f);
+        }
+
+        /// <summary>The box around the drawn meshes (enabled, active, mesh or skinned) of a renderer list; false when none are drawn.</summary>
+        private static bool Encapsulate(IEnumerable<Renderer> renderers, out Bounds b)
+        {
+            bool any = false;
+            b = default;
+            foreach (Renderer r in renderers)
+            {
+                if (r == null || !(r is MeshRenderer || r is SkinnedMeshRenderer) || !r.enabled || !r.gameObject.activeInHierarchy) continue;
+                if (!any) { b = r.bounds; any = true; } else b.Encapsulate(r.bounds);
+            }
+            return any;
         }
 
         /// <summary>
@@ -204,7 +236,9 @@ namespace CursedAppleCuriosities.Survivors.Viscous
             foreach (CharacterBody body in CharacterBody.readOnlyInstancesList)
                 if (body != null && body.HasBuff(cube.buffIndex) && !_drawn.ContainsKey(body))
                 {
-                    float height = Mathf.Max(2.2f, (body.corePosition.y - body.footPosition.y) * 2.6f);
+                    CharacterModel? cm = body.modelLocator != null && body.modelLocator.modelTransform != null ? body.modelLocator.modelTransform.GetComponent<CharacterModel>() : null;
+                    float height = ViscousCubes.FitSize(cm != null ? cm.gameObject : null, cm)
+                                   ?? Mathf.Max(2.2f, (body.corePosition.y - body.footPosition.y) * 2.6f);
                     _drawn[body] = (ViscousCubes.MakeVisual(height), DeadlockSounds.Loop("viscous_cube_loop", body.gameObject, 30f));
                 }
             foreach (CharacterBody body in _drawn.Keys.ToArray())

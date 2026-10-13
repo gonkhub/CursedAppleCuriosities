@@ -588,7 +588,10 @@ namespace CursedAppleCuriosities.Deadlock
 
         // ---- states ----
 
-        public void Play(string id)
+        public void Play(string id) => Play(id, 0.08f);
+
+        /// <summary>Play a state, crossfading a full-body one over <paramref name="blend"/> seconds (a lobby intro's slow settle).</summary>
+        public void Play(string id, float blend)
         {
             if (_clips == null || !_states.TryGetValue(id, out Row row)) return;
             // An ability cast mid-slide plays over the slide pose (Deadlock masks casts to the upper body): as a full
@@ -600,7 +603,7 @@ namespace CursedAppleCuriosities.Deadlock
                 _overWeight = Mathf.Max(_overWeight, 0.01f);
                 if (overSlide && _cur.Row.State != "slide_start") Switch("slide", 0.1f);
             }
-            else Switch(id, 0.08f);
+            else Switch(id, blend);
         }
 
         private EntityStateMachine? _bodyMachine;

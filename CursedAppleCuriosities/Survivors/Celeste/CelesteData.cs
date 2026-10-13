@@ -31,7 +31,8 @@ namespace CursedAppleCuriosities.Survivors.Celeste
             StaminaPips = 5,                   // user (Deadlock EStamina 4)
             AirJumps = 2,                      // like Lash (user)
             AirDashesPerAir = 2,
-            AirDashMetres = 14f,               // a couple of metres short of Lash's 16 (user)
+            AirDashMetres = 10f,               // user: 14 -> 10 (Lash's is 16)
+            AirJumpScale = 1.25f,              // user: her air jumps take her higher (~1.56x the height)
             // Her innate modifier_hero_gravity (on citadel_weapon_unicorn_set): gravity -25%, air control +44%, air accel +10%.
             GravityScale = 0.75f,
             AirAccel = 50f * 1.44f,
@@ -43,10 +44,10 @@ namespace CursedAppleCuriosities.Survivors.Celeste
         // ---- primary: Carny Life (Deadlock: a bouncing, homing thrown blade every 0.58 s, 18 damage, gravity 0.2) ----
         public static float DaggerDamage = 1.2f;        // a light poke (user): her damage is Shining Wonder and blades on marked enemies
         public const float DaggerCycle = 0.58f;          // Deadlock m_flCycleTime
-        public const float DaggerSpeed = 75f;            // faster than Deadlock's 50 m/s (user)
+        public const float DaggerSpeed = 60f;            // a little faster than Deadlock's 50 m/s (user: 75 was too fast)
         public const float DaggerDrop = 18f;             // m/s2, homing or not: an arc (user)
-        public const float DaggerDragFrom = 20f;         // metres flown before it starts losing airspeed (user)
-        public const float DaggerDrag = 3f;              // per second after that: forward speed fades, so it drops away
+        public const float DaggerDragFrom = 10f;         // metres flown before it starts losing airspeed (user; 15, then earlier so it is already slowing at 20 m)
+        public const float DaggerStopAt = 90f;           // by here its forward speed has eased all the way out and it only drops (user: gradual, not steep; 45, doubled)
         public const float DaggerHomeConeDeg = 22.5f;    // Deadlock: homes onto an enemy within ~45 deg of its flight
         public const float DaggerHomeRange = 45f;
         public const float DaggerTurnDegPerSec = 150f;  // gentle, so the arc shows
@@ -55,7 +56,7 @@ namespace CursedAppleCuriosities.Survivors.Celeste
 
         // ---- secondary: Light Eater (Deadlock: 70 deg cone, 10 m, 0.3 s delay, 40 damage; marked 8 s; 15 per bullet; 18% lifesteal) ----
         public static float FlareDamage = 4f;
-        public static float FlareRange = 10f;            // Deadlock AbilityCastRange (Mystic Expansion widens it)
+        public static float FlareRange = 15f;            // Deadlock AbilityCastRange 10 m; 15 by playtest (user). Mystic Expansion widens it
         public const float FlareConeDeg = 35f;           // half of Deadlock's 70 deg TargetingConeAngle
         public const float FlareDelay = 0.3f;            // Deadlock AbilityCastDelay
         public static float FlareCooldown = 7f;          // Deadlock 20
@@ -82,9 +83,9 @@ namespace CursedAppleCuriosities.Survivors.Celeste
         public static float PrismCooldown = 12f;         // Deadlock 38
 
         // ---- special: Shining Wonder (Deadlock: hold to aim, release; 140 damage, 32% slow 1.5 s, 8 bounces within 15.5 m) ----
-        public static float OrbDamage = 10f;
-        public static int OrbBounces = 8;                // Deadlock MaxBounces (hits after the first)
-        public static float OrbBounceRange = 7f;         // from the enemy it just hit (user: close; Deadlock BounceRadius 15.5)
+        public static float OrbDamage = 5f;             // user: half (was 10)
+        public static int OrbBounces = 24;               // user: triple Deadlock's MaxBounces 8 (hits after the first)
+        public static float OrbBounceRange = 15.5f;      // from the enemy it just hit: Deadlock BounceRadius (user: back from 7 m)
         public static float OrbCooldown = 40f;           // Deadlock 160
         public const float OrbSpeed = 18f;               // much slower than Deadlock's 50.8 m/s (user): a floating ball of light
         public const float OrbRadius = 1.65f;            // Deadlock m_flBulletRadius 65 hu
@@ -128,7 +129,7 @@ namespace CursedAppleCuriosities.Survivors.Celeste
         // ---- Deadlock assets (read from the player's own install, never shipped) ----
 
         public const string DlModel = "models/heroes_wip/unicorn/unicorn.vmdl_c";
-        public const float ModelHeightScale = 1.08f * 1.25f; // Lash's size
+        public const float ModelHeightScale = 1.08f * 1.25f * 1.15f; // Lash's size, then x1.15 by playtest
         public const string MuzzleBone = "hand_R";           // she throws from her right hand
 
         public const string IconPortrait = "panorama/images/heroes/unicorn_sm_psd.vtex_c";

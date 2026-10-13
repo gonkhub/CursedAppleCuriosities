@@ -47,6 +47,19 @@ namespace CursedAppleCuriosities.Deadlock
             return slot;
         }
 
+        /// <summary>The hero's own copy of the stand-in's camera, pivot raised and pulled back for a bigger model.</summary>
+        public static void BiggerCamera(GameObject body, string name, float height, float distance)
+        {
+            var target = body.GetComponent<CameraTargetParams>();
+            if (target == null || target.cameraParams == null) return;
+            CharacterCameraParams cam = ScriptableObject.Instantiate(target.cameraParams);
+            cam.name = name;
+            cam.data.pivotVerticalOffset.value += height;
+            Vector3 pos = cam.data.idealLocalCameraPos.value;
+            cam.data.idealLocalCameraPos.value = new Vector3(pos.x, pos.y, pos.z * distance);
+            target.cameraParams = cam;
+        }
+
         /// <summary>
         /// The hero's own copies of the stand-in's default skin (sharing its SkinDef would mix up skin indices): the
         /// default, then any extra skins. They only differ in name and icon here; the look is the hero def's Skins,
@@ -188,6 +201,14 @@ namespace CursedAppleCuriosities.Deadlock
         public static Sprite Sprite(Texture2D t) => UnityEngine.Sprite.Create(t, new Rect(0, 0, t.width, t.height), new Vector2(0.5f, 0.5f));
 
         private static readonly System.Collections.Generic.Dictionary<float, Texture2D> Ramps = new System.Collections.Generic.Dictionary<float, Texture2D>();
+
+        /// <summary>Gun damage falloff: 1 up to <paramref name="start"/> metres, easing (smoothstep) down to <paramref name="min"/> at <paramref name="end"/>.</summary>
+        public static float Falloff(float distance, float start, float end, float min)
+        {
+            if (distance <= start) return 1f;
+            float t = Mathf.Clamp01((distance - start) / Mathf.Max(1f, end - start));
+            return Mathf.Lerp(1f, min, t * t * (3f - 2f * t));
+        }
 
         /// <summary>
         /// A vanilla effect recoloured (a copy: the original is untouched). Most RoR2 VFX take their colour from a remap

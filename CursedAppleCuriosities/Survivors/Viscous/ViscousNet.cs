@@ -68,17 +68,33 @@ namespace CursedAppleCuriosities.Survivors.Viscous
         public static Vector3 PunchLaunch(Vector3 normal) => (normal.normalized + Vector3.up * ViscousData.PunchUpBias).normalized * ViscousData.PunchUp;
 
         /// <summary>Server: send one body flying. Its motor's owner applies it (players included); rigidbody flyers are pushed.</summary>
-        public static void Launch(CharacterBody b, Vector3 v)
+        public static void Launch(CharacterBody b, Vector3 v, float toss = 0f)
         {
             if (Immovable(b)) return;
             if (b.characterMotor != null)
-                b.characterMotor.ApplyForceImpulse(new PhysForceInfo { force = v, massIsOne = true, resetVelocity = true, ignoreGroundStick = true });
+                b.characterMotor.ApplyForceImpulse(new PhysForceInfo
+                {
+                    force = v, massIsOne = true, resetVelocity = true, ignoreGroundStick = true,
+                    disableAirControlUntilCollision = toss > 0f, // the throw carries: no braking until it hits something (user)
+                });
             else if (b.rigidbody != null) b.rigidbody.velocity = v;
+            if (toss > 0f && b.hasAuthority) PunchToss.Hold(b.gameObject, v, toss);
         }
 
         /// <summary>Bosses and the biggest monsters aren't knocked: the ball bounces off them.</summary>
         public static bool Immovable(CharacterBody? b) =>
             b == null || b.isChampion || b.hullClassification == HullClassification.BeetleQueen;
+
+        /// <summary>Can't be stunned (no SetStateOnHurt, or stuns turned off): the ball can't stop it, so it stops the ball.</summary>
+        public static bool Unstunnable(CharacterBody? b)
+        {
+            if (b == null) return true;
+            SetStateOnHurt? s = b.GetComponent<SetStateOnHurt>();
+            return s == null || !s.canBeStunned;
+        }
+
+        /// <summary>The Goo Ball's impact hit (user): bosses, the biggest monsters, and anything it can't stun.</summary>
+        public static bool BallImpact(CharacterBody? b) => Immovable(b) || Unstunnable(b);
 
         /// <summary>Is this body a Goo Ball right now (curling up or rolling)? Read from its Body state machine, so true on every client.</summary>
         public static bool IsBall(GameObject? body, bool castToo = true)
@@ -184,10 +200,9 @@ namespace CursedAppleCuriosities.Survivors.Viscous
             if (body == null) return;
             body.ClearTimedBuffs(ViscousSurvivor.BallBuff);
             while (body.HasBuff(ViscousSurvivor.BallBuff)) body.RemoveBuff(ViscousSurvivor.BallBuff);
+            // Popped out mid-air: no landing guard. Out of the ball he takes fall damage like anyone (user).
             if (Rolling)
                 using (DurationExtender.Exact()) body.AddTimedBuff(ViscousSurvivor.BallBuff, Seconds + 0.25f); // the state already extended it
-            else if (body.characterMotor != null && !body.characterMotor.isGrounded)
-                DeadlockFallGuard.ProtectNextLanding(body.gameObject, 8f); // popped out mid-air (after a ball jump): that landing is safe too
         }
     }
 
@@ -221,7 +236,7 @@ namespace CursedAppleCuriosities.Survivors.Viscous
             EquipmentFx.Sound("viscous_punch_hit", Point);
             if (ViscousSurvivor.PunchEffect != null)
                 EffectManager.SpawnEffect(ViscousSurvivor.PunchEffect, new EffectData { origin = Point, rotation = Quaternion.FromToRotation(Vector3.up, Normal), scale = grown * 1.5f }, true);
-            if (SelfHit) DeadlockFallGuard.ProtectNextLanding(Attacker, 8f);
+            // Punching himself up has no landing guard (user: fall damage whenever he isn't in the ball or cube).
             bool crit = body.RollCrit();
             foreach (CharacterBody b in CharacterBody.readOnlyInstancesList.ToArray())
             {
@@ -242,8 +257,45 @@ namespace CursedAppleCuriosities.Survivors.Viscous
                     if (!b.healthComponent.alive) continue;
                 }
                 else DeadlockFallGuard.ProtectNextLanding(b.gameObject, 8f); // allies fly, but never die of the landing
-                ViscousNet.Launch(b, ViscousNet.PunchLaunch(Normal));
+                ViscousNet.Launch(b, ViscousNet.PunchLaunch(Normal), ViscousData.PunchToss);
             }
+        }
+    }
+
+    /// <summary>
+    /// Deadlock's toss (TossDuration): for a moment after Puddle Punch the body keeps exactly its launch velocity, with no
+    /// gravity or braking, so the throw carries (user). Runs where the body's motor is simulated (the server for monsters,
+    /// the owner for players). Ends early on landing or when it hits something.
+    /// </summary>
+    public class PunchToss : MonoBehaviour
+    {
+        private CharacterMotor? _motor;
+        private Rigidbody? _rb;
+        private Vector3 _v;
+        private float _until, _from;
+
+        public static void Hold(GameObject go, Vector3 v, float seconds)
+        {
+            var t = go.GetComponent<PunchToss>() ?? go.AddComponent<PunchToss>();
+            t._motor = go.GetComponent<CharacterMotor>();
+            t._rb = t._motor == null ? go.GetComponent<Rigidbody>() : null;
+            t._v = v;
+            t._from = Time.fixedTime;
+            t._until = Time.fixedTime + seconds;
+            t.enabled = true;
+        }
+
+        private void FixedUpdate()
+        {
+            if (Time.fixedTime >= _until) { enabled = false; return; }
+            if (_motor != null)
+            {
+                // Grounded again, or stopped by a wall: the toss is over.
+                if (Time.fixedTime - _from > 0.1f && (_motor.isGrounded || _motor.velocity.sqrMagnitude < 0.25f * _v.sqrMagnitude)) { enabled = false; return; }
+                _motor.velocity = _v;
+            }
+            else if (_rb != null) _rb.velocity = _v;
+            else enabled = false;
         }
     }
 
