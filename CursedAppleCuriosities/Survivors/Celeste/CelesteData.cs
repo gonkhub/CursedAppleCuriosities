@@ -23,12 +23,12 @@ namespace CursedAppleCuriosities.Survivors.Celeste
         public const float DamagePerLevel = 2.4f;
         public const float BaseSpeed = 6.2f;            // Deadlock EMaxMoveSpeed
         public const float BaseRegen = 1f;              // Deadlock EBaseHealthRegen
-        // ---- Deadlock movement: Lash's extras (user): 5 stamina, 2 air jumps, 2 air dashes, plus her low gravity ----
+        // ---- Deadlock movement: Lash's extras (user): 4 stamina (1.7), 2 air jumps, 2 air dashes, plus her low gravity ----
         public static readonly DeadlockMovementProfile Movement = new DeadlockMovementProfile
         {
             Hero = Hero,
             Anim = CelesteModel.Play,
-            StaminaPips = 5,                   // user (Deadlock EStamina 4)
+            StaminaPips = 4,                   // Deadlock EStamina 4 (user, 1.7; was 5)
             AirJumps = 2,                      // like Lash (user)
             AirDashesPerAir = 2,
             AirDashMetres = 10f,               // user: 14 -> 10 (Lash's is 16)

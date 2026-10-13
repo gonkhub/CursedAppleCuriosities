@@ -392,7 +392,7 @@ same on a stand-in model.
 - `Survivors/Celeste/` — **Celeste** (`CursedAppleCelesteBody`, Deadlock `hero_unicorn`, model `models/heroes_wip/unicorn/unicorn`,
   AnimGraph2 clips in `unicorn/clips`, icons `unicorn_*`, VO `sounds/vo/unicorn`). Built 2026-10-12 while the user was away,
   then tuned by the user in playtest the same evening (memory `celeste-design`). All numbers are `[Celeste]` config knobs.
-  - Movement (user): Lash's extras: 5 stamina, 2 air jumps (1.25x the ground jump's speed, `AirJumpScale`), 2 air dashes of 10 m;
+  - Movement (user): Lash's extras: 4 stamina (1.7 user; was 5), 2 air jumps (1.25x the ground jump's speed, `AirJumpScale`), 2 air dashes of 10 m;
     her innate low gravity (-25%, +44% air control).
     Air-dash pose holds 0.8 s before the in-air loop.
   - M1 Carny Life: a blade every 0.58 s, 120% (user: a light poke), 60 m/s, always drops 18 m/s2; its forward speed eases out from 15 m
