@@ -89,7 +89,7 @@ namespace CursedAppleCuriosities.Survivors.GreyTalon
         public const float OwlDecel = 7.6f;             // Deadlock m_flSpeedDeccel 300 hu/s2
         public static float OwlTurnDegPerSec = 110f;    // Deadlock m_flTrackAmount 110
         public const float OwlHitRadius = 0.76f;        // Deadlock m_flTriggerRadius 30 hu
-        public static float OwlRadius = 12f;            // Deadlock ExplosionRadius
+        public static float OwlRadius = 36f;            // Deadlock ExplosionRadius 12; tripled (user, 2.0)
         public const float OwlStun = 0.75f;             // Deadlock StunDuration
         public static float OwlExitGrace = 2f;          // seconds still invulnerable and cloaked once he has control back (user)
         public const float OwlCameraHold = 0.8f;        // Deadlock m_flCameraHoldAtExplosion
