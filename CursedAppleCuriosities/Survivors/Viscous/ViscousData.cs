@@ -60,7 +60,8 @@ namespace CursedAppleCuriosities.Survivors.Viscous
         public static float BallAirJump = 22f;          // the same for the one double jump (Deadlock AirJumpForce 500 hu/s)
         public const float BallRadius = 1.4f;           // Deadlock BallRadius: the ball is drawn this big
         public static float BallHitRadius = 1.8f;       // Deadlock BallHitRadius: enemies this close to its centre are hit
-        public static float BallDamage = 5.5f;          // Deadlock Damage 110
+        public static float BallDamage = 2.5f;          // base per hit (user: lowered from 550% when it went Heavy)
+        public static float BallHeavyDamage = 0.3f;     // Heavy (Loader's punch, velocityDamageCoefficient 0.3): + this x speed in m/s
         public const float BallProc = 1f;
         public static float BallStun = 0.5f;            // Deadlock StunDuration
         public const float BallKnock = 10.16f;          // Deadlock KnockForce 400 hu/s, as m/s given to the enemy
@@ -130,7 +131,8 @@ namespace CursedAppleCuriosities.Survivors.Viscous
             BallJump = c.Bind(Section, "Goo Ball - Jump", BallJump, "Upward speed of the ball's jump and double jump, m/s.").Value;
             BallAirJump = BallJump;
             BallHitRadius = c.Bind(Section, "Goo Ball - Hit Radius", BallHitRadius, "Metres from the ball's centre.").Value;
-            BallDamage = c.Bind(Section, "Goo Ball - Damage", BallDamage, "Damage coefficient per hit (each enemy at most once every 1.2 s).").Value;
+            BallDamage = c.Bind(Section, "Goo Ball - Damage", BallDamage, "Base damage coefficient per hit, before Heavy (each enemy at most once every 1.2 s).").Value;
+            BallHeavyDamage = c.Bind(Section, "Goo Ball - Heavy Damage Per Speed", BallHeavyDamage, "Heavy: extra damage coefficient per m/s of the ball's speed (Loader's punch uses 0.3).").Value;
             BallStun = c.Bind(Section, "Goo Ball - Stun", BallStun, "Seconds.").Value;
             BossFreeze = c.Bind(Section, "Goo Ball - Boss Freeze", BossFreeze, "Seconds the ball stops dead on hitting a boss, before bouncing off it.").Value;
             BossDamageMult = c.Bind(Section, "Goo Ball - Boss Damage Multiplier", BossDamageMult, "Bosses take this many times the ball's damage (and are not stunned).").Value;

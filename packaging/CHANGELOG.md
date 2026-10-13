@@ -8,6 +8,7 @@
   beam of light that strengthens you for every enemy it hits. **Dazzling Trick** raises a barrier prism that bursts and
   silences enemies if it breaks. **Shining Wonder**: hold, then release an orb that bounces between enemies, elites
   and bosses first.
+- **Viscous**: the Goo Ball is **Heavy** (like Loader's punches): 250% plus 30% per m/s of speed, rolling or falling, and takes 50% less damage while rolling.
 - New skins: **Mint** Celeste, **Coral** Vyper, **Blue** Viscous.
 - **Kinetic Dash**: dash-jumping (Deadlock heroes) triggers it too, as in Deadlock.
 - Fixed: Abrams' **Heavy Melee** now counts as his Special (Ethereal Shift's bonus and other Special effects apply).

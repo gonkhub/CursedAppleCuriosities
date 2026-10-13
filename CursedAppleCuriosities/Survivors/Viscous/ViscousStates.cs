@@ -285,17 +285,21 @@ namespace EntityStates.CursedApple.Viscous
                 Vector3 away = Shared.Flat(center - h.transform.position, -_dir);
                 if (Vector3.Dot(_dir, away) < 0f) BounceOff(away, h.transform.position);
             }
+            // Heavy (Loader's punch): the faster the ball is going, rolling or falling, the harder it hits.
+            float vy = characterMotor != null ? characterMotor.velocity.y : 0f;
+            float speed = Mathf.Sqrt(_speed * _speed + vy * vy);
+            float coeff = ViscousData.BallDamage + ViscousData.BallHeavyDamage * speed;
             if (normal.Count > 0)
                 ViscousNet.ToServer(new ViscousHitMessage
                 {
-                    Attacker = gameObject, Targets = normal.ToArray(), Damage = ViscousData.BallDamage * damageStat, Crit = RollCrit(), Dir = dir,
+                    Attacker = gameObject, Targets = normal.ToArray(), Damage = coeff * damageStat, Crit = RollCrit(), Dir = dir,
                 });
             if (bosses.Count > 0)
             {
                 _freezeLeft = ViscousData.BossFreeze;
                 ViscousNet.ToServer(new ViscousHitMessage
                 {
-                    Attacker = gameObject, Targets = bosses.ToArray(), Damage = ViscousData.BallDamage * ViscousData.BossDamageMult * damageStat,
+                    Attacker = gameObject, Targets = bosses.ToArray(), Damage = coeff * ViscousData.BossDamageMult * damageStat,
                     Crit = RollCrit(), Dir = dir, Boss = true,
                 });
             }

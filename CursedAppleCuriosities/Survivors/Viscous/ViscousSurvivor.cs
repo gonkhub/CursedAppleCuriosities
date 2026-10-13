@@ -152,6 +152,7 @@ namespace CursedAppleCuriosities.Survivors.Viscous
             _cube.cancelSprintingOnActivation = false;
 
             _ball = Skill<SkillDef>("Ball", typeof(GooBallCast), "Body", ViscousData.BallCooldown, InterruptPriority.PrioritySkill);
+            _ball.keywordTokens = new[] { "KEYWORD_HEAVY" }; // RoR2's own Heavy keyword (Loader)
             _ball.mustKeyPress = true;
             _ball.cancelSprintingOnActivation = false;
             _ball.beginSkillCooldownOnSkillEnd = true; // Deadlock: the cooldown starts when he pops out
@@ -314,8 +315,8 @@ namespace CursedAppleCuriosities.Survivors.Viscous
             LanguageAPI.Add(Token + "BALL_NAME", "Goo Ball");
             LanguageAPI.Add(Token + "BALL_DESC",
                 $"Morph into a large goo ball for <style=cIsUtility>{ViscousData.BallDuration:0}s</style>. It rolls where you look (or where WASD points), <style=cIsUtility>bounces off walls</style> and can <style=cIsUtility>double jump</style>; " +
-                "hold Primary to go faster. Enemies it rolls into take " +
-                $"<style=cIsDamage>{D(ViscousData.BallDamage)} damage</style> and are <style=cIsUtility>stunned</style> and knocked away; bosses take <style=cIsDamage>{D(ViscousData.BallDamage * ViscousData.BossDamageMult)}</style> and bounce the ball off. " +
+                "hold Primary to go faster. <style=cIsDamage>Heavy</style>. Enemies it rolls into take " +
+                $"<style=cIsDamage>{D(ViscousData.BallDamage)} damage</style>, +{D(ViscousData.BallHeavyDamage)} per m/s of speed, and are <style=cIsUtility>stunned</style> and knocked away; bosses take <style=cIsDamage>{ViscousData.BossDamageMult:0.#}x</style> and bounce the ball off. " +
                 $"Take <style=cIsUtility>{ViscousData.BallResist * 100f:0}% less damage</style> while rolling. Special again pops out early.");
         }
     }
