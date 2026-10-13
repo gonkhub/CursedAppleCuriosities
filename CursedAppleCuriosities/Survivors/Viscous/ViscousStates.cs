@@ -253,7 +253,7 @@ namespace EntityStates.CursedApple.Viscous
             // Above the target: holding Primary it sheds speed slowly (Deadlock); let go and it brakes to the slow roll
             // quickly (user), except just after an impact rebound.
             _reboundLeft -= dt;
-            float decel = fast || _reboundLeft > 0f ? ViscousData.BallDecel : ViscousData.BallBrake;
+            float decel = _reboundLeft > 0f ? 0f : fast ? ViscousData.BallDecel : ViscousData.BallBrake; // a rebound keeps all its speed for a moment
             _speed = _speed < target ? Mathf.Min(target, _speed + ViscousData.BallAccel * dt) : Mathf.Max(target, _speed - decel * dt);
 
             Bounce(dt);
@@ -292,7 +292,7 @@ namespace EntityStates.CursedApple.Viscous
             _lastPos = transform.position;
             moved.y = 0f;
             _stalledFor = moved.magnitude < _speed * dt * 0.25f ? _stalledFor + dt : 0f;
-            if (fixedAge > 0.2f && _stalledFor > 0.12f)
+            if (fixedAge > 0.2f && _stalledFor > 0.12f && _reboundLeft <= 0f) // not right after an impact (the freeze reads as a stall)
             {
                 _stalledFor = 0f;
                 BounceOff(-_dir, center + _dir * R);
@@ -303,7 +303,10 @@ namespace EntityStates.CursedApple.Viscous
         {
             _dir = Shared.Flat(Vector3.Reflect(_dir, normal), -_dir);
             // Off a wall it loses speed; off an impact (after the freeze) it rebounds fast (user): at least Go Fast speed.
-            _speed = impact ? Mathf.Max(_speed, ViscousData.BallFastSpeed * SpeedScale) * ViscousData.ImpactRebound : _speed * ViscousData.BallElasticity;
+            float fastSpeed = ViscousData.BallFastSpeed * SpeedScale;
+            _speed = impact
+                ? Mathf.Min(Mathf.Max(_speed * ViscousData.ImpactRebound, fastSpeed), fastSpeed * ViscousData.ImpactReboundCap)
+                : _speed * ViscousData.BallElasticity;
             if (impact) _reboundLeft = ViscousData.BallReboundHold; // counts down after the freeze (the freeze skips this)
             _steerPause = ViscousData.BallWallPause;
             ViscousNet.ToServer(new ViscousFxMessage { Kind = ViscousFxKind.Wall, Point = point, Normal = normal });

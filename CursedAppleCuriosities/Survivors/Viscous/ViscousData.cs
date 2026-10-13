@@ -53,7 +53,7 @@ namespace CursedAppleCuriosities.Survivors.Viscous
         public const float BallAccel = 15.24f;          // Deadlock m_flSpeedAccel 600 hu/s2: up to the speed it should have
         public const float BallDecel = 1.27f;           // Deadlock m_flSpeedDeccel 50 hu/s2: a fast ball sheds speed slowly (while Primary is held)
         public const float BallBrake = 14f;             // user: let go of Primary and it drops back to its slow roll quickly
-        public const float BallReboundHold = 0.75f;     // an impact rebound keeps its speed this long before the brake applies
+        public const float BallReboundHold = 1.5f;      // an impact rebound keeps all its speed this long (no brake, no decel, no stall bounce)
         public const float BallTurn = 110f;             // Deadlock m_flTurnRatio, deg/s toward where he looks
         public const float BallAirTurn = 50f;           // Deadlock m_flAirTurnRatio
         public const float BallElasticity = 0.65f;      // Deadlock m_flElasticity: speed kept off a wall
@@ -71,7 +71,8 @@ namespace CursedAppleCuriosities.Survivors.Viscous
         public const float BallRehit = 1.2f;            // Deadlock viscous_ball_damage_prevention: the same enemy again after this
         public static float BossFreeze = 0.3f;          // user: a boss stops the ball dead this long (hit-stop), then it bounces off as off a wall
         public static float BossDamageMult = 2f;        // user: bosses (and anything it can't stun) take double, and aren't stunned
-        public const float ImpactRebound = 1.1f;        // user: after the freeze it comes off fast: 1.1x its speed, at least Go Fast's
+        public const float ImpactRebound = 1.35f;       // user: it gains speed off an impact: 1.35x the speed it hit with, at least Go Fast's
+        public const float ImpactReboundCap = 3f;       // ...but never above this many times Go Fast speed (chained impacts)
         public static float BallResist = 0.5f;         // damage taken while rolling (Deadlock BulletResist/TechResist 35%; 50% by the user)
 
         /// <summary>The ball's radius on this body: Mystic Expansion makes it bigger (user); it is drawn, bounced and hit with this.</summary>
