@@ -60,6 +60,8 @@ namespace CursedAppleCuriosities.Deadlock
         // Wall jump. Spammed ones diminish (user, 1.7): each within WallJumpRecharge of the last is WallJumpPowerMin times the one
         // before (0.6: 100%, 60%, 36%, 22%...). Full height again after WallJumpRecharge s, or at once after an air jump or air dash.
         public float WallJumpUp = 13.3f, WallJumpOutMax = 7.9f, WallJumpOutMin = 5.7f, WallJumpRecharge = 1f, WallJumpPowerMin = 0.2f;
+        /// <summary>Stamina for each wall jump after the first, until landing or an air jump/air dash (user, 1.7). The first is free.</summary>
+        public float WallJumpCost = 0.5f;
         // Air: momentum is kept; input steers it at AirAccel (RoR2's own is 20 m/s2 toward a walk), speed above a run bleeds off at AirDrag.
         public float AirAccel = 50f, AirDrag = 3f;
         /// <summary>CharacterMotor.gravityScale (Celeste's innate modifier_hero_gravity: -25%).</summary>
@@ -171,8 +173,10 @@ namespace CursedAppleCuriosities.Deadlock
         public float LastWallJump = -10f;
         /// <summary>Wall jumps chained so far (each within WallJumpRecharge of the last); 0 = the next one is full height.</summary>
         public int WallJumpChain;
-        /// <summary>An air jump or air dash: the next wall jump is full height again.</summary>
-        public void ResetWallJumps() => WallJumpChain = 0;
+        /// <summary>Wall jumps since landing or the last air jump/air dash: all but the first cost WallJumpCost stamina.</summary>
+        public int WallJumpsSinceReset;
+        /// <summary>An air jump or air dash: the next wall jump is full height and free again.</summary>
+        public void ResetWallJumps() { WallJumpChain = 0; WallJumpsSinceReset = 0; }
         public float SprintRamp;    // 0-1: how far the out-of-combat sprint has built up
         /// <summary>Time.time this hero last took damage / last used a combat skill (owner's copy): the sprint waits SprintCalmSeconds after either.</summary>
         public float LastHurt = -10f, LastAttack = -10f;
@@ -212,7 +216,7 @@ namespace CursedAppleCuriosities.Deadlock
             // Extra jumps from items (Hopoo Feather...) become stamina pips instead (playtest).
             Max = Profile.StaminaPips + Mathf.Max(0, _body.maxJumpCount - _body.baseJumpCount);
             if (Pips < 0f || Pips > Max) Pips = Max;
-            if (_body.characterMotor != null && _body.characterMotor.isGrounded) { AirDashes = 0; AirBoost = false; WallJumpChain = 0; }
+            if (_body.characterMotor != null && _body.characterMotor.isGrounded) { AirDashes = 0; AirBoost = false; WallJumpChain = 0; WallJumpsSinceReset = 0; }
             if (Pips >= Max) { _regen = 0f; return; }
             int quail = _body.inventory != null ? _body.inventory.GetItemCountEffective(RoR2Content.Items.JumpBoost) : 0;
             float rate = 1f + Profile.QuailStaminaRegen * quail; // Wax Quail: faster stamina
@@ -575,8 +579,18 @@ namespace EntityStates.CursedApple.Deadlock
             if (jumpInputReceived && _mover != null && Time.time < _mover.SuppressJumpUntil) jumpInputReceived = false;
             if (jumpInputReceived && characterBody != null && characterMotor != null && !characterMotor.isGrounded && _mover != null)
             {
-                // Deadlock order: ground jump, else kick off a wall (free), else an air jump.
-                if (TryWall(out Vector3 normal)) { WallJump(normal); jumpInputReceived = false; return; }
+                // Deadlock order: ground jump, else kick off a wall (the first free), else an air jump.
+                if (TryWall(out Vector3 normal))
+                {
+                    // The first wall jump is free; later ones cost stamina (none left: no wall jump, and no air jump either).
+                    if (_mover.WallJumpsSinceReset == 0 || _mover.TrySpend(P.WallJumpCost))
+                    {
+                        _mover.WallJumpsSinceReset++;
+                        WallJump(normal);
+                    }
+                    jumpInputReceived = false;
+                    return;
+                }
                 if (characterMotor.jumpCount == 0) characterMotor.jumpCount = 1; // walked off a ledge: the next jump is an air jump
                 int jumpsBefore = characterMotor.jumpCount;
                 // Air jumps cost one stamina each. Extra jumps from items are extra stamina instead.

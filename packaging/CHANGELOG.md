@@ -7,6 +7,7 @@
   also fall around Seven, hitting anything near them.
 - Wall jumps (every Deadlock hero) lose height when spammed: each one within a second of the last is 60% as high as the one
   before. Waiting a full second, an air jump, an air dash or landing restores full height.
+- Wall jumps: the first is free, each one after it costs half a stamina until you land or air jump/air dash.
 - **Celeste**: **Light Eater** flashes a purple cone showing exactly what it reaches.
 - **Celeste**: **Shining Wonder** drifts slower (12 m/s, was 18) and waits up to 6 s for a new target (was 3.25).
 - Deadlock heroes start sprinting 1 second after last taking damage or attacking (was RoR2's 5 seconds out of combat).
