@@ -236,8 +236,9 @@ namespace EntityStates.CursedApple.Seven
             {
                 _struck = true;
                 Ray aim = GetAimRay();
-                Vector3 point = Physics.Raycast(aim, out RaycastHit hit, SevenData.StrikeRange, LayerIndex.world.mask | LayerIndex.entityPrecise.mask, QueryTriggerInteraction.Ignore)
-                    ? hit.point : aim.GetPoint(SevenData.StrikeRange);
+                float range = SevenData.StrikeRange * MysticExpansion.RadiusMultiplier(characterBody);
+                Vector3 point = Physics.Raycast(aim, out RaycastHit hit, range, LayerIndex.world.mask | LayerIndex.entityPrecise.mask, QueryTriggerInteraction.Ignore)
+                    ? hit.point : aim.GetPoint(range);
                 SevenNet.ToServer(new SevenStrikeMessage { Attacker = gameObject, Point = point, Crit = RollCrit() });
             }
             bool endEarly = fixedAge > 0.5f && inputBank.skill4.justPressed;

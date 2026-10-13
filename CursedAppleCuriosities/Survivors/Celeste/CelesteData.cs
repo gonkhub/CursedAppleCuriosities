@@ -68,7 +68,7 @@ namespace CursedAppleCuriosities.Survivors.Celeste
 
         // ---- secondary alt: Radiant Daggers (Deadlock: 30 m, 1.4 s to form, 8 m, 55 damage, a stacking spirit buff per hero hit) ----
         public static float BeamDamage = 6f;
-        public static float BeamRange = 30f;             // Deadlock AbilityCastRange
+        public static float BeamRange = 30f;             // Deadlock AbilityCastRange (Mystic Expansion: farther)
         public static float BeamRadius = 8f;             // Deadlock ExplosionRadius
         public const float BeamDelay = 1.4f;             // Deadlock PreExplosionDuration
         public static float BeamCooldown = 10f;          // Deadlock 33
