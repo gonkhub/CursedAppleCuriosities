@@ -39,7 +39,7 @@ namespace CursedAppleCuriosities.Survivors.Celeste
         public static BuffDef? MarkBuff, RadianceBuff, PrismBuff, OrbSlow;
         public static BodyIndex BodyIndex = BodyIndex.None;
 
-        public static GameObject? HitEffect, FlareEffect, BeamEffect, BeamWarning, ShatterEffect, BreakEffect, OrbHitEffect;
+        public static GameObject? HitEffect, FlareEffect, BeamEffect, BeamWarning, ShatterEffect, BreakEffect, OrbHitEffect, BounceEffect;
         public static Material? LineMaterial;
 
         private static SkillDef? _blade, _flare, _beam, _prism, _orb;
@@ -81,6 +81,7 @@ namespace CursedAppleCuriosities.Survivors.Celeste
             BeamEffect = Kit.Recoloured(TryLoad<GameObject>("RoR2/Base/Lightning/LightningStrikeImpact.prefab"), "CursedAppleCelesteBeam", Hue, effect: true);
             ShatterEffect = Kit.Recoloured(TryLoad<GameObject>("RoR2/Base/Captain/CaptainTazerNova.prefab"), "CursedAppleCelesteShatter", Hue, effect: true);
             BreakEffect = TryLoad<GameObject>("RoR2/Base/Common/VFX/ShieldBreakEffect.prefab");
+            BounceEffect = Kit.Recoloured(TryLoad<GameObject>("RoR2/Base/Common/VFX/OmniImpactVFX.prefab"), "CursedAppleCelesteBounce", ProjectileHue, effect: true);
             OrbHitEffect = Kit.Recoloured(TryLoad<GameObject>("RoR2/Base/ArtifactShell/ExplosionSolarFlare.prefab", "RoR2/Base/Common/VFX/OmniImpactVFXSlash.prefab"), "CursedAppleCelesteOrbHit", ProjectileHue, effect: true);
             Material? laser = TryLoad<Material>("RoR2/Base/Common/VFX/matLaserPointerBeam.mat");
             LineMaterial = laser != null ? new Material(laser) : null;
@@ -130,6 +131,7 @@ namespace CursedAppleCuriosities.Survivors.Celeste
                 TryLoad<GameObject>("RoR2/Base/Bandit2/Bandit2ShivProjectile.prefab", "RoR2/Base/Characters/Bandit2/Skills/Bandit2ShivProjectile.prefab"),
                 "CursedAppleCelesteBlade", typeof(CelesteDagger), CelesteData.DaggerSpeed, CelesteData.DaggerLifetime + 0.5f, gravity: false, triggers: false, steer: false);
             RecolourGhost(DaggerProjectile, "CursedAppleCelesteBladeGhost", 0.45f); // much smaller (user)
+            SteadyRings(DaggerProjectile, 0.45f);
             // Shining Wonder: the Artifact shell's seeking solar flare, steered by CelesteOrb (it passes through everything).
             OrbProjectile = Kit.CloneProjectile(
                 TryLoad<GameObject>("RoR2/Base/ArtifactShell/ArtifactShellSeekingSolarFlare.prefab", "RoR2/Base/Mage/MageLightningBombProjectile.prefab"),
@@ -138,6 +140,28 @@ namespace CursedAppleCuriosities.Survivors.Celeste
             if (orbPc != null && orbPc.ghostPrefab == null) // the seeking flare draws itself: give it the flare's own ghost
                 orbPc.ghostPrefab = TryLoad<GameObject>("RoR2/Base/ArtifactShell/SolarFlareGhost.prefab", "RoR2/Base/Mage/MageLightningBombGhost.prefab");
             RecolourGhost(OrbProjectile, "CursedAppleCelesteOrbGhost", 0.8f);    // smaller (user)
+        }
+
+        /// <summary>
+        /// The shiv projectile carries its own swing rings (InFlight/SwingTrail particles, outside the ghost): sized for
+        /// Bandit's knife, some burst with a size-over-life curve that doubles them and others drift outward off a circle,
+        /// so the rings grew as the blade flew (user: not intended). Shrink them with the blade and hold their size.
+        /// </summary>
+        private static void SteadyRings(GameObject? projectile, float scale)
+        {
+            if (projectile == null) return;
+            foreach (ParticleSystem ps in projectile.GetComponentsInChildren<ParticleSystem>(true))
+            {
+                ParticleSystem.MainModule main = ps.main;
+                if (main.startSize3D) // startSizeMultiplier is X alone then
+                {
+                    main.startSizeXMultiplier *= scale; main.startSizeYMultiplier *= scale; main.startSizeZMultiplier *= scale;
+                }
+                else main.startSizeMultiplier *= scale;
+                main.startSpeedMultiplier = 0f;
+                ParticleSystem.SizeOverLifetimeModule growth = ps.sizeOverLifetime;
+                growth.enabled = false;
+            }
         }
 
         private static void RecolourGhost(GameObject? projectile, string name, float scale)

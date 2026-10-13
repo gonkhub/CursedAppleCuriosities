@@ -68,12 +68,17 @@ namespace CursedAppleCuriosities.Survivors.Viscous
         public static Vector3 PunchLaunch(Vector3 normal) => (normal.normalized + Vector3.up * ViscousData.PunchUpBias).normalized * ViscousData.PunchUp;
 
         /// <summary>Server: send one body flying. Its motor's owner applies it (players included); rigidbody flyers are pushed.</summary>
-        public static void Launch(CharacterBody b, Vector3 v)
+        public static void Launch(CharacterBody b, Vector3 v, float toss = 0f)
         {
             if (Immovable(b)) return;
             if (b.characterMotor != null)
-                b.characterMotor.ApplyForceImpulse(new PhysForceInfo { force = v, massIsOne = true, resetVelocity = true, ignoreGroundStick = true });
+                b.characterMotor.ApplyForceImpulse(new PhysForceInfo
+                {
+                    force = v, massIsOne = true, resetVelocity = true, ignoreGroundStick = true,
+                    disableAirControlUntilCollision = toss > 0f, // the throw carries: no braking until it hits something (user)
+                });
             else if (b.rigidbody != null) b.rigidbody.velocity = v;
+            if (toss > 0f && b.hasAuthority) PunchToss.Hold(b.gameObject, v, toss);
         }
 
         /// <summary>Bosses and the biggest monsters aren't knocked: the ball bounces off them.</summary>
@@ -242,8 +247,45 @@ namespace CursedAppleCuriosities.Survivors.Viscous
                     if (!b.healthComponent.alive) continue;
                 }
                 else DeadlockFallGuard.ProtectNextLanding(b.gameObject, 8f); // allies fly, but never die of the landing
-                ViscousNet.Launch(b, ViscousNet.PunchLaunch(Normal));
+                ViscousNet.Launch(b, ViscousNet.PunchLaunch(Normal), ViscousData.PunchToss);
             }
+        }
+    }
+
+    /// <summary>
+    /// Deadlock's toss (TossDuration): for a moment after Puddle Punch the body keeps exactly its launch velocity, with no
+    /// gravity or braking, so the throw carries (user). Runs where the body's motor is simulated (the server for monsters,
+    /// the owner for players). Ends early on landing or when it hits something.
+    /// </summary>
+    public class PunchToss : MonoBehaviour
+    {
+        private CharacterMotor? _motor;
+        private Rigidbody? _rb;
+        private Vector3 _v;
+        private float _until, _from;
+
+        public static void Hold(GameObject go, Vector3 v, float seconds)
+        {
+            var t = go.GetComponent<PunchToss>() ?? go.AddComponent<PunchToss>();
+            t._motor = go.GetComponent<CharacterMotor>();
+            t._rb = t._motor == null ? go.GetComponent<Rigidbody>() : null;
+            t._v = v;
+            t._from = Time.fixedTime;
+            t._until = Time.fixedTime + seconds;
+            t.enabled = true;
+        }
+
+        private void FixedUpdate()
+        {
+            if (Time.fixedTime >= _until) { enabled = false; return; }
+            if (_motor != null)
+            {
+                // Grounded again, or stopped by a wall: the toss is over.
+                if (Time.fixedTime - _from > 0.1f && (_motor.isGrounded || _motor.velocity.sqrMagnitude < 0.25f * _v.sqrMagnitude)) { enabled = false; return; }
+                _motor.velocity = _v;
+            }
+            else if (_rb != null) _rb.velocity = _v;
+            else enabled = false;
         }
     }
 

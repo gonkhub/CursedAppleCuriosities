@@ -98,9 +98,11 @@ namespace CursedAppleCuriosities.Survivors.Viscous
         public static float PunchRange = 40f;           // Deadlock AbilityCastRange (Mystic Expansion: farther)
         public static float PunchRadius = 4f;           // Deadlock Radius (Mystic Expansion: wider)
         public const float PunchHalfHeight = 5.5f;      // Deadlock PunchHalfHeight
-        public static float PunchUp = 34f;              // user: sends most things flying, straight out of the surface (was 26; Deadlock TossSpeed 625 hu/s = 16 m/s)
+        public static float PunchUp = 42f;              // user: sends most things flying, straight out of the surface (was 26, 34; Deadlock TossSpeed 625 hu/s = 16 m/s)
         public const float PunchUpBias = 0.15f;         // user: a little upward tilt on every punch (a wall throws ~8.5 deg up)
         public const float PunchWindup = 0.3f;          // Deadlock m_flWindupTime 0.2 + m_flAttackTime 0.1
+        public const float PunchTelegraph = 0.45f;      // Deadlock m_flEnemyPortalTelegraphTime: the portal shows this long first (m_flSelfPortalTelegraphTime 0: a self-punch is quick)
+        public static float PunchToss = 0.6f;           // Deadlock TossDuration: the launch speed is held this long (no gravity, no braking), then flies on
         public static float PunchCooldown = 7f;         // Deadlock 24
         public static float PunchSelfAirControl = 3f;   // user: much more air control after punching himself (Deadlock PunchFriendlyAirControl)
         public const float PunchSelfAirSeconds = 2.5f;
@@ -146,6 +148,7 @@ namespace CursedAppleCuriosities.Survivors.Viscous
             PunchRange = c.Bind(Section, "Puddle Punch - Range", PunchRange, "Metres to where the fist comes up (Mystic Expansion: farther).").Value;
             PunchRadius = c.Bind(Section, "Puddle Punch - Radius", PunchRadius, "Metres (Mystic Expansion widens it).").Value;
             PunchUp = c.Bind(Section, "Puddle Punch - Launch", PunchUp, "Speed everything punched is thrown at, straight out of the surface, m/s (bosses don't move).").Value;
+            PunchToss = c.Bind(Section, "Puddle Punch - Toss Duration", PunchToss, "Seconds everything punched keeps the full launch speed (no gravity, no braking) before it falls; after that it keeps its momentum until it hits something.").Value;
             PunchCooldown = c.Bind(Section, "Puddle Punch - Cooldown", PunchCooldown, "Seconds.").Value;
             PunchSelfAirControl = c.Bind(Section, "Puddle Punch - Self Air Control", PunchSelfAirControl, "Air control multiplier for a moment after punching himself into the air.").Value;
             CubeDuration = c.Bind(Section, "The Cube - Duration", CubeDuration, "Seconds (Duration Extender lengthens it). Jump breaks out after 1 s.").Value;
@@ -204,14 +207,15 @@ namespace CursedAppleCuriosities.Survivors.Viscous
             ("sprint_s", "sprint_run_s", true, "", "full"), ("sprint_sw", "sprint_run_sw", true, "", "full"),
             ("sprint_w", "sprint_run_w", true, "", "full"), ("sprint_nw", "sprint_run_nw", true, "", "full"),
             ("jump", "jump_start", false, "in_air", "full"),
-            ("air_jump", "jump_start_short", false, "in_air", "full"),
+            // jump_start_short (Abrams' air jump) is posed on a bigger skeleton: limbs 30-50% longer, pelvis 0.5 m higher (user: he stretched).
+            ("air_jump", K + "jump_ground", false, "in_air", "full"),
             ("wall_jump", "wall_jump", false, "in_air", "full"),
             // In the air: Kelvin's AnimGraph2 loops, which Deadlock's live Viscous plays (his graphs are hero_*+kelvin). The
             // jump_upwards_loop / jump_downwards_loop in his own list are the ones Abrams uses (playtest: "Abrams' in-air animation").
             ("in_air", K + "in_air_loop_apex", true, "", "full"),
             ("falling", K + "in_air_down", true, "", "full"),
             ("land", "jump_landing", false, "locomotion", "additive"),
-            ("dash_ground", "primary_airdash", false, "locomotion", "full"),
+            ("dash_ground", K + "dash_ground", false, "locomotion", "full"),                   // Kelvin's ground roll, as Deadlock's Viscous (user)
             ("dash_air_forward", "primary_airdash", false, "in_air", "full"),
             ("dash_air_back", "primary_airdash_bkward", false, "in_air", "full"),
             ("dash_air_left", "primary_airdash_left", false, "in_air", "full"),

@@ -27,6 +27,7 @@ namespace CursedAppleCuriosities.Deadlock
         public float StaminaRegenSeconds = 4.5f;        // 1 / EStaminaRegenPerSecond
         public float QuailStaminaRegen = 0.25f;         // Wax Quail: faster stamina regen per stack (they never sprint-jump)
         public int AirJumps = 1;                        // one stamina each; extra jumps from items are extra stamina instead
+        public float AirJumpScale = 1f;                 // an air jump's upward speed over the ground jump's (Celeste jumps higher in the air)
         // Dash
         public bool GroundDash = true;
         public float GroundDashMetres = 10f, GroundDashSeconds = 0.68f;   // the burst: metres covered in seconds
@@ -229,6 +230,13 @@ namespace CursedAppleCuriosities.Deadlock
             _timedAirMult = mult;
             _timedAirUntil = Time.time + seconds;
         }
+
+        private float _noDragUntil = -10f;
+
+        /// <summary>For a while, speed above a run isn't shed in the air (a launch carries: Viscous' Puddle Punch). Owner only.</summary>
+        public void SuspendAirDrag(float seconds) => _noDragUntil = Time.time + seconds;
+
+        public bool AirDragSuspended => Time.time < _noDragUntil;
 
         /// <summary>Faster stamina refill from abilities (multipliers, e.g. Viscous' post-cube buff); read from synced buffs.</summary>
         public static readonly System.Collections.Generic.List<Func<CharacterBody, float>> RegenMultipliers = new System.Collections.Generic.List<Func<CharacterBody, float>>();
@@ -457,7 +465,7 @@ namespace EntityStates.CursedApple.Deadlock
                 Vector3 target = wish.normalized * Mathf.Max(run * Mathf.Min(1f, wish.magnitude), flat.magnitude);
                 flat = Vector3.MoveTowards(flat, target, accel * dt);
             }
-            if (flat.magnitude > run) flat = flat.normalized * Mathf.Max(run, flat.magnitude - p.AirDrag * dt);
+            if (flat.magnitude > run && (mover == null || !mover.AirDragSuspended)) flat = flat.normalized * Mathf.Max(run, flat.magnitude - p.AirDrag * dt);
             characterMotor.velocity = new Vector3(flat.x, v.y, flat.z);
         }
 
@@ -554,6 +562,7 @@ namespace EntityStates.CursedApple.Deadlock
                 if (characterMotor.jumpCount > jumpsBefore)
                 {
                     KeepMomentum(before);
+                    if (P.AirJumpScale != 1f) { Vector3 v = characterMotor.velocity; v.y *= P.AirJumpScale; characterMotor.velocity = v; }
                     DeadlockSounds.Play(P.Sound("jump"), transform.position, gameObject);
                     DeadlockSounds.Play(P.Sound("vo_efforts"), transform.position, gameObject);
                     characterMotor.disableAirControlUntilCollision = false; // steering back after a launch

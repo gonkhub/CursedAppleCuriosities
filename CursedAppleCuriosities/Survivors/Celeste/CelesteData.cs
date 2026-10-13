@@ -31,7 +31,8 @@ namespace CursedAppleCuriosities.Survivors.Celeste
             StaminaPips = 5,                   // user (Deadlock EStamina 4)
             AirJumps = 2,                      // like Lash (user)
             AirDashesPerAir = 2,
-            AirDashMetres = 14f,               // a couple of metres short of Lash's 16 (user)
+            AirDashMetres = 10f,               // user: 14 -> 10 (Lash's is 16)
+            AirJumpScale = 1.25f,              // user: her air jumps take her higher (~1.56x the height)
             // Her innate modifier_hero_gravity (on citadel_weapon_unicorn_set): gravity -25%, air control +44%, air accel +10%.
             GravityScale = 0.75f,
             AirAccel = 50f * 1.44f,
@@ -43,10 +44,10 @@ namespace CursedAppleCuriosities.Survivors.Celeste
         // ---- primary: Carny Life (Deadlock: a bouncing, homing thrown blade every 0.58 s, 18 damage, gravity 0.2) ----
         public static float DaggerDamage = 1.2f;        // a light poke (user): her damage is Shining Wonder and blades on marked enemies
         public const float DaggerCycle = 0.58f;          // Deadlock m_flCycleTime
-        public const float DaggerSpeed = 75f;            // faster than Deadlock's 50 m/s (user)
+        public const float DaggerSpeed = 60f;            // a little faster than Deadlock's 50 m/s (user: 75 was too fast)
         public const float DaggerDrop = 18f;             // m/s2, homing or not: an arc (user)
-        public const float DaggerDragFrom = 20f;         // metres flown before it starts losing airspeed (user)
-        public const float DaggerDrag = 3f;              // per second after that: forward speed fades, so it drops away
+        public const float DaggerDragFrom = 15f;         // metres flown before it starts losing airspeed (user)
+        public const float DaggerStopAt = 45f;           // by here its forward speed has eased all the way out and it only drops (user: gradual, not steep)
         public const float DaggerHomeConeDeg = 22.5f;    // Deadlock: homes onto an enemy within ~45 deg of its flight
         public const float DaggerHomeRange = 45f;
         public const float DaggerTurnDegPerSec = 150f;  // gentle, so the arc shows
@@ -82,8 +83,8 @@ namespace CursedAppleCuriosities.Survivors.Celeste
         public static float PrismCooldown = 12f;         // Deadlock 38
 
         // ---- special: Shining Wonder (Deadlock: hold to aim, release; 140 damage, 32% slow 1.5 s, 8 bounces within 15.5 m) ----
-        public static float OrbDamage = 10f;
-        public static int OrbBounces = 8;                // Deadlock MaxBounces (hits after the first)
+        public static float OrbDamage = 5f;             // user: half (was 10)
+        public static int OrbBounces = 24;               // user: triple Deadlock's MaxBounces 8 (hits after the first)
         public static float OrbBounceRange = 7f;         // from the enemy it just hit (user: close; Deadlock BounceRadius 15.5)
         public static float OrbCooldown = 40f;           // Deadlock 160
         public const float OrbSpeed = 18f;               // much slower than Deadlock's 50.8 m/s (user): a floating ball of light

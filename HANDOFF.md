@@ -387,9 +387,11 @@ same on a stand-in model.
 - `Survivors/Celeste/` — **Celeste** (`CursedAppleCelesteBody`, Deadlock `hero_unicorn`, model `models/heroes_wip/unicorn/unicorn`,
   AnimGraph2 clips in `unicorn/clips`, icons `unicorn_*`, VO `sounds/vo/unicorn`). Built 2026-10-12 while the user was away,
   then tuned by the user in playtest the same evening (memory `celeste-design`). All numbers are `[Celeste]` config knobs.
-  - Movement (user): Lash's extras: 5 stamina, 2 air jumps, 2 air dashes of 14 m; her innate low gravity (-25%, +44% air control).
+  - Movement (user): Lash's extras: 5 stamina, 2 air jumps (1.25x the ground jump's speed, `AirJumpScale`), 2 air dashes of 10 m;
+    her innate low gravity (-25%, +44% air control).
     Air-dash pose holds 0.8 s before the in-air loop.
-  - M1 Carny Life: a blade every 0.58 s, 120% (user: a light poke), 75 m/s, always drops 18 m/s2 and loses airspeed after 20 m,
+  - M1 Carny Life: a blade every 0.58 s, 120% (user: a light poke), 60 m/s, always drops 18 m/s2; its forward speed eases out from 15 m
+    to nothing at 45 m (smoothstep, user: gradual), a blue-violet spark where it bounces, the shiv's own swing rings shrunk and held at size,
     homes gently onto an enemy within 22.5 deg of its flight, one bounce off the world, no ricochet; ghost 0.45x, light blue-violet
     (`CelesteDagger` on a Bandit shiv clone).
   - M2 Light Eater: 0.3 s (she hangs in the air; in the air the flare plays over her in-air pose), 70 deg cone 10 m, 400%, marks 8 s
@@ -399,7 +401,7 @@ same on a stand-in model.
   - Utility Dazzling Trick: 20% max HP barrier, 4 s window (Lunar Golem shell visual); the hit that takes the barrier to 0 bursts
     it: 500% in 14 m + 1.75 s stun (user; Deadlock silences).
   - Special Shining Wonder: hold to aim (slow fall), release: orb (Artifact shell's seeking flare, given SolarFlareGhost, 0.8x) at
-    18 m/s (user: a floating ball of light), chases the nearest enemy through walls, 1000% + 32% slow per hit, 8 bounces within 7 m of
+    18 m/s (user: a floating ball of light), chases the nearest enemy through walls, 500% + 32% slow per hit, 24 bounces (user) within 7 m of
     the enemy it hit (or off her prism, which tops the prism back up), lingers 3.25 s for a target circling what it last hit.
   - Every radius takes Mystic Expansion; mark/slow/prism durations take Duration Extender. Her light is pink (Hue 0.9, her hair);
     projectiles blue-violet (Hue 0.72). Soft purple glow: self-lit horn shell (`unicorn_glow`) and a faint chest light (`CelesteGlow`).
@@ -427,6 +429,11 @@ same on a stand-in model.
 
 ## Recent changes (since last handoff)
 
+- **1.6.0 (branch `1.6`, 2026-10-12, user's list):** Cursed Broker guaranteed on stage 4 and in each later loop's first Bazaar;
+  Viscous air jump = Kelvin `jump_ground` (`jump_start_short` is posed on Abrams' bigger skeleton: limbs 30-50% long) and ground dash =
+  Kelvin's `dash_ground` roll; Puddle Punch windup 0.3 s + Deadlock's 0.45 s enemy portal telegraph (self-punch none), launch 42 m/s held
+  for Deadlock's 0.6 s toss (`PunchToss`), then `disableAirControlUntilCollision` (others) / no air drag 2.5 s (himself,
+  `DeadlockMover.SuspendAirDrag`); Celeste blade/orb/movement changes (see Survivors). Not playtested yet.
 - **Playtest pass (user, 2026-10-12 evening):** Celeste retuned (movement, Carny Life, Light Eater, Radiant Daggers preview, uncapped
   Radiance, Dazzling Trick stuns, slower homing Shining Wonder, purple glow, VO mapping; see Survivors above); Viscous Goo Ball is Heavy
   (250% + 30% per m/s) with 50% resist; Viscous' lobby cube is cleaned up mid-intro; shorter skill descriptions for the six newer heroes;
@@ -442,7 +449,8 @@ same on a stand-in model.
 
 - **Cursed Broker (1.4.0, built 2026-10-12, NOT playtested).** `Broker/`: `CursedBroker` (Shrine of Order clone with its
   purchase stripped and a `PickupPickerController` + Command picker panel; symbol tinted purple; spawned in
-  `SceneDirector.onPostPopulateSceneServer`, 20% per stage from stage 3 or after a loop, config `[Cursed Broker]`),
+  `SceneDirector.onPostPopulateSceneServer`, 20% per stage from stage 3 or after a loop, always on stage 4 of the first loop, and (1.6.0, user)
+  in the first Bazaar visit of each later loop (`Stage.onServerStageBegin`, near the Newt's shop terminal), config `[Cursed Broker]`),
   `CurseRules` (per-item Mult/Add on the effective stack count + improvement text; full table in
   `docs/CursedBrokerAudit.md`, regenerate with `tools/gen_curse_audit.py`; any non-lunar tier incl. white),
   `CursePenalties` (26 narrow penalties, rolled per item when a player first opens a broker, cached per broker+player), `CurseLedger` (per-master curse list, server-owned, mirrored by `CurseLedgerMessage`; IL hook on

@@ -1,6 +1,14 @@
 # Changelog
 
 ## 1.6.0 (unreleased)
+- **Cursed Broker**: always appears on stage 4, and after looping in your first visit to the Bazaar Between Time each loop.
+- **Viscous**: his air jump no longer stretches him out, and his ground dash is his own roll.
+- **Viscous**: **Puddle Punch** winds up like Deadlock's (its portal shows for a moment before the fist comes out), throws
+  harder, and the throw carries: everything punched keeps its full speed for a moment, then flies on without slowing.
+- **Celeste**: blades are a little slower and ease out gradually toward the end of their range; they flash where they bounce
+  off a surface, and their rings no longer grow in flight.
+- **Celeste**: **Shining Wonder** deals half damage (500%) but bounces three times as often (24).
+- **Celeste**: shorter air dashes (10 m, was 14) and higher air jumps.
 
 ## 1.5.0
 - New survivor: **Viscous**. His **Goo Ball** rolls him up into a bowling ball that bowls through enemies. **Splatter**
