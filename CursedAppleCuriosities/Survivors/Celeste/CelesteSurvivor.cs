@@ -39,7 +39,7 @@ namespace CursedAppleCuriosities.Survivors.Celeste
         public static BuffDef? MarkBuff, RadianceBuff, PrismBuff, OrbSlow;
         public static BodyIndex BodyIndex = BodyIndex.None;
 
-        public static GameObject? HitEffect, FlareEffect, BeamEffect, BeamWarning, ShatterEffect, BreakEffect, OrbHitEffect, RicochetTracer;
+        public static GameObject? HitEffect, FlareEffect, BeamEffect, BeamWarning, ShatterEffect, BreakEffect, OrbHitEffect;
         public static Material? LineMaterial;
 
         private static SkillDef? _blade, _flare, _beam, _prism, _orb;
@@ -82,7 +82,6 @@ namespace CursedAppleCuriosities.Survivors.Celeste
             ShatterEffect = Kit.Recoloured(TryLoad<GameObject>("RoR2/Base/Captain/CaptainTazerNova.prefab"), "CursedAppleCelesteShatter", Hue, effect: true);
             BreakEffect = TryLoad<GameObject>("RoR2/Base/Common/VFX/ShieldBreakEffect.prefab");
             OrbHitEffect = Kit.Recoloured(TryLoad<GameObject>("RoR2/Base/ArtifactShell/ExplosionSolarFlare.prefab", "RoR2/Base/Common/VFX/OmniImpactVFXSlash.prefab"), "CursedAppleCelesteOrbHit", ProjectileHue, effect: true);
-            RicochetTracer = Kit.Recoloured(TryLoad<GameObject>("RoR2/Base/Commando/TracerCommandoDefault.prefab"), "CursedAppleCelesteRicochet", ProjectileHue, effect: true);
             Material? laser = TryLoad<Material>("RoR2/Base/Common/VFX/matLaserPointerBeam.mat");
             LineMaterial = laser != null ? new Material(laser) : null;
             if (LineMaterial != null) // the laser material ignores line colours: tint it pink
@@ -300,7 +299,7 @@ namespace CursedAppleCuriosities.Survivors.Celeste
             LanguageAPI.Add(Token + "SKIN_MINT", "Mint");
             LanguageAPI.Add(Token + "DESCRIPTION",
                 "Celeste ran away with the carnival and never stopped performing. The show goes on, wherever the tent lands.<color=#CCD3E0>\n\n" +
-                "< ! > Carny Life's blades curve onto enemies near your aim and bounce once off walls. Aim close, not exact.\n\n" +
+                "< ! > Carny Life's blades arc, curve onto enemies near your aim and bounce once off walls. Aim close, not exact.\n\n" +
                 "< ! > Light Eater first: marked enemies take extra damage from every blade and heal you for part of all you deal them.\n\n" +
                 "< ! > Dazzling Trick rewards being hit. Raise it in the thick of a fight and let them break it.\n\n" +
                 "< ! > Shining Wonder bounces off your own prism: raise Dazzling Trick in a crowd and let the orb ping-pong.</color>\n");
@@ -315,8 +314,8 @@ namespace CursedAppleCuriosities.Survivors.Celeste
 
             LanguageAPI.Add(Token + "BLADE_NAME", "Carny Life");
             LanguageAPI.Add(Token + "BLADE_DESC",
-                $"Throw a blade of light for <style=cIsDamage>{D(CelesteData.DaggerDamage)} damage</style>. It <style=cIsUtility>homes</style> onto enemies near its path, " +
-                $"<style=cIsUtility>bounces</style> once off walls, and <style=cIsDamage>ricochets</style> {D(CelesteData.DaggerRicochet)} of a hit to a second enemy close by.");
+                $"Throw a blade of light for <style=cIsDamage>{D(CelesteData.DaggerDamage)} damage</style>. It <style=cIsUtility>homes</style> onto enemies near its path " +
+                "and <style=cIsUtility>bounces</style> once off walls.");
 
             LanguageAPI.Add(Token + "FLARE_NAME", "Light Eater");
             LanguageAPI.Add(Token + "FLARE_DESC",

@@ -49,8 +49,6 @@ namespace CursedAppleCuriosities.Survivors.Celeste
         public const float DaggerHomeRange = 45f;
         public const float DaggerTurnDegPerSec = 150f;  // gentle, so the arc shows
         public const float DaggerBounceKeep = 0.7f;      // speed kept by its one bounce off the world
-        public static float DaggerRicochet = 0.6f;       // share of the hit a ricochet deals to a second enemy close by
-        public const float DaggerRicochetRange = 10f;
         public const float DaggerLifetime = 3f;
 
         // ---- secondary: Light Eater (Deadlock: 70 deg cone, 10 m, 0.3 s delay, 40 damage; marked 8 s; 15 per bullet; 18% lifesteal) ----
@@ -103,7 +101,6 @@ namespace CursedAppleCuriosities.Survivors.Celeste
             Movement.Bind(c, Section);
             BaseHealth = c.Bind(Section, "Base Health", BaseHealth, "Celeste max health at level 1 (+28 per level).").Value;
             DaggerDamage = c.Bind(Section, "Carny Life - Damage", DaggerDamage, "Damage coefficient of each thrown blade.").Value;
-            DaggerRicochet = c.Bind(Section, "Carny Life - Ricochet Share", DaggerRicochet, "Share of a hit that ricochets to a second enemy close by.").Value;
             FlareDamage = c.Bind(Section, "Light Eater - Damage", FlareDamage, "Damage coefficient of the flare.").Value;
             FlareRange = c.Bind(Section, "Light Eater - Range", FlareRange, "Metres (a 70 degree cone).").Value;
             FlareCooldown = c.Bind(Section, "Light Eater - Cooldown", FlareCooldown, "Seconds.").Value;

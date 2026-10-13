@@ -388,7 +388,7 @@ same on a stand-in model.
   AnimGraph2 clips in `unicorn/clips`, icons `unicorn_*`, VO `sounds/vo/unicorn`). Built 2026-10-12 while the user was away:
   **kit, numbers, sounds and writing are my picks, pending the user's review** (memory `celeste-design`). Self-tested in game.
   - M1 Carny Life: a blade every 0.58 s, 220%, 50 m/s shallow arc, homes onto an enemy within 22.5 deg of its flight, one bounce
-    off the world, 60% ricochet to an enemy within 10 m (`CelesteDagger` on a Bandit shiv clone).
+    off the world, no ricochet (user); always falls 9 m/s2; ghost 0.45x, blue-violet (`CelesteDagger` on a Bandit shiv clone).
   - M2 Light Eater: 0.3 s (she hangs in the air), 70 deg cone 10 m, 400%, marks 8 s (Merc's expose marker): +150% per blade hit on
     marked enemies and 18% of all her damage to them heals her. Alt Radiant Daggers: beam onto the aimed spot (30 m), pink warning
     ring + beam (`CelesteBeamWarning`, an effect so every client sees it), 1.4 s, 600% in 8 m (a tall cylinder), +7% damage per

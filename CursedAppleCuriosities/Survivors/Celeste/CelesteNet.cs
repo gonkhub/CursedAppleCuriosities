@@ -105,7 +105,7 @@ namespace CursedAppleCuriosities.Survivors.Celeste
             EquipmentFx.Sound(stacks >= CelesteData.RadianceMaxStacks ? "celeste_beam_buff_max" : "celeste_beam_buff", celeste.corePosition, celeste.gameObject);
         }
 
-        /// <summary>Server: the nearest visible enemy for a ricochet or a bounce (user: just the nearest).</summary>
+        /// <summary>Server: the nearest visible enemy for Shining Wonder's next bounce (user: just the nearest).</summary>
         public static HealthComponent? NextTarget(Vector3 from, float range, TeamIndex team, HealthComponent? skip)
         {
             HealthComponent? best = null;
@@ -321,7 +321,7 @@ namespace CursedAppleCuriosities.Survivors.Celeste
 
     /// <summary>
     /// Server, on a thrown blade (Deadlock's Carny Life): a shallow arc that homes onto an enemy near its line, bounces
-    /// once off the world, and ricochets part of a hit to a second enemy close by.
+    /// once off the world. No ricochet between enemies (user).
     /// </summary>
     [RequireComponent(typeof(ProjectileController))]
     public class CelesteDagger : MonoBehaviour, IProjectileImpactBehavior
@@ -394,15 +394,6 @@ namespace CursedAppleCuriosities.Survivors.Celeste
                 float coeff = CelesteData.DaggerDamage + (CelesteNet.Marked(hc) ? CelesteData.MarkDaggerBonus : 0f);
                 CelesteNet.Hit(body, hc, coeff * dmg, crit, DamageSource.Primary, 1f, transform.position);
                 EquipmentFx.Sound("celeste_gun_impact", transform.position);
-                // Ricochet: part of the hit jumps to a second enemy close by.
-                HealthComponent? next = CelesteNet.NextTarget(CelesteNet.Core(hc), CelesteData.DaggerRicochetRange * MysticExpansion.RadiusMultiplier(body), body.teamComponent.teamIndex, hc);
-                if (next != null)
-                {
-                    if (CelesteSurvivor.RicochetTracer != null)
-                        EffectManager.SpawnEffect(CelesteSurvivor.RicochetTracer, new EffectData { origin = CelesteNet.Core(next), start = CelesteNet.Core(hc) }, true);
-                    float rc = CelesteData.DaggerRicochet * (CelesteData.DaggerDamage + (CelesteNet.Marked(next) ? CelesteData.MarkDaggerBonus : 0f));
-                    CelesteNet.Hit(body, next, rc * dmg, crit, DamageSource.Primary, 0.5f);
-                }
                 Destroy(gameObject);
                 return;
             }
