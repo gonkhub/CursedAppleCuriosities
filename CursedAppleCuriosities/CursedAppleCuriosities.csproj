@@ -259,7 +259,7 @@
   <Target Name="BuildMapConverter" AfterTargets="Build">
     <Exec Command="dotnet build &quot;$(MSBuildProjectDirectory)\..\CursedAppleMapConvert\CursedAppleMapConvert.csproj&quot; -c Release -nologo -v q" />
   </Target>
-  <Target Name="DeployMapConverter" AfterTargets="DeployToProfile;BuildMapConverter" Condition="'$(Configuration)' != 'Release'">
+  <Target Name="DeployMapConverter" AfterTargets="BuildMapConverter" Condition="'$(Configuration)' != 'Release'">
     <Copy SourceFiles="$(MapConvertDir)\CursedAppleMapConvert.exe;$(MapConvertDir)\CursedAppleMapConvert.exe.config" DestinationFolder="$(DevPluginDir)" />
     <Copy Condition="Exists('$(PlaytestPluginDir)')" SourceFiles="$(MapConvertDir)\CursedAppleMapConvert.exe;$(MapConvertDir)\CursedAppleMapConvert.exe.config" DestinationFolder="$(PlaytestPluginDir)" />
   </Target>

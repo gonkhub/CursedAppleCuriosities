@@ -94,6 +94,8 @@ namespace CursedAppleMapConvert
             GC.Collect(); GC.WaitForPendingFinalizers();
             Program.Mem("after collect");
             Program.Log($"world node: {node.Instances.Count} placed models, {bounds.Models.Count} model bounds");
+            if (node.Instances.Count == 0 || bounds.Models.Count == 0)
+                throw new InvalidDataException("the map's world node couldn't be read (a Deadlock update newer than this Source2Viewer-CLI?)");
 
             // 2. Which placements matter: everything near the playable area, and the backdrop's larger pieces.
             var byModel = new Dictionary<string, List<WorldInstance>>(StringComparer.OrdinalIgnoreCase);

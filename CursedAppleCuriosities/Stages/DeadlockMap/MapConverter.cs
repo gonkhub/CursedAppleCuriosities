@@ -58,6 +58,15 @@ namespace CursedAppleCuriosities.Stages.DeadlockMap
             return h;
         }
 
+        /// <summary>Two fingerprints that differ only in Deadlock's map checksum.</summary>
+        private static bool SameSection(string a, string b)
+        {
+            string[] x = a.Split(':'), y = b.Split(':');
+            if (x.Length != 5 || y.Length != 5) return false;
+            for (int i = 0; i < 5; i++) if (i != 1 && x[i] != y[i]) return false;
+            return true;
+        }
+
         private void Run(string folder, string exe)
         {
             string? citadel = DeadlockInstall.CitadelDir();
@@ -109,8 +118,20 @@ namespace CursedAppleCuriosities.Stages.DeadlockMap
             }
             if (exit != 0 || MapCache.ReadFingerprint(cacheFile) != fingerprint)
             {
+                string why = exit == 3 ? "conversion stopped at its memory limit" : $"conversion failed (exit {exit})";
+                // The converter only replaces the cache on success, so the one from the previous Deadlock build is still
+                // there: keep playing on it when only Deadlock's map changed (same section, pipeline and shape).
+                string? kept = File.Exists(cacheFile) ? MapCache.ReadFingerprint(cacheFile) : null;
+                if (kept != null && SameSection(kept, fingerprint))
+                {
+                    Fingerprint = kept;
+                    State = MapState.Ready;
+                    Status = $"{why}: using the map from the previous Deadlock build";
+                    Warn($"{Def.Id}: {Status} ({kept})");
+                    return;
+                }
                 State = MapState.Failed;
-                Status = exit == 3 ? "conversion stopped at its memory limit" : $"conversion failed (exit {exit})";
+                Status = why;
                 Warn(Status);
                 return;
             }
