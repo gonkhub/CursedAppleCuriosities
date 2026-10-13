@@ -1,6 +1,8 @@
 # Changelog
 
-## 1.5.0 (unreleased)
+## 1.6.0 (unreleased)
+
+## 1.5.0
 - New survivor: **Viscous**. His **Goo Ball** rolls him up into a bowling ball that bowls through enemies. **Splatter**
   bounces a ball of goo that bursts three times; alt **Puddle Punch** launches everything off any surface, him included.
   **The Cube** encases an ally (tap) or himself (hold): invulnerable, then faster with quicker stamina.
