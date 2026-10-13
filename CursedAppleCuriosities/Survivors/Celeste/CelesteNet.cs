@@ -94,15 +94,16 @@ namespace CursedAppleCuriosities.Survivors.Celeste
         public static bool Marked(HealthComponent hc) =>
             CelesteSurvivor.MarkBuff != null && hc.body != null && hc.body.HasBuff(CelesteSurvivor.MarkBuff);
 
-        /// <summary>Server: Radiant Daggers hit an enemy: one more Radiance stack (Deadlock: per hero hit), all refreshed.</summary>
-        public static void AddRadiance(CharacterBody celeste)
+        /// <summary>
+        /// Server: Radiant Daggers hit this many enemies: that many more Radiance stacks, uncapped (user: it's taken in place of
+        /// Light Eater, her only healing), and the whole pile's 30 s timer starts over (CelesteRadiance).
+        /// </summary>
+        public static void AddRadiance(CharacterBody celeste, int stacks)
         {
-            if (CelesteSurvivor.RadianceBuff == null) return;
-            int stacks = Mathf.Min(CelesteData.RadianceMaxStacks, celeste.GetBuffCount(CelesteSurvivor.RadianceBuff) + 1);
-            celeste.ClearTimedBuffs(CelesteSurvivor.RadianceBuff);
-            using (DurationExtender.Exact())
-                for (int i = 0; i < stacks; i++) celeste.AddTimedBuff(CelesteSurvivor.RadianceBuff, CelesteData.RadianceSeconds * DurationExtender.Multiplier(celeste));
-            EquipmentFx.Sound(stacks >= CelesteData.RadianceMaxStacks ? "celeste_beam_buff_max" : "celeste_beam_buff", celeste.corePosition, celeste.gameObject);
+            if (CelesteSurvivor.RadianceBuff == null || stacks <= 0) return;
+            var r = celeste.GetComponent<CelesteRadiance>() ?? celeste.gameObject.AddComponent<CelesteRadiance>();
+            r.Add(stacks, CelesteData.RadianceSeconds * DurationExtender.Multiplier(celeste));
+            EquipmentFx.Sound("celeste_beam_buff", celeste.corePosition, celeste.gameObject);
         }
 
         /// <summary>Server: the nearest visible enemy for Shining Wonder's next bounce (user: just the nearest).</summary>
@@ -222,10 +223,36 @@ namespace CursedAppleCuriosities.Survivors.Celeste
                     CelesteNet.Hit(By, hc, CelesteData.BeamDamage * By.damage, Crit, DamageSource.Secondary);
                     hits++;
                 }
-                for (int i = 0; i < hits; i++) CelesteNet.AddRadiance(By);
+                CelesteNet.AddRadiance(By, hits);
                 CursedAppleCuriositiesPlugin.Logger?.LogInfo($"[Celeste] Radiant Daggers struck: {hits} hit");
             }
             Destroy(gameObject);
+        }
+    }
+
+    /// <summary>
+    /// Server, on Celeste: her Radiance stacks as one synced (untimed) buff count, all cleared together when the timer the
+    /// last hit set runs out. Uncapped, so no per-stack timers (refreshing hundreds of timed stacks every hit was quadratic).
+    /// </summary>
+    public class CelesteRadiance : MonoBehaviour
+    {
+        private CharacterBody _body = null!;
+        private float _until;
+
+        private void Awake() => _body = GetComponent<CharacterBody>();
+
+        public void Add(int stacks, float seconds)
+        {
+            if (CelesteSurvivor.RadianceBuff == null) return;
+            _body.SetBuffCount(CelesteSurvivor.RadianceBuff.buffIndex, _body.GetBuffCount(CelesteSurvivor.RadianceBuff) + stacks);
+            _until = Time.fixedTime + seconds;
+        }
+
+        private void FixedUpdate()
+        {
+            if (CelesteSurvivor.RadianceBuff == null || Time.fixedTime < _until || !_body.HasBuff(CelesteSurvivor.RadianceBuff)) return;
+            _body.SetBuffCount(CelesteSurvivor.RadianceBuff.buffIndex, 0);
+            EquipmentFx.Sound("celeste_beam_buff_expire", _body.corePosition, _body.gameObject);
         }
     }
 

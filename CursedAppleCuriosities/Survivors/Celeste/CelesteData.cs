@@ -71,7 +71,6 @@ namespace CursedAppleCuriosities.Survivors.Celeste
         public const float BeamDelay = 1.4f;             // Deadlock PreExplosionDuration
         public static float BeamCooldown = 10f;          // Deadlock 33
         public static float RadianceDamage = 0.07f;      // per stack (Deadlock MagicIncreasePerStack 7%)
-        public const int RadianceMaxStacks = 6;          // Deadlock BuffMaxStacks
         public const float RadianceSeconds = 30f;        // Deadlock BuffDuration
 
         // ---- utility: Dazzling Trick (Deadlock: a 100 barrier for 4 s; broken = 14 m burst, half the barrier as damage, a 1.75 s silence: a stun here, user) ----
@@ -114,7 +113,7 @@ namespace CursedAppleCuriosities.Survivors.Celeste
             BeamRange = c.Bind(Section, "Radiant Daggers - Range", BeamRange, "Metres to the aimed spot.").Value;
             BeamRadius = c.Bind(Section, "Radiant Daggers - Radius", BeamRadius, "Metres.").Value;
             BeamCooldown = c.Bind(Section, "Radiant Daggers - Cooldown", BeamCooldown, "Seconds.").Value;
-            RadianceDamage = c.Bind(Section, "Radiant Daggers - Damage Per Stack", RadianceDamage, "Damage bonus per Radiance stack (one per enemy hit, up to 6, 30 s).").Value;
+            RadianceDamage = c.Bind(Section, "Radiant Daggers - Damage Per Stack", RadianceDamage, "Damage bonus per Radiance stack (one per enemy hit, no cap, all lasting 30 s from the latest hit).").Value;
             PrismBarrier = c.Bind(Section, "Dazzling Trick - Barrier", PrismBarrier, "Barrier as a share of max health.").Value;
             PrismDamage = c.Bind(Section, "Dazzling Trick - Damage", PrismDamage, "Damage coefficient of the burst when the barrier breaks.").Value;
             PrismRadius = c.Bind(Section, "Dazzling Trick - Radius", PrismRadius, "Metres.").Value;
@@ -214,7 +213,7 @@ namespace CursedAppleCuriosities.Survivors.Celeste
             new DeadlockSound { Id = "celeste_beam_warning", VpkPrefix = "sounds/abilities/unicorn/a3/unicorn_luminous_aoe_warning", Volume = 0.8f, Range = 50f },
             new DeadlockSound { Id = "celeste_beam_explode", VpkPrefix = "sounds/abilities/unicorn/a3/unicorn_luminous_explode", Range = 80f },
             new DeadlockSound { Id = "celeste_beam_buff", VpkPrefix = "sounds/abilities/unicorn/a3/unicorn_luminous_buff", Volume = 0.7f, Range = 25f, MinGap = 0.2f },
-            new DeadlockSound { Id = "celeste_beam_buff_max", VpkPrefix = "sounds/abilities/unicorn/a3/unicorn_luminous_buff_max", Volume = 0.8f, Range = 25f, MinGap = 1f },
+            new DeadlockSound { Id = "celeste_beam_buff_expire", VpkPrefix = "sounds/abilities/unicorn/a3/unicorn_luminous_buff_expire", Volume = 0.7f, Range = 25f, MinGap = 1f },
             new DeadlockSound { Id = "celeste_orb_cast", VpkPrefix = "sounds/abilities/unicorn/a4/unicorn_dazzling_orb_cast_delay", Volume = 0.9f, Range = 50f },
             new DeadlockSound { Id = "celeste_orb_channel", VpkPrefix = "sounds/abilities/unicorn/a4/unicorn_dazzling_orb_channel_lp", Volume = 0.6f, Range = 30f },
             new DeadlockSound { Id = "celeste_orb_fire", VpkPrefix = "sounds/abilities/unicorn/a4/unicorn_dazzling_orb_cast", Volume = 0.9f, Range = 60f },
