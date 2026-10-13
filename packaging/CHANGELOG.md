@@ -7,6 +7,7 @@
   also fall around Seven, hitting anything near them.
 - Wall jumps (every Deadlock hero) lose height when spammed: each one within a second of the last is 60% as high as the one
   before. Waiting a full second, an air jump, an air dash or landing restores full height.
+- **Celeste**: **Light Eater** flashes a purple cone showing exactly what it reaches.
 
 ## 1.6.0
 - Fixed: **Cursed Broker** cooldown penalties (all skills, Secondary, Utility, Special) now actually lengthen your cooldowns.

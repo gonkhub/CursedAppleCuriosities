@@ -39,8 +39,8 @@ namespace CursedAppleCuriosities.Survivors.Celeste
         public static BuffDef? MarkBuff, RadianceBuff, PrismBuff, OrbSlow;
         public static BodyIndex BodyIndex = BodyIndex.None;
 
-        public static GameObject? HitEffect, FlareEffect, BeamEffect, BeamWarning, ShatterEffect, BreakEffect, OrbHitEffect, BounceEffect;
-        public static Material? LineMaterial;
+        public static GameObject? HitEffect, FlareEffect, BeamEffect, BeamWarning, ShatterEffect, BreakEffect, OrbHitEffect, BounceEffect, FlareCone;
+        public static Material? LineMaterial, ConeFill, ConeEdge;
 
         private static SkillDef? _blade, _flare, _beam, _prism, _orb;
 
@@ -89,6 +89,35 @@ namespace CursedAppleCuriosities.Survivors.Celeste
                 foreach (string prop in new[] { "_TintColor", "_Color" })
                     if (LineMaterial.HasProperty(prop)) LineMaterial.SetColor(prop, LightColor);
             BeamWarning = CreateBeamWarning();
+            // Light Eater's cone (user, 1.7): a see-through purple fill (Helfire's range-sphere material) and purple outline.
+            Material? fill = TryLoad<Material>("RoR2/Base/BurnNearby/matHelfireRangeIndicator.mat", "RoR2/Base/WardOnLevel/matWarbannerSphereIndicator.mat");
+            if (fill != null)
+            {
+                ConeFill = new Material(fill) { name = "matCursedAppleCelesteCone" };
+                if (ConeFill.HasProperty("_TintColor")) ConeFill.SetColor("_TintColor", new Color(ConeColor.r, ConeColor.g, ConeColor.b, ConeFill.GetColor("_TintColor").a));
+            }
+            if (laser != null)
+            {
+                ConeEdge = new Material(laser) { name = "matCursedAppleCelesteConeEdge" };
+                foreach (string prop in new[] { "_TintColor", "_Color" })
+                    if (ConeEdge.HasProperty(prop)) ConeEdge.SetColor(prop, ConeColor);
+            }
+            FlareCone = CreateEffect<CelesteFlareCone>("CursedAppleCelesteFlareCone");
+        }
+
+        public static readonly Color ConeColor = new Color(0.62f, 0.3f, 1f);
+
+        /// <summary>An effect of our own (drawn by T), so every client sees it.</summary>
+        private static GameObject CreateEffect<T>(string name) where T : MonoBehaviour
+        {
+            var go = new GameObject(name + "Source");
+            go.AddComponent<EffectComponent>().applyScale = false;
+            go.AddComponent<VFXAttributes>().DoNotPool = true;
+            go.AddComponent<T>();
+            GameObject prefab = go.InstantiateClone(name, false);
+            UnityEngine.Object.Destroy(go);
+            ContentAddition.AddEffect(prefab);
+            return prefab;
         }
 
         /// <summary>Radiant Daggers' warning as an effect of our own (lines drawn by CelesteBeamWarning), so every client sees it.</summary>

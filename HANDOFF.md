@@ -399,7 +399,7 @@ same on a stand-in model.
     to nothing at 45 m (smoothstep, user: gradual), a blue-violet spark where it bounces, the shiv's own swing rings shrunk and held at size,
     homes gently onto an enemy within 22.5 deg of its flight, one bounce off the world, no ricochet; ghost 0.45x, light blue-violet
     (`CelesteDagger` on a Bandit shiv clone).
-  - M2 Light Eater: 0.3 s (she hangs in the air; in the air the flare plays over her in-air pose), 70 deg cone 10 m, 400%, marks 8 s
+  - M2 Light Eater: 0.3 s (she hangs in the air; in the air the flare plays over her in-air pose), 70 deg cone 15 m (user), 400%, marks 8 s; every client sees the exact cone flash purple for 0.7 s (`CelesteFlareCone` effect: Helfire range material + laser-line outline, 1.7 user)
     (mark shown over the enemy): +180% per blade hit on marked enemies and 18% of all her damage to them heals her. Alt Radiant Daggers:
     hold to preview (ring + beam marker), release to cast, like Puddle Punch; beam onto the aimed spot (30 m), 1.4 s, 600% in 8 m (a tall
     cylinder), +7% damage per enemy hit (Radiance: uncapped, one counter, 30 s from the latest hit).

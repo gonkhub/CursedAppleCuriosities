@@ -144,6 +144,8 @@ namespace CursedAppleCuriosities.Survivors.Celeste
             Vector3 dir = Dir.sqrMagnitude > 0.01f ? Dir.normalized : body.transform.forward;
             if (CelesteSurvivor.FlareEffect != null)
                 EffectManager.SpawnEffect(CelesteSurvivor.FlareEffect, new EffectData { origin = Origin + dir * range * 0.45f, scale = range * 0.6f }, true);
+            if (CelesteSurvivor.FlareCone != null)
+                EffectManager.SpawnEffect(CelesteSurvivor.FlareCone, new EffectData { origin = Origin, rotation = Quaternion.LookRotation(dir), scale = range }, true);
             EquipmentFx.Sound("celeste_flare_blast", Origin, Attacker);
             int hits = 0;
             using (DurationExtender.From(body))
@@ -680,6 +682,125 @@ namespace CursedAppleCuriosities.Survivors.Celeste
             if (_beam != null) _beam.widthMultiplier = Mathf.Lerp(0.1f, _radius * 0.15f, t * t);
             if (_ring != null) _ring.widthMultiplier = 0.12f + 0.1f * Mathf.Sin(_age * 12f);
             if (_age >= CelesteData.BeamDelay) Destroy(gameObject);
+        }
+    }
+
+    /// <summary>
+    /// Every client: Light Eater's real reach (user, 1.7), the exact cone the server hits (FlareConeDeg either side of the aim,
+    /// out to the flare's range, Mystic Expansion included) as a see-through purple solid with a purple outline: it snaps
+    /// out from her, holds a moment and fades.
+    /// </summary>
+    public class CelesteFlareCone : MonoBehaviour
+    {
+        private const float Grow = 0.08f, Life = 0.7f;
+        private const int Around = 32, Rings = 6;
+        private float _age, _range = 15f;
+        private Transform? _shape;
+        private Material? _fill, _edge;
+        private Color _fillTint, _edgeTint;
+
+        private void Start()
+        {
+            var ec = GetComponent<EffectComponent>();
+            if (ec != null && ec.effectData != null)
+            {
+                _range = Mathf.Max(1f, ec.effectData.scale);
+                transform.rotation = ec.effectData.rotation;
+            }
+            transform.localScale = Vector3.one;
+            var shape = new GameObject("cone");
+            shape.transform.SetParent(transform, false);
+            _shape = shape.transform;
+            float half = CelesteData.FlareConeDeg * Mathf.Deg2Rad;
+
+            if (CelesteSurvivor.ConeFill != null)
+            {
+                _fill = new Material(CelesteSurvivor.ConeFill);
+                _fillTint = _fill.HasProperty("_TintColor") ? _fill.GetColor("_TintColor") : Color.white;
+                shape.AddComponent<MeshFilter>().sharedMesh = Mesh(half);
+                var mr = shape.AddComponent<MeshRenderer>();
+                mr.sharedMaterial = _fill;
+                mr.shadowCastingMode = UnityEngine.Rendering.ShadowCastingMode.Off;
+                mr.receiveShadows = false;
+            }
+            if (CelesteSurvivor.ConeEdge != null)
+            {
+                _edge = new Material(CelesteSurvivor.ConeEdge);
+                _edgeTint = _edge.HasProperty("_TintColor") ? _edge.GetColor("_TintColor") : CelesteSurvivor.ConeColor;
+                // The rim where the cone ends, and edges from her out to it.
+                LineRenderer rim = Line(Around + 1);
+                for (int i = 0; i <= Around; i++) rim.SetPosition(i, Point(half, i * Mathf.PI * 2f / Around));
+                for (int k = 0; k < 8; k++)
+                {
+                    LineRenderer edge = Line(2);
+                    edge.SetPosition(0, Vector3.zero);
+                    edge.SetPosition(1, Point(half, k * Mathf.PI / 4f));
+                }
+            }
+            _shape.localScale = Vector3.one * 0.2f;
+        }
+
+        /// <summary>A point on the cone's far end (a sphere of radius 1: the server's cone is a distance check), polar angle from the aim.</summary>
+        private static Vector3 Point(float polar, float around) =>
+            new Vector3(Mathf.Sin(polar) * Mathf.Cos(around), Mathf.Sin(polar) * Mathf.Sin(around), Mathf.Cos(polar));
+
+        private LineRenderer Line(int points)
+        {
+            var go = new GameObject("edge");
+            go.transform.SetParent(_shape, false);
+            var lr = go.AddComponent<LineRenderer>();
+            lr.useWorldSpace = false;
+            lr.positionCount = points;
+            lr.widthMultiplier = 0.08f;
+            lr.sharedMaterial = _edge;
+            lr.startColor = lr.endColor = CelesteSurvivor.ConeColor;
+            lr.shadowCastingMode = UnityEngine.Rendering.ShadowCastingMode.Off;
+            return lr;
+        }
+
+        /// <summary>A unit cone (tip at the origin, along +Z): its side and its rounded end, both faces drawn.</summary>
+        private static Mesh Mesh(float half)
+        {
+            var v = new List<Vector3> { Vector3.zero };
+            var t = new List<int>();
+            // Rounded end: Rings rings from the rim (polar = half) in to the centre.
+            for (int r = 0; r <= Rings; r++)
+                for (int i = 0; i < Around; i++)
+                    v.Add(Point(half * (1f - r / (float)Rings), i * Mathf.PI * 2f / Around));
+            int Ring(int r, int i) => 1 + r * Around + (i % Around);
+            for (int i = 0; i < Around; i++) Tri(t, 0, Ring(0, i), Ring(0, i + 1)); // the side: tip to rim
+            for (int r = 0; r < Rings; r++)
+                for (int i = 0; i < Around; i++)
+                {
+                    Tri(t, Ring(r, i), Ring(r + 1, i), Ring(r, i + 1));
+                    Tri(t, Ring(r, i + 1), Ring(r + 1, i), Ring(r + 1, i + 1));
+                }
+            var m = new Mesh { name = "CelesteFlareCone" };
+            m.SetVertices(v);
+            m.SetTriangles(t, 0);
+            m.RecalculateNormals();
+            return m;
+        }
+
+        private static void Tri(List<int> t, int a, int b, int c) { t.Add(a); t.Add(b); t.Add(c); t.Add(a); t.Add(c); t.Add(b); }
+
+        private void Update()
+        {
+            _age += Time.deltaTime;
+            if (_shape != null) _shape.localScale = Vector3.one * _range * Mathf.Lerp(0.2f, 1f, Mathf.Clamp01(_age / Grow));
+            float fade = 1f - Mathf.Clamp01((_age - Grow) / (Life - Grow));
+            fade *= fade;
+            if (_fill != null && _fill.HasProperty("_TintColor")) _fill.SetColor("_TintColor", new Color(_fillTint.r, _fillTint.g, _fillTint.b, _fillTint.a * fade));
+            if (_edge != null && _edge.HasProperty("_TintColor")) _edge.SetColor("_TintColor", new Color(_edgeTint.r, _edgeTint.g, _edgeTint.b, _edgeTint.a * fade));
+            if (_age >= Life) Destroy(gameObject);
+        }
+
+        private void OnDestroy()
+        {
+            if (_fill != null) Destroy(_fill);
+            if (_edge != null) Destroy(_edge);
+            var mf = GetComponentInChildren<MeshFilter>();
+            if (mf != null && mf.sharedMesh != null) Destroy(mf.sharedMesh);
         }
     }
 }
