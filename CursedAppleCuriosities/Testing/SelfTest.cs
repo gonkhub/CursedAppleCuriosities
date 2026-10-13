@@ -222,10 +222,21 @@ namespace CursedAppleCuriosities.Testing
                     Log($"content: expansion {(CuriositiesExpansion.Enabled ? "on" : "off")}, items available {items}/{CursedAppleCuriositiesPlugin.ModItemDefs.Count}, equipment {equips}/{CursedAppleCuriositiesPlugin.ModEquipmentDefs.Count}, held {held} mod items, equipment {inv?.currentEquipmentIndex}");
                     return null;
                 }
+                case "waitmap": return WaitMap(F(p, 1, 1800f)); // until the Deadlock map conversion ends (or the timeout)
                 case "log": Log(rest); return null;
                 case "quit": Application.Quit(); return null;
                 default: Log("unknown command: " + p[0]); return null;
             }
+        }
+
+        private static IEnumerator WaitMap(float timeout)
+        {
+            float end = Time.realtimeSinceStartup + timeout;
+            var c = CursedAppleCuriosities.Stages.DeadlockMap.DeadlockMaps.SunkenPlaza;
+            while (c != null && Time.realtimeSinceStartup < end &&
+                   (c.State == CursedAppleCuriosities.Stages.DeadlockMap.MapState.Converting || c.State == CursedAppleCuriosities.Stages.DeadlockMap.MapState.NotStarted))
+                yield return new WaitForSeconds(1f);
+            Log($"waitmap: {(c == null ? "off" : c.State + ", " + c.Status)}");
         }
 
         private IEnumerator Screen(string name)

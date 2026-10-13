@@ -79,6 +79,24 @@ namespace CursedAppleCuriosities.Deadlock
             return changed ? t : null;
         }
 
+        /// <summary>Background thread: a standalone cache file (map textures, written by CursedAppleMapConvert; null if unreadable).</summary>
+        public static TexData? ReadStandalone(string cacheFile)
+        {
+            var t = new TexData { Key = cacheFile, Name = Path.GetFileNameWithoutExtension(cacheFile) };
+            if (!File.Exists(cacheFile)) return null;
+            try
+            {
+                using var br = new BinaryReader(File.OpenRead(cacheFile));
+                if (br.ReadUInt32() != Magic || br.ReadInt32() != Version) return null;
+                br.ReadInt64(); br.ReadInt64(); // no source file
+                t.W = br.ReadInt32(); t.H = br.ReadInt32(); t.Format = (TextureFormat)br.ReadInt32(); t.Mips = br.ReadBoolean();
+                int n = br.ReadInt32();
+                t.Raw = br.ReadBytes(n);
+                return t.Raw.Length == n ? t : null;
+            }
+            catch { return null; }
+        }
+
         /// <summary>Mipmapped and block-compressed (DXT1, DXT5 when the alpha is used), or RGBA32 when the size isn't a multiple of 4.</summary>
         private static void Encode(TexData t, byte[] rgba, int w, int h)
         {

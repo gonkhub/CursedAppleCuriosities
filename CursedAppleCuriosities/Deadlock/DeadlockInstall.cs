@@ -603,7 +603,31 @@ namespace CursedAppleCuriosities.Deadlock
             public long DataStart;
         }
 
-        private static List<VpkEntry> ReadVpkDirectory(string file)
+        /// <summary>CRC of every entry in a VPK's directory that want accepts (path -> CRC).</summary>
+        internal static Dictionary<string, uint> VpkCrcs(string file, Func<string, bool> want)
+        {
+            var d = new Dictionary<string, uint>();
+            foreach (VpkEntry e in ReadVpkDirectory(file, want)) d[e.Path] = e.Crc;
+            return d;
+        }
+
+        /// <summary>The converter this install uses (config, else the vrf folder next to the DLL).</summary>
+        internal static string Converter() => !string.IsNullOrWhiteSpace(ConverterPath?.Value) ? ConverterPath!.Value : DefaultConverter();
+
+        /// <summary>Run the converter, handing each line it prints to onLine (a background thread). False if it didn't finish in time.</summary>
+        internal static bool RunConverterLines(string args, Action<string> onLine, int timeoutMs = 30 * 60 * 1000)
+        {
+            var psi = new ProcessStartInfo(Converter(), args)
+            { UseShellExecute = false, CreateNoWindow = true, RedirectStandardOutput = true, RedirectStandardError = true };
+            using Process p = Process.Start(psi);
+            p.ErrorDataReceived += (o, e) => { };
+            p.BeginErrorReadLine();
+            string? line;
+            while ((line = p.StandardOutput.ReadLine()) != null) onLine(line);
+            return p.WaitForExit(timeoutMs);
+        }
+
+        private static List<VpkEntry> ReadVpkDirectory(string file, Func<string, bool>? wantPath = null)
         {
             var result = new List<VpkEntry>();
             using (var fs = new FileStream(file, FileMode.Open, FileAccess.Read, FileShare.ReadWrite))
@@ -633,7 +657,8 @@ namespace CursedAppleCuriosities.Deadlock
                             uint length = br.ReadUInt32();
                             br.ReadUInt16(); // terminator
                             string path = (dir == " " ? "" : dir + "/") + name + "." + ext;
-                            bool want = ext == "vsnd_c" ? WantedSounds.Exists(w => MatchesSound(w, path)) : ext == "vtex_c" && WantedIcons.Contains(path);
+                            bool want = wantPath != null ? wantPath(path)
+                                : ext == "vsnd_c" ? WantedSounds.Exists(w => MatchesSound(w, path)) : ext == "vtex_c" && WantedIcons.Contains(path);
                             byte[] pre = preload > 0 ? br.ReadBytes(preload) : Array.Empty<byte>();
                             if (want)
                                 result.Add(new VpkEntry { Path = path, Crc = crc, Archive = archive, Offset = offset, Length = length, Preload = pre, DataStart = header + treeSize });

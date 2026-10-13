@@ -20,6 +20,8 @@
 
   <!-- ───── BepInEx ───── -->
   <ItemGroup>
+    <EmbeddedResource Include="Resources\stages\cac_stagescenes" LogicalName="cac_stagescenes" />
+    <EmbeddedResource Include="Resources\stages\cac_stageassets" LogicalName="cac_stageassets" />
     <EmbeddedResource Include="Resources\icon_kineticdash.png" />
     <EmbeddedResource Include="Resources\icon_berserker.png" />
     <EmbeddedResource Include="Resources\icon_ricochet.png" />
@@ -151,6 +153,10 @@
       <HintPath>$(GameManagedPath)\UnityEngine.AudioModule.dll</HintPath>
       <Private>False</Private>
     </Reference>
+    <Reference Include="UnityEngine.AssetBundleModule">
+      <HintPath>$(GameManagedPath)\UnityEngine.AssetBundleModule.dll</HintPath>
+      <Private>False</Private>
+    </Reference>
     <Reference Include="UnityEngine.UnityWebRequestModule">
       <HintPath>$(GameManagedPath)\UnityEngine.UnityWebRequestModule.dll</HintPath>
       <Private>False</Private>
@@ -243,6 +249,19 @@
     <ItemGroup><VrfFiles Include="$(VrfSource)\**\*" /></ItemGroup>
     <Copy Condition="!Exists('$(DevPluginDir)\vrf\Source2Viewer-CLI.exe')" SourceFiles="@(VrfFiles)" DestinationFolder="$(DevPluginDir)\vrf\%(RecursiveDir)" />
     <Copy Condition="Exists('$(PlaytestPluginDir)') And !Exists('$(PlaytestPluginDir)\vrf\Source2Viewer-CLI.exe')" SourceFiles="@(VrfFiles)" DestinationFolder="$(PlaytestPluginDir)\vrf\%(RecursiveDir)" />
+  </Target>
+
+  <!-- ───── Deadlock map converter (CursedAppleMapConvert.exe, our own) next to the DLL ───── -->
+  <!-- Converts the Deadlock map stage from the player's OWN install in its own process (the game never carries the load). -->
+  <PropertyGroup>
+    <MapConvertDir>$(MSBuildProjectDirectory)\..\CursedAppleMapConvert\bin\Release\net472</MapConvertDir>
+  </PropertyGroup>
+  <Target Name="BuildMapConverter" AfterTargets="Build">
+    <Exec Command="dotnet build &quot;$(MSBuildProjectDirectory)\..\CursedAppleMapConvert\CursedAppleMapConvert.csproj&quot; -c Release -nologo -v q" />
+  </Target>
+  <Target Name="DeployMapConverter" AfterTargets="DeployToProfile;BuildMapConverter" Condition="'$(Configuration)' != 'Release'">
+    <Copy SourceFiles="$(MapConvertDir)\CursedAppleMapConvert.exe;$(MapConvertDir)\CursedAppleMapConvert.exe.config" DestinationFolder="$(DevPluginDir)" />
+    <Copy Condition="Exists('$(PlaytestPluginDir)')" SourceFiles="$(MapConvertDir)\CursedAppleMapConvert.exe;$(MapConvertDir)\CursedAppleMapConvert.exe.config" DestinationFolder="$(PlaytestPluginDir)" />
   </Target>
 
   <!-- ───── Post-build (Release only): refresh the Thunderstore distributable zip ───── -->

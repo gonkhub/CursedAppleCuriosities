@@ -100,6 +100,8 @@ namespace CursedAppleCuriosities
             InitSurvivors();
             Logger.LogInfo($"  survivors done at {clock.ElapsedMilliseconds} ms");
 
+            try { Stages.DeadlockMap.DeadlockMaps.Init(Config); Logger.LogInfo("  + [Stage] Deadlock map (Sunken Plaza)"); }
+            catch (Exception e) { Logger.LogError($"  ! [Stage] Deadlock map failed to init: {e}"); }
             try { Broker.CursedBroker.Init(Config); Logger.LogInfo("  + [Interactable] Cursed Broker"); }
             catch (Exception e) { Logger.LogError($"  ! [Interactable] Cursed Broker failed to init: {e}"); }
             try { Interactables.SoulUrn.Init(Config); Logger.LogInfo("  + [Interactable] Soul Urn"); }

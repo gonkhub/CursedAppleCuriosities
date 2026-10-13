@@ -49,6 +49,11 @@ try {
     $nlayer = Join-Path $env:USERPROFILE '.nuget\packages\nlayer\1.16.0\lib\netstandard2.0\NLayer.dll'
     if (-not (Test-Path $nlayer)) { throw "NLayer.dll not found at $nlayer (run a build to restore it)." }
     Copy-Item $nlayer (Join-Path $pluginsDir 'NLayer.dll')
+    # Our own Deadlock map converter (runs the stage conversion in its own process).
+    $mapConvert = Join-Path $projectRoot 'CursedAppleMapConvert\bin\Release\net472'
+    if (-not (Test-Path (Join-Path $mapConvert 'CursedAppleMapConvert.exe'))) { throw "CursedAppleMapConvert.exe not built at $mapConvert." }
+    Copy-Item (Join-Path $mapConvert 'CursedAppleMapConvert.exe') $pluginsDir
+    Copy-Item (Join-Path $mapConvert 'CursedAppleMapConvert.exe.config') $pluginsDir
     # Model converter: turns the player's OWN Deadlock hero models into glTF at runtime. No Valve file is shipped.
     if (-not (Test-Path (Join-Path $VrfSource 'Source2Viewer-CLI.exe'))) { throw "Source2Viewer-CLI.exe not found in $VrfSource." }
     Copy-Item $VrfSource (Join-Path $pluginsDir 'vrf') -Recurse
