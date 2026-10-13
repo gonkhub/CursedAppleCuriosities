@@ -112,7 +112,7 @@ namespace EntityStates.CursedApple.Viscous
     /// ground, 50 in the air). It cruises at 11.4 m/s; holding Primary ("Go Fast") builds to 20.3 m/s at 15 m/s2, and
     /// letting go sheds it slowly (1.3 m/s2). Walls bounce it off with 65% of its speed and 0.1 s without steering.
     /// Jump jumps, once more in the air. Enemies it touches (1.8 m from its centre) take damage, a short stun and a
-    /// knock, each at most once every 1.2 s; bosses don't move and bounce the ball back instead. 35% damage resist
+    /// knock, each at most once every 1.2 s; bosses don't move and bounce the ball back instead. 50% damage resist
     /// while rolling. Special again (after 0.3 s) ends it early; otherwise it lasts 11 s. The owner moves the ball;
     /// damage happens on the server; ViscousBallLook draws it on every client.
     /// </summary>

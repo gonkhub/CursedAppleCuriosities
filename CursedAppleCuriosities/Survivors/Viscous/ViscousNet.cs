@@ -34,7 +34,7 @@ namespace CursedAppleCuriosities.Survivors.Viscous
                 if (body != null && ViscousSurvivor.BallBuff != null && body.HasBuff(ViscousSurvivor.BallBuff)) info.velocity = Vector3.zero;
                 orig(self, body, info);
             };
-            // Deadlock's 35% bullet and spirit resist while rolling, as armor (100 armor = half damage).
+            // 50% resist while rolling (user; Deadlock 35% bullet and spirit), as armor (100 armor = half damage).
             RecalculateStatsAPI.GetStatCoefficients += (body, args) =>
             {
                 if (ViscousSurvivor.BallBuff == null || !body.HasBuff(ViscousSurvivor.BallBuff)) return;
@@ -167,7 +167,7 @@ namespace CursedAppleCuriosities.Survivors.Viscous
         }
     }
 
-    /// <summary>The rolling buff (35% resist, HUD timer) on or off.</summary>
+    /// <summary>The rolling buff (damage resist, HUD timer) on or off.</summary>
     public class ViscousBallMessage : INetMessage
     {
         public GameObject? Body;

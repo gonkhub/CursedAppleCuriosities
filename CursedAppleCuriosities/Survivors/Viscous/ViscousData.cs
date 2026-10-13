@@ -68,7 +68,7 @@ namespace CursedAppleCuriosities.Survivors.Viscous
         public const float BallRehit = 1.2f;            // Deadlock viscous_ball_damage_prevention: the same enemy again after this
         public static float BossFreeze = 0.3f;          // user: a boss stops the ball dead this long (hit-stop), then it bounces off as off a wall
         public static float BossDamageMult = 2f;        // user: bosses take double, and aren't stunned
-        public static float BallResist = 0.35f;        // Deadlock BulletResist/TechResist 35%: damage taken while rolling
+        public static float BallResist = 0.5f;         // damage taken while rolling (Deadlock BulletResist/TechResist 35%; 50% by the user)
 
         /// <summary>The ball's radius on this body: Mystic Expansion makes it bigger (user); it is drawn, bounced and hit with this.</summary>
         public static float Radius(CharacterBody? body) => BallRadius * MysticExpansion.RadiusMultiplier(body);
