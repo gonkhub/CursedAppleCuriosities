@@ -8,9 +8,9 @@
     <Nullable>enable</Nullable>
     <AllowUnsafeBlocks>true</AllowUnsafeBlocks>
 
-    <!-- Update these two paths if your install locations differ -->
-    <ProfilePath>C:\r2heimman\RiskOfRain2\profiles\Curiosities Dev</ProfilePath>
-    <GameManagedPath>C:\Program Files (x86)\Steam\steamapps\common\Risk of Rain 2\Risk of Rain 2_Data\Managed</GameManagedPath>
+    <!-- Override these for your machine, e.g. dotnet build /p:ProfilePath="..." /p:GameManagedPath="..." -->
+    <ProfilePath Condition="'$(ProfilePath)' == ''">C:\r2heimman\RiskOfRain2\profiles\Curiosities Dev</ProfilePath>
+    <GameManagedPath Condition="'$(GameManagedPath)' == ''">C:\Program Files (x86)\Steam\steamapps\common\Risk of Rain 2\Risk of Rain 2_Data\Managed</GameManagedPath>
   </PropertyGroup>
 
   <!-- ───── NLayer (MIT): decodes the cached Deadlock MP3s; RoR2 has Unity audio disabled ───── -->

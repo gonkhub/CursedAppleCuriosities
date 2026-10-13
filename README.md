@@ -9,8 +9,15 @@ from Deadlock. See [HANDOFF.md](HANDOFF.md) for the full roster, architecture, a
 dotnet build "CursedAppleCuriosities\CursedAppleCuriosities.csproj" -c Release
 ```
 
-The csproj references the game's `Managed` DLLs and an r2modman profile (BepInEx, R2API, MMHOOK);
-adjust `GameManagedPath` / `ProfilePath` in the csproj for your machine.
+The csproj references the game's `Managed` DLLs and an r2modman profile (BepInEx, R2API, MMHOOK).
+Point it at your own install and profile:
+
+```
+dotnet build "CursedAppleCuriosities\CursedAppleCuriosities.csproj" -c Debug /p:GameManagedPath="<RoR2>\Risk of Rain 2_Data\Managed" /p:ProfilePath="<r2modman profile>"
+```
+
+A Debug build copies the DLL into that profile's `BepInEx\plugins`. A Release build also packages the
+Thunderstore zip and needs Source2Viewer-CLI (`/p:VrfSource=...`).
 
 ## Icons
 
