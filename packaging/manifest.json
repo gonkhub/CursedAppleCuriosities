@@ -1,6 +1,6 @@
 {
   "name": "CursedAppleCuriosities",
-  "version_number": "1.8.0",
+  "version_number": "1.9.0",
   "website_url": "",
   "description": "Items, equipment, two artifacts, a cursed shrine and survivors (Lash, Abrams, Seven) adapted from Deadlock, as an expansion you can toggle in the lobby.",
   "dependencies": [
