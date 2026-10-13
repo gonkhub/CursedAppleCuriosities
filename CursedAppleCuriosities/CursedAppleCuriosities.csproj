@@ -43,6 +43,7 @@
     <EmbeddedResource Include="Resources\icon_counterspell.png" />
     <EmbeddedResource Include="Resources\icon_colossus.png" />
     <EmbeddedResource Include="Resources\icon_majesticleap.png" />
+    <EmbeddedResource Include="Resources\icon_lightningscroll.png" />
     <EmbeddedResource Include="Resources\icon_durationextender.png" />
     <EmbeddedResource Include="Resources\icon_goldengooseegg.png" />
     <EmbeddedResource Include="Resources\icon_fortitude.png" />

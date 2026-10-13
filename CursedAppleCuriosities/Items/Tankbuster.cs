@@ -14,8 +14,8 @@ namespace CursedAppleCuriosities.Items
         public override string ItemPickupDesc => "Big hits deal bonus damage based on the enemy's health.";
         public override string ItemFullDescription =>
             $"Dealing <style=cIsDamage>{DamageThreshold * 100:0}%+ damage</style> in a single hit " +
-            $"deals a bonus burst of <style=cIsDamage>{BurstPercent * 100:0}% of the enemy's max HP</style> " +
-            $"<style=cStack>(+{StackPercent * 100:0}% per stack)</style>. " +
+            $"deals a bonus burst of <style=cIsDamage>{BurstPercent * 100:0.#}% of the enemy's max HP</style> " +
+            $"<style=cStack>(+{StackPercent * 100:0.#}% per stack)</style>. " +
             $"<style=cIsUtility>{Cooldown:0}s cooldown</style>.";
 
         public override string ItemLore => "Somebody's been hitting the gym.";
@@ -33,9 +33,9 @@ namespace CursedAppleCuriosities.Items
 
         public override void Init(ConfigFile config)
         {
-            BurstPercent = config.Bind("Green", "Tankbuster - Burst Percent Of Enemy HP", 0.10f,
+            BurstPercent = config.Bind("Green", "Tankbuster - Burst Percent Of Enemy HP", 0.05f, // 0.10 before 1.8 (user)
                 "Bonus burst damage as a fraction of the enemy's max HP on a heavy hit.").Value;
-            StackPercent = config.Bind("Green", "Tankbuster - Stack Percent Of Enemy HP", 0.05f,
+            StackPercent = config.Bind("Green", "Tankbuster - Stack Percent Of Enemy HP", 0.025f, // 0.05 before 1.8 (user)
                 "Extra burst damage per additional stack, as a fraction of the enemy's max HP.").Value;
             CreateLang();
             CreateItem();

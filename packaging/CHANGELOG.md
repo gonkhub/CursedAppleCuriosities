@@ -1,8 +1,23 @@
 # Changelog
 
 ## 1.8.0 (unreleased)
+- New red item: **Lightning Scroll**. The first time your special skill hits an enemy, a purple bolt of lightning strikes it
+  3 seconds later for 500% damage (+250% per stack) and stuns it for 2 seconds.
 - The mod's content is now an **expansion** you can switch off in the lobby, next to the base game's expansions. Off: none of
   its items, equipment or artifacts drop or can be given, and no Cursed Broker appears. Its survivors can still be played.
+- **Toxic Bullets**: the poison is now credited to you, so poison kills pay gold and XP and trigger on-kill effects. It deals
+  exactly 1% of the enemy's max health per second per stack, ignoring armor.
+- **Colossus**: other players now see you grow (the growth only showed on the host).
+- **Hunter's Aura**: holders no longer interfere with each other; an enemy takes the strongest aura on it.
+- **Counterspell**: a blocked hit is fully rejected, so its debuffs and on-hit effects don't land either.
+- **Trophy Collector**: gold per Trophy scales with difficulty (like chest prices). Trophies are cleared whenever you leave a
+  stage, not only when the teleporter charges, so leftover gold can always be turned into XP.
+- **Burst Fire**: only hits from your primary skill trigger it.
+- **Radiant Regen**: only secondary, utility and special skills count. The cast heal is 5% of max health (5 s cooldown) and each
+  Radiance stack regenerates 1% of max health per second.
+- **Long Range**: boosts the hit itself instead of dealing a separate hit.
+- **Tankbuster**: 5% of the enemy's max health (+2.5% per stack), was 10% (+5%).
+- **Spirit Burn**: burns for 60% damage per second per stack. It was described as 35% but actually dealt about 9%.
 
 ## 1.7.0
 - Survivors now release one at a time: this package has **Lash**, **Abrams** and **Seven**. The other heroes from

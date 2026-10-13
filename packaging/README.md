@@ -2,8 +2,8 @@
 
 Items, equipment and survivors adapted from Deadlock's item shop for Risk of Rain 2.
 
-- **31 items** across white, green, red, void and lunar tiers
-- **9 equipment**
+- **32 items** across white, green, red, void and lunar tiers
+- **14 equipment**
 - **Artifact of the Curio**: only this mod's items drop
 - **Artifact of the Goose**: every player starts the run with a random Goose Egg
 - **Curiosity Catalog** (lunar): clearing the teleporter drops a shop selling this mod's

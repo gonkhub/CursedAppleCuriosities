@@ -42,50 +42,38 @@ namespace CursedAppleCuriosities.Items
 
         public override void Hooks()
         {
-            On.RoR2.GlobalEventManager.OnHitEnemy += OnHitEnemy;
+            On.RoR2.HealthComponent.TakeDamage += HealthComponent_TakeDamage;
         }
 
-        private void OnHitEnemy(
-            On.RoR2.GlobalEventManager.orig_OnHitEnemy orig,
-            GlobalEventManager self,
-            DamageInfo damageInfo,
-            GameObject victim)
+        // Boosts the hit itself (1.8, user; it used to be a separate 0-proc hit): one damage number, and the
+        // bonus is part of the hit everything else sees.
+        private void HealthComponent_TakeDamage(
+            On.RoR2.HealthComponent.orig_TakeDamage orig,
+            HealthComponent self,
+            DamageInfo damageInfo)
         {
-            orig(self, damageInfo, victim);
-
-            if (!NetworkServer.active) return;
-            if (damageInfo == null || victim == null) return;
-            if (damageInfo.procCoefficient <= 0f) return;
-            if (damageInfo.attacker == null) return;
-
-            var attackerBody = damageInfo.attacker.GetComponent<CharacterBody>();
-            if (attackerBody?.inventory == null) return;
-
-            int count = attackerBody.inventory.GetItemCountEffective(ItemDef);
-            if (count <= 0) return;
-
-            float distance = Vector3.Distance(damageInfo.attacker.transform.position, victim.transform.position);
-            float reach = MysticExpansion.RadiusMultiplier(attackerBody); // Mystic Expansion slides the window closer
-            float min = MinRange / reach, max = MaxRange / reach;
-            if (distance <= min) return;
-
-            float rangeScalar = Mathf.Clamp01((distance - min) / (max - min));
-            float bonusMult   = count * (MinBonusPerStack + (MaxBonusPerStack - MinBonusPerStack) * rangeScalar);
-            if (bonusMult <= 0f) return;
-
-            var victimHC = victim.GetComponent<HealthComponent>();
-            if (victimHC == null) return;
-
-            var proc = new DamageInfo();
-            proc.attacker         = damageInfo.attacker;
-            proc.inflictor        = damageInfo.attacker;
-            proc.damage           = damageInfo.damage * bonusMult;
-            proc.crit             = damageInfo.crit;
-            proc.position         = damageInfo.position;
-            proc.procCoefficient  = 0f;
-            proc.damageColorIndex = DamageColorIndex.Item;
-
-            victimHC.TakeDamage(proc);
+            if (NetworkServer.active
+                && damageInfo != null
+                && damageInfo.attacker != null
+                && damageInfo.procCoefficient > 0f
+                && damageInfo.dotIndex == DotController.DotIndex.None
+                && damageInfo.damage > 0f)
+            {
+                var attackerBody = damageInfo.attacker.GetComponent<CharacterBody>();
+                int count = attackerBody != null && attackerBody.inventory != null ? attackerBody.inventory.GetItemCountEffective(ItemDef) : 0;
+                if (count > 0)
+                {
+                    float distance = Vector3.Distance(damageInfo.attacker.transform.position, self.transform.position);
+                    float reach = MysticExpansion.RadiusMultiplier(attackerBody); // Mystic Expansion slides the window closer
+                    float min = MinRange / reach, max = MaxRange / reach;
+                    if (distance > min)
+                    {
+                        float rangeScalar = Mathf.Clamp01((distance - min) / (max - min));
+                        damageInfo.damage *= 1f + count * (MinBonusPerStack + (MaxBonusPerStack - MinBonusPerStack) * rangeScalar);
+                    }
+                }
+            }
+            orig(self, damageInfo);
         }
     }
 }

@@ -14,7 +14,7 @@ namespace CursedAppleCuriosities.Items
 
         public override string ItemPickupDesc => "Nearby enemies take more damage, especially when isolated.";
         public override string ItemFullDescription =>
-            $"Emit a fixed <style=cIsUtility>{BaseRange}m</style> aura that amplifies the " +
+            $"Emit a <style=cIsUtility>{BaseRange}m</style> aura that amplifies the " +
             $"<style=cIsDamage>incoming damage</style> of nearby enemies by " +
             $"<style=cIsDamage>+{DamageAmplifyPerStack * 100:0}% per stack</style>. " +
             $"If the target is <style=cIsDamage>isolated</style> — the only enemy in range — " +
@@ -102,11 +102,16 @@ namespace CursedAppleCuriosities.Items
 
     public class HuntersAuraController : MonoBehaviour
     {
+        // Every holder's aura. An enemy's debuff is the strongest aura on it, so two holders never
+        // overwrite each other (or clear each other's debuff when one walks away).
+        private static readonly List<HuntersAuraController> Live = new List<HuntersAuraController>();
+
         private float         _timer;
         private CharacterBody _body;
         private HuntersAura   _item;
 
-        private readonly HashSet<CharacterBody> _debuffedBodies = new HashSet<CharacterBody>();
+        // What this holder's aura gives each enemy in it.
+        private readonly Dictionary<CharacterBody, int> _given = new Dictionary<CharacterBody, int>();
 
         public HuntersAuraController Initialize(HuntersAura item)
         {
@@ -115,12 +120,14 @@ namespace CursedAppleCuriosities.Items
         }
 
         private void Awake() => _body = GetComponent<CharacterBody>();
+        private void OnEnable() => Live.Add(this);
 
-        private void OnDestroy()
+        private void OnDisable()
         {
-            foreach (var body in _debuffedBodies)
-                if (body != null) SyncDebuff(body, 0);
-            _debuffedBodies.Clear();
+            Live.Remove(this);
+            var was = new List<CharacterBody>(_given.Keys);
+            _given.Clear();
+            foreach (var body in was) Resync(body);
         }
 
         private void FixedUpdate()
@@ -164,29 +171,30 @@ namespace CursedAppleCuriosities.Items
                 inRange.Add(hb.healthComponent.body);
             }
 
-            int desiredStacks = (inRange.Count == 1
+            // Isolated = the only enemy in this holder's aura.
+            int stacks = (inRange.Count == 1
                 ? HuntersAura.FocusedStacks
                 : HuntersAura.NormalStacks) * itemCount;
 
+            var touched = new List<CharacterBody>(_given.Keys);
+            _given.Clear();
             foreach (var body in inRange)
-                SyncDebuff(body, desiredStacks);
-
-            foreach (var body in _debuffedBodies)
-                if (!inRange.Contains(body) && body != null)
-                    SyncDebuff(body, 0);
-
-            _debuffedBodies.Clear();
-            foreach (var body in inRange)
-                _debuffedBodies.Add(body);
+            {
+                _given[body] = stacks;
+                touched.Add(body);
+            }
+            foreach (var body in touched) Resync(body);
         }
 
-        private static void SyncDebuff(CharacterBody body, int desired)
+        private static void Resync(CharacterBody body)
         {
-            if (HuntersAura.HuntersDebuffDef == null || HuntersAura.HuntersDebuffDef.buffIndex == BuffIndex.None) return;
+            if (!NetworkServer.active || body == null || HuntersAura.HuntersDebuffDef == null || HuntersAura.HuntersDebuffDef.buffIndex == BuffIndex.None) return;
+            int desired = 0;
+            foreach (var aura in Live)
+                if (aura._given.TryGetValue(body, out int n) && n > desired) desired = n;
             var idx     = HuntersAura.HuntersDebuffDef.buffIndex;
             int current = body.GetBuffCount(idx);
-            while (current > desired) { body.RemoveBuff(idx); current--; }
-            while (current < desired) { body.AddBuff(idx);    current++; }
+            if (current != desired) body.SetBuffCount(idx, desired);
         }
     }
 }

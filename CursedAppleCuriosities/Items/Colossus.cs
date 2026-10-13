@@ -73,6 +73,12 @@ namespace CursedAppleCuriosities.Items
         public override void Hooks()
         {
             On.RoR2.HealthComponent.TakeDamage += HealthComponent_TakeDamage;
+            // Runs on every machine whenever buffs change: start the growth wherever the Colossus buff shows up.
+            RecalculateStatsAPI.GetStatCoefficients += (sender, args) =>
+            {
+                if (ColossusBuffDef != null && sender.HasBuff(ColossusBuffDef) && sender.GetComponent<ColossusScale>() == null)
+                    sender.gameObject.AddComponent<ColossusScale>();
+            };
         }
 
         public override bool OnUse(EquipmentSlot slot)
@@ -114,15 +120,12 @@ namespace CursedAppleCuriosities.Items
     // Scale is applied to modelTransform, which cascades to HurtBox child colliders —
     // so enemies genuinely have a larger target. CharacterMotor's own capsule is on
     // the root and is NOT a child, so movement physics are unaffected.
-    // NOTE: The scale change runs server-side. In hosted multiplayer the host sees it
-    // correctly; remote clients see the buff indicator but not the visual growth.
+    // The growth itself is ColossusScale, which every machine runs from the synced buff count.
     public class ColossusEffect : MonoBehaviour
     {
         private CharacterBody _body;
         private float         _timer;
         private float         _slowTimer;
-        private Vector3       _originalScale;
-        private bool          _scaled;
         private int           _stacks;
 
         // Incoming-damage multiplier from the current stack count. Resistance stacks
@@ -143,8 +146,6 @@ namespace CursedAppleCuriosities.Items
             _stacks = 1;
             _timer  = Colossus.Duration * DurationExtender.Multiplier(_body);
 
-            CaptureOriginalScale();
-            UpdateScale();
             SyncBuff();
             _body?.RecalculateStats();
         }
@@ -156,7 +157,6 @@ namespace CursedAppleCuriosities.Items
             if (_stacks < Mathf.Max(1, Colossus.MaxStacks)) _stacks++;
             _timer = Colossus.Duration * DurationExtender.Multiplier(_body);
 
-            UpdateScale();
             SyncBuff();
             _body?.RecalculateStats();
         }
@@ -182,41 +182,8 @@ namespace CursedAppleCuriosities.Items
 
         private void OnDestroy()
         {
-            RestoreScale();
             ClearBuff();
             _body?.RecalculateStats();
-        }
-
-        private void CaptureOriginalScale()
-        {
-            if (_scaled || _body?.modelLocator?.modelTransform == null) return;
-            _originalScale = _body.modelLocator.modelTransform.localScale;
-            _scaled = true;
-        }
-
-        // Set size from the original scale (never compound onto the current value, or repeated
-        // updates would runaway). Growth is the base step for stack 1, plus a geometrically
-        // decaying step per extra stack → the model keeps growing but by less each time.
-        private void UpdateScale()
-        {
-            if (!_scaled || _body?.modelLocator?.modelTransform == null) return;
-
-            float growth = 0f;
-            float step   = Colossus.ScaleFactor - 1f;
-            for (int i = 0; i < _stacks; i++)
-            {
-                growth += step;
-                step   *= Colossus.ScaleDecay;
-            }
-            _body.modelLocator.modelTransform.localScale = _originalScale * (1f + growth);
-        }
-
-        private void RestoreScale()
-        {
-            if (!_scaled) return;
-            if (_body?.modelLocator?.modelTransform != null)
-                _body.modelLocator.modelTransform.localScale = _originalScale;
-            _scaled = false;
         }
 
         private void PulseSlow()
@@ -256,6 +223,50 @@ namespace CursedAppleCuriosities.Items
             if (!NetworkServer.active || _body == null) return;
             if (Colossus.ColossusBuffDef == null || Colossus.ColossusBuffDef.buffIndex == BuffIndex.None) return;
             _body.SetBuffCount(Colossus.ColossusBuffDef.buffIndex, 0);
+        }
+    }
+
+    /// <summary>
+    /// Colossus' growth, on every machine (the transformation itself is server-only): sized from the synced Colossus buff
+    /// count, so remote players see each other grow. Scaling modelTransform also grows the hurtboxes under it.
+    /// </summary>
+    public class ColossusScale : MonoBehaviour
+    {
+        private CharacterBody _body = null!;
+        private Transform?    _model;
+        private Vector3       _originalScale;
+        private int           _shownStacks;
+
+        private void Awake() => _body = GetComponent<CharacterBody>();
+
+        private void LateUpdate()
+        {
+            int stacks = _body != null && Colossus.ColossusBuffDef != null && Colossus.ColossusBuffDef.buffIndex != BuffIndex.None
+                ? _body.GetBuffCount(Colossus.ColossusBuffDef.buffIndex) : 0;
+            if (stacks == _shownStacks) return;
+            if (stacks <= 0) { Destroy(this); return; }
+            if (_model == null)
+            {
+                _model = _body.modelLocator != null ? _body.modelLocator.modelTransform : null;
+                if (_model == null) return;
+                _originalScale = _model.localScale;
+            }
+            _shownStacks = stacks;
+            // From the original scale (never compounded): the base step for stack 1, then a geometrically
+            // decaying step per extra stack, so it keeps growing but by less each time.
+            float growth = 0f;
+            float step   = Colossus.ScaleFactor - 1f;
+            for (int i = 0; i < stacks; i++)
+            {
+                growth += step;
+                step   *= Colossus.ScaleDecay;
+            }
+            _model.localScale = _originalScale * (1f + growth);
+        }
+
+        private void OnDestroy()
+        {
+            if (_model != null && _shownStacks > 0) _model.localScale = _originalScale;
         }
     }
 }

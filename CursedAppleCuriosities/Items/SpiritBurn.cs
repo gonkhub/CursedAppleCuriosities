@@ -35,13 +35,15 @@ namespace CursedAppleCuriosities.Items
         public const float ExplosionRadius = 15f;
         public static float BurnDpsPerStack;
         public const float BurnDuration    = 5f;
-        // Burn ticks ~2x/s; damageMultiplier = DPS_fraction * tickInterval
-        private const float BurnTickInterval = 0.5f;
+        // The game's Burn deals damageCoefficient 0.1 of the attacker's damage x damageMultiplier every 0.2 s:
+        // 0.5 x damageMultiplier per second. (Before 1.8 this was taken as 1 tick per 0.5 s, so it dealt a quarter
+        // of the described DPS.)
+        private const float BurnDpsPerMultiplier = 0.5f;
         public const float Cooldown         = 3f;
 
         public override void Init(ConfigFile config)
         {
-            BurnDpsPerStack = config.Bind("Void", "Spirit Burn - Burn DPS Per Stack", 0.35f,
+            BurnDpsPerStack = config.Bind("Void", "Spirit Burn - Burn DPS Per Stack", 0.6f, // 0.35 before 1.8, which actually dealt ~0.09 (user: buff)
                 "Ignite damage per second as a fraction of your damage, per stack.").Value;
             CreateLang();
             CreateItem();
@@ -109,10 +111,9 @@ namespace CursedAppleCuriosities.Items
              .FilterCandidatesByDistinctHurtBoxEntities()
              .GetHurtBoxes(hurtBoxes);
 
-            // Target DPS = BurnDpsPerStack * itemCount * attackerBody.damage
-            // InflictDot damage per tick = attackerBody.damage * damageMultiplier
-            // DPS = damage per tick / tickInterval  →  damageMultiplier = DPS_fraction * tickInterval
-            float damageMultiplier = BurnDpsPerStack * itemCount * BurnTickInterval;
+            // Target DPS = BurnDpsPerStack * itemCount * attackerBody.damage (Burn's own cap, 5% of the target's
+            // max health per second per multiplier, only matters on weak enemies).
+            float damageMultiplier = BurnDpsPerStack * itemCount / BurnDpsPerMultiplier;
 
             foreach (var hb in hurtBoxes)
             {
