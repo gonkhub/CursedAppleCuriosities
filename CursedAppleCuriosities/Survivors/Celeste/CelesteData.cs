@@ -181,7 +181,7 @@ namespace CursedAppleCuriosities.Survivors.Celeste
         };
 
         /// <summary>Seconds her jump and air-dash poses play before the in-air loop takes over (see CelesteModel.LoopRule).</summary>
-        public const float JumpPose = 0.8f, AirDashPose = 0.5f;
+        public const float JumpPose = 0.8f, AirDashPose = 0.8f; // her air-dash clip is 0.83 s: it plays (nearly) through (user: it snapped back too soon)
 
         public static readonly HashSet<string> Locked = new HashSet<string>
         { "dash_ground", "dash_air_forward", "dash_air_back", "dash_air_left", "dash_air_right", "death", "select" };
