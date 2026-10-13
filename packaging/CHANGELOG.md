@@ -7,7 +7,7 @@
   harder, and the throw carries: everything punched keeps its full speed for a moment, then flies on without slowing.
 - **Celeste**: blades are a little slower and ease out gradually toward the end of their range; they flash where they bounce
   off a surface, and their rings no longer grow in flight.
-- **Celeste**: **Shining Wonder** deals half damage (500%) but bounces three times as often (24).
+- **Celeste**: **Shining Wonder** deals half damage (500%) but bounces three times as often (24), and reaches 15.5 m to its next target again (was 7).
 - **Celeste**: shorter air dashes (10 m, was 14) and higher air jumps.
 
 ## 1.5.0
