@@ -45,7 +45,7 @@ namespace CursedAppleCuriosities.Survivors.Viscous
 
         // ---- special: Goo Ball (Deadlock viscous_goo_bowling_ball) ----
         public static float BallDuration = 11f;         // Deadlock AbilityDuration
-        public static float BallCooldown = 20f;         // Deadlock 150 (user: half of the first 40)
+        public static float BallCooldown = 32f;         // Deadlock 150 (user: 40 -> 20 -> 32)
         public const float BallCastDelay = 0.55f;       // Deadlock AbilityCastDelay: he curls up, then is the ball
         public const float BallCancelGrace = 0.3f;      // Special again after this ends it early (Deadlock: ability button cancels)
         public static float BallSpeed = 11.43f;         // Deadlock m_flDefaultBallSpeed 450 hu/s
