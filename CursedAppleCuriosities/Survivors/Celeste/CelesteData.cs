@@ -50,7 +50,7 @@ namespace CursedAppleCuriosities.Survivors.Celeste
         public const float DaggerDragFrom = 10f;         // metres flown before it starts losing airspeed (user; 15, then earlier so it is already slowing at 20 m)
         public const float DaggerStopAt = 90f;           // by here its forward speed has eased all the way out and it only drops (user: gradual, not steep; 45, doubled)
         public const float DaggerHomeConeDeg = 22.5f;    // Deadlock: homes onto an enemy within ~45 deg of its flight
-        public const float DaggerHomeRange = 45f;
+        public const float DaggerHomeRange = 45f;        // Mystic Expansion: farther
         public const float DaggerTurnDegPerSec = 150f;  // gentle, so the arc shows
         public const float DaggerBounceKeep = 0.7f;      // speed kept by its one bounce off the world
         public const float DaggerLifetime = 3f;

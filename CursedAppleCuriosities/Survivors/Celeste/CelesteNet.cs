@@ -412,7 +412,8 @@ namespace CursedAppleCuriosities.Survivors.Celeste
             TeamIndex team = TeamComponent.GetObjectTeam(owner);
             HealthComponent? best = null;
             float bestAngle = CelesteData.DaggerHomeConeDeg;
-            foreach (HealthComponent hc in CelesteNet.EnemiesIn(transform.position, CelesteData.DaggerHomeRange, team))
+            float range = CelesteData.DaggerHomeRange * MysticExpansion.RadiusMultiplier(owner.GetComponent<CharacterBody>());
+            foreach (HealthComponent hc in CelesteNet.EnemiesIn(transform.position, range, team))
             {
                 float a = Vector3.Angle(v, CelesteNet.Core(hc) - transform.position);
                 if (a < bestAngle && CelesteNet.Visible(transform.position, CelesteNet.Core(hc))) { bestAngle = a; best = hc; }

@@ -76,6 +76,10 @@
       <HintPath>$(ProfilePath)\BepInEx\core\MonoMod.Utils.dll</HintPath>
       <Private>False</Private>
     </Reference>
+    <Reference Include="MonoMod.RuntimeDetour">
+      <HintPath>$(ProfilePath)\BepInEx\core\MonoMod.RuntimeDetour.dll</HintPath>
+      <Private>False</Private>
+    </Reference>
   </ItemGroup>
 
   <!-- ───── RoR2 game assemblies ───── -->

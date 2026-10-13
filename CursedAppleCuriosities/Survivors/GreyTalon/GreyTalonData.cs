@@ -38,7 +38,7 @@ namespace CursedAppleCuriosities.Survivors.GreyTalon
         // ---- primary: the bow (slow, very long range hitscan: user) ----
         public static float BowDamage = 3f;
         public static float BowCycle = 0.6f;            // Deadlock m_flCycleTime
-        public const float BowRange = 600f;             // Deadlock 7000 hu (178 m): far longer here (user: very long range)
+        public const float BowRange = 600f;             // Deadlock 7000 hu (178 m): far longer here (user: very long range); Mystic Expansion: farther (every bullet)
         // Falloff (user: the primary only, full damage across about half of most maps first). Deadlock: 18 m -> 54 m, to 10%.
         public static float BowFalloffStart = 150f;
         public static float BowFalloffEnd = 300f;
@@ -54,7 +54,7 @@ namespace CursedAppleCuriosities.Survivors.GreyTalon
         public const float ChargedSpeed = 406.4f;       // Deadlock m_flBulletSpeed 8000 hu/s (203 m/s), doubled (user, 2.0)
         public static float ChargedRadius = 3f;         // wider than Deadlock's 24 hu (0.61 m) (user; 1.5 until 2.0). Enemies only: walls stop it at ChargedWallRadius
         public const float ChargedWallRadius = 0.3f;    // m: the arrow's own thickness against terrain, so a fat hitbox doesn't snag the floor
-        public const float ChargedRange = 600f;         // Deadlock 10000 hu; no falloff (user)
+        public const float ChargedRange = 600f;         // Deadlock 10000 hu; no falloff (user); Mystic Expansion: farther
         public const float ChargedDrop = 3f;            // m/s2 (Deadlock gravity scale 0.3)
         // Camera while drawn (Deadlock CameraHeightOffset 20 hu, CameraHorizontalOffset 15 hu): over the right shoulder, zoomed.
         public const float ChargedFov = 45f;

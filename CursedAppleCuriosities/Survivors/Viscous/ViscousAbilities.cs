@@ -327,7 +327,8 @@ namespace CursedAppleCuriosities.Survivors.Viscous
         private DeadlockVoice? _hum;
 
         // The alt glob flies its Deadlock range (m_flRange) and bursts there; Splatter bounces until it's spent or times out.
-        private float Lifetime => Splatter ? ViscousData.SplatterLifetime : ViscousData.AltRange / ViscousData.AltSpeed;
+        private float Lifetime => Splatter ? ViscousData.SplatterLifetime
+            : ViscousData.AltRange * MysticExpansion.RadiusMultiplier(_pc != null && _pc.owner != null ? _pc.owner.GetComponent<CharacterBody>() : null) / ViscousData.AltSpeed; // Mystic Expansion: farther
 
         private void Awake()
         {

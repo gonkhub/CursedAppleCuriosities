@@ -41,6 +41,7 @@ namespace CursedAppleCuriosities.Items
             // Will-o'-the-wisp, Arctic Blast...) resolves through BlastAttack.Fire with the owner as attacker.
             On.RoR2.BlastAttack.Fire += BlastAttack_Fire;
             MysticExpansionReach.Hook();
+            MysticExpansionSkills.Hook();
         }
 
         private static BlastAttack.Result BlastAttack_Fire(On.RoR2.BlastAttack.orig_Fire orig, BlastAttack self)

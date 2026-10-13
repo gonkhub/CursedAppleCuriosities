@@ -279,7 +279,16 @@ namespace CursedAppleCuriosities.Survivors.GreyTalon
         {
             if (!NetworkServer.active || _done) return;
             Vector3 now = transform.position;
-            if (!_started) { _started = true; _last = now; return; }
+            if (!_started)
+            {
+                _started = true;
+                _last = now;
+                // Mystic Expansion: it flies farther (ChargedRange is its lifetime at full speed).
+                var simple = GetComponent<ProjectileSimple>();
+                var owner = GetComponent<ProjectileController>().owner;
+                if (simple != null && owner != null) simple.lifetime *= MysticExpansion.RadiusMultiplier(owner.GetComponent<CharacterBody>());
+                return;
+            }
             Vector3 d = now - _last;
             float len = d.magnitude;
             if (len < 1e-4f) return;
