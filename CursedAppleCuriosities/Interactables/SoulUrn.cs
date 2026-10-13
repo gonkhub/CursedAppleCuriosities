@@ -26,7 +26,6 @@ namespace CursedAppleCuriosities.Interactables
         public static float SpawnChance;
         public static float TimeLimit;
         public static float MinTeleporterDistance;
-        public static float MaxTeleporterDistance;
         public static float DeliveryRadius;
         public static int BaseItems;
         public static float ItemsPerStage;
@@ -73,8 +72,6 @@ namespace CursedAppleCuriosities.Interactables
             TimeLimit = config.Bind(S, "Time Limit", 30f, "Seconds to reach the teleporter after picking the urn up.").Value;
             MinTeleporterDistance = config.Bind(S, "Min Teleporter Distance", 180f, // 60 until 2.0 (user)
                 "The urn always spawns at least this far (m) from the teleporter.").Value;
-            MaxTeleporterDistance = config.Bind(S, "Max Teleporter Distance", 160f,
-                "The urn prefers to spawn within this distance (m) of the teleporter, so it can be delivered in time. Further out only when the map has no room closer.").Value;
             DeliveryRadius = config.Bind(S, "Delivery Radius", 12f, "How close (m) to the teleporter the carrier must get.").Value;
             BaseItems = config.Bind(S, "Base Items", 3, "Items for a delivery on stage 1.").Value;
             ItemsPerStage = config.Bind(S, "Items Per Stage", 1f, "Extra items per stage already cleared this run (fractions add up and round down).").Value;
@@ -195,30 +192,27 @@ namespace CursedAppleCuriosities.Interactables
             var rng = new Xoroshiro128Plus(run.seed ^ (ulong)(run.stageClearCount + 1) * 0xA24BAED4963EE407UL);
             if (!DebugAlwaysSpawn && rng.nextNormalizedFloat >= SpawnChance) return;
 
-            // Nearest band first, so the urn is far from the teleporter but still deliverable in time.
+            // Anywhere at least MinTeleporterDistance from the teleporter (no upper limit: user, 2.0).
             float min = Mathf.Max(0f, MinTeleporterDistance);
-            float max = Mathf.Max(min + 10f, MaxTeleporterDistance);
-            foreach (float far in new[] { max, max * 2f, 10000f })
+            const float far = 10000f;
+            for (int attempt = 0; attempt < 12; attempt++)
             {
-                for (int attempt = 0; attempt < 6; attempt++)
+                GameObject? spawned = DirectorCore.instance.TrySpawnObject(new DirectorSpawnRequest(_card, new DirectorPlacementRule
                 {
-                    GameObject? spawned = DirectorCore.instance.TrySpawnObject(new DirectorSpawnRequest(_card, new DirectorPlacementRule
-                    {
-                        placementMode = DirectorPlacementRule.PlacementMode.Approximate,
-                        minDistance = min,
-                        maxDistance = far,
-                        spawnOnTarget = tp.transform,
-                    }, rng));
-                    if (spawned == null) continue;
-                    if (Vector3.Distance(spawned.transform.position, tp.transform.position) < min)
-                    {
-                        NetworkServer.Destroy(spawned); // node distance and straight-line distance can disagree
-                        continue;
-                    }
-                    CursedAppleCuriositiesPlugin.Logger?.LogInfo($"[SoulUrn] Spawned at {spawned.transform.position}, " +
-                        $"{Vector3.Distance(spawned.transform.position, tp.transform.position):0} m from the teleporter.");
-                    return;
+                    placementMode = DirectorPlacementRule.PlacementMode.Approximate,
+                    minDistance = min,
+                    maxDistance = far,
+                    spawnOnTarget = tp.transform,
+                }, rng));
+                if (spawned == null) continue;
+                if (Vector3.Distance(spawned.transform.position, tp.transform.position) < min)
+                {
+                    NetworkServer.Destroy(spawned); // node distance and straight-line distance can disagree
+                    continue;
                 }
+                CursedAppleCuriositiesPlugin.Logger?.LogInfo($"[SoulUrn] Spawned at {spawned.transform.position}, " +
+                    $"{Vector3.Distance(spawned.transform.position, tp.transform.position):0} m from the teleporter.");
+                return;
             }
             CursedAppleCuriositiesPlugin.Logger?.LogWarning("[SoulUrn] No spot far enough from the teleporter for the urn this stage.");
         }
