@@ -193,7 +193,7 @@ namespace CursedAppleCuriosities.Survivors.Celeste
 
         /// <summary>
         /// Deadlock sounds from her own folders (picked by name while the user was away: review pending). VO by ability:
-        /// 1 Light Eater, 2 Dazzling Trick, 3 Radiant Daggers, 4 Shining Wonder (Deadlock's slot order).
+        /// 1 Light Eater, 2 Dazzling Trick, 3 Shining Wonder (her "_ult" lines), 4 Radiant Daggers ("Light strike!"), per Deadlock's captions.
         /// </summary>
         public static readonly DeadlockSound[] Sounds =
         {
@@ -225,12 +225,12 @@ namespace CursedAppleCuriosities.Survivors.Celeste
             new DeadlockSound { Id = "celeste_orb_expire", VpkPrefix = "sounds/abilities/unicorn/a4/unicorn_dazzling_orb_expire", Volume = 0.8f, Range = 50f },
             new DeadlockSound { Id = "celeste_vo_power1", VpkPrefix = "sounds/vo/unicorn/unicorn_use_power1", Chance = 0.6f, MinGap = 4f, Voice = true },
             new DeadlockSound { Id = "celeste_vo_power2", VpkPrefix = "sounds/vo/unicorn/unicorn_use_power2_on_self", Chance = 0.6f, MinGap = 4f, Voice = true },
-            new DeadlockSound { Id = "celeste_vo_power3", VpkPrefix = "sounds/vo/unicorn/unicorn_use_power3", Chance = 0.6f, MinGap = 4f, Voice = true },
-            new DeadlockSound { Id = "celeste_vo_power4", VpkPrefix = "sounds/vo/unicorn/unicorn_use_power4", Range = 60f, MinGap = 4f, Voice = true },
+            new DeadlockSound { Id = "celeste_vo_power3", VpkPrefix = "sounds/vo/unicorn/unicorn_use_power3", Range = 60f, MinGap = 4f, Voice = true },
+            new DeadlockSound { Id = "celeste_vo_power4", VpkPrefix = "sounds/vo/unicorn/unicorn_use_power4", Chance = 0.6f, MinGap = 4f, Voice = true },
             new DeadlockSound { Id = "celeste_vo_desperation_power1", VpkPrefix = "sounds/vo/unicorn/unicorn_desperation_power1", Chance = 0.8f, MinGap = 4f, Voice = true },
             new DeadlockSound { Id = "celeste_vo_desperation_power2", VpkPrefix = "sounds/vo/unicorn/unicorn_desperation_power2", Chance = 0.8f, MinGap = 4f, Voice = true },
-            new DeadlockSound { Id = "celeste_vo_desperation_power3", VpkPrefix = "sounds/vo/unicorn/unicorn_desperation_power3", Chance = 0.8f, MinGap = 4f, Voice = true },
-            new DeadlockSound { Id = "celeste_vo_desperation_power4", VpkPrefix = "sounds/vo/unicorn/unicorn_desperation_power4", Range = 60f, MinGap = 4f, Voice = true },
+            new DeadlockSound { Id = "celeste_vo_desperation_power3", VpkPrefix = "sounds/vo/unicorn/unicorn_desperation_power3", Range = 60f, MinGap = 4f, Voice = true },
+            new DeadlockSound { Id = "celeste_vo_desperation_power4", VpkPrefix = "sounds/vo/unicorn/unicorn_desperation_power4", Chance = 0.8f, MinGap = 4f, Voice = true },
             new DeadlockSound { Id = "celeste_vo_select", VpkPrefix = "sounds/vo/unicorn/unicorn_select", MinGap = 2f, Voice = true },
             new DeadlockSound { Id = "celeste_vo_kill", VpkPrefix = "sounds/vo/unicorn/unicorn_kill_anyhero", Chance = 0.15f, MinGap = 8f, Voice = true },
             new DeadlockSound { Id = "celeste_vo_killstreak", VpkPrefix = "sounds/vo/unicorn/unicorn_killstreak_start", MinGap = 30f, Voice = true },

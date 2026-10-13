@@ -148,7 +148,7 @@ namespace EntityStates.CursedApple.Celeste
             _preview = null;
             CelesteModel.Play(gameObject, "beam");
             DeadlockSounds.Play("celeste_beam_cast", transform.position, gameObject);
-            DeadlockHeroVoice.Power("celeste_vo_power3", gameObject);
+            DeadlockHeroVoice.Power("celeste_vo_power4", gameObject); // Deadlock files Radiant Daggers as power4
             CelesteNet.ToServer(new CelesteBeamMessage { Attacker = gameObject, Point = _point, Crit = RollCrit() });
         }
 
@@ -248,7 +248,7 @@ namespace EntityStates.CursedApple.Celeste
             CelesteModel.Play(gameObject, "orb_start");
             DeadlockSounds.Play("celeste_orb_cast", transform.position, gameObject);
             _loop = DeadlockSounds.Loop("celeste_orb_channel", gameObject, CelesteData.OrbMaxHold + 0.5f);
-            DeadlockHeroVoice.Power("celeste_vo_power4", gameObject);
+            DeadlockHeroVoice.Power("celeste_vo_power3", gameObject); // her ult lines are power3 ("_ult" in Deadlock's captions)
         }
 
         public override void FixedUpdate()
