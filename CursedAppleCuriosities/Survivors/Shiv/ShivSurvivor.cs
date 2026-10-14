@@ -52,6 +52,7 @@ namespace CursedAppleCuriosities.Survivors.Shiv
             CreateSkills();
             BodyPrefab = CreateBody();
             DisplayPrefab = CreateDisplay();
+            ShivItemDisplays.Register();
             CreateSurvivor();
             AddLanguage();
             ShivNet.Register();

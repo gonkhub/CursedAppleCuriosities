@@ -17,6 +17,7 @@ namespace CursedAppleCuriosities.Survivors.Shiv
             MuzzleName = ShivSurvivor.MuzzleName,
             Anims = ShivData.Anims,
             RootLocked = ShivData.Locked,
+            ItemAnchors = ShivItemDisplays.Anchors,
             Skins = ShivSkins.All,
         };
 

@@ -70,7 +70,8 @@ namespace CursedAppleCuriosities.Survivors.Mina
             SwipeEffect = TryLoad<GameObject>("RoR2/Base/Imp/ImpSwipeEffect.prefab");          // Imp's claws: already her crimson
             SlashEffect = TryLoad<GameObject>("RoR2/Base/Imp/ImpactImpSwipe.prefab");
             BlinkEffect = TryLoad<GameObject>("RoR2/Base/Imp/ImpBlinkEffect.prefab");
-            LoveBitesEffect = TryLoad<GameObject>("RoR2/Base/BleedOnHitAndExplode/BleedOnHitAndExplode_Explosion.prefab");
+            // A compact crimson pop (Shatterspleen's blast filled the whole screen up close).
+            LoveBitesEffect = Kit.Recoloured(TryLoad<GameObject>("RoR2/Base/Common/VFX/OmniExplosionVFXQuick.prefab"), "CursedAppleMinaLoveBites", Hue, effect: true);
         }
 
         /// <summary>A bat in flight: the firebolt's glow made dark crimson and small, with Deadlock's bat inside once converted (MinaBatGhost).</summary>

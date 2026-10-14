@@ -189,7 +189,7 @@ namespace CursedAppleCuriosities.Survivors.Mina
             HealthComponent hc = _body.healthComponent;
             EquipmentFx.Sound("mina_lovebites_proc", _body.corePosition);
             if (MinaSurvivor.LoveBitesEffect != null)
-                EffectManager.SpawnEffect(MinaSurvivor.LoveBitesEffect, new EffectData { origin = _body.corePosition, scale = _body.bestFitRadius * 2f }, true);
+                EffectManager.SpawnEffect(MinaSurvivor.LoveBitesEffect, new EffectData { origin = _body.corePosition, scale = Mathf.Clamp(_body.bestFitRadius, 1f, 4f) }, true);
             MinaNet.Bursting = true;
             try { MinaNet.Hit(mina, hc, MinaData.LoveBitesDamage * mina.damage, mina.RollCrit(), Vector3.zero, DamageSource.NoneSpecified, 0.5f); }
             finally { MinaNet.Bursting = false; }
