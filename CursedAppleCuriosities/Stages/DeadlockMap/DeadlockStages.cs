@@ -73,12 +73,15 @@ namespace CursedAppleCuriosities.Stages.DeadlockMap
             if (NetworkServer.active)
             {
                 int order = SlotOf(choices);
+                float vanilla = 0f; // the slot's own stages, before any district joins
+                for (int i = 0; i < choices.Count; i++) vanilla += choices.GetChoice(i).weight;
                 foreach (District d in DeadlockMaps.Districts)
                 {
                     SceneDef? def = d.Stage.Def;
-                    float weight = d.Stage.Weight?.Value ?? 0f;
-                    if (def == null || weight <= 0f || order != d.Def.StageOrder || Offered(choices, def)) continue;
-                    if (PartyCheck.AllReady(d, out string why)) choices.AddChoice(def, weight);
+                    float chance = Mathf.Clamp(d.Stage.Chance?.Value ?? 0f, 0f, 0.95f);
+                    if (def == null || chance <= 0f || order != d.Def.StageOrder || Offered(choices, def) || vanilla <= 0f) continue;
+                    // A weight that makes it this likely against the slot's vanilla stages: w / (vanilla + w) = chance.
+                    if (PartyCheck.AllReady(d, out string why)) choices.AddChoice(def, vanilla * chance / (1f - chance));
                     else Log($"{d.Def.Name} left out of the stage {order} choices: {why}");
                 }
             }
@@ -182,7 +185,7 @@ namespace CursedAppleCuriosities.Stages.DeadlockMap
     {
         public readonly District District;
         public readonly SceneDef? Def;
-        public readonly ConfigEntry<float>? Weight;
+        public readonly ConfigEntry<float>? Chance;
         public readonly ConfigEntry<string>? Sky;
         private MapSectionDef D => District.Def;
 
@@ -194,8 +197,8 @@ namespace CursedAppleCuriosities.Stages.DeadlockMap
             District = district;
             Sky = config.Bind("Deadlock Map", $"{D.Name} Sky", D.Sky,
                 "Skybox material borrowed from a vanilla stage (Addressables key).");
-            Weight = config.Bind("Deadlock Map", $"{D.Name} Weight", 1f,
-                $"How likely {D.Name} is as stage {D.StageOrder}, against each vanilla stage {D.StageOrder} (1 = as likely as each of them, 0 = never on its own).");
+            Chance = config.Bind("Deadlock Map", $"{D.Name} Chance", 0.1f,
+                $"Chance that {D.Name} replaces the usual stage {D.StageOrder} (0.1 = 10%; 0 = never on its own). Only when everyone in the run can load it.");
             if (Array.IndexOf(MapSectionDef.Scenes, D.Scene) < 0) { Warn($"{D.Id}: scene {D.Scene} isn't in the stage bundle"); return; }
             string token = "CURSEDAPPLE_STAGE_" + D.Id.ToUpperInvariant();
             LanguageAPI.Add(token + "_NAME", D.Name);

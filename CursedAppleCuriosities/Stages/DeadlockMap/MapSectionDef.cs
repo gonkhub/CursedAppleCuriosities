@@ -74,8 +74,71 @@ namespace CursedAppleCuriosities.Stages.DeadlockMap
             SubwayTeleports = SunkenPlazaData.SubwayTeleports,
         };
 
+        /// <summary>Haunted Lot: the Hidden King side west of the blue lane, around the yellow lane's southern Walker (stage 1). Newt altars and player spawns: to be marked in game.</summary>
+        public static readonly MapSectionDef HauntedLot = new MapSectionDef
+        {
+            Id = "hauntedlot",
+            Name = "Haunted Lot",
+            Subtitle = "Hidden King's Ward",
+            Scene = "cac_district2",
+            StageOrder = 1,
+            Origin = new[] { -4800f, -3500f, 0f }, // the drawn outline's centre: marks are relative to it, so it never moves
+            Arrival = new[] { -4800f, -3500f, 600f },
+            MonsterPool = "RoR2/Base/blackbeach/dpBlackBeachMonsters.asset",
+            InteractablePool = "RoR2/Base/blackbeach/dpBlackBeachInteractables.asset",
+            MusicFrom = "RoR2/Base/blackbeach/blackbeach.asset",
+            Outline = HauntedLotData.Outline,
+            NoWalk = HauntedLotData.VentTunnels,
+            Seal = HauntedLotData.VentOpenings,
+            Shops = HauntedLotData.Shops,
+            SubwayTeleports = HauntedLotData.SubwayTeleports,
+            InteractableSpots = HauntedLotData.InteractableSpots,
+        };
+
+        /// <summary>Umbria University: the Archmother side east of the blue lane, around the purple lane's northern Walker (stage 2). Newt altars and player spawns: to be marked in game.</summary>
+        public static readonly MapSectionDef Umbria = new MapSectionDef
+        {
+            Id = "umbria",
+            Name = "Umbria University",
+            Subtitle = "Archmother's Ward",
+            Scene = "cac_district3",
+            StageOrder = 2,
+            Origin = new[] { 5400f, 3900f, 0f }, // the drawn outline's centre: marks are relative to it, so it never moves
+            Arrival = new[] { 5400f, 3900f, 600f },
+            MonsterPool = "RoR2/Base/goolake/dpGooLakeMonsters.asset",
+            InteractablePool = "RoR2/Base/goolake/dpGooLakeInteractables.asset",
+            MusicFrom = "RoR2/Base/goolake/goolake.asset",
+            Outline = UmbriaData.Outline,
+            NoWalk = UmbriaData.VentTunnels,
+            Seal = UmbriaData.VentOpenings,
+            Shops = UmbriaData.Shops,
+            SubwayTeleports = UmbriaData.SubwayTeleports,
+            InteractableSpots = UmbriaData.InteractableSpots,
+        };
+
+        /// <summary>Chinatown: the Hidden King side east of the blue lane, around the purple lane's southern Walker (stage 4). Newt altars and player spawns: to be marked in game.</summary>
+        public static readonly MapSectionDef Chinatown = new MapSectionDef
+        {
+            Id = "chinatown",
+            Name = "Chinatown",
+            Subtitle = "Hidden King's Ward",
+            Scene = "cac_district4",
+            StageOrder = 4,
+            Origin = new[] { 3800f, -4700f, 0f }, // the drawn outline's centre: marks are relative to it, so it never moves
+            Arrival = new[] { 3800f, -4700f, 600f },
+            MonsterPool = "RoR2/Base/rootjungle/dpRootJungleMonsters.asset",
+            InteractablePool = "RoR2/Base/rootjungle/dpRootJungleInteractables.asset",
+            MusicFrom = "RoR2/Base/rootjungle/rootjungle.asset",
+            Outline = ChinatownData.Outline,
+            NoWalk = ChinatownData.VentTunnels,
+            Seal = ChinatownData.VentOpenings,
+            Shops = ChinatownData.Shops,
+            SubwayTeleports = ChinatownData.SubwayTeleports,
+            InteractableSpots = ChinatownData.InteractableSpots,
+        };
+
         /// <summary>Every district, in the order they are converted (the first finishes first).</summary>
-        public static readonly MapSectionDef[] All = { SunkenPlaza };
+        public static readonly MapSectionDef[] All = { SunkenPlaza, HauntedLot, Umbria, Chinatown };
 
         /// <summary>The shell scenes the stage bundle carries (tools/stageshell): one per district, spares for the next ones.</summary>
         public static readonly string[] Scenes = { "cac_sunkenplaza", "cac_district2", "cac_district3", "cac_district4" };
@@ -163,6 +226,210 @@ namespace CursedAppleCuriosities.Stages.DeadlockMap
             -1078, 1104, 376, -762, 1376, 504,
             -6600, 1616, 248, -6284, 1888, 376,
             -4088, 976, -144, -3772, 1248, -16,
+        };
+    }
+
+    /// <summary>Haunted Lot: the Hidden King side west of the blue lane, around the yellow lane's southern Walker. Traced from the user's drawing (2026-10-14); data by tools/mapstage/section_consts.py.</summary>
+    internal static class HauntedLotData
+    {
+        public static readonly float[] Outline = {-9055, -157, -8268, -118, -7835, -197, -7717, -354, -7618, -236, -6004, -236, -4547, -276, -4331, -354, -925, -354, -472, -433, -433, -2283, -965, -2717, -1398, -2835, -1909, -2795, -2106, -2992, -1890, -3268, -1811, -3622, -1811, -4882, -2008, -5276, -2795, -5315, -2953, -5472, -3051, -6220, -3248, -6378, -3189, -7323, -4567, -7323, -5335, -6929, -5728, -6575, -6181, -6339, -6693, -5787, -6791, -5787, -7559, -4724, -7953, -4331, -8366, -4331, -8701, -4213, -8957, -3622, -9055, -2953 };
+        public static readonly int[] VentTunnels = { // min x, y, z, max x, y, z
+            -832, -1696, -640, 1280, -1408, -192,
+            -832, -1952, -640, 192, -1696, -192,
+            -640, -1408, -640, -288, -1024, -464,
+            -1472, -1920, -672, -864, -1472, -160,
+            -2272, -1920, -512, -1472, -992, -160,
+            -3328, -1280, -512, -2272, -992, -160,
+            -6176, -1792, -128, -5472, -1152, 192,
+            -6400, -2400, -64, -5984, -1792, 192,
+            -6752, -2400, -64, -6400, -2112, 224,
+            -7072, -2416, 256, -6944, -2144, 384,
+            -2464, -992, -512, -2272, -672, -32,
+            -2464, -672, -384, -2080, -336, -32,
+            -2080, -544, -320, -1824, -336, 192,
+            -1824, -544, -160, -1568, -368, 192,
+            -1568, -544, -32, -1424, -368, 224,
+            -1856, -3744, 32, -1216, -3328, 256,
+            -2752, -3744, 32, -1856, -3552, 240,
+            -3712, -4288, 32, -2752, -3552, 240,
+            -4584, -4288, 32, -3712, -4096, 336,
+            -4736, -4288, 176, -4584, -4096, 480,
+            -1632, -2720, 120, -1472, -2208, 336,
+            -4008, -1280, -384, -3328, -992, 32,
+            -3776, -1824, -128, -3648, -1376, 0,
+            -5472, -1728, -128, -4864, -1408, 192,
+            -1632, -3104, -8, -1472, -2720, 336,
+            -6944, -2416, 32, -6752, -2144, 384,
+            -4768, -4288, 384, -4736, -4096, 480,
+            -1216, -1696, 112, -256, -1312, 368,
+            -256, -1696, 112, 640, -1472, 320,
+            -1312, -1504, 256, -1216, -1312, 368,
+        };
+        public static readonly int[] VentOpenings = { // min x, y, z, max x, y, z
+            -392, -1024, -640, -312, -928, -576,
+            -7160, -2416, 256, -7080, -2320, 320,
+            -3752, -1920, -128, -3672, -1824, -64,
+            -1416, -496, 64, -1336, -400, 128,
+            -1592, -2208, 128, -1512, -2112, 192,
+            -4856, -4240, 384, -4776, -4144, 448,
+            -4096, -1120, -128, -4016, -1024, -64,
+            -4968, -1408, -64, -4888, -1312, 0,
+            -3752, -1376, -128, -3672, -1280, -64,
+            -1400, -1456, 256, -1320, -1360, 320,
+        };
+        public static readonly int[] Shops = { // min x, y, z, max x, y, z
+            -9000, -2088, 248, -8684, -1816, 376,
+        };
+        public static readonly int[] SubwayTeleports = { // min x, y, z, max x, y, z
+            -3640, -2840, -128, -3528, -2728, 0,
+        };
+        // Deadlock's neutral trooper camps and spawns and item crates (x, y, z units): where interactables may stand.
+        public static readonly int[] InteractableSpots = {
+            -7296, -1280, 256, -7168, -1408, 256, -7168, -1280, 264, -7040, -1280, 256,
+            -6016, -1184, 256, -5928, -2296, 1088, -5920, -1184, 264, -5824, -2560, 1088,
+            -5824, -2400, 1088, -5824, -1472, -128, -5824, -1280, -128, -5720, -2296, 1088,
+            -5632, -1376, -128, -5584, -3776, 384, -5504, -3680, 392, -5504, -3552, 384,
+            -5376, -3680, 384, -5224, -672, -128, -5120, -576, -128, -5092, -1792, 256,
+            -5024, -832, -128, -5024, -680, -128, -4916, -1792, 264, -4896, -576, -128,
+            -4832, -1936, 256, -4832, -1664, 256, -4800, -1248, -64, -4736, -688, -128,
+            -4592, -3760, 384, -4480, -3840, 384, -4352, -3744, 384, -4336, -3936, 384,
+            -4000, -1856, 248, -4000, -1696, 248, -4000, -1536, 248, -3872, -1696, 248,
+            -3712, -4384, 384, -3680, -3072, 384, -3520, -4576, 384, -3520, -4384, 384,
+            -3440, -1260, 256, -3424, -1728, 568, -3384, -1448, 564, -3328, -4288, 384,
+            -3318, -1260, 256, -3318, -1148, 256, -3264, -1600, 564, -3186, -3961, 64,
+            -3172, -1260, 256, -3138, -1524, 562, -3088, -3824, 64, -2985, -3751, 64,
+            -2464, -1088, -448, -2360, -962, -448, -2240, -1090, -448, -2096, -928, 256,
+            -2096, -776, 256, -1920, -864, 256, -1792, -944, 256, -1792, -776, 256,
+        };
+    }
+
+    /// <summary>Umbria University: the Archmother side east of the blue lane, around the purple lane's northern Walker. Traced from the user's drawing (2026-10-14); data by tools/mapstage/section_consts.py.</summary>
+    internal static class UmbriaData
+    {
+        public static readonly float[] Outline = {669, 433, 650, 2402, 1083, 2717, 1280, 2717, 1654, 2913, 1929, 3189, 1949, 5039, 3071, 5118, 3425, 5394, 3445, 7441, 4311, 7362, 4764, 6969, 5138, 7008, 5413, 6850, 6378, 6732, 7323, 6299, 7776, 6260, 7815, 6181, 9252, 6142, 9311, 3701, 9134, 3543, 8878, 3543, 8701, 3346, 8701, 512, 8602, 394, 7480, 394, 7067, 512, 5276, 472, 5177, 394 };
+        public static readonly int[] VentTunnels = { // min x, y, z, max x, y, z
+            -1328, 1312, -640, 832, 1696, -184,
+            296, 1024, -640, 640, 1312, -480,
+            416, 1312, 128, 704, 1696, 366,
+            896, 1312, 238, 1472, 1696, 366,
+            320, 1312, 128, 512, 1536, 320,
+            960, 1152, -416, 1568, 1440, 0,
+            1316, 336, -384, 2580, 720, 112,
+            1984, 1456, -640, 2176, 1648, -192,
+            2176, 752, -640, 3232, 1648, -192,
+            832, 1456, -640, 1984, 1648, -448,
+            4184, 3976, 176, 4376, 4104, 576,
+            3352, 4040, 64, 4184, 4232, 336,
+            2896, 3616, 64, 3712, 4272, 240,
+            1212, 3328, 32, 1860, 3748, 256,
+            1440, 2788, 24, 1600, 3904, 288,
+            1864, 3552, 64, 2756, 3744, 224,
+            4040, 3976, 176, 4168, 4104, 336,
+            4280, 3976, 448, 4376, 4104, 576,
+        };
+        public static readonly int[] VentOpenings = { // min x, y, z, max x, y, z
+            1336, 400, 64, 1416, 496, 128,
+            1320, 1360, 256, 1400, 1456, 320,
+            3856, 1208, -128, 3936, 1304, -64,
+            4696, 4088, 448, 4776, 4184, 512,
+            1512, 2112, 128, 1592, 2208, 192,
+            5768, 2608, 256, 5848, 2704, 320,
+        };
+        public static readonly int[] Shops = { // min x, y, z, max x, y, z
+            8664, 1800, 248, 8980, 2072, 376,
+        };
+        public static readonly int[] SubwayTeleports = { // min x, y, z, max x, y, z
+            3528, 2728, -128, 3640, 2840, 0,
+        };
+        // Deadlock's neutral trooper camps and spawns and item crates (x, y, z units): where interactables may stand.
+        public static readonly int[] InteractableSpots = {
+            1568, 1536, -640, 1632, 1584, -640, 1696, 1536, -640, 1792, 776, 256,
+            1792, 944, 256, 1952, 832, 256, 2096, 760, 256, 2096, 944, 256,
+            2496, 544, -384, 2544, 480, -384, 2985, 3751, 64, 3088, 3824, 64,
+            3186, 3961, 64, 3232, 3840, 944, 3328, 1280, -384, 3328, 3712, 944,
+            3355, 3514, 944, 3392, 1200, -384, 3456, 1280, -384, 3456, 3808, 944,
+            3584, 1856, 256, 3616, 3608, 448, 3776, 1856, 256, 3776, 2048, 256,
+            3808, 3704, 448, 3808, 3864, 448, 3968, 1856, 256, 4000, 3008, 1008,
+            4000, 3608, 448, 4032, 1024, -128, 4096, 896, -128, 4160, 2624, 1008,
+            4160, 2784, 1008, 4288, 896, -128, 4288, 1024, -128, 4288, 1152, -128,
+            4320, 3008, 1008, 4368, 1856, 256, 4480, 1152, -128, 4544, 1024, -128,
+            4544, 1856, 256, 4544, 2016, 256, 4576, 3792, 944, 4704, 3568, 944,
+            4720, 1856, 256, 4736, 3728, 944, 4864, 3824, 944, 5696, 1600, 270,
+            5748, 3884, 384, 5824, 3984, 384, 5863, 4110, 384, 5912, 1348, 264,
+            5960, 3960, 384, 6008, 1348, 256, 6152, 2212, 1000, 6176, 964, 256,
+            6304, 836, 256, 6304, 964, 264, 6304, 2208, 1000, 6404, 2064, 1000,
+            6432, 964, 256, 6432, 2372, 1000,
+        };
+    }
+
+    /// <summary>Chinatown: the Hidden King side east of the blue lane, around the purple lane's southern Walker. Traced from the user's drawing (2026-10-14); data by tools/mapstage/section_consts.py.</summary>
+    internal static class ChinatownData
+    {
+        public static readonly float[] Outline = {-217, -5354, -177, -3386, 197, -3386, 433, -3110, 531, -472, 610, -433, 2480, -433, 3720, -591, 9114, -591, 9016, -1654, 9016, -3346, 8740, -5079, 8386, -5276, 7126, -5276, 6949, -5472, 6890, -6142, 6732, -6260, 5315, -6260, 5118, -6457, 5157, -7795, 5079, -7874, 1201, -7795, 1083, -7441, 925, -7283, 610, -7244, 492, -7087, 433, -5630, 276, -5472 };
+        public static readonly int[] VentTunnels = { // min x, y, z, max x, y, z
+            -832, -1696, -640, 1280, -1408, -192,
+            256, -1408, -640, 384, -1296, -448,
+            -1200, -3712, 48, -256, -3584, 344,
+            528, -3520, 176, 656, -3392, 480,
+            256, -3520, 176, 528, -3392, 344,
+            -256, -3712, 176, 256, -3392, 344,
+            656, -3520, 384, 784, -3392, 480,
+            2528, -1376, 112, 2720, -1184, 368,
+            1024, -1696, 112, 1280, -1152, 336,
+            -256, -1696, 112, 640, -1472, 320,
+            640, -1696, 112, 1024, -1312, 336,
+            1664, -1376, 112, 2528, -1184, 336,
+            1280, -1408, 112, 1664, -1152, 336,
+            2720, -1376, 112, 2848, -1184, 368,
+            4800, -3040, 0, 4992, -2912, 416,
+            4672, -3040, 0, 4800, -2912, 192,
+            4416, -3040, -144, 4672, -2784, 192,
+            4416, -2784, -144, 4544, -2080, 192,
+            4416, -2080, -144, 4544, -1568, 48,
+            2656, -1248, -256, 2976, -1024, 48,
+            2208, -1024, -672, 2816, -324, -16,
+            1312, -1632, -672, 2816, -1472, -16,
+            1536, -576, -672, 2208, -324, -288,
+            1056, -448, -672, 1536, -324, -544,
+            2624, -1472, -672, 2816, -1248, -16,
+            4992, -3040, 256, 5108, -2912, 416,
+        };
+        public static readonly int[] VentOpenings = { // min x, y, z, max x, y, z
+            968, -432, -640, 1048, -336, -576,
+            792, -3504, 384, 872, -3408, 448,
+            2856, -1328, 256, 2936, -1232, 320,
+            2984, -1200, -144, 3064, -1104, -80,
+            4440, -1568, -144, 4520, -1472, -80,
+            5116, -3024, 256, 5196, -2928, 320,
+            5208, -2048, 256, 5288, -1952, 320,
+        };
+        public static readonly int[] Shops = { // min x, y, z, max x, y, z
+            856, -1392, 376, 1172, -1120, 504,
+            6264, -1904, 248, 6580, -1632, 376,
+            3752, -1264, -144, 4068, -992, -16,
+        };
+        public static readonly int[] SubwayTeleports = { // min x, y, z, max x, y, z
+            3848, -1848, -144, 3960, -1736, -16,
+        };
+        // Deadlock's neutral trooper camps and spawns and item crates (x, y, z units): where interactables may stand.
+        public static readonly int[] InteractableSpots = {
+            560, -1584, -640, 640, -1472, -640, 720, -1584, -640, 1305, -1120, 384,
+            1312, -896, 384, 1408, -1536, -640, 1408, -992, 384, 1472, -1584, -640,
+            1504, -896, 384, 1536, -1536, -640, 1792, -3616, 406, 1920, -3488, 406,
+            1920, -3360, 406, 2048, -3616, 406, 2080, -1056, 384, 2080, -864, 384,
+            2208, -960, 400, 2264, -2792, 376, 2368, -960, 392, 2392, -2792, 376,
+            2488, -2936, 376, 2488, -2664, 376, 2688, -1120, -256, 2736, -1184, -256,
+            2736, -1056, -256, 2752, -1888, 2496, 3008, -3984, 725, 3136, -3888, 725,
+            3136, -3728, 725, 3248, -1888, 2499, 3264, -3984, 725, 3440, -2048, 2496,
+            3440, -1739, 2496, 3744, -4128, 376, 3872, -4000, 376, 4000, -4128, 376,
+            4000, -3872, 376, 4128, -2240, 256, 4288, -2688, 271, 4352, -1824, 256,
+            4448, -1856, -144, 4480, -2080, 256, 4480, -1920, 264, 4496, -1920, -144,
+            4496, -1792, -144, 4640, -1920, 256, 4800, -1696, 256, 5504, -1536, 928,
+            5696, -1920, 928, 5696, -1728, 944, 5760, -1136, 256, 5792, -1248, 264,
+            5888, -1536, 928, 7792, -2408, 256, 7816, -2152, 256, 7840, -4640, 376,
+            7872, -4864, 376, 7936, -2288, 257, 7944, -2472, 258, 8000, -4736, 376,
+            8080, -2400, 256, 8080, -2144, 256, 8144, -4616, 376, 8152, -4840, 376,
+            8184, -4736, 376,
         };
     }
 }
