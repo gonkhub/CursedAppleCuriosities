@@ -108,6 +108,22 @@ namespace CursedAppleCuriosities.Stages.DeadlockMap
             else local = d.ArrivalLocal(t.OriginUnits);
             Vector3 from = world.TransformPoint(local) + Vector3.up * 3f;
             Vector3 to = Physics.Raycast(from, Vector3.down, out RaycastHit hit, 30f, LayerIndex.world.mask) ? hit.point + Vector3.up * 0.5f : from;
+            if (where.StartsWith("rope"))
+            {
+                // Straight onto the nearest rope geyser, and say what it is (for checking the launch).
+                Transform? g = null;
+                foreach (Transform c in world.GetComponentsInChildren<Transform>(true))
+                    if (c.name == "RopeGeyser" && (g == null || (c.position - to).sqrMagnitude < (g.position - to).sqrMagnitude)) g = c;
+                if (g != null)
+                {
+                    to = g.position + Vector3.up * 1f;
+                    foreach (JumpVolume jv in g.GetComponentsInChildren<JumpVolume>(true))
+                    {
+                        Collider? col = jv.GetComponent<Collider>();
+                        CursedAppleCuriositiesPlugin.Logger?.LogInfo($"[DeadlockMap] rope geyser at {g.position}: active {jv.isActiveAndEnabled}, layer {LayerMask.LayerToName(jv.gameObject.layer)}, trigger {(col != null ? col.isTrigger + " " + col.bounds.center + " size " + col.bounds.size + " enabled " + col.enabled : "none")}, v {jv.jumpVelocity}");
+                    }
+                }
+            }
             TeleportHelper.TeleportBody(body, to);
         }
 
