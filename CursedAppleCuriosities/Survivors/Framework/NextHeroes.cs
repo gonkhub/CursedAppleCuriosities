@@ -80,7 +80,7 @@ namespace CursedAppleCuriosities.Survivors.Framework
                 ModelHeightScale = 1.08f * 1.25f * 1.15f * 0.95f,
                 Anims = FrameworkAnims.Table(new FrameworkAnims.Names
                     {
-                        Idle = "weapon_idle", Land = "land_impact_idle", DashGround = "ground_dash", DashAir = "air_dash_", Shoot = "weapon_shoot",
+                        Idle = "weapon_idle", Falling = "in_air_loop_apex", Land = "land_impact_idle", DashGround = "ground_dash", DashAir = "air_dash_", Shoot = "weapon_shoot",
                         Death = "knockdown_large_start",
                     },
                     ("cast", "generic_cast_start", false, "locomotion", "full"),
