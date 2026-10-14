@@ -468,7 +468,9 @@ namespace CursedAppleMapConvert
                 {
                     int a = p.Tris[t], b = p.Tris[t + 1], c = p.Tris[t + 2];
                     V3 cen = (src[a] + src[b] + src[c]) / 3f;
-                    bool inside = Inside(cen.X, cen.Y);
+                    // Playable (drawn and solid) when any corner is inside: a big floor triangle straddling the outline with its
+                    // centre outside would otherwise be drawn without collision, a hole between the barrier and solid ground.
+                    bool inside = Inside(cen.X, cen.Y) || Inside(src[a].X, src[a].Y) || Inside(src[b].X, src[b].Y) || Inside(src[c].X, src[c].Y);
                     if (inside && cen.Z < _def.FloorZ) continue;
                     if (!inside && cen.Z < BackdropMinZ) continue;
                     V3 uc = (u[a] + u[b] + u[c]) / 3f;
