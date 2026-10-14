@@ -18,6 +18,7 @@ namespace CursedAppleCuriosities.Survivors.Mina
             MuzzleName = MinaSurvivor.MuzzleName,
             Anims = MinaData.Anims,
             RootLocked = MinaData.Locked,
+            ItemAnchors = MinaItemDisplays.Anchors,
             HideMeshes = new[] { "head_ui" }, // the menu-portrait head, not part of her in game
             // Nightshade (skin 1): her red umbrella, bows and dress trim turned violet; her pale skin is left alone (minSat).
             Skins = new[] { new DeadlockSkin { Id = "nightshade1", Recolor = DeadlockSkin.HueShift(-25f, 20f, -75f, 0.35f), Only = new[] { "mina_umbrella", "mina_upper", "mina_lower", "mina_hair", "mina_bag", "mina_charm" } } },

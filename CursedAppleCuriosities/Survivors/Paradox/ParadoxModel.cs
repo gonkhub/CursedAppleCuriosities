@@ -18,6 +18,7 @@ namespace CursedAppleCuriosities.Survivors.Paradox
             MuzzleName = ParadoxSurvivor.MuzzleName,
             Anims = ParadoxData.Anims,
             RootLocked = ParadoxData.Locked,
+            ItemAnchors = ParadoxItemDisplays.Anchors,
             HideMeshes = new[] { "chrono_gun_on_hip" }, // the holstered copy of her rifle (she always has it out here)
             // Teal (skin 1): her maroon coat and trim turned deep teal; the tan leather, her skin and the brass stay (a narrow
             // range: her atlas holds all of them).

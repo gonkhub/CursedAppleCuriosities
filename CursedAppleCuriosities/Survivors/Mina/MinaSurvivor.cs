@@ -52,6 +52,7 @@ namespace CursedAppleCuriosities.Survivors.Mina
             CreateSkills();
             BodyPrefab = CreateBody();
             DisplayPrefab = CreateDisplay();
+            MinaItemDisplays.Register();
             CreateSurvivor();
             AddLanguage();
             MinaNet.Register();

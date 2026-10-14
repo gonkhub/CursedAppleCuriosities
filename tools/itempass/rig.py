@@ -22,7 +22,13 @@ HEROES = {"abrams": {"scale": 1.2, "hide": [], "skip": ("gun_model", "book_model
           # for height only; the outline shell isn't fitted to; items skip his gun.
           "viscous": {"scale": 1.2 * 2.94 / 2.45, "hide": [], "fit_hide": ["inflated", "bodyoutline"], "skip": (".gun_",)},
           # Celeste (hero_unicorn): items skip her baton; the horn glow is a see-through shell over the horn.
-          "celeste": {"scale": 1.08, "hide": [], "fit_hide": ["unicorn_hornglow"], "skip": (".unicorn_baton_a_",), "glb": "unicorn"}}
+          "celeste": {"scale": 1.08, "hide": [], "fit_hide": ["unicorn_hornglow"], "skip": (".unicorn_baton_a_",), "glb": "unicorn"},
+          # 2.5: Mina (hero_vampirebat): her menu head is hidden in game; items skip her umbrella.
+          "mina": {"scale": 1.08, "hide": ["head_ui"], "skip": (".umbrella",), "glb": "vampirebat"},
+          # Paradox (hero_chrono): the holstered rifle is hidden in game; items skip the rifle in her hands.
+          "paradox": {"scale": 1.08, "hide": ["chrono_gun_on_hip"], "skip": (".chrono_gun_model",), "glb": "chrono"},
+          # Shiv: items skip his shotgun.
+          "shiv": {"scale": 1.08, "hide": [], "skip": (".gun",)}}
 GLB = os.environ.get("HERO_GLB") or os.path.join(os.environ["USERPROFILE"], "AppData", "LocalLow", "Hopoo Games, LLC", "Risk of Rain 2", "CursedApple", "deadlock", "models", HEROES[HERO].get("dir", HERO), HEROES[HERO].get("glb", HERO) + ".glb")
 BLENDER = r"C:\Program Files\Blender Foundation\Blender 5.1\blender.exe"
 

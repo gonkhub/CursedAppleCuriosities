@@ -57,6 +57,7 @@ namespace CursedAppleCuriosities.Survivors.Paradox
             CreateSkills();
             BodyPrefab = CreateBody();
             DisplayPrefab = CreateDisplay();
+            ParadoxItemDisplays.Register();
             CreateSurvivor();
             AddLanguage();
             ParadoxNet.Register();
