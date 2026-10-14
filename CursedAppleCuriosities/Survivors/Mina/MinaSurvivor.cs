@@ -42,7 +42,6 @@ namespace CursedAppleCuriosities.Survivors.Mina
                 DeadlockInstall.WantIcon(icon);
             DeadlockHeroes.Register(MinaModel.Def);
             DeadlockInstall.WantModel(MinaModel.Def.ModelRequest());
-            DeadlockInstall.WantModel(new DeadlockInstall.ModelRequest { Hero = MinaData.BatKey, DlModel = MinaData.DlBatModel }); // her bats
 
             LoadAssets();
             CreateBuffs();

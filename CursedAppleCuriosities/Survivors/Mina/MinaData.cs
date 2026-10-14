@@ -110,8 +110,6 @@ namespace CursedAppleCuriosities.Survivors.Mina
         // ---- Deadlock assets (read from the player's own install, never shipped) ----
 
         public const string DlModel = "models/heroes_wip/vampirebat/vampirebat.vmdl_c";
-        public const string BatKey = "mina_bat";
-        public const string DlBatModel = "models/heroes_wip/vampirebat/bat_ui_a.vmdl_c";
         public const float ModelHeightScale = 1.08f * 1.25f * 1.15f * 0.95f;
         public const string MuzzleBone = "muzzle_fx";   // checked against her skeleton once the converter works again
 
@@ -138,7 +136,7 @@ namespace CursedAppleCuriosities.Survivors.Mina
             ("sprint_s", "vampirebat_outofcombat_run_s", true, "", "full"), ("sprint_sw", "vampirebat_outofcombat_run_sw", true, "", "full"),
             ("sprint_w", "vampirebat_outofcombat_run_w", true, "", "full"), ("sprint_nw", "vampirebat_outofcombat_run_nw", true, "", "full"),
             ("jump", "vampirebat_jump_ground", false, "in_air", "full"),
-            ("air_jump", "vampirebat_jump_in_air_transition", false, "in_air", "full"),
+            ("air_jump", "vampirebat_jump_ground", false, "in_air", "full"),
             ("wall_jump", "vampirebat_jump_ground", false, "in_air", "full"),
             ("in_air", "vampirebat_in_air_loop_apex", true, "", "full"),
             ("falling", "vampirebat_in_air_loop_down", true, "", "full"),
@@ -151,9 +149,9 @@ namespace CursedAppleCuriosities.Survivors.Mina
             ("slide_start", "vampirebat_slide_intro", false, "slide", "full"),
             ("slide", "vampirebat_slide_forward", true, "", "full"),
             ("slide_getup", "vampirebat_slide_getup", false, "locomotion", "full"),
-            ("shoot", "vampirebat_primary_hip_fire", false, "locomotion", "delta"),
+            ("shoot", "vampirebat_idle_shoot", false, "locomotion", "delta"),
             ("rake", "vampirebat_ability_rake", false, "locomotion", "full"),
-            ("retreat_end", "vampirebat_leap_forward", false, "in_air", "full"),
+            ("retreat_end", "vampirebat_in_air_loop_glide", false, "in_air", "full"), // reforming mid-air under the umbrella
             ("nox", "vampirebat_ability_ult_start", false, "nox_loop", "full"),
             ("nox_loop", "vampirebat_ability_ult_loop", true, "", "full"),
             ("parry", "vampirebat_parry_to_idle", false, "locomotion", "full"),

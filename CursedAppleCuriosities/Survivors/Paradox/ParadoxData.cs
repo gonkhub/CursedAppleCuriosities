@@ -128,7 +128,7 @@ namespace CursedAppleCuriosities.Survivors.Paradox
         /// <summary>
         /// State, Deadlock clip, loop, next state, layer. Paradox is an AnimGraph2 hero (heroes_staging/chrono/clips):
         /// ability_pulse_grenade_cast, ability_time_wall, ability_kinetic_carbine_charging/_shoot, ability_paradoxical_swap_*.
-        /// She has real death clips (death_idle_01).
+        /// Her model exports no out_of_combat_run_* or death_*: she sprints gun-up (primary_sprint_gun_up_*), a knockdown stands in for death.
         /// </summary>
         public static readonly (string State, string Clip, bool Loop, string Next, string Layer)[] Anims =
         {
@@ -137,10 +137,10 @@ namespace CursedAppleCuriosities.Survivors.Paradox
             ("run_e", "weapon_run_e", true, "", "full"), ("run_se", "weapon_run_se", true, "", "full"),
             ("run_s", "weapon_run_s", true, "", "full"), ("run_sw", "weapon_run_sw", true, "", "full"),
             ("run_w", "weapon_run_w", true, "", "full"), ("run_nw", "weapon_run_nw", true, "", "full"),
-            ("sprint_n", "out_of_combat_run_n", true, "", "full"), ("sprint_ne", "out_of_combat_run_ne", true, "", "full"),
-            ("sprint_e", "out_of_combat_run_e", true, "", "full"), ("sprint_se", "out_of_combat_run_se", true, "", "full"),
-            ("sprint_s", "out_of_combat_run_s", true, "", "full"), ("sprint_sw", "out_of_combat_run_sw", true, "", "full"),
-            ("sprint_w", "out_of_combat_run_w", true, "", "full"), ("sprint_nw", "out_of_combat_run_nw", true, "", "full"),
+            ("sprint_n", "primary_sprint_gun_up_n", true, "", "full"), ("sprint_ne", "primary_sprint_gun_up_ne", true, "", "full"),
+            ("sprint_e", "primary_sprint_gun_up_e", true, "", "full"), ("sprint_se", "primary_sprint_gun_up_se", true, "", "full"),
+            ("sprint_s", "primary_sprint_gun_up_s", true, "", "full"), ("sprint_sw", "primary_sprint_gun_up_sw", true, "", "full"),
+            ("sprint_w", "primary_sprint_gun_up_w", true, "", "full"), ("sprint_nw", "primary_sprint_gun_up_nw", true, "", "full"),
             ("jump", "jump_ground", false, "in_air", "full"),
             ("air_jump", "jump_air", false, "in_air", "full"),
             ("wall_jump", "jump_ground", false, "in_air", "full"),
@@ -165,7 +165,7 @@ namespace CursedAppleCuriosities.Survivors.Paradox
             ("swap_end", "ability_paradoxical_swap_end", false, "locomotion", "full"),
             ("parry", "parry", false, "locomotion", "full"),
             ("parry_air", "parry", false, "in_air", "full"),
-            ("death", "death_idle_01", false, "hold", "full"),
+            ("death", "knockdown_large_start", false, "hold", "full"), // her death_* clips aren't in her model's list
         };
 
         public static readonly HashSet<string> Locked = new HashSet<string>

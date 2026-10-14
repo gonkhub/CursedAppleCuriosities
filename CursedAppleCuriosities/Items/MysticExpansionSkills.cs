@@ -80,10 +80,15 @@ namespace CursedAppleCuriosities.Items
                     int dot = reader.LastIndexOf('.');
                     Type? owner = dot < 0 ? type : game.GetType(reader.Substring(0, dot));
                     string methodName = dot < 0 ? reader : reader.Substring(dot + 1);
-                    MethodInfo? method = owner?.GetMethod(methodName, BindingFlags.Public | BindingFlags.NonPublic | BindingFlags.Instance | BindingFlags.DeclaredOnly);
-                    if (method == null) { Warn($"{reader} not found ({fieldName})"); continue; }
+                    // Every overload of that name (GetMethod threw AmbiguousMatchException once a game update added one, and the
+                    // whole item failed to load); an overload that never reads the field just warns.
+                    var methods = new List<MethodInfo>();
+                    if (owner != null)
+                        foreach (MethodInfo m in owner.GetMethods(BindingFlags.Public | BindingFlags.NonPublic | BindingFlags.Instance | BindingFlags.DeclaredOnly))
+                            if (m.Name == methodName && !m.IsAbstract) methods.Add(m);
+                    if (methods.Count == 0) { Warn($"{reader} not found ({fieldName})"); continue; }
                     FieldInfo f = field;
-                    Hooks.Add(new ILHook(method, il => ScaleReads(il, f, reader)));
+                    foreach (MethodInfo method in methods) Hooks.Add(new ILHook(method, il => ScaleReads(il, f, reader)));
                 }
             }
         }

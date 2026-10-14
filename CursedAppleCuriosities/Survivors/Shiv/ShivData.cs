@@ -110,9 +110,9 @@ namespace CursedAppleCuriosities.Survivors.Shiv
             KnifeDamage = c.Bind(Section, "Serrated Knife - Damage", KnifeDamage, "Damage coefficient of the knife hit.").Value;
             KnifeBleeds = c.Bind(Section, "Serrated Knife - Bleed Stacks", KnifeBleeds, "Bleed stacks per knife (Tri-Tip Dagger's bleed).").Value;
             KnifeRecharge = c.Bind(Section, "Serrated Knife - Recharge", KnifeRecharge, "Seconds per charge (3 charges).").Value;
-            DashDamage = c.Bind(Section, "Slice'n'Dice - Damage", DashDamage, "Damage coefficient to enemies in the dash's path.").Value;
-            DashCooldown = c.Bind(Section, "Slice'n'Dice - Cooldown", DashCooldown, "Seconds.").Value;
-            DashCooldownPerHit = c.Bind(Section, "Slice'n'Dice - Cooldown Per Hit", DashCooldownPerHit, "Seconds taken off the cooldown per enemy struck.").Value;
+            DashDamage = c.Bind(Section, "Slice n Dice - Damage", DashDamage, "Damage coefficient to enemies in the dash's path.").Value;
+            DashCooldown = c.Bind(Section, "Slice n Dice - Cooldown", DashCooldown, "Seconds.").Value;
+            DashCooldownPerHit = c.Bind(Section, "Slice n Dice - Cooldown Per Hit", DashCooldownPerHit, "Seconds taken off the cooldown per enemy struck.").Value;
             LungeDamage = c.Bind(Section, "Killing Blow - Damage", LungeDamage, "Damage coefficient to enemies in the lunge's path.").Value;
             LungeMetres = c.Bind(Section, "Killing Blow - Distance", LungeMetres, "Metres the lunge covers.").Value;
             ExecuteThreshold = c.Bind(Section, "Killing Blow - Execute Threshold", ExecuteThreshold, "Health fraction under which an enemy is executed (bosses: half).").Value;

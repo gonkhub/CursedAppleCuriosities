@@ -5,41 +5,83 @@ using UnityEngine;
 namespace CursedAppleCuriosities.Survivors.Mina
 {
     /// <summary>
-    /// Mina's bats: Deadlock's own bat (bat_ui_a, converted as "mina_bat") when it's there, else a small dark shape. Used by
-    /// the Nox Nostra projectiles, Sanguine Retreat's swarm and her lobby intro.
+    /// Mina's bats: a small dark-crimson bat built in code (two scalloped wings on a body, both sides drawn, flapping). Deadlock's
+    /// own bat_ui_a is a flat menu silhouette with a see-through texture, which drew as black cards. Used by the Nox Nostra
+    /// projectiles, Sanguine Retreat's swarm and her lobby intro.
     /// </summary>
     public static class MinaBatVisual
     {
-        private static Material? _fallback;
+        private static Material? _material;
+        private static Mesh? _wing, _body;
 
-        /// <summary>One bat under <paramref name="parent"/>, about <paramref name="span"/> metres wide, facing the parent's forward.</summary>
+        /// <summary>One bat under <paramref name="parent"/>, about <paramref name="span"/> metres wingtip to wingtip, facing the parent's forward.</summary>
         public static GameObject Build(Transform parent, float span)
         {
-            GlbModel? model = DeadlockInstall.Model(MinaData.BatKey);
-            GameObject bat;
-            if (model != null)
+            if (_material == null)
             {
-                bat = Object.Instantiate(model.Root, parent, false);
-                bat.SetActive(true);
-                var bounds = new Bounds(bat.transform.position, Vector3.zero);
-                foreach (Renderer r in bat.GetComponentsInChildren<Renderer>()) bounds.Encapsulate(r.bounds);
-                float size = Mathf.Max(0.01f, Mathf.Max(bounds.size.x, bounds.size.z));
-                bat.transform.localScale *= span / size;
+                _material = DeadlockHeroes.MakeMaterial("Mina", "bat", null);
+                _material.color = new Color(0.16f, 0.03f, 0.07f);
+                if (_material.HasProperty("_EmColor")) { _material.SetColor("_EmColor", new Color(0.5f, 0.05f, 0.15f)); _material.SetFloat("_EmPower", 0.6f); }
             }
-            else
-            {
-                bat = GameObject.CreatePrimitive(PrimitiveType.Sphere);
-                Object.Destroy(bat.GetComponent<Collider>());
-                bat.transform.SetParent(parent, false);
-                bat.transform.localScale = new Vector3(span, span * 0.25f, span * 0.4f); // a flat dark wing shape
-                if (_fallback == null) { _fallback = DeadlockHeroes.MakeMaterial("Mina", "bat", null); _fallback.color = new Color(0.12f, 0.03f, 0.06f); }
-                bat.GetComponent<Renderer>().sharedMaterial = _fallback;
-            }
-            bat.name = "MinaBat";
-            bat.transform.localPosition = Vector3.zero;
-            bat.transform.localRotation = Quaternion.identity;
-            bat.AddComponent<MinaBatFlap>();
+            _wing ??= WingMesh();
+            _body ??= BodyMesh();
+            var bat = new GameObject("MinaBat");
+            bat.transform.SetParent(parent, false);
+            bat.transform.localScale = Vector3.one * span;
+            Part(bat.transform, "Body", _body, Vector3.one);
+            Transform right = Part(bat.transform, "WingR", _wing, Vector3.one);
+            Transform left = Part(bat.transform, "WingL", _wing, new Vector3(-1f, 1f, 1f)); // mirrored (both faces are drawn)
+            var flap = bat.AddComponent<MinaBatFlap>();
+            flap.Right = right;
+            flap.Left = left;
             return bat;
+        }
+
+        private static Transform Part(Transform parent, string name, Mesh mesh, Vector3 scale)
+        {
+            var go = new GameObject(name, typeof(MeshFilter), typeof(MeshRenderer));
+            go.transform.SetParent(parent, false);
+            go.transform.localScale = scale;
+            go.GetComponent<MeshFilter>().sharedMesh = mesh;
+            var r = go.GetComponent<MeshRenderer>();
+            r.sharedMaterial = _material;
+            r.shadowCastingMode = UnityEngine.Rendering.ShadowCastingMode.Off;
+            return go.transform;
+        }
+
+        /// <summary>The right wing, half a unit long: a fan from the shoulder out to a scalloped trailing edge (x out, z forward).</summary>
+        private static Mesh WingMesh()
+        {
+            Vector3[] rim =
+            {
+                new Vector3(0.02f, 0f, 0.07f), new Vector3(0.2f, 0.03f, 0.1f), new Vector3(0.38f, 0.02f, 0.08f), new Vector3(0.5f, 0f, 0.02f),
+                new Vector3(0.42f, 0f, -0.1f), new Vector3(0.33f, 0f, -0.05f), new Vector3(0.24f, 0f, -0.13f), new Vector3(0.14f, 0f, -0.07f),
+                new Vector3(0.03f, 0f, -0.1f),
+            };
+            return Fan(new Vector3(0.02f, 0f, 0f), rim);
+        }
+
+        private static Mesh BodyMesh() => Fan(Vector3.zero, new[]
+        {
+            new Vector3(0f, 0.02f, 0.14f), new Vector3(0.04f, 0f, 0.05f), new Vector3(0.03f, 0f, -0.1f), new Vector3(0f, 0.01f, -0.14f),
+            new Vector3(-0.03f, 0f, -0.1f), new Vector3(-0.04f, 0f, 0.05f), new Vector3(0f, 0.02f, 0.14f),
+        });
+
+        /// <summary>A triangle fan around a centre, with both faces (the wings are paper thin).</summary>
+        private static Mesh Fan(Vector3 centre, Vector3[] rim)
+        {
+            var v = new System.Collections.Generic.List<Vector3> { centre };
+            v.AddRange(rim);
+            var t = new System.Collections.Generic.List<int>();
+            for (int i = 1; i < v.Count - 1; i++)
+            {
+                t.AddRange(new[] { 0, i, i + 1 });
+                t.AddRange(new[] { 0, i + 1, i });
+            }
+            var m = new Mesh { name = "MinaBat", vertices = v.ToArray(), triangles = t.ToArray() };
+            m.RecalculateNormals();
+            m.RecalculateBounds();
+            return m;
         }
 
         /// <summary>A little swarm circling a transform (every client): Sanguine Retreat's bats.</summary>
@@ -60,23 +102,23 @@ namespace CursedAppleCuriosities.Survivors.Mina
         }
     }
 
-    /// <summary>Wings beating: the bat squashes and stretches quickly (the UI bat has no flight clip to play).</summary>
+    /// <summary>Wings beating: each wing swings up and down about the body.</summary>
     public class MinaBatFlap : MonoBehaviour
     {
-        private Vector3 _base;
+        public Transform? Right, Left;
         private float _rate, _phase;
 
         private void Start()
         {
-            _base = transform.localScale;
-            _rate = Random.Range(12f, 18f);
+            _rate = Random.Range(16f, 24f);
             _phase = Random.value * 6.28f;
         }
 
         private void Update()
         {
-            float s = Mathf.Sin(Time.time * _rate + _phase);
-            transform.localScale = new Vector3(_base.x * (0.75f + 0.25f * s), _base.y * (1f - 0.2f * s), _base.z);
+            float a = Mathf.Sin(Time.time * _rate + _phase) * 40f;
+            if (Right != null) Right.localRotation = Quaternion.Euler(0f, 0f, a);
+            if (Left != null) Left.localRotation = Quaternion.Euler(0f, 0f, -a);
         }
     }
 

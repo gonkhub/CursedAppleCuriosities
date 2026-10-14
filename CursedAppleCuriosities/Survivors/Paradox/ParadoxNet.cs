@@ -528,6 +528,7 @@ namespace CursedAppleCuriosities.Survivors.Paradox
                 EffectManager.SpawnEffect(ParadoxSurvivor.SwapHitEffect, new EffectData { origin = paradox.corePosition, scale = 3f }, true);
             }
             ParadoxNet.Hit(paradox, enemy, damage, crit, Vector3.zero, DamageSource.Special);
+            CursedAppleCuriositiesPlugin.Logger?.LogInfo($"[Paradox] swap with {enemy.name}: {Vector3.Distance(a, b):0.#} m in {duration:0.##} s");
             if (enemy.alive)
             {
                 var carry = enemy.GetComponent<ParadoxSwapCarry>() ?? enemy.gameObject.AddComponent<ParadoxSwapCarry>();
@@ -603,6 +604,7 @@ namespace CursedAppleCuriosities.Survivors.Paradox
             if (_motor != null) { _motor.velocity = Vector3.zero; _motor.disableAirControlUntilCollision = false; }
             else if (_rb != null && !_rb.isKinematic) _rb.velocity = Vector3.zero;
             EquipmentFx.Sound("paradox_swap_end", transform.position);
+            CursedAppleCuriositiesPlugin.Logger?.LogInfo($"[Paradox] swapped {name} ended {Vector3.Distance(transform.position, _to):0.#} m from her old spot");
             using (DurationExtender.From(_by)) ParadoxNet.FadingSlow(_body!.healthComponent, ParadoxData.SwapSlow, ParadoxData.SwapSlowSeconds);
             Destroy(this);
         }
