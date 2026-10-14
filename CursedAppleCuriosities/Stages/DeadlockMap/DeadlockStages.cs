@@ -333,7 +333,7 @@ namespace CursedAppleCuriosities.Stages.DeadlockMap
                 SceneDirector.onTeleporterPlaced += LogTeleporter;
                 SceneDirector.onPrePopulateSceneServer += SeedCamps;
                 SpawnNewtAltars(District.Def);
-                SpawnFixed(District.Def);
+                SpawnFixed(District);
                 SpawnShops(District);
                 Log($"director started (stage ready), {Spawns.Count} player spawns placed");
                 Destroy(gameObject);
@@ -356,17 +356,24 @@ namespace CursedAppleCuriosities.Stages.DeadlockMap
             }
 
             /// <summary>The district's fixed interactables (a legendary chest on a bell tower...), each exactly at its spot.</summary>
-            private static void SpawnFixed(MapSectionDef def)
+            private static void SpawnFixed(District district)
             {
+                MapSectionDef def = district.Def;
                 GameObject? world = GameObject.Find("DeadlockMap");
-                if (world == null || def.FixedInteractables.Length == 0 || DirectorCore.instance == null) return;
+                MapBuilder.Built? t = DeadlockMaps.Template(district);
+                if (world == null || t == null || def.FixedInteractables.Length == 0 || DirectorCore.instance == null) return;
                 int placed = 0;
                 var anchor = new GameObject("FixedAnchor");
                 foreach (FixedSpawn f in def.FixedInteractables)
                 {
                     SpawnCard? card = Addressables.LoadAssetAsync<SpawnCard>(f.Card).WaitForCompletion();
                     if (card == null) { Warn($"fixed interactable: no spawn card {f.Card}"); continue; }
-                    anchor.transform.position = world.transform.TransformPoint(new Vector3(f.X, f.Y, f.Z));
+                    if (f.Atop != null)
+                    {
+                        if (!HighestFlat(world.transform, t.OriginUnits, f.Atop, out Vector3 top)) { Warn($"fixed interactable {f.Card}: nothing flat on top of its box"); continue; }
+                        anchor.transform.position = top;
+                    }
+                    else anchor.transform.position = world.transform.TransformPoint(new Vector3(f.X, f.Y, f.Z));
                     anchor.transform.rotation = Quaternion.Euler(0f, f.Yaw + world.transform.eulerAngles.y, 0f);
                     var rule = new DirectorPlacementRule { placementMode = DirectorPlacementRule.PlacementMode.Direct, spawnOnTarget = anchor.transform };
                     var rng = new Xoroshiro128Plus(Run.instance != null ? Run.instance.stageRng.nextUlong : 0UL);
@@ -375,6 +382,25 @@ namespace CursedAppleCuriosities.Stages.DeadlockMap
                 }
                 Destroy(anchor);
                 Log($"{placed} fixed interactables placed");
+            }
+
+            /// <summary>The highest flat (walkable) spot inside a box of Deadlock units, by a grid of rays straight down.</summary>
+            private static bool HighestFlat(Transform world, Vector3 originUnits, float[] box, out Vector3 best)
+            {
+                best = default;
+                bool found = false;
+                const int n = 12;
+                for (int i = 0; i <= n; i++)
+                    for (int j = 0; j <= n; j++)
+                    {
+                        float x = Mathf.Lerp(box[0], box[2], i / (float)n), y = Mathf.Lerp(box[1], box[3], j / (float)n);
+                        Vector3 from = world.TransformPoint(MapCache.ToUnity(new Vector3(x, y, 0f), originUnits)) + Vector3.up * 400f;
+                        if (!Physics.Raycast(from, Vector3.down, out RaycastHit hit, 800f, LayerIndex.world.mask, QueryTriggerInteraction.Ignore)) continue;
+                        if (hit.normal.y < 0.9f) continue; // a slope or a spire: not somewhere to stand a chest
+                        if (!found || hit.point.y > best.y) { best = hit.point; found = true; }
+                    }
+                if (found) Log($"highest flat spot of the box at {best}");
+                return found;
             }
 
             /// <summary>
