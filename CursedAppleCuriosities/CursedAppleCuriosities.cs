@@ -8,6 +8,7 @@ using CursedAppleCuriosities.Survivors.Bebop;
 using CursedAppleCuriosities.Survivors.Celeste;
 using CursedAppleCuriosities.Survivors.Framework;
 using CursedAppleCuriosities.Survivors.GreyTalon;
+using CursedAppleCuriosities.Survivors.Ivy;
 using CursedAppleCuriosities.Survivors.Lash;
 using CursedAppleCuriosities.Survivors.Mina;
 using CursedAppleCuriosities.Survivors.Paradox;
@@ -149,7 +150,7 @@ namespace CursedAppleCuriosities
                 ("Paradox", ParadoxSurvivor.Init),
                 ("Bebop", BebopSurvivor.Init),
                 // frameworks: kits not designed yet (user, 2026-10-14)
-                ("Ivy", NextHeroes.Ivy.Init),
+                ("Ivy", IvySurvivor.Init),
                 ("Apollo", NextHeroes.Apollo.Init),
             };
             foreach (var hero in heroes)
