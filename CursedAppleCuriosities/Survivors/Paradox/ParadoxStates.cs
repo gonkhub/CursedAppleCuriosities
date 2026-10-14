@@ -79,7 +79,7 @@ namespace EntityStates.CursedApple.Paradox
             if (fixedAge >= _duration && isAuthority) outer.SetNextStateToMain();
         }
 
-        public override InterruptPriority GetMinimumInterruptPriority() => _fired < ParadoxData.BurstCount ? InterruptPriority.Skill : InterruptPriority.Any;
+        public override InterruptPriority GetMinimumInterruptPriority() => InterruptPriority.Skill; // Any would let a held trigger restart the burst during its cycle time
     }
 
     // ================= Secondary: Pulse Bomb =================

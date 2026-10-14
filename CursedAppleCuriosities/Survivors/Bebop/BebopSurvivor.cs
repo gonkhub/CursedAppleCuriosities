@@ -161,7 +161,7 @@ namespace CursedAppleCuriosities.Survivors.Bebop
             var gun = body.AddComponent<BebopGunBeam>();
             gun.Prefab = GunBeamPrefab;
             gun.Range = BebopData.BeamRange;
-            gun.Width = 1f;
+            gun.Width = 2.4f; // about 0.6 m: Engi's laser material is faint when thin
             var hyper = body.AddComponent<BebopHyperBeamFx>();
             hyper.Prefab = HyperBeamPrefab;
             hyper.Range = BebopData.HyperLength;

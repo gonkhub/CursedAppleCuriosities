@@ -96,7 +96,9 @@ namespace CursedAppleCuriosities.Survivors.Ivy
         private static void RecolourGhost(GameObject? projectile, string name, float scale)
         {
             var pc = projectile != null ? projectile.GetComponent<RoR2.Projectile.ProjectileController>() : null;
-            if (pc == null || pc.ghostPrefab == null) return;
+            if (pc == null) return;
+            if (pc.ghostPrefab == null) pc.ghostPrefab = TryLoad<GameObject>("RoR2/Base/Commando/CommandoGrenadeGhost.prefab"); // the clone came without one
+            if (pc.ghostPrefab == null) return;
             GameObject? ghost = Kit.Recoloured(pc.ghostPrefab, name, Hue, effect: false);
             if (ghost == null) return;
             ghost.transform.localScale *= scale;

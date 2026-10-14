@@ -71,6 +71,7 @@ namespace EntityStates.CursedApple.Bebop
             _firing = true;
             _nextTick = fixedAge;
             if (_fx != null) _fx.Active = true;
+            if (isAuthority) CursedAppleCuriosities.CursedAppleCuriositiesPlugin.Logger?.LogDebug($"[Bebop] Humble Pie on (wind-up {_windUp:0.00} s)");
             DeadlockSounds.Play("bebop_beam_start", transform.position, gameObject);
             _loop = DeadlockSounds.Loop("bebop_beam_loop", gameObject, 600f);
             _jazzLoop = DeadlockSounds.Loop("bebop_beam_jazz_" + _jazz, gameObject, 600f);
@@ -116,7 +117,8 @@ namespace EntityStates.CursedApple.Bebop
             base.OnExit();
         }
 
-        public override InterruptPriority GetMinimumInterruptPriority() => InterruptPriority.Any;
+        // Skill, not Any: held primary re-activates its skill every frame, and Any let that restart the beam (and its wind-up) each time.
+        public override InterruptPriority GetMinimumInterruptPriority() => InterruptPriority.Skill;
     }
 
     // ================= Secondary: Sticky Bomb =================
