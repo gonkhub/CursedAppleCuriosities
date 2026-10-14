@@ -16,7 +16,7 @@ namespace CursedAppleCuriosities.Stages.DeadlockMap
     /// </summary>
     internal static class NavBuilder
     {
-        public const int Version = 5;
+        public const int Version = 6;
         private const float GroundSpacing = 4.5f, AirSpacing = 12f;
         private const float MaxLink = 15f, MaxAirLink = 30f;
         private const float LosRange = 140f;
@@ -146,15 +146,25 @@ namespace CursedAppleCuriosities.Stages.DeadlockMap
             var avgClear = new float[n];
             var bestYaw = new float[n];
             var onClip = new bool[n];
+            // Back faces count while classifying: a node inside a hollow mesh (a statue's base) sees only the inside of its
+            // walls, which one-sided colliders would otherwise let every ray through, so it looked wide open (a player spawn).
+            bool backfaces = Physics.queriesHitBackfaces;
+            Physics.queriesHitBackfaces = true;
+            try
+            {
             for (int i = 0; i < n; i++)
             {
                 Vector3 eye = g.Pos[i] + Vector3.up * 1.0f;
                 float min = reach, sum = 0f, best = -1f;
+                bool enclosed = Physics.Raycast(eye, Vector3.up, out RaycastHit up, 60f, mask, QueryTriggerInteraction.Ignore) && Vector3.Dot(up.normal, Vector3.up) > 0.01f;
+                int backs = 0; // one stray back face is a one-sided prop seen from behind; several mean we're inside something
                 for (int k = 0; k < rays; k++)
                 {
                     float yaw = k * 360f / rays;
                     Vector3 dir = Quaternion.Euler(0f, yaw, 0f) * Vector3.forward;
-                    float d = Physics.Raycast(eye, dir, out RaycastHit hit, reach, mask, QueryTriggerInteraction.Ignore) ? hit.distance : reach;
+                    bool hitAny = Physics.Raycast(eye, dir, out RaycastHit hit, reach, mask, QueryTriggerInteraction.Ignore);
+                    if (hitAny && Vector3.Dot(hit.normal, dir) > 0.01f) backs++; // the back of a surface
+                    float d = hitAny ? hit.distance : reach;
                     min = Mathf.Min(min, d);
                     sum += d;
                     if (d > best) { best = d; bestYaw[i] = yaw; }
@@ -163,9 +173,13 @@ namespace CursedAppleCuriosities.Stages.DeadlockMap
                 avgClear[i] = sum / rays;
                 // On a clip, or inside one: a capsule wholly inside a clip box touches none of its faces, so a clip face more than
                 // a metre overhead (higher than any ramp over stairs) counts too: players can't get there (a chest in a prop's clip).
-                onClip[i] = Physics.CheckCapsule(g.Pos[i] + Vector3.up * 0.3f, g.Pos[i] + Vector3.up * 1.7f, 0.45f, clipMask, QueryTriggerInteraction.Ignore)
+                enclosed |= backs >= 4;
+                onClip[i] = enclosed
+                    || Physics.CheckCapsule(g.Pos[i] + Vector3.up * 0.3f, g.Pos[i] + Vector3.up * 1.7f, 0.45f, clipMask, QueryTriggerInteraction.Ignore)
                     || Physics.Raycast(g.Pos[i] + Vector3.up * 6f, Vector3.down, 5f, clipMask, QueryTriggerInteraction.Ignore);
             }
+            }
+            finally { Physics.queriesHitBackfaces = backfaces; }
 
             // Walkable regions: nodes joined by human-sized links (either way).
             var adj = new List<int>[n];
