@@ -15,6 +15,15 @@ namespace CursedAppleMapConvert
         public bool Cutout, Translucent, Glass, DoubleSided, VertexPaint, SelfIllum, Skip;
         public float Cutoff = 0.5f;
         public C32 Tint = C32.White;
+        // environment_blend's second layer (resource paths of Deadlock textures; null = one layer).
+        public string? Color2, Reveal2;
+        public float RevealOffset2, RevealSoftness2 = 0.125f;
+        public bool RevealInvert2;
+        public C32 Tint2 = C32.White;
+        // World overlay: a grime texture projected in world space (tiling in Source units), modulating every layer.
+        public string? Overlay;
+        public float OverlayTiling = 512f, OverlayDark = 1f, OverlayBright = 1f, OverlayStrength1 = 1f, OverlayStrength2 = 1f;
+        public byte OverlayMask1 = 1, OverlayMask2 = 1; // 0 = unmasked, 1 = masked by the layer's tint mask, 2 = inverted
     }
 
     /// <summary>One primitive (a draw call) of a map model, in Source units and axes (z up).</summary>
@@ -25,6 +34,8 @@ namespace CursedAppleMapConvert
         public V3[] Pos = null!;
         public V3[]? Normal;
         public V2[]? Uv;
+        public V2[]? Lightmap;         // Deadlock's baked lightmap UVs (0-0.75, scaled by the world's lightmap UV scale), or null
+        public float[]? Blend;         // vertex paint blend weight of layer 2 (environment_blend), or null
         public C32[]? Color;
         public int[] Tris = null!;
     }
@@ -127,6 +138,30 @@ namespace CursedAppleMapConvert
                     for (int k = 0; k < o.Length; k++) o[k] = new V2(uv[k * 2], 1f - uv[k * 2 + 1]); // glTF UV origin is top-left
                     return o;
                 });
+            // The lightmap UVs are the highest TEXCOORD_n (n >= 1) that stays inside the atlas (0-0.75): blend materials have a
+            // secondary UV set before them, simple ones don't.
+            for (int n = 5; n >= 1 && p.Lightmap == null; n--)
+            {
+                if (!(MiniJson.Int(attrs, "TEXCOORD_" + n) is int li)) continue;
+                V2[] lm = Shared(li, 4, () =>
+                {
+                    float[] uv = Floats(j, b, bin, li, out _);
+                    var o = new V2[uv.Length / 2];
+                    for (int k = 0; k < o.Length; k++) o[k] = new V2(uv[k * 2], uv[k * 2 + 1]);
+                    return o;
+                });
+                bool atlas = lm.Length > 0;
+                foreach (V2 v in lm) if (v.X < -0.001f || v.Y < -0.001f || v.X > 0.76f || v.Y > 0.76f) { atlas = false; break; }
+                if (atlas) p.Lightmap = lm;
+            }
+            if (MiniJson.Int(attrs, "_TEXCOORD_4") is int bi)
+                p.Blend = Shared(bi, 5, () =>
+                {
+                    float[] v = Floats(j, b, bin, bi, out int width);
+                    var o = new float[v.Length / width];
+                    for (int k = 0; k < o.Length; k++) o[k] = v[k * width];
+                    return o;
+                });
             if (MiniJson.Int(attrs, "COLOR_0") is int ci)
                 p.Color = Shared(ci, 3, () =>
                 {
@@ -185,9 +220,45 @@ namespace CursedAppleMapConvert
             info.SelfIllum = Flag("F_SELF_ILLUM");
             info.Skip = info.Shader.StartsWith("cosmic_veil") || info.Shader.StartsWith("black") || info.Shader.Contains("sky");
             var vec = MiniJson.Obj(vmat, "VectorParams");
-            if (vec != null && (vec.TryGetValue("g_vColorTint", out object ct) || vec.TryGetValue("g_vColorTint1", out ct)) && ct is List<object> c && c.Count >= 3)
-                info.Tint = info.Tint * C32.FromFloats(MiniJson.F(c[0]), MiniJson.F(c[1]), MiniJson.F(c[2]));
+            var texs = MiniJson.Obj(vmat, "TextureParams");
+            var floats = MiniJson.Obj(vmat, "FloatParams");
+            string? Tex(string k) => texs != null && texs.TryGetValue(k, out object v) && v is string t && t.Length > 0 && !t.Contains("/default/") ? t : null;
+            float Fl(string k, float d) => floats != null && floats.TryGetValue(k, out object v) && v is double x ? (float)x : d;
+            if (info.Shader.StartsWith("environment_blend") && Tex("g_tColor2") is string c2 && c2 != Tex("g_tColor1"))
+            {
+                info.Color2 = c2;
+                info.Reveal2 = Tex("g_tRevealMask2");
+                info.RevealOffset2 = Fl("g_flRevealOffset2", 0f);
+                info.RevealSoftness2 = Fl("g_flRevealSoftness2", 0.125f);
+                info.RevealInvert2 = Flag("g_bRevealInvert2");
+                info.Tint2 = LayerTint(vec, texs, "2", C32.White);
+            }
+            if (Flag("F_WORLD_OVERLAY") && Tex("g_tColorWorldOverlay") is string ov)
+            {
+                info.Overlay = ov;
+                info.OverlayTiling = Fl("g_flWorldOverlayTiling", 512f);
+                info.OverlayDark = Fl("g_flWorldOverlayDarknessContrast", 1f);
+                info.OverlayBright = Fl("g_flWorldOverlayBrightnessContrast", 1f);
+                info.OverlayStrength1 = Fl("g_flWorldOverlayStrength1", 1f);
+                info.OverlayStrength2 = Fl("g_flWorldOverlayStrength2", 1f);
+                byte Mode(string k) => ints != null && ints.TryGetValue(k, out object v) && v is double d ? (byte)Math.Max(0, Math.Min(2, (int)d)) : (byte)1;
+                info.OverlayMask1 = Mode("g_nWorldOverlayTintMask1");
+                info.OverlayMask2 = Mode("g_nWorldOverlayTintMask2");
+            }
+            info.Tint = LayerTint(vec, texs, "1", info.Tint);
             return info;
+        }
+
+        /// <summary>
+        /// A layer's colour tint (g_vColorTint / g_vColorTintN) times the base. Deadlock masks every tint by the colour texture's
+        /// alpha (its tint mask): the world shader does that per pixel, so the tint itself always comes through here.
+        /// </summary>
+        private static C32 LayerTint(Dictionary<string, object>? vec, Dictionary<string, object>? texs, string layer, C32 base_)
+        {
+            if (vec == null) return base_;
+            if (!vec.TryGetValue("g_vColorTint" + layer, out object ct) && !(layer == "1" && vec.TryGetValue("g_vColorTint", out ct))) return base_;
+            if (!(ct is List<object> c) || c.Count < 3) return base_;
+            return base_ * C32.FromFloats(MiniJson.F(c[0]), MiniJson.F(c[1]), MiniJson.F(c[2]));
         }
 
         /// <summary>An accessor as floats (normalized integers scaled to 0-1); width = its component count.</summary>

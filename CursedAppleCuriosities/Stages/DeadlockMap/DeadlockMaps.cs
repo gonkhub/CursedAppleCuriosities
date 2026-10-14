@@ -71,6 +71,17 @@ namespace CursedAppleCuriosities.Stages.DeadlockMap
             UnityEngine.Debug.Log($"[DeadlockMap] shader {sh.name}: {string.Join(", ", names)}; keywords {string.Join(" ", m.shaderKeywords)}");
         }
 
+        [ConCommand(commandName = "cac_map_light", flags = ConVarFlags.None,
+            helpText = "Cursed Apple: try the map's lighting live (not saved): cac_map_light <lightmap exposure> [dynamic share] [sun intensity].")]
+        private static void CCLight(ConCommandArgs args)
+        {
+            if (args.Count > 0) Shader.SetGlobalFloat("_CacExposure", args.GetArgFloat(0));
+            if (args.Count > 1) Shader.SetGlobalFloat("_CacDynamic", args.GetArgFloat(1));
+            if (args.Count > 2 && RenderSettings.sun != null) RenderSettings.sun.intensity = args.GetArgFloat(2);
+            UnityEngine.Debug.Log($"[DeadlockMap] lighting: exposure {Shader.GetGlobalFloat("_CacExposure")}, dynamic share {Shader.GetGlobalFloat("_CacDynamic")}, " +
+                $"lightmap {(Shader.GetGlobalFloat("_CacLightmapOn") > 0.5f ? "on" : "off")}, sun {(RenderSettings.sun != null ? RenderSettings.sun.intensity : 0f)}");
+        }
+
         private static GameObject? _walk;
 
         [ConCommand(commandName = "cac_map_walk", flags = ConVarFlags.None,

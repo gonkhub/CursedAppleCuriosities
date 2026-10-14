@@ -75,7 +75,7 @@ namespace CursedAppleCuriosities.Stages.DeadlockMap
         }
 
         [ConCommand(commandName = "cac_map_goto", flags = ConVarFlags.None,
-            helpText = "Cursed Apple: jump to a spot in the Deadlock stage: plaza, statue, shop1, shop2, shop3, subway (subwayin: into its doorway).")]
+            helpText = "Cursed Apple: jump to a spot in the Deadlock stage: plaza, statue, shop1, shop2, shop3, subway (subwayin: into its doorway), or x y z (section space, as cac_map_mark writes it).")]
         private static void CCGoto(ConCommandArgs args)
         {
             CharacterBody? body = LocalUserManager.GetFirstLocalUser()?.cachedBody;
@@ -88,8 +88,12 @@ namespace CursedAppleCuriosities.Stages.DeadlockMap
             int[]? box = null;
             if (where.StartsWith("shop") && int.TryParse(where.Substring(4), out int n) && n >= 1 && n * 6 <= def.Shops.Length) box = def.Shops[((n - 1) * 6)..(n * 6)];
             else if (where.StartsWith("subway") && def.SubwayTeleports.Length >= 6) box = def.SubwayTeleports[0..6];
-            if (box != null)
-                local = MapCache.ToUnity(new Vector3((box[0] + box[3]) / 2f, (box[1] + box[4]) / 2f - (where == "subwayin" ? 0f : 200f), box[5]), t.OriginUnits); // just outside it (subwayin: in the doorway)
+            if (args.Count >= 3 && float.TryParse(args.GetArgString(0), NumberStyles.Float, CultureInfo.InvariantCulture, out float gx)
+                && float.TryParse(args.GetArgString(1), NumberStyles.Float, CultureInfo.InvariantCulture, out float gy)
+                && float.TryParse(args.GetArgString(2), NumberStyles.Float, CultureInfo.InvariantCulture, out float gz))
+                local = new Vector3(gx, gy, gz); // section space, as cac_map_mark writes it
+            else if (box != null)
+                local =MapCache.ToUnity(new Vector3((box[0] + box[3]) / 2f, (box[1] + box[4]) / 2f - (where == "subwayin" ? 0f : 200f), box[5]), t.OriginUnits); // just outside it (subwayin: in the doorway)
             else if (where == "statue" && t.HasHidden)
                 local = t.Hidden.center + new Vector3(0f, -t.Hidden.extents.y, 0f) + (DeadlockMaps.PlazaCenter(t.OriginUnits) - t.Hidden.center).normalized * 12f;
             else local = DeadlockMaps.PlazaCenter(t.OriginUnits);

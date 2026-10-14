@@ -114,7 +114,9 @@ namespace CursedAppleCuriosities.Stages.DeadlockMap
             Light l = go.AddComponent<Light>();
             l.type = LightType.Directional;
             l.color = new Color(1f, 0.74f, 0.5f);
-            l.intensity = 1.35f;
+            // Deadlock's own sun is off on this dusk map (all its light is baked): under the lightmap ours mostly lights the
+            // characters, so it is kept soft enough not to make them glow against the baked scene.
+            l.intensity = MapBuilder.Lit ? 0.75f : 1.35f;
             l.shadows = LightShadows.Soft;
             l.shadowStrength = 0.75f;
             RenderSettings.sun = l;

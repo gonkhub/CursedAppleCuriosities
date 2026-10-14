@@ -24,9 +24,10 @@ namespace CursedAppleCuriosities.Stages.DeadlockMap
         public static ConfigEntry<float>? Weight;
         public static ConfigEntry<string>? Sky;
         public static ConfigEntry<int>? ShopWhite, ShopGreen, ShopRed;
+        public static ConfigEntry<float>? Exposure, DynamicLight;
         private static SceneDef? _def;
         private static AssetBundle? _scenes, _assets;
-        internal static Material? BarrierMaterial, GlassMaterial;
+        internal static Material? BarrierMaterial, GlassMaterial, WorldMaterial;
 
         private static void Log(string s) => CursedAppleCuriositiesPlugin.Logger?.LogInfo("[DeadlockMap] " + s);
         private static void Warn(string s) => CursedAppleCuriositiesPlugin.Logger?.LogWarning("[DeadlockMap] " + s);
@@ -38,12 +39,17 @@ namespace CursedAppleCuriosities.Stages.DeadlockMap
             ShopWhite = config.Bind("Deadlock Map", "Shop White Base Cost", 25, "Curiosity shop on the map: base price of a white (a small chest's base cost; scaled by difficulty like chests).");
             ShopGreen = config.Bind("Deadlock Map", "Shop Green Base Cost", 50, "Base price of a green (a large chest's base cost).");
             ShopRed = config.Bind("Deadlock Map", "Shop Red Base Cost", 400, "Base price of a red (a legendary chest's base cost).");
+            Exposure = config.Bind("Deadlock Map", "Lightmap Exposure", 1f,
+                "Brightness of Deadlock's own baked lighting on the map (1 = as baked).");
+            DynamicLight = config.Bind("Deadlock Map", "Dynamic Light Share", 0.15f,
+                "How much the game's own lights (the sun, explosions, glows) light the map on top of Deadlock's baked lighting (0 = none).");
             Weight = config.Bind("Deadlock Map", "Sunken Plaza Weight", 1f,
                 "How likely Sunken Plaza is as stage 3, against each vanilla stage 3 (1 = as likely as each of them, 0 = never on its own).");
             _scenes = LoadBundle("cac_stagescenes");
             _assets = LoadBundle("cac_stageassets");
             BarrierMaterial = _assets?.LoadAsset<Material>("matBarrier");
             GlassMaterial = _assets?.LoadAsset<Material>("matGlass");
+            WorldMaterial = _assets?.LoadAsset<Material>("matWorld");
 
             LanguageAPI.Add("CURSEDAPPLE_STAGE_SUNKENPLAZA_NAME", "Sunken Plaza");
             LanguageAPI.Add("CURSEDAPPLE_STAGE_SUNKENPLAZA_SUBTITLE", "Archmother's Ward");

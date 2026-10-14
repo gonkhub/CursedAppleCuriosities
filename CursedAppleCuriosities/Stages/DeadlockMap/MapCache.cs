@@ -23,6 +23,16 @@ namespace CursedAppleCuriosities.Stages.DeadlockMap
         public string Texture = "";   // file name in the section's tex folder ("" = none)
         public MapMatFlags Flags;
         public float Cutoff = 0.5f;
+        public Color32 Tint = new Color32(255, 255, 255, 255); // layer 1's material tint (the vertex colour has the object's and the paint)
+        // Layer 2 (Deadlock's environment_blend): its colour and reveal mask (file names, "" = none), the threshold's shape, its tint.
+        public string Texture2 = "", Reveal2 = "";
+        public float RevealOffset2, RevealSoftness2 = 0.125f;
+        public bool RevealInvert2;
+        public Color32 Tint2 = new Color32(255, 255, 255, 255);
+        // World overlay: grime projected in world space (tiling in metres), modulating both layers.
+        public string Overlay = "";
+        public float OverlayTiling = 13f, OverlayDark = 1f, OverlayBright = 1f, OverlayStrength1 = 1f, OverlayStrength2 = 1f;
+        public byte OverlayMask1 = 1, OverlayMask2 = 1;  // 0 = unmasked, 1 = by the layer's tint mask (texture alpha), 2 = inverted
     }
 
     /// <summary>One material's triangles in one chunk (Unity space, metres, relative to the section origin).</summary>
@@ -32,7 +42,8 @@ namespace CursedAppleCuriosities.Stages.DeadlockMap
         public Vector3[] Pos = Array.Empty<Vector3>();
         public Vector3[] Normal = Array.Empty<Vector3>();
         public Vector2[] Uv = Array.Empty<Vector2>();
-        public Color32[] Color = Array.Empty<Color32>();
+        public Vector2[] Lightmap = Array.Empty<Vector2>(); // Deadlock's baked lightmap UVs (0-1); (-1, -1) = none
+        public Color32[] Color = Array.Empty<Color32>();     // tint (rgb); alpha = layer 2's blend weight on blended materials
         public int[] Tris = Array.Empty<int>();
     }
 
@@ -50,10 +61,12 @@ namespace CursedAppleCuriosities.Stages.DeadlockMap
     internal sealed class MapCache : IDisposable
     {
         public const uint Magic = 0x4D434143; // "CACM"
-        public const int Version = 2;
+        public const int Version = 3;
 
         public string Fingerprint = "";
         public Vector3 OriginUnits;       // Source units: the section's origin (Unity 0,0,0)
+        public string LightmapFile = "";  // raw BC6H irradiance lightmap in the tex folder ("" = none)
+        public int LightmapSize;
         public readonly List<MapMaterial> Materials = new List<MapMaterial>();
         public int ChunkCount;
         private BinaryReader? _br;
@@ -81,9 +94,19 @@ namespace CursedAppleCuriosities.Stages.DeadlockMap
             if (br.ReadUInt32() != Magic || br.ReadInt32() != Version) { c.Dispose(); throw new InvalidDataException("not a map cache of this version"); }
             c.Fingerprint = br.ReadString();
             c.OriginUnits = V(br);
+            c.LightmapFile = br.ReadString();
+            c.LightmapSize = br.ReadInt32();
             int mats = br.ReadInt32();
             for (int i = 0; i < mats; i++)
-                c.Materials.Add(new MapMaterial { Name = br.ReadString(), Texture = br.ReadString(), Flags = (MapMatFlags)br.ReadByte(), Cutoff = br.ReadSingle() });
+                c.Materials.Add(new MapMaterial
+                {
+                    Name = br.ReadString(), Texture = br.ReadString(), Flags = (MapMatFlags)br.ReadByte(), Cutoff = br.ReadSingle(),
+                    Tint = new Color32(br.ReadByte(), br.ReadByte(), br.ReadByte(), 255),
+                    Texture2 = br.ReadString(), Reveal2 = br.ReadString(), RevealOffset2 = br.ReadSingle(), RevealSoftness2 = br.ReadSingle(),
+                    RevealInvert2 = br.ReadBoolean(), Tint2 = new Color32(br.ReadByte(), br.ReadByte(), br.ReadByte(), 255),
+                    Overlay = br.ReadString(), OverlayTiling = br.ReadSingle(), OverlayDark = br.ReadSingle(), OverlayBright = br.ReadSingle(),
+                    OverlayStrength1 = br.ReadSingle(), OverlayStrength2 = br.ReadSingle(), OverlayMask1 = br.ReadByte(), OverlayMask2 = br.ReadByte(),
+                });
             c.ChunkCount = br.ReadInt32();
             return c;
         }
@@ -100,7 +123,7 @@ namespace CursedAppleCuriosities.Stages.DeadlockMap
                     ch.Subs.Add(new MapSub
                     {
                         Material = br.ReadInt32(),
-                        Pos = Arr<Vector3>(br), Normal = Arr<Vector3>(br), Uv = Arr<Vector2>(br), Color = Arr<Color32>(br), Tris = Arr<int>(br),
+                        Pos = Arr<Vector3>(br), Normal = Arr<Vector3>(br), Uv = Arr<Vector2>(br), Lightmap = Arr<Vector2>(br), Color = Arr<Color32>(br), Tris = Arr<int>(br),
                     });
                 yield return ch;
             }

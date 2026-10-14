@@ -13,6 +13,7 @@ namespace CursedAppleMapConvert
         public C32 Tint = C32.White;
         public int DrawCall = -1;               // -1: every draw of the model
         public Dictionary<int, C32>? DrawTints; // merged aggregates: per draw call
+        public HashSet<int>? SkipDraws;         // merged aggregates: draws of a lower level of detail (the full one is drawn)
         public V3 Min, Max;                     // world bounds (Source units)
 
         public static float[] Identity() => new float[] { 1, 0, 0, 0, 0, 1, 0, 0, 0, 0, 1, 0 };
@@ -76,9 +77,9 @@ namespace CursedAppleMapConvert
             private readonly List<float> _rows = new List<float>();
             private bool _inTransform;
             private C32 _tint = C32.White;
-            private readonly List<(bool Has, int Draw, C32 Tint)> _meshes = new List<(bool, int, C32)>();
+            private readonly List<(bool Has, int Draw, C32 Tint, bool Lod)> _meshes = new List<(bool, int, C32, bool)>();
             private bool _has;
-            private int _draw;
+            private int _draw, _lodMask;
             private bool _inFragments;
             private readonly List<float> _frag = new List<float>();
 
@@ -130,10 +131,13 @@ namespace CursedAppleMapConvert
             {
                 if (l.StartsWith("m_bHasTransform")) { _has = l.EndsWith("true"); return; }
                 if (l.StartsWith("m_nDrawCallIndex")) { float[] n = Nums(l); _draw = n.Length > 0 ? (int)n[0] : 0; return; }
+                if (l.StartsWith("m_nLODGroupMask")) { float[] n = Nums(l); _lodMask = n.Length > 0 ? (int)n[0] : 0; return; }
                 if (l.StartsWith("m_vTintColor"))
                 {
                     float[] c = Nums(l);
-                    _meshes.Add((_has, _draw, c.Length >= 3 ? new C32(B(c[0]), B(c[1]), B(c[2]), 255) : C32.White));
+                    // A draw only in the lower levels of detail duplicates the full one: left out.
+                    _meshes.Add((_has, _draw, c.Length >= 3 ? new C32(B(c[0]), B(c[1]), B(c[2]), 255) : C32.White, _lodMask != 0 && (_lodMask & 1) == 0));
+                    _lodMask = 0;
                     return;
                 }
                 if (l.StartsWith("m_fragmentTransforms")) { _inFragments = !l.EndsWith("[  ]"); return; }
@@ -154,18 +158,19 @@ namespace CursedAppleMapConvert
             {
                 WorldInstance? merged = null;
                 int f = 0;
-                foreach (var (has, draw, tint) in _meshes)
+                foreach (var (has, draw, tint, lod) in _meshes)
                 {
                     if (has)
                     {
                         float[] t = f * 12 + 12 <= _frag.Count ? _frag.GetRange(f * 12, 12).ToArray() : WorldInstance.Identity();
-                        f++;
-                        Instances.Add(new WorldInstance { Model = model, Transform = t, Tint = tint, DrawCall = draw });
+                        f++; // every fragment has its transform, drawn or not
+                        if (!lod) Instances.Add(new WorldInstance { Model = model, Transform = t, Tint = tint, DrawCall = draw });
                     }
                     else
                     {
                         merged ??= new WorldInstance { Model = model, DrawTints = new Dictionary<int, C32>() };
-                        merged.DrawTints![draw] = tint;
+                        if (lod) (merged.SkipDraws ??= new HashSet<int>()).Add(draw);
+                        else merged.DrawTints![draw] = tint;
                     }
                 }
                 if (merged != null) Instances.Add(merged);

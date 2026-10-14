@@ -16,7 +16,7 @@ namespace CursedAppleCuriosities.Stages.DeadlockMap
     /// </summary>
     internal static class NavBuilder
     {
-        public const int Version = 4;
+        public const int Version = 5;
         private const float GroundSpacing = 4.5f, AirSpacing = 12f;
         private const float MaxLink = 15f, MaxAirLink = 30f;
         private const float LosRange = 140f;
@@ -161,7 +161,10 @@ namespace CursedAppleCuriosities.Stages.DeadlockMap
                 }
                 minClear[i] = min;
                 avgClear[i] = sum / rays;
-                onClip[i] = Physics.CheckCapsule(g.Pos[i] + Vector3.up * 0.3f, g.Pos[i] + Vector3.up * 1.7f, 0.45f, clipMask, QueryTriggerInteraction.Ignore);
+                // On a clip, or inside one: a capsule wholly inside a clip box touches none of its faces, so a clip face more than
+                // a metre overhead (higher than any ramp over stairs) counts too: players can't get there (a chest in a prop's clip).
+                onClip[i] = Physics.CheckCapsule(g.Pos[i] + Vector3.up * 0.3f, g.Pos[i] + Vector3.up * 1.7f, 0.45f, clipMask, QueryTriggerInteraction.Ignore)
+                    || Physics.Raycast(g.Pos[i] + Vector3.up * 6f, Vector3.down, 5f, clipMask, QueryTriggerInteraction.Ignore);
             }
 
             // Walkable regions: nodes joined by human-sized links (either way).

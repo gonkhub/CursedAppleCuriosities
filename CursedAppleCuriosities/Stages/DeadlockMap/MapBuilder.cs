@@ -28,13 +28,95 @@ namespace CursedAppleCuriosities.Stages.DeadlockMap
             return mat;
         }
 
+        private static Texture2D? _lightmap;
+        private static string _lightmapFor = "";
+        private static readonly int LightmapId = Shader.PropertyToID("_CacLightmap"), LightmapOnId = Shader.PropertyToID("_CacLightmapOn"),
+            ExposureId = Shader.PropertyToID("_CacExposure"), DynamicId = Shader.PropertyToID("_CacDynamic"), FallbackId = Shader.PropertyToID("_CacFallback");
+
+        /// <summary>
+        /// Deadlock's baked irradiance (raw BC6H blocks straight to the GPU: no decoding, ~64 MB of video memory for the
+        /// whole map), kept for every later stage. Null when the cache has none or the GPU can't sample BC6H.
+        /// </summary>
+        private static Texture2D? Lightmap(MapCache cache, string texFolder)
+        {
+            string file = System.IO.Path.Combine(texFolder, cache.LightmapFile);
+            if (_lightmap != null && _lightmapFor == file) return _lightmap;
+            if (cache.LightmapFile.Length == 0 || cache.LightmapSize <= 0 || !File.Exists(file)) return null;
+            if (!SystemInfo.SupportsTextureFormat(TextureFormat.BC6H)) { Log("this GPU can't sample BC6H: the map is lit without its lightmap"); return null; }
+            byte[] raw = File.ReadAllBytes(file);
+            var tex = new Texture2D(cache.LightmapSize, cache.LightmapSize, TextureFormat.BC6H, false, true)
+            {
+                name = "DeadlockLightmap", wrapMode = TextureWrapMode.Clamp, filterMode = FilterMode.Bilinear,
+            };
+            tex.LoadRawTextureData(raw); // Direct3D's rows run top-down, as do Deadlock's lightmap UVs: no flip needed
+            tex.Apply(false, true);      // the CPU copy goes
+            if (_lightmap != null) UnityEngine.Object.Destroy(_lightmap);
+            _lightmap = tex;
+            _lightmapFor = file;
+            return tex;
+        }
+
+        /// <summary>True once Deadlock's lightmap lights the map (the world shader is in use).</summary>
+        public static bool Lit => _lightmap != null && SunkenPlazaStage.WorldMaterial != null;
+
+        /// <summary>The lighting globals the world shader reads (config: exposure, the dynamic lights' share).</summary>
+        public static void ApplyLighting()
+        {
+            bool on = _lightmap != null && SunkenPlazaStage.WorldMaterial != null;
+            Shader.SetGlobalTexture(LightmapId, on ? (Texture)_lightmap! : Texture2D.blackTexture);
+            Shader.SetGlobalFloat(LightmapOnId, on ? 1f : 0f);
+            Shader.SetGlobalFloat(ExposureId, SunkenPlazaStage.Exposure?.Value ?? 1f);
+            Shader.SetGlobalFloat(DynamicId, SunkenPlazaStage.DynamicLight?.Value ?? 0.15f);
+            Shader.SetGlobalColor(FallbackId, new Color(0.35f, 0.3f, 0.32f));
+        }
+
+        /// <summary>A world material on our Deadlock shader: layer 2 and the world overlay when the material has them.</summary>
+        private static Material MakeWorld(MapMaterial m, Func<string, Texture2D?> tex)
+        {
+            var mat = new Material(SunkenPlazaStage.WorldMaterial) { name = "matDeadlock_" + m.Name };
+            mat.mainTexture = tex(m.Texture);
+            mat.color = Color.white;
+            mat.SetColor("_Tint1", m.Tint);
+            // Cut out: alpha is the opacity. Otherwise it is the tint mask (where tints and vertex paint apply).
+            if ((m.Flags & MapMatFlags.Cutout) != 0) { mat.EnableKeyword("_ALPHATEST_ON"); mat.SetFloat("_Cutoff", m.Cutoff); mat.SetFloat("_TintMask", 0f); }
+            else { mat.DisableKeyword("_ALPHATEST_ON"); mat.SetFloat("_TintMask", 1f); }
+            mat.SetFloat("_Cull", (m.Flags & MapMatFlags.DoubleSided) != 0 ? (float)CullMode.Off : (float)CullMode.Back);
+            mat.SetFloat("_SelfIllum", (m.Flags & MapMatFlags.SelfIllum) != 0 ? 0.8f : 0f);
+            Texture2D? t2 = tex(m.Texture2);
+            if (t2 != null)
+            {
+                mat.EnableKeyword("CAC_LAYER2");
+                mat.SetTexture("_Tex2", t2);
+                mat.SetColor("_Tint2", m.Tint2);
+                Texture2D? reveal = tex(m.Reveal2);
+                mat.SetTexture("_Reveal2", reveal != null ? reveal : Texture2D.grayTexture);
+                mat.SetFloat("_RevealOffset", m.RevealOffset2);
+                mat.SetFloat("_RevealSoftness", m.RevealSoftness2);
+                mat.SetFloat("_RevealInvert", m.RevealInvert2 ? 1f : 0f);
+            }
+            Texture2D? ov = tex(m.Overlay);
+            if (ov != null)
+            {
+                mat.EnableKeyword("CAC_OVERLAY");
+                mat.SetTexture("_Overlay", ov);
+                mat.SetFloat("_OverlayTiling", Mathf.Max(0.1f, m.OverlayTiling));
+                mat.SetFloat("_OverlayDark", m.OverlayDark);
+                mat.SetFloat("_OverlayBright", m.OverlayBright);
+                mat.SetFloat("_OverlayStrength1", m.OverlayStrength1);
+                mat.SetFloat("_OverlayStrength2", m.OverlayStrength2);
+                mat.SetFloat("_OverlayMask1", m.OverlayMask1);
+                mat.SetFloat("_OverlayMask2", m.OverlayMask2);
+            }
+            return mat;
+        }
+
         /// <summary>A world material: RoR2's own standard shader (so the map is lit like the game), vertex colours on.</summary>
         public static Material MakeMaterial(MapMaterial m, Texture2D? tex)
         {
             if (_base == null) _base = UnityEngine.AddressableAssets.Addressables.LoadAssetAsync<Material>("RoR2/Base/Commando/matCommandoDualies.mat").WaitForCompletion();
             var mat = new Material(_base) { name = "matDeadlock_" + m.Name };
             mat.mainTexture = tex;
-            mat.color = Color.white;
+            mat.color = m.Tint;
             foreach (string p in new[] { "_NormalTex", "_EmTex", "_FresnelRamp", "_PrintRamp", "_SplatmapTex", "_FlowHeightmap", "_FlowHeightRamp" })
                 if (mat.HasProperty(p)) mat.SetTexture(p, null);
             if (mat.HasProperty("_EmPower")) mat.SetFloat("_EmPower", 0f);
@@ -77,6 +159,17 @@ namespace CursedAppleCuriosities.Stages.DeadlockMap
             var built = new Built { Root = root, OriginUnits = cache.OriginUnits };
 
             var textures = new Dictionary<string, Texture2D?>();
+            Texture2D? Tex(string name)
+            {
+                if (name.Length == 0) return null;
+                if (textures.TryGetValue(name, out Texture2D? t)) return t;
+                TexData? td = HeroTextures.ReadStandalone(System.IO.Path.Combine(conv.TexFolder, name));
+                if (td != null) { t = HeroTextures.Make(td); t.wrapMode = TextureWrapMode.Repeat; t.anisoLevel = 4; }
+                textures[name] = t;
+                return t;
+            }
+            bool lit = SunkenPlazaStage.WorldMaterial != null && Lightmap(cache, conv.TexFolder) != null;
+            ApplyLighting();
             var mats = new Material?[cache.Materials.Count];
             var hidden = new bool[cache.Materials.Count];
             for (int i = 0; i < hidden.Length; i++) hidden[i] = Array.IndexOf(conv.Def.HiddenMaterials, cache.Materials[i].Name) >= 0;
@@ -86,14 +179,7 @@ namespace CursedAppleCuriosities.Stages.DeadlockMap
                 if (hidden[i]) continue;
                 bool glass = (m.Flags & MapMatFlags.Translucent) != 0;
                 if (glass && SunkenPlazaStage.GlassMaterial == null) continue; // no glass shader: leave it undrawn (still solid)
-                Texture2D? tex = null;
-                if (m.Texture.Length > 0 && !textures.TryGetValue(m.Texture, out tex))
-                {
-                    TexData? td = HeroTextures.ReadStandalone(System.IO.Path.Combine(conv.TexFolder, m.Texture));
-                    if (td != null) { tex = HeroTextures.Make(td); tex.wrapMode = TextureWrapMode.Repeat; tex.anisoLevel = 4; }
-                    textures[m.Texture] = tex;
-                }
-                mats[i] = glass ? MakeGlass(m, tex) : MakeMaterial(m, tex);
+                mats[i] = glass ? MakeGlass(m, Tex(m.Texture)) : lit ? MakeWorld(m, Tex) : MakeMaterial(m, Tex(m.Texture));
             }
 
             var bake = new List<(Mesh Mesh, GameObject Holder)>();
@@ -170,6 +256,7 @@ namespace CursedAppleCuriosities.Stages.DeadlockMap
             for (int i = 0; i < ids.Length; i++) ids[i] = bake[i].Mesh.GetInstanceID();
             Parallel.For(0, ids.Length, new ParallelOptions { MaxDegreeOfParallelism = 2 }, i => Physics.BakeMesh(ids[i], false));
             foreach (var (mesh, holder) in bake) holder.AddComponent<MeshCollider>().sharedMesh = mesh;
+            Log(lit ? $"lighting: Deadlock's baked lightmap ({cache.LightmapSize}x{cache.LightmapSize})" : "lighting: RoR2's standard shader (no lightmap)");
             Log($"section built in {watch.ElapsedMilliseconds} ms: {tris} playable + {backTris} backdrop triangles drawn, {bake.Count} collision meshes ({clipTris.Length / 3} clip triangles), {textures.Count} textures" + (built.HasHidden ? $", hidden statue at {built.Hidden.center} size {built.Hidden.size}" : ", nothing hidden"));
             return built;
         }
@@ -179,18 +266,20 @@ namespace CursedAppleCuriosities.Stages.DeadlockMap
             materials = new List<int>();
             int n = 0;
             foreach (MapSub s in subs) n += s.Pos.Length;
-            var pos = new Vector3[n]; var nrm = new Vector3[n]; var uv = new Vector2[n]; var col = new Color32[n];
+            var pos = new Vector3[n]; var nrm = new Vector3[n]; var uv = new Vector2[n]; var lm = new Vector2[n]; var col = new Color32[n];
             int at = 0;
             foreach (MapSub s in subs)
             {
                 Array.Copy(s.Pos, 0, pos, at, s.Pos.Length);
                 Array.Copy(s.Normal, 0, nrm, at, s.Normal.Length);
                 Array.Copy(s.Uv, 0, uv, at, s.Uv.Length);
+                Array.Copy(s.Lightmap, 0, lm, at, s.Lightmap.Length);
                 Array.Copy(s.Color, 0, col, at, s.Color.Length);
                 at += s.Pos.Length;
             }
             var mesh = new Mesh { indexFormat = n > 65535 ? IndexFormat.UInt32 : IndexFormat.UInt16 };
             mesh.vertices = pos; mesh.normals = nrm; mesh.uv = uv; mesh.colors32 = col;
+            mesh.SetUVs(3, lm); // the world shader's lightmap UVs
             mesh.subMeshCount = subs.Count;
             at = 0;
             for (int i = 0; i < subs.Count; i++)

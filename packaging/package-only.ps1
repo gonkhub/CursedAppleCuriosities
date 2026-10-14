@@ -12,7 +12,7 @@
 
 param(
     # Source2Viewer-CLI folder (MIT) bundled as plugins/vrf. The csproj passes its $(VrfSource).
-    [string]$VrfSource = 'C:\r2heimman\Valheim\profiles\HeroBrew Playtest\BepInEx\plugins\gonkhub-HeroBrew\vrf'
+    [string]$VrfSource = (Join-Path $PSScriptRoot '..\tools\vrf')
 )
 
 $ErrorActionPreference = 'Stop'
