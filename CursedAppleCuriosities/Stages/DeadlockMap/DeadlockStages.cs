@@ -333,6 +333,7 @@ namespace CursedAppleCuriosities.Stages.DeadlockMap
                 SceneDirector.onTeleporterPlaced += LogTeleporter;
                 SceneDirector.onPrePopulateSceneServer += SeedCamps;
                 SpawnNewtAltars(District.Def);
+                SpawnFixed(District.Def);
                 SpawnShops(District);
                 Log($"director started (stage ready), {Spawns.Count} player spawns placed");
                 Destroy(gameObject);
@@ -352,6 +353,28 @@ namespace CursedAppleCuriosities.Stages.DeadlockMap
                 DeadlockStages.SitOnFloor(altar, at.y);
                 NetworkServer.Spawn(altar);
                 Log($"newt altar placed at spot {i / 4 + 1} of {spots}");
+            }
+
+            /// <summary>The district's fixed interactables (a legendary chest on a bell tower...), each exactly at its spot.</summary>
+            private static void SpawnFixed(MapSectionDef def)
+            {
+                GameObject? world = GameObject.Find("DeadlockMap");
+                if (world == null || def.FixedInteractables.Length == 0 || DirectorCore.instance == null) return;
+                int placed = 0;
+                var anchor = new GameObject("FixedAnchor");
+                foreach (FixedSpawn f in def.FixedInteractables)
+                {
+                    SpawnCard? card = Addressables.LoadAssetAsync<SpawnCard>(f.Card).WaitForCompletion();
+                    if (card == null) { Warn($"fixed interactable: no spawn card {f.Card}"); continue; }
+                    anchor.transform.position = world.transform.TransformPoint(new Vector3(f.X, f.Y, f.Z));
+                    anchor.transform.rotation = Quaternion.Euler(0f, f.Yaw + world.transform.eulerAngles.y, 0f);
+                    var rule = new DirectorPlacementRule { placementMode = DirectorPlacementRule.PlacementMode.Direct, spawnOnTarget = anchor.transform };
+                    var rng = new Xoroshiro128Plus(Run.instance != null ? Run.instance.stageRng.nextUlong : 0UL);
+                    if (DirectorCore.instance.TrySpawnObject(new DirectorSpawnRequest(card, rule, rng)) != null) placed++;
+                    else Warn($"fixed interactable {f.Card} couldn't be placed at {anchor.transform.position}");
+                }
+                Destroy(anchor);
+                Log($"{placed} fixed interactables placed");
             }
 
             /// <summary>

@@ -44,6 +44,11 @@ namespace CursedAppleCuriosities.Stages.DeadlockMap
         public int[] InteractableSpots = System.Array.Empty<int>();
         /// <summary>Doorways that send whoever walks in to the teleporter (min x, y, z, max x, y, z units).</summary>
         public int[] SubwayTeleports = System.Array.Empty<int>();
+        /// <summary>
+        /// Interactables always placed at a spot (cac_map_mark), on top of what the director spends: a vanilla spawn card
+        /// (Addressables key) at x, y, z, yaw in the section's Unity space. E.g. Chinatown's legendary chest on its bell tower.
+        /// </summary>
+        public FixedSpawn[] FixedInteractables = System.Array.Empty<FixedSpawn>();
         /// <summary>Player spawns placed by hand (cac_map_mark spawn): x, y, z, yaw each, in the section's Unity space. Empty = picked automatically.</summary>
         public float[] PlayerSpawns = System.Array.Empty<float>();
         /// <summary>Newt altar spots: x, y, z, yaw each, in the section's Unity space (from cac_map_mark). One altar per stage, at one of them.</summary>
@@ -116,7 +121,10 @@ namespace CursedAppleCuriosities.Stages.DeadlockMap
             InteractableSpots = UmbriaData.InteractableSpots,
         };
 
-        /// <summary>Chinatown: the Hidden King side east of the blue lane, around the purple lane's southern Walker (stage 4). Newt altars and player spawns: to be marked in game.</summary>
+        /// <summary>
+        /// Chinatown: the Hidden King side east of the blue lane, around the purple lane's southern Walker (stage 4). Newt altars,
+        /// player spawns and the legendary chest on the bell tower (FixedInteractables, FixedSpawn.LegendaryChest): to be marked in game.
+        /// </summary>
         public static readonly MapSectionDef Chinatown = new MapSectionDef
         {
             Id = "chinatown",
@@ -148,6 +156,15 @@ namespace CursedAppleCuriosities.Stages.DeadlockMap
             foreach (MapSectionDef d in All) if (d.Id == id) return d;
             return null;
         }
+    }
+
+    /// <summary>One interactable a district always has at a spot (see <see cref="MapSectionDef.FixedInteractables"/>).</summary>
+    public class FixedSpawn
+    {
+        public const string LegendaryChest = "RoR2/Base/GoldChest/iscGoldChest.asset";
+        public string Card = "";
+        public float X, Y, Z, Yaw;
+        public FixedSpawn(string card, float x, float y, float z, float yaw) { Card = card; X = x; Y = y; Z = z; Yaw = yaw; }
     }
 
     internal static class SunkenPlazaData
