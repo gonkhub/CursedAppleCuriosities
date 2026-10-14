@@ -24,6 +24,8 @@ namespace CursedAppleCuriosities.Stages.DeadlockMap
         public int[] InteractableSpots = System.Array.Empty<int>();
         /// <summary>Doorways that send whoever walks in to the teleporter (min x, y, z, max x, y, z units).</summary>
         public int[] SubwayTeleports = System.Array.Empty<int>();
+        /// <summary>Player spawns placed by hand (cac_map_mark spawn): x, y, z, yaw each, in the section's Unity space. Empty = picked automatically.</summary>
+        public float[] PlayerSpawns = System.Array.Empty<float>();
         /// <summary>Newt altar spots: x, y, z, yaw each, in the section's Unity space (from cac_map_mark). One altar per stage, at one of them.</summary>
         public float[] NewtAltars = System.Array.Empty<float>();
         /// <summary>Lowest point of the playable area (units): anything below falls out of the map.</summary>

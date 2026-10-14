@@ -211,6 +211,14 @@ namespace CursedAppleCuriosities.Stages.DeadlockMap
             Bounds area = t.Playable;
             Vector3 arrival = world.transform.TransformPoint(DeadlockMaps.PlazaCenter(t.OriginUnits));
             var (ground, air, spawns) = NavBuilder.Get(conv.NavFile, conv.Fingerprint ?? "", world.transform, section.Inside, section.NoWalk, area, arrival);
+            // Hand-placed spawns win over the automatic pick.
+            float[] hand = conv.Def.PlayerSpawns;
+            if (hand.Length >= 4)
+            {
+                spawns = new List<(Vector3 Pos, float Yaw)>();
+                for (int i = 0; i + 3 < hand.Length; i += 4)
+                    spawns.Add((world.transform.TransformPoint(new Vector3(hand[i], hand[i + 1], hand[i + 2])), hand[i + 3] + world.transform.eulerAngles.y));
+            }
 
             var info = new GameObject("SceneInfo");
             info.SetActive(false);
