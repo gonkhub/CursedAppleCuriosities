@@ -14,28 +14,23 @@ using UnityEngine.SceneManagement;
 namespace CursedAppleCuriosities.Stages.DeadlockMap
 {
     /// <summary>
-    /// The Sunken Plaza stage: an empty shell scene (our own bundle: no Valve content) that each machine fills at load time
-    /// from its own converted Deadlock map. Offered as a stage-3 alternative, and only when every player in the run has a
-    /// working Deadlock install that converted the same map (<see cref="PartyCheck"/>); checked again right before loading.
+    /// What every Deadlock district stage shares: the shell bundles (no Valve content), the map shaders, the lighting and shop
+    /// settings, and the run hooks that offer a district in its stage slot only when every player in the run can load it
+    /// (<see cref="PartyCheck"/>), checked again right before loading.
     /// </summary>
-    public static class SunkenPlazaStage
+    public static class DeadlockStages
     {
-        public const string SceneName = "cac_sunkenplaza";
-        public static ConfigEntry<float>? Weight;
-        public static ConfigEntry<string>? Sky;
         public static ConfigEntry<int>? ShopWhite, ShopGreen, ShopRed;
         public static ConfigEntry<float>? Exposure, DynamicLight;
-        private static SceneDef? _def;
         private static AssetBundle? _scenes, _assets;
         internal static Material? BarrierMaterial, GlassMaterial, WorldMaterial;
+        internal const string NewtPrefab = "RoR2/Base/NewtStatue/NewtStatue.prefab";
 
         private static void Log(string s) => CursedAppleCuriositiesPlugin.Logger?.LogInfo("[DeadlockMap] " + s);
         private static void Warn(string s) => CursedAppleCuriositiesPlugin.Logger?.LogWarning("[DeadlockMap] " + s);
 
-        public static void Init(ConfigFile config)
+        public static void Init(ConfigFile config, IReadOnlyList<District> districts)
         {
-            Sky = config.Bind("Deadlock Map", "Sunken Plaza Sky", "RoR2/DLC1/ancientloft/matSkyboxAncientLoft.mat",
-                "Skybox material borrowed from a vanilla stage (Addressables key). Default: Aphelion Sanctuary's sunset.");
             ShopWhite = config.Bind("Deadlock Map", "Shop White Base Cost", 25, "Curiosity shop on the map: base price of a white (a small chest's base cost; scaled by difficulty like chests).");
             ShopGreen = config.Bind("Deadlock Map", "Shop Green Base Cost", 50, "Base price of a green (a large chest's base cost).");
             ShopRed = config.Bind("Deadlock Map", "Shop Red Base Cost", 400, "Base price of a red (a legendary chest's base cost).");
@@ -43,110 +38,116 @@ namespace CursedAppleCuriosities.Stages.DeadlockMap
                 "Brightness of Deadlock's own baked lighting on the map (1 = as baked).");
             DynamicLight = config.Bind("Deadlock Map", "Dynamic Light Share", 0.15f,
                 "How much the game's own lights (the sun, explosions, glows) light the map on top of Deadlock's baked lighting (0 = none).");
-            Weight = config.Bind("Deadlock Map", "Sunken Plaza Weight", 1f,
-                "How likely Sunken Plaza is as stage 3, against each vanilla stage 3 (1 = as likely as each of them, 0 = never on its own).");
             _scenes = LoadBundle("cac_stagescenes");
             _assets = LoadBundle("cac_stageassets");
             BarrierMaterial = _assets?.LoadAsset<Material>("matBarrier");
             GlassMaterial = _assets?.LoadAsset<Material>("matGlass");
             WorldMaterial = _assets?.LoadAsset<Material>("matWorld");
 
-            LanguageAPI.Add("CURSEDAPPLE_STAGE_SUNKENPLAZA_NAME", "Sunken Plaza");
-            LanguageAPI.Add("CURSEDAPPLE_STAGE_SUNKENPLAZA_SUBTITLE", "Archmother's Ward");
-            _def = ScriptableObject.CreateInstance<SceneDef>();
-            _def.cachedName = SceneName;
-            _def.sceneType = SceneType.Stage;
-            _def.stageOrder = 3;
-            _def.nameToken = "CURSEDAPPLE_STAGE_SUNKENPLAZA_NAME";
-            _def.subtitleToken = "CURSEDAPPLE_STAGE_SUNKENPLAZA_SUBTITLE";
-            _def.shouldIncludeInLogbook = false;
-            _def.validForRandomSelection = false; // random stage orders don't check the party
-            _def.filterOutOfBazaar = true;
-            _def.environmentColor = new Color(0.45f, 0.55f, 0.7f);
-            ContentAddition.AddSceneDef(_def);
-
-            RoR2Application.onLoad += FinishDef;
+            // Registered on every machine whatever the config: scene catalogs must match between host and clients.
+            foreach (District d in districts) d.Stage = new DistrictStage(d, config);
+            RoR2Application.onLoad += () => { foreach (District d in districts) d.Stage.FinishDef(); };
             On.RoR2.Run.PickNextStageScene += PickNextStageScene;
             On.RoR2.Run.AdvanceStage += AdvanceStage;
-            SceneManager.sceneLoaded += (scene, mode) => { if (scene.name == SceneName) Populate(scene); };
+            SceneManager.sceneLoaded += (scene, mode) =>
+            {
+                District? d = DeadlockMaps.ByScene(scene.name);
+                if (d != null) d.Stage.Populate(scene);
+            };
         }
 
         private static AssetBundle? LoadBundle(string name)
         {
-            using Stream? s = typeof(SunkenPlazaStage).Assembly.GetManifestResourceStream(name);
+            using Stream? s = typeof(DeadlockStages).Assembly.GetManifestResourceStream(name);
             if (s == null) { Warn($"bundle {name} missing from the DLL"); return null; }
             var bytes = new byte[s.Length];
             s.Read(bytes, 0, bytes.Length);
             return AssetBundle.LoadFromMemory(bytes);
         }
 
-        /// <summary>Destinations and music borrowed from vanilla once the catalogs are up.</summary>
-        private static void FinishDef()
-        {
-            if (_def == null) return;
-            _def.destinationsGroup = Addressables.LoadAssetAsync<SceneCollection>("RoR2/Base/SceneGroups/sgStage4.asset").WaitForCompletion();
-            _def.loopedDestinationsGroup = Addressables.LoadAssetAsync<SceneCollection>("RoR2/Base/SceneGroups/loopSgStage4.asset").WaitForCompletion();
-            SceneDef? rallypoint = Addressables.LoadAssetAsync<SceneDef>("RoR2/Base/frozenwall/frozenwall.asset").WaitForCompletion();
-            if (rallypoint != null)
-            {
-                _def.mainTrack = rallypoint.mainTrack;
-                _def.bossTrack = rallypoint.bossTrack;
-                _def.portalMaterial = rallypoint.portalMaterial;
-                _def.portalMaterialReference = rallypoint.portalMaterialReference;
-                _def.previewTextureReference = rallypoint.previewTextureReference;
-            }
-        }
+        // ---------------------------------------------------------------- picking (server)
 
-        // ---------------------------------------------------------------- picking it (server)
-
-        /// <summary>Stage 3 picks: Sunken Plaza joins the choices when the whole party can load it.</summary>
+        /// <summary>A stage pick: every district of that stage slot joins the choices when the whole party can load it.</summary>
         private static void PickNextStageScene(On.RoR2.Run.orig_PickNextStageScene orig, Run self, WeightedSelection<SceneDef> choices)
         {
-            if (_def != null && NetworkServer.active && (Weight?.Value ?? 0f) > 0f && IsStage3Pick(choices))
+            if (NetworkServer.active)
             {
-                if (PartyCheck.AllReady(out string why)) choices.AddChoice(_def, Weight!.Value);
-                else Log($"Sunken Plaza left out of the stage 3 choices: {why}");
+                int order = SlotOf(choices);
+                foreach (District d in DeadlockMaps.Districts)
+                {
+                    SceneDef? def = d.Stage.Def;
+                    float weight = d.Stage.Weight?.Value ?? 0f;
+                    if (def == null || weight <= 0f || order != d.Def.StageOrder || Offered(choices, def)) continue;
+                    if (PartyCheck.AllReady(d, out string why)) choices.AddChoice(def, weight);
+                    else Log($"{d.Def.Name} left out of the stage {order} choices: {why}");
+                }
             }
             orig(self, choices);
         }
 
-        private static bool IsStage3Pick(WeightedSelection<SceneDef> choices)
+        /// <summary>The vanilla stage slot these choices are for (0 = not a numbered stage pick).</summary>
+        private static int SlotOf(WeightedSelection<SceneDef> choices)
         {
             for (int i = 0; i < choices.Count; i++)
             {
                 SceneDef d = choices.GetChoice(i).value;
-                if (d == _def) return false; // already offered
-                if (d != null && d.stageOrder == 3) return true;
+                if (d != null && d.stageOrder >= 1 && d.stageOrder <= 5 && DeadlockMaps.ByScene(d.cachedName) == null) return d.stageOrder;
             }
+            return 0;
+        }
+
+        private static bool Offered(WeightedSelection<SceneDef> choices, SceneDef def)
+        {
+            for (int i = 0; i < choices.Count; i++) if (choices.GetChoice(i).value == def) return true;
             return false;
         }
 
         /// <summary>Last check before loading: if anyone can't load it now (joined since, conversion broke), go elsewhere.</summary>
         private static void AdvanceStage(On.RoR2.Run.orig_AdvanceStage orig, Run self, SceneDef nextScene)
         {
-            if (nextScene == _def && _def != null && !PartyCheck.AllReady(out string why))
+            District? d = nextScene != null ? DeadlockMaps.ByScene(nextScene.cachedName) : null;
+            if (d != null && !PartyCheck.AllReady(d, out string why))
             {
-                SceneCollection? stage3 = Addressables.LoadAssetAsync<SceneCollection>("RoR2/Base/SceneGroups/sgStage3.asset").WaitForCompletion();
+                SceneCollection? slot = Addressables.LoadAssetAsync<SceneCollection>($"RoR2/Base/SceneGroups/sgStage{d.Def.StageOrder}.asset").WaitForCompletion();
                 var pick = new WeightedSelection<SceneDef>();
-                stage3?.AddToWeightedSelection(pick, d => d != _def);
+                slot?.AddToWeightedSelection(pick, s => DeadlockMaps.ByScene(s.cachedName) == null);
                 SceneDef? instead = pick.Count > 0 ? pick.Evaluate(UnityEngine.Random.value) : null;
-                Warn($"Sunken Plaza can't load ({why}): going to {instead?.cachedName ?? "the default next stage"} instead");
-                Chat.SendBroadcastChat(new Chat.SimpleChatMessage { baseToken = $"<color=#ffb347>Sunken Plaza skipped: {why}.</color>" });
+                Warn($"{d.Def.Name} can't load ({why}): going to {instead?.cachedName ?? "the default next stage"} instead");
+                Chat.SendBroadcastChat(new Chat.SimpleChatMessage { baseToken = $"<color=#ffb347>{d.Def.Name} skipped: {why}.</color>" });
                 if (instead != null) nextScene = instead;
             }
             orig(self, nextScene);
         }
 
-        [ConCommand(commandName = "cac_map_go", flags = ConVarFlags.ExecuteOnServer,
-            helpText = "Cursed Apple: go to Sunken Plaza now (host; only if the whole party can load it).")]
-        private static void CCGo(ConCommandArgs args)
+        /// <summary>The district a command names (its id), or the first one.</summary>
+        internal static District Named(ConCommandArgs args, int index)
         {
-            if (Run.instance == null || _def == null) throw new ConCommandException("Needs a run.");
-            if (!PartyCheck.AllReady(out string why)) throw new ConCommandException("Sunken Plaza can't load: " + why);
-            Run.instance.AdvanceStage(_def);
+            if (DeadlockMaps.Districts.Count == 0) throw new ConCommandException("No Deadlock districts.");
+            if (args.Count <= index) return DeadlockMaps.Districts[0];
+            string id = args.GetArgString(index).ToLowerInvariant();
+            return DeadlockMaps.Find(id) ?? throw new ConCommandException(
+                $"No district \"{id}\": {string.Join(", ", DeadlockMaps.Districts.ConvertAll(x => x.Id))}");
         }
 
-        internal const string NewtPrefab = "RoR2/Base/NewtStatue/NewtStatue.prefab";
+        [ConCommand(commandName = "cac_map_go", flags = ConVarFlags.ExecuteOnServer,
+            helpText = "Cursed Apple: go to a Deadlock district now (host; only if the whole party can load it). Optional: its id (default the first).")]
+        private static void CCGo(ConCommandArgs args)
+        {
+            District d = Named(args, 0);
+            if (Run.instance == null || d.Stage.Def == null) throw new ConCommandException("Needs a run.");
+            if (!PartyCheck.AllReady(d, out string why)) throw new ConCommandException($"{d.Def.Name} can't load: {why}");
+            Run.instance.AdvanceStage(d.Stage.Def);
+        }
+
+        [ConCommand(commandName = "cac_map_party", flags = ConVarFlags.ExecuteOnServer, helpText = "Cursed Apple: can everyone load each Deadlock district? (host)")]
+        private static void CCParty(ConCommandArgs args)
+        {
+            foreach (District d in DeadlockMaps.Districts)
+            {
+                bool ok = PartyCheck.AllReady(d, out string why);
+                Debug.Log(ok ? $"[DeadlockMap] {d.Id}: everyone can load {d.Def.Name}" : $"[DeadlockMap] {d.Id}: not everyone can load {d.Def.Name}: {why}");
+            }
+        }
 
         [ConCommand(commandName = "cac_map_newt", flags = ConVarFlags.ExecuteOnServer,
             helpText = "Cursed Apple: put a newt altar where you stand, facing your way (host; to try a spot out).")]
@@ -171,24 +172,75 @@ namespace CursedAppleCuriosities.Stages.DeadlockMap
             if (bottom == float.MaxValue) return;
             go.transform.position += Vector3.up * (floorY - bottom);
         }
+    }
 
-        [ConCommand(commandName = "cac_map_party", flags = ConVarFlags.ExecuteOnServer, helpText = "Cursed Apple: can everyone load Sunken Plaza? (host)")]
-        private static void CCParty(ConCommandArgs args)
+    /// <summary>
+    /// One district's stage: an empty shell scene that each machine fills at load time from its own converted Deadlock map.
+    /// Offered in its stage slot when the whole party has it (see <see cref="DeadlockStages"/>).
+    /// </summary>
+    public sealed class DistrictStage
+    {
+        public readonly District District;
+        public readonly SceneDef? Def;
+        public readonly ConfigEntry<float>? Weight;
+        public readonly ConfigEntry<string>? Sky;
+        private MapSectionDef D => District.Def;
+
+        private static void Log(string s) => CursedAppleCuriositiesPlugin.Logger?.LogInfo("[DeadlockMap] " + s);
+        private static void Warn(string s) => CursedAppleCuriositiesPlugin.Logger?.LogWarning("[DeadlockMap] " + s);
+
+        internal DistrictStage(District district, ConfigFile config)
         {
-            bool ok = PartyCheck.AllReady(out string why);
-            Debug.Log(ok ? "[DeadlockMap] everyone can load Sunken Plaza" : "[DeadlockMap] not everyone can load Sunken Plaza: " + why);
+            District = district;
+            Sky = config.Bind("Deadlock Map", $"{D.Name} Sky", D.Sky,
+                "Skybox material borrowed from a vanilla stage (Addressables key).");
+            Weight = config.Bind("Deadlock Map", $"{D.Name} Weight", 1f,
+                $"How likely {D.Name} is as stage {D.StageOrder}, against each vanilla stage {D.StageOrder} (1 = as likely as each of them, 0 = never on its own).");
+            if (Array.IndexOf(MapSectionDef.Scenes, D.Scene) < 0) { Warn($"{D.Id}: scene {D.Scene} isn't in the stage bundle"); return; }
+            string token = "CURSEDAPPLE_STAGE_" + D.Id.ToUpperInvariant();
+            LanguageAPI.Add(token + "_NAME", D.Name);
+            LanguageAPI.Add(token + "_SUBTITLE", D.Subtitle);
+            Def = ScriptableObject.CreateInstance<SceneDef>();
+            Def.cachedName = D.Scene;
+            Def.sceneType = SceneType.Stage;
+            Def.stageOrder = D.StageOrder;
+            Def.nameToken = token + "_NAME";
+            Def.subtitleToken = token + "_SUBTITLE";
+            Def.shouldIncludeInLogbook = false;
+            Def.validForRandomSelection = false; // random stage orders don't check the party
+            Def.filterOutOfBazaar = true;
+            Def.environmentColor = new Color(0.45f, 0.55f, 0.7f);
+            ContentAddition.AddSceneDef(Def);
+        }
+
+        /// <summary>Destinations (the next slot's stages) and music borrowed from vanilla once the catalogs are up.</summary>
+        internal void FinishDef()
+        {
+            if (Def == null) return;
+            int next = D.StageOrder % 5 + 1;
+            Def.destinationsGroup = Addressables.LoadAssetAsync<SceneCollection>($"RoR2/Base/SceneGroups/sgStage{next}.asset").WaitForCompletion();
+            Def.loopedDestinationsGroup = Addressables.LoadAssetAsync<SceneCollection>($"RoR2/Base/SceneGroups/loopSgStage{next}.asset").WaitForCompletion();
+            SceneDef? music = Addressables.LoadAssetAsync<SceneDef>(D.MusicFrom).WaitForCompletion();
+            if (music != null)
+            {
+                Def.mainTrack = music.mainTrack;
+                Def.bossTrack = music.bossTrack;
+                Def.portalMaterial = music.portalMaterial;
+                Def.portalMaterialReference = music.portalMaterialReference;
+                Def.previewTextureReference = music.previewTextureReference;
+            }
         }
 
         // ---------------------------------------------------------------- building the scene (every machine)
 
-        private static void Populate(Scene scene)
+        internal void Populate(Scene scene)
         {
-            MapConverter? conv = DeadlockMaps.SunkenPlaza;
-            MapBuilder.Built? t = DeadlockMaps.Template();
+            MapConverter? conv = District.Converter;
+            MapBuilder.Built? t = DeadlockMaps.Template(District);
             if (conv == null || t == null)
             {
                 // Shouldn't happen (the party check gates loading): a floor so nobody falls forever, and say why.
-                Warn("Sunken Plaza loaded without a converted map on this machine");
+                Warn($"{D.Name} loaded without a converted map on this machine");
                 var floor = GameObject.CreatePrimitive(PrimitiveType.Cube);
                 floor.transform.localScale = new Vector3(200f, 1f, 200f);
                 floor.layer = LayerIndex.world.intVal;
@@ -205,14 +257,14 @@ namespace CursedAppleCuriosities.Stages.DeadlockMap
             Physics.SyncTransforms();
 
             var section = new SectionSpace(conv.Def, t.OriginUnits);
-            StageDressing.Build(scene, world.transform, section, t.Playable);
+            StageDressing.Build(scene, world.transform, section, t.Playable, Sky?.Value ?? "");
 
             // AI navigation from the geometry (cached after the first time), then the stage's own objects.
             Bounds area = t.Playable;
-            Vector3 arrival = world.transform.TransformPoint(DeadlockMaps.PlazaCenter(t.OriginUnits));
+            Vector3 arrival = world.transform.TransformPoint(District.ArrivalLocal(t.OriginUnits));
             var (ground, air, spawns) = NavBuilder.Get(conv.NavFile, conv.Fingerprint ?? "", world.transform, section.Inside, section.NoWalk, area, arrival);
             // Hand-placed spawns win over the automatic pick.
-            float[] hand = conv.Def.PlayerSpawns;
+            float[] hand = D.PlayerSpawns;
             if (hand.Length >= 4)
             {
                 spawns = new List<(Vector3 Pos, float Yaw)>();
@@ -231,8 +283,8 @@ namespace CursedAppleCuriosities.Stages.DeadlockMap
             csi.sceneDirectorMonsterCredits = 30;
             csi.bonusInteractibleCreditObjects = Array.Empty<ClassicStageInfo.BonusInteractibleCreditObject>();
             csi.possibleMonsterFamilies = Array.Empty<ClassicStageInfo.MonsterFamily>();
-            csi.SetMonsterDCCSP(Addressables.LoadAssetAsync<DccsPool>("RoR2/Base/frozenwall/dpFrozenWallMonsters.asset").WaitForCompletion());
-            csi.SetInteractableDCCSP(Addressables.LoadAssetAsync<DccsPool>("RoR2/Base/frozenwall/dpFrozenWallInteractables.asset").WaitForCompletion());
+            csi.SetMonsterDCCSP(Addressables.LoadAssetAsync<DccsPool>(D.MonsterPool).WaitForCompletion());
+            csi.SetInteractableDCCSP(Addressables.LoadAssetAsync<DccsPool>(D.InteractablePool).WaitForCompletion());
             info.SetActive(true);
 
             // Scene-level managers every vanilla stage carries (GlobalEventManager and friends).
@@ -245,16 +297,20 @@ namespace CursedAppleCuriosities.Stages.DeadlockMap
             {
                 var wait = new GameObject("DirectorWhenStageReady");
                 SceneManager.MoveGameObjectToScene(wait, scene);
-                wait.AddComponent<DirectorWhenStageReady>().Spawns = spawns;
+                var dw = wait.AddComponent<DirectorWhenStageReady>();
+                dw.District = District;
+                dw.Spawns = spawns;
             }
-            Log($"Sunken Plaza populated in {watch.ElapsedMilliseconds} ms ({ground.GetNodeCount()} ground / {air.GetNodeCount()} air nodes; " +
+            Log($"{D.Name} populated in {watch.ElapsedMilliseconds} ms ({ground.GetNodeCount()} ground / {air.GetNodeCount()} air nodes; " +
                 $"manager: {string.Join(", ", Array.ConvertAll(manager.GetComponentsInChildren<Component>(), c => c.GetType().Name))})");
         }
 
         /// <summary>Server: starts the vanilla Director (scene, combat) once Stage.instance exists.</summary>
         private class DirectorWhenStageReady : MonoBehaviour
         {
+            public District District = null!;
             public List<(Vector3 Pos, float Yaw)> Spawns = new List<(Vector3, float)>();
+            private static District? _seeding;
 
             private void Update()
             {
@@ -270,41 +326,42 @@ namespace CursedAppleCuriosities.Stages.DeadlockMap
                         sd.teleporterSpawnCard = Addressables.LoadAssetAsync<SpawnCard>("RoR2/Base/Teleporters/iscTeleporter.asset").WaitForCompletion();
                     sd.usePlacedSpawnPoints = Spawns.Count > 0;
                 }
+                _seeding = District;
                 SceneDirector.onTeleporterPlaced += LogTeleporter;
                 SceneDirector.onPrePopulateSceneServer += SeedCamps;
-                SpawnNewtAltars(gameObject.scene);
-                SpawnShops();
+                SpawnNewtAltars(District.Def);
+                SpawnShops(District);
                 Log($"director started (stage ready), {Spawns.Count} player spawns placed");
                 Destroy(gameObject);
             }
 
-            private static void SpawnNewtAltars(Scene scene)
+            private static void SpawnNewtAltars(MapSectionDef def)
             {
-                float[] a = MapSectionDef.SunkenPlaza.NewtAltars;
+                float[] a = def.NewtAltars;
                 GameObject? world = GameObject.Find("DeadlockMap");
                 if (a.Length < 4 || world == null) return;
-                GameObject prefab = Addressables.LoadAssetAsync<GameObject>(NewtPrefab).WaitForCompletion();
+                GameObject prefab = Addressables.LoadAssetAsync<GameObject>(DeadlockStages.NewtPrefab).WaitForCompletion();
                 // As in vanilla stages: the spots are candidates, one altar per stage at one of them (the stage's own RNG).
                 int spots = a.Length / 4;
                 int i = (Run.instance != null ? Run.instance.stageRng.RangeInt(0, spots) : UnityEngine.Random.Range(0, spots)) * 4;
                 Vector3 at = world.transform.TransformPoint(new Vector3(a[i], a[i + 1], a[i + 2]));
                 GameObject altar = Instantiate(prefab, at, Quaternion.Euler(0f, a[i + 3] + world.transform.eulerAngles.y, 0f));
-                SitOnFloor(altar, at.y);
+                DeadlockStages.SitOnFloor(altar, at.y);
                 NetworkServer.Spawn(altar);
                 Log($"newt altar placed at spot {i / 4 + 1} of {spots}");
             }
 
             /// <summary>
-            /// A Curiosity shop at each of Deadlock's shop counters in the section: open to everyone, bought from as often
+            /// A Curiosity shop at each of Deadlock's shop counters in the district: open to everyone, bought from as often
             /// as you like, priced like chests (small / large / legendary base costs, scaled by difficulty the same way). Deadlock's
             /// own items only.
             /// </summary>
-            private static void SpawnShops()
+            private static void SpawnShops(District district)
             {
                 GameObject? world = GameObject.Find("DeadlockMap");
-                MapBuilder.Built? t = DeadlockMaps.Template();
+                MapBuilder.Built? t = DeadlockMaps.Template(district);
                 if (world == null || t == null) return;
-                int[] b = MapSectionDef.SunkenPlaza.Shops;
+                int[] b = district.Def.Shops;
                 int placed = 0;
                 for (int i = 0; i + 5 < b.Length; i += 6)
                 {
@@ -313,7 +370,7 @@ namespace CursedAppleCuriosities.Stages.DeadlockMap
                     Vector3 top = world.transform.TransformPoint(MapCache.ToUnity(centre, t.OriginUnits));
                     if (!Physics.Raycast(top, Vector3.down, out RaycastHit hit, 12f, LayerIndex.world.mask, QueryTriggerInteraction.Ignore)) continue;
                     if (Items.CuriosityCatalog.SpawnShop(hit.point, requiresCatalog: false,
-                            ShopWhite?.Value ?? 25, ShopGreen?.Value ?? 50, ShopRed?.Value ?? 400, deadlockOnly: true) != null)
+                            DeadlockStages.ShopWhite?.Value ?? 25, DeadlockStages.ShopGreen?.Value ?? 50, DeadlockStages.ShopRed?.Value ?? 400, deadlockOnly: true) != null)
                         placed++;
                 }
                 Log($"{placed} curiosity shops placed at Deadlock's shop counters");
@@ -327,14 +384,15 @@ namespace CursedAppleCuriosities.Stages.DeadlockMap
             private static void SeedCamps(SceneDirector sd)
             {
                 SceneDirector.onPrePopulateSceneServer -= SeedCamps;
+                District? district = _seeding;
                 GameObject? world = GameObject.Find("DeadlockMap");
-                MapBuilder.Built? t = DeadlockMaps.Template();
+                MapBuilder.Built? t = district != null ? DeadlockMaps.Template(district) : null;
                 ClassicStageInfo? csi = ClassicStageInfo.instance;
-                if (world == null || t == null || csi == null || csi.interactableCategories == null || DirectorCore.instance == null) return;
-                var section = new SectionSpace(MapSectionDef.SunkenPlaza, t.OriginUnits);
+                if (district == null || world == null || t == null || csi == null || csi.interactableCategories == null || DirectorCore.instance == null) return;
+                var section = new SectionSpace(district.Def, t.OriginUnits);
 
                 // Camp clusters: spawn points within ~6 m of each other are one camp.
-                int[] sp = MapSectionDef.SunkenPlaza.InteractableSpots;
+                int[] sp = district.Def.InteractableSpots;
                 var camps = new List<Vector3>();
                 for (int i = 0; i + 2 < sp.Length; i += 3)
                 {
@@ -388,13 +446,13 @@ namespace CursedAppleCuriosities.Stages.DeadlockMap
     /// <summary>The section's local space (Unity metres from its origin) against Deadlock units: inside the outline, no-walk boxes.</summary>
     internal class SectionSpace
     {
-        private readonly MapSectionDef _def;
+        public readonly MapSectionDef Def;
         private readonly Vector3 _origin;
         private readonly Vector2[] _outline;
 
         public SectionSpace(MapSectionDef def, Vector3 originUnits)
         {
-            _def = def;
+            Def = def;
             _origin = originUnits;
             _outline = new Vector2[def.Outline.Length / 2];
             for (int i = 0; i < _outline.Length; i++) _outline[i] = new Vector2(def.Outline[i * 2], def.Outline[i * 2 + 1]);
@@ -420,7 +478,7 @@ namespace CursedAppleCuriosities.Stages.DeadlockMap
         public bool NoWalk(Vector3 u)
         {
             Vector3 s = ToUnits(u);
-            int[] b = _def.NoWalk;
+            int[] b = Def.NoWalk;
             for (int i = 0; i + 5 < b.Length; i += 6)
                 if (s.x >= b[i] - 32 && s.y >= b[i + 1] - 32 && s.z >= b[i + 2] - 32 && s.x <= b[i + 3] + 32 && s.y <= b[i + 4] + 32 && s.z <= b[i + 5] + 32)
                     return true;

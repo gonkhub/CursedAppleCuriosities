@@ -12,7 +12,8 @@ using UnityEngine.SceneManagement;
 
 public static class BuildStageBundle
 {
-    static readonly string[] Stages = { "cac_sunkenplaza" };
+    // Must match MapSectionDef.Scenes: one per district, plus spares so a new district needs no rebuild here.
+    static readonly string[] Stages = { "cac_sunkenplaza", "cac_district2", "cac_district3", "cac_district4" };
 
     public static void Build()
     {

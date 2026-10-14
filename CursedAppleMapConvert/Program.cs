@@ -44,7 +44,7 @@ namespace CursedAppleMapConvert
                 Console.Error.WriteLine("usage: --cli <exe> --citadel <dir> --section <id> --fingerprint <fp> --out <folder> [--max-mb N] [--parallel N]");
                 return 2;
             }
-            MapSectionDef? def = id == MapSectionDef.SunkenPlaza.Id ? MapSectionDef.SunkenPlaza : null;
+            MapSectionDef? def = MapSectionDef.Find(id);
             if (def == null) { Console.Error.WriteLine("unknown section " + id); return 2; }
             long maxMb = a.TryGetValue("max-mb", out string m) && long.TryParse(m, out long mm) ? mm : 3000;
             int parallel = a.TryGetValue("parallel", out string p) && int.TryParse(p, out int pp) ? pp : 2;

@@ -15,7 +15,7 @@ namespace CursedAppleCuriosities.Stages.DeadlockMap
     {
         private const float BarrierBelow = 40f, BarrierAbove = 120f; // metres around the playable area's height range
 
-        public static void Build(Scene scene, Transform world, SectionSpace section, Bounds playable)
+        public static void Build(Scene scene, Transform world, SectionSpace section, Bounds playable, string sky)
         {
             var root = new GameObject("StageDressing");
             SceneManager.MoveGameObjectToScene(root, scene);
@@ -24,7 +24,7 @@ namespace CursedAppleCuriosities.Stages.DeadlockMap
             Seals(root.transform, section);
             SubwayDoors(root.transform, section);
             KillFloor(root.transform, playable);
-            Sun(scene);
+            Sun(scene, sky);
         }
 
         /// <summary>Walls straight up the outline, solid for characters and shots, drawn only near the local player.</summary>
@@ -49,11 +49,11 @@ namespace CursedAppleCuriosities.Stages.DeadlockMap
             var go = new GameObject("Barrier") { layer = LayerIndex.world.intVal };
             go.transform.SetParent(parent, false);
             go.AddComponent<MeshCollider>().sharedMesh = mesh;
-            if (SunkenPlazaStage.BarrierMaterial != null)
+            if (DeadlockStages.BarrierMaterial != null)
             {
                 go.AddComponent<MeshFilter>().sharedMesh = mesh;
                 var r = go.AddComponent<MeshRenderer>();
-                r.sharedMaterial = SunkenPlazaStage.BarrierMaterial;
+                r.sharedMaterial = DeadlockStages.BarrierMaterial;
                 r.shadowCastingMode = ShadowCastingMode.Off;
                 r.receiveShadows = false;
                 go.AddComponent<BarrierProximity>();
@@ -63,7 +63,7 @@ namespace CursedAppleCuriosities.Stages.DeadlockMap
         /// <summary>Deadlock's vent entrances (only tiny heroes fit there): solid boxes, so nobody walks into the tunnels.</summary>
         private static void Seals(Transform parent, SectionSpace section)
         {
-            int[] b = MapSectionDef.SunkenPlaza.Seal;
+            int[] b = section.Def.Seal;
             for (int i = 0; i + 5 < b.Length; i += 6)
             {
                 Vector3 p0 = section.ToSection(new Vector3(b[i] - 24, b[i + 1] - 24, b[i + 2] - 24));
@@ -78,7 +78,7 @@ namespace CursedAppleCuriosities.Stages.DeadlockMap
         /// <summary>Deadlock's subway "TELEPORTER" doorways: whoever walks in comes out at the stage's teleporter.</summary>
         private static void SubwayDoors(Transform parent, SectionSpace section)
         {
-            int[] b = MapSectionDef.SunkenPlaza.SubwayTeleports;
+            int[] b = section.Def.SubwayTeleports;
             for (int i = 0; i + 5 < b.Length; i += 6)
             {
                 Vector3 p0 = section.ToSection(new Vector3(b[i] - 24, b[i + 1] - 24, b[i + 2]));
@@ -105,8 +105,8 @@ namespace CursedAppleCuriosities.Stages.DeadlockMap
             z.triggerType = MapZone.TriggerType.TriggerEnter;
         }
 
-        /// <summary>A low, warm evening sun under a vanilla sunset sky (config: Sunken Plaza Sky), with matching ambient and fog.</summary>
-        private static void Sun(Scene scene)
+        /// <summary>A low, warm evening sun under a vanilla sky (config: "<district> Sky"), with matching ambient and fog.</summary>
+        private static void Sun(Scene scene, string skyKey)
         {
             var go = new GameObject("Sun");
             SceneManager.MoveGameObjectToScene(go, scene);
@@ -121,7 +121,7 @@ namespace CursedAppleCuriosities.Stages.DeadlockMap
             l.shadowStrength = 0.75f;
             RenderSettings.sun = l;
 
-            string key = SunkenPlazaStage.Sky?.Value ?? "";
+            string key = skyKey;
             Material? sky = null;
             if (key.Length > 0)
                 try { sky = UnityEngine.AddressableAssets.Addressables.LoadAssetAsync<Material>(key).WaitForCompletion(); }

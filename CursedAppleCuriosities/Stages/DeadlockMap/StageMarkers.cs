@@ -17,7 +17,8 @@ namespace CursedAppleCuriosities.Stages.DeadlockMap
     {
         private static readonly List<GameObject> Shown = new List<GameObject>();
 
-        private static string File_ => System.IO.Path.Combine(DeadlockMaps.SunkenPlaza?.Folder ?? Application.persistentDataPath, "markers.txt");
+        /// <summary>The current district's marks (each district keeps its own, next to its converted cache).</summary>
+        private static string File_ => System.IO.Path.Combine(DeadlockMaps.Current?.Converter?.Folder ?? Application.persistentDataPath, "markers.txt");
 
         private static Transform? World()
         {
@@ -75,15 +76,16 @@ namespace CursedAppleCuriosities.Stages.DeadlockMap
         }
 
         [ConCommand(commandName = "cac_map_goto", flags = ConVarFlags.None,
-            helpText = "Cursed Apple: jump to a spot in the Deadlock stage: plaza, statue, shop1, shop2, shop3, subway (subwayin: into its doorway), or x y z (section space, as cac_map_mark writes it).")]
+            helpText = "Cursed Apple: jump to a spot in the current Deadlock district: arrival (or plaza: where players arrive), statue, shop1, shop2, ..., subway (subwayin: into its doorway), or x y z (section space, as cac_map_mark writes it).")]
         private static void CCGoto(ConCommandArgs args)
         {
             CharacterBody? body = LocalUserManager.GetFirstLocalUser()?.cachedBody;
             Transform? world = World();
-            MapBuilder.Built? t = DeadlockMaps.Template();
-            if (body == null || world == null || t == null) throw new ConCommandException("Needs your body, in a Deadlock stage.");
-            string where = args.Count > 0 ? args.GetArgString(0).ToLowerInvariant() : "plaza";
-            MapSectionDef def = MapSectionDef.SunkenPlaza;
+            District? d = DeadlockMaps.Current;
+            MapBuilder.Built? t = d != null ? DeadlockMaps.Template(d) : null;
+            if (body == null || world == null || d == null || t == null) throw new ConCommandException("Needs your body, in a Deadlock stage.");
+            string where = args.Count > 0 ? args.GetArgString(0).ToLowerInvariant() : "arrival";
+            MapSectionDef def = d.Def;
             Vector3 local;
             int[]? box = null;
             if (where.StartsWith("shop") && int.TryParse(where.Substring(4), out int n) && n >= 1 && n * 6 <= def.Shops.Length) box = def.Shops[((n - 1) * 6)..(n * 6)];
@@ -95,8 +97,8 @@ namespace CursedAppleCuriosities.Stages.DeadlockMap
             else if (box != null)
                 local =MapCache.ToUnity(new Vector3((box[0] + box[3]) / 2f, (box[1] + box[4]) / 2f - (where == "subwayin" ? 0f : 200f), box[5]), t.OriginUnits); // just outside it (subwayin: in the doorway)
             else if (where == "statue" && t.HasHidden)
-                local = t.Hidden.center + new Vector3(0f, -t.Hidden.extents.y, 0f) + (DeadlockMaps.PlazaCenter(t.OriginUnits) - t.Hidden.center).normalized * 12f;
-            else local = DeadlockMaps.PlazaCenter(t.OriginUnits);
+                local = t.Hidden.center + new Vector3(0f, -t.Hidden.extents.y, 0f) + (d.ArrivalLocal(t.OriginUnits) - t.Hidden.center).normalized * 12f;
+            else local = d.ArrivalLocal(t.OriginUnits);
             Vector3 from = world.TransformPoint(local) + Vector3.up * 3f;
             Vector3 to = Physics.Raycast(from, Vector3.down, out RaycastHit hit, 30f, LayerIndex.world.mask) ? hit.point + Vector3.up * 0.5f : from;
             TeleportHelper.TeleportBody(body, to);
@@ -112,7 +114,7 @@ namespace CursedAppleCuriosities.Stages.DeadlockMap
             pillar.name = "Mark " + label;
             pillar.transform.position = at + Vector3.up * 2f;
             pillar.transform.localScale = new Vector3(0.35f, 2f, 0.35f);
-            Material? m = SunkenPlazaStage.GlassMaterial != null ? new Material(SunkenPlazaStage.GlassMaterial) : null;
+            Material? m = DeadlockStages.GlassMaterial != null ? new Material(DeadlockStages.GlassMaterial) : null;
             if (m != null)
             {
                 m.color = new Color(1f, 0.3f, 1f, 0.85f);

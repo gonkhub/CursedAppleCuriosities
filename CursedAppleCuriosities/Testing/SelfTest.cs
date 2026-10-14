@@ -232,11 +232,11 @@ namespace CursedAppleCuriosities.Testing
         private static IEnumerator WaitMap(float timeout)
         {
             float end = Time.realtimeSinceStartup + timeout;
-            var c = CursedAppleCuriosities.Stages.DeadlockMap.DeadlockMaps.SunkenPlaza;
-            while (c != null && Time.realtimeSinceStartup < end &&
-                   (c.State == CursedAppleCuriosities.Stages.DeadlockMap.MapState.Converting || c.State == CursedAppleCuriosities.Stages.DeadlockMap.MapState.NotStarted))
+            // Until every Deadlock district has converted (or failed), or the timeout.
+            while (CursedAppleCuriosities.Stages.DeadlockMap.DeadlockMaps.Converting && Time.realtimeSinceStartup < end)
                 yield return new WaitForSeconds(1f);
-            Log($"waitmap: {(c == null ? "off" : c.State + ", " + c.Status)}");
+            foreach (var d in CursedAppleCuriosities.Stages.DeadlockMap.DeadlockMaps.Districts)
+                Log($"waitmap: {d.Id}: {(d.Converter == null ? "off" : d.Converter.State + ", " + d.Converter.Status)}");
         }
 
         private IEnumerator Screen(string name)

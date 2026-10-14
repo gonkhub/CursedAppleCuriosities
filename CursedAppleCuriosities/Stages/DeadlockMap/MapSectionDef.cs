@@ -1,14 +1,34 @@
 namespace CursedAppleCuriosities.Stages.DeadlockMap
 {
     /// <summary>
-    /// A playable piece of a Deadlock map. Everything is in Deadlock (Source) units and axes: x/y on the ground, z up,
-    /// 1 unit = 0.0254 m. The outline bounds the playable area; the rest of the map is converted as a render-only
-    /// backdrop behind a barrier.
+    /// A district: a playable piece of a Deadlock map and the RoR2 stage made of it. Everything spatial is in Deadlock
+    /// (Source) units and axes: x/y on the ground, z up, 1 unit = 0.0254 m. The outline bounds the playable area; the rest
+    /// of the map is converted as a render-only backdrop behind a barrier.
+    ///
+    /// Adding a district: draw its outline on a tools/mapstage overview, trace it (trace_outline.py), generate its data
+    /// (section_consts.py) into a new data class, give it a reserved shell scene (Scenes below), list it in All, then mark
+    /// its newt altars and player spawns in game (cac_map_mark). Plain data only: the converter (net472) compiles this too.
     /// </summary>
     public class MapSectionDef
     {
-        public string Id = "";
+        public string Id = "";              // folder, fingerprint and command name: never change once released
         public string Map = "dl_midtown";
+
+        // ---- the stage
+        public string Name = "", Subtitle = "";
+        /// <summary>Its shell scene in the cac_stagescenes bundle (one of <see cref="Scenes"/>).</summary>
+        public string Scene = "";
+        /// <summary>The stage slot it joins (1-5): offered among that slot's vanilla stages.</summary>
+        public int StageOrder = 3;
+        /// <summary>Where players arrive (Deadlock units): spawns are picked near it unless placed by hand.</summary>
+        public float[] Arrival = System.Array.Empty<float>();
+        /// <summary>Vanilla assets borrowed (Addressables keys): monster and interactable pools, music, sky.</summary>
+        public string MonsterPool = "RoR2/Base/frozenwall/dpFrozenWallMonsters.asset";
+        public string InteractablePool = "RoR2/Base/frozenwall/dpFrozenWallInteractables.asset";
+        public string MusicFrom = "RoR2/Base/frozenwall/frozenwall.asset";
+        public string Sky = "RoR2/DLC1/ancientloft/matSkyboxAncientLoft.mat";
+
+        // ---- the geometry
         public float[] Outline = System.Array.Empty<float>();   // x0, y0, x1, y1, ... (closed implicitly)
         /// <summary>Where the section's Unity origin sits (Deadlock units). Fixed, so marks and placements stay put when the outline changes.</summary>
         public float[] Origin = System.Array.Empty<float>();
@@ -39,6 +59,11 @@ namespace CursedAppleCuriosities.Stages.DeadlockMap
         public static readonly MapSectionDef SunkenPlaza = new MapSectionDef
         {
             Id = "sunkenplaza",
+            Name = "Sunken Plaza",
+            Subtitle = "Archmother's Ward",
+            Scene = "cac_sunkenplaza",
+            StageOrder = 3,
+            Arrival = new[] { -2400f, 2700f, 600f }, // the plaza's centre, at street height
             Outline = SunkenPlazaData.Outline,
             Origin = new[] { -3700f, 3200f, 0f }, // the first outline's centre (2026-10-13): every mark is relative to it
             NoWalk = SunkenPlazaData.VentTunnels,
@@ -48,6 +73,18 @@ namespace CursedAppleCuriosities.Stages.DeadlockMap
             InteractableSpots = SunkenPlazaData.InteractableSpots,
             SubwayTeleports = SunkenPlazaData.SubwayTeleports,
         };
+
+        /// <summary>Every district, in the order they are converted (the first finishes first).</summary>
+        public static readonly MapSectionDef[] All = { SunkenPlaza };
+
+        /// <summary>The shell scenes the stage bundle carries (tools/stageshell): one per district, spares for the next ones.</summary>
+        public static readonly string[] Scenes = { "cac_sunkenplaza", "cac_district2", "cac_district3", "cac_district4" };
+
+        public static MapSectionDef? Find(string id)
+        {
+            foreach (MapSectionDef d in All) if (d.Id == id) return d;
+            return null;
+        }
     }
 
     internal static class SunkenPlazaData

@@ -37,14 +37,12 @@ namespace CursedAppleCuriosities.Stages.DeadlockMap
 
         public MapConverter(MapSectionDef def) { Def = def; }
 
-        public void Start()
+        /// <summary>Checks the cache and converts if needed, on the calling thread (DeadlockMaps runs the districts one by one).</summary>
+        public void RunNow()
         {
             string folder = Folder, exe = Path.Combine(Path.GetDirectoryName(typeof(MapConverter).Assembly.Location), "CursedAppleMapConvert.exe");
-            new Thread(() =>
-            {
-                try { Run(folder, exe); }
-                catch (Exception e) { State = MapState.Failed; Status = "failed: " + e.Message; Warn(e.ToString()); }
-            }) { IsBackground = true, Name = "CursedApple map converter", Priority = ThreadPriority.BelowNormal }.Start();
+            try { Run(folder, exe); }
+            catch (Exception e) { State = MapState.Failed; Status = "failed: " + e.Message; Warn(e.ToString()); }
         }
 
         /// <summary>The section's outline, origin and sealed volumes: a change to any of them means converting again.</summary>

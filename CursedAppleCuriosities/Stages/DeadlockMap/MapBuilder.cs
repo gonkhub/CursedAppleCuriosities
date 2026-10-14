@@ -23,7 +23,7 @@ namespace CursedAppleCuriosities.Stages.DeadlockMap
         /// <summary>Glass: our see-through shader (fresnel edge), the surface's texture and tints.</summary>
         private static Material MakeGlass(MapMaterial m, Texture2D? tex)
         {
-            var mat = new Material(SunkenPlazaStage.GlassMaterial) { name = "matDeadlockGlass_" + m.Name };
+            var mat = new Material(DeadlockStages.GlassMaterial) { name = "matDeadlockGlass_" + m.Name };
             mat.mainTexture = tex;
             return mat;
         }
@@ -57,23 +57,23 @@ namespace CursedAppleCuriosities.Stages.DeadlockMap
         }
 
         /// <summary>True once Deadlock's lightmap lights the map (the world shader is in use).</summary>
-        public static bool Lit => _lightmap != null && SunkenPlazaStage.WorldMaterial != null;
+        public static bool Lit => _lightmap != null && DeadlockStages.WorldMaterial != null;
 
         /// <summary>The lighting globals the world shader reads (config: exposure, the dynamic lights' share).</summary>
         public static void ApplyLighting()
         {
-            bool on = _lightmap != null && SunkenPlazaStage.WorldMaterial != null;
+            bool on = _lightmap != null && DeadlockStages.WorldMaterial != null;
             Shader.SetGlobalTexture(LightmapId, on ? (Texture)_lightmap! : Texture2D.blackTexture);
             Shader.SetGlobalFloat(LightmapOnId, on ? 1f : 0f);
-            Shader.SetGlobalFloat(ExposureId, SunkenPlazaStage.Exposure?.Value ?? 1f);
-            Shader.SetGlobalFloat(DynamicId, SunkenPlazaStage.DynamicLight?.Value ?? 0.15f);
+            Shader.SetGlobalFloat(ExposureId, DeadlockStages.Exposure?.Value ?? 1f);
+            Shader.SetGlobalFloat(DynamicId, DeadlockStages.DynamicLight?.Value ?? 0.15f);
             Shader.SetGlobalColor(FallbackId, new Color(0.45f, 0.38f, 0.4f)); // dusk: props off the lightmap, the far backdrop
         }
 
         /// <summary>A world material on our Deadlock shader: layer 2 and the world overlay when the material has them.</summary>
         private static Material MakeWorld(MapMaterial m, Func<string, Texture2D?> tex)
         {
-            var mat = new Material(SunkenPlazaStage.WorldMaterial) { name = "matDeadlock_" + m.Name };
+            var mat = new Material(DeadlockStages.WorldMaterial) { name = "matDeadlock_" + m.Name };
             mat.mainTexture = tex(m.Texture);
             mat.color = Color.white;
             mat.SetColor("_Tint1", m.Tint);
@@ -144,6 +144,27 @@ namespace CursedAppleCuriosities.Stages.DeadlockMap
             public Bounds Playable;      // section space: the playable chunks' bounds
             public Bounds Hidden;        // section space: where the hidden materials were (the replaced statue)
             public bool HasHidden;
+            public readonly List<Texture2D> Textures = new List<Texture2D>(); // this district's own (the lightmap is shared)
+
+            /// <summary>
+            /// Frees everything built for this district: its objects, and the meshes, materials and textures they use (made at
+            /// runtime, so destroying the objects alone would leave them behind). The shared lightmap stays.
+            /// </summary>
+            public void Release()
+            {
+                if (Root == null) return;
+                var meshes = new HashSet<Mesh>();
+                var materials = new HashSet<Material>();
+                foreach (MeshFilter f in Root.GetComponentsInChildren<MeshFilter>(true)) if (f.sharedMesh != null) meshes.Add(f.sharedMesh);
+                foreach (MeshCollider c in Root.GetComponentsInChildren<MeshCollider>(true)) if (c.sharedMesh != null) meshes.Add(c.sharedMesh);
+                foreach (Renderer r in Root.GetComponentsInChildren<Renderer>(true)) foreach (Material m in r.sharedMaterials) if (m != null) materials.Add(m);
+                UnityEngine.Object.Destroy(Root);
+                foreach (Mesh m in meshes) UnityEngine.Object.Destroy(m);
+                foreach (Material m in materials) UnityEngine.Object.Destroy(m);
+                foreach (Texture2D t in Textures) if (t != null) UnityEngine.Object.Destroy(t);
+                Textures.Clear();
+                Root = null!;
+            }
         }
 
         /// <summary>
@@ -164,11 +185,11 @@ namespace CursedAppleCuriosities.Stages.DeadlockMap
                 if (name.Length == 0) return null;
                 if (textures.TryGetValue(name, out Texture2D? t)) return t;
                 TexData? td = HeroTextures.ReadStandalone(System.IO.Path.Combine(conv.TexFolder, name));
-                if (td != null) { t = HeroTextures.Make(td); t.wrapMode = TextureWrapMode.Repeat; t.anisoLevel = 4; }
+                if (td != null) { t = HeroTextures.Make(td); t.wrapMode = TextureWrapMode.Repeat; t.anisoLevel = 4; built.Textures.Add(t); }
                 textures[name] = t;
                 return t;
             }
-            bool lit = SunkenPlazaStage.WorldMaterial != null && Lightmap(cache, conv.TexFolder) != null;
+            bool lit = DeadlockStages.WorldMaterial != null && Lightmap(cache, conv.TexFolder) != null;
             ApplyLighting();
             var mats = new Material?[cache.Materials.Count];
             var hidden = new bool[cache.Materials.Count];
@@ -178,7 +199,7 @@ namespace CursedAppleCuriosities.Stages.DeadlockMap
                 MapMaterial m = cache.Materials[i];
                 if (hidden[i]) continue;
                 bool glass = (m.Flags & MapMatFlags.Translucent) != 0;
-                if (glass && SunkenPlazaStage.GlassMaterial == null) continue; // no glass shader: leave it undrawn (still solid)
+                if (glass && DeadlockStages.GlassMaterial == null) continue; // no glass shader: leave it undrawn (still solid)
                 mats[i] = glass ? MakeGlass(m, Tex(m.Texture)) : lit ? MakeWorld(m, Tex) : MakeMaterial(m, Tex(m.Texture));
             }
 
