@@ -377,6 +377,14 @@ namespace CursedAppleCuriosities.Stages.DeadlockMap
                     anchor.transform.rotation = Quaternion.Euler(0f, f.Yaw + world.transform.eulerAngles.y, 0f);
                     var rule = new DirectorPlacementRule { placementMode = DirectorPlacementRule.PlacementMode.Direct, spawnOnTarget = anchor.transform };
                     var rng = new Xoroshiro128Plus(Run.instance != null ? Run.instance.stageRng.nextUlong : 0UL);
+                    if (card is InteractableSpawnCard isc && (isc.orientToFloor || isc.slightlyRandomizeOrientation))
+                    {
+                        // Upright, whatever the roof under it does (a copy of the card that doesn't tilt it to the surface).
+                        isc = Instantiate(isc);
+                        isc.orientToFloor = false;
+                        isc.slightlyRandomizeOrientation = false;
+                        card = isc;
+                    }
                     if (DirectorCore.instance.TrySpawnObject(new DirectorSpawnRequest(card, rule, rng)) != null) placed++;
                     else Warn($"fixed interactable {f.Card} couldn't be placed at {anchor.transform.position}");
                 }
