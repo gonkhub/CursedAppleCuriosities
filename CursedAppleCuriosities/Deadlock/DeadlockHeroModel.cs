@@ -190,6 +190,8 @@ namespace CursedAppleCuriosities.Deadlock
     {
         public string HeroKey = "";
         public bool IsDisplay;
+        /// <summary>A display copy that must not say its select line (Paradox's intro keeps the last pick on the pedestal).</summary>
+        public bool Silent;
 
         private DeadlockHeroDef? _def;
         private GlbModel? _template;
@@ -224,7 +226,7 @@ namespace CursedAppleCuriosities.Deadlock
             if (_def == null) { CursedAppleCuriositiesPlugin.Logger?.LogWarning($"[Deadlock] no hero registered as '{HeroKey}'"); enabled = false; return; }
             TryAttach();
             // A lobby intro says the line itself once the hero is on the pedestal (from the start position it was too far to hear).
-            if (IsDisplay && GetComponentInParent<DeadlockDisplayIntro>() == null) PlaySelectVoice(transform.position);
+            if (IsDisplay && !Silent && GetComponentInParent<DeadlockDisplayIntro>() == null) PlaySelectVoice(transform.position);
         }
 
         /// <summary>The hero's character-select line.</summary>
