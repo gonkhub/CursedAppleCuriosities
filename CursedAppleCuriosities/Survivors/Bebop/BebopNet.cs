@@ -460,34 +460,40 @@ namespace CursedAppleCuriosities.Survivors.Bebop
         public Vector3 Direction;
         public Vector3 End { get; private set; }
 
-        private GameObject? _beam;
-        private Transform? _end;
-        private LineRenderer[] _lines = new LineRenderer[0];
+        private LineRenderer? _line;
         private CharacterBody _body = null!;
         private ChildLocator? _children;
 
         private void Awake() => _body = GetComponent<CharacterBody>();
 
+        /// <summary>Our own line, in the laser prefab's material (its own layout differs per prefab), so the beam always draws.</summary>
+        private void Build()
+        {
+            var go = new GameObject("BebopBeam");
+            _line = go.AddComponent<LineRenderer>();
+            _line.positionCount = 2;
+            _line.useWorldSpace = true;
+            _line.widthMultiplier = 0.25f * Width;
+            LineRenderer? source = Prefab != null ? Prefab.GetComponentInChildren<LineRenderer>(true) : null;
+            _line.material = source != null && source.sharedMaterial != null ? source.sharedMaterial : BebopSurvivor.ChainMaterial;
+            _line.colorGradient = source != null ? source.colorGradient : new Gradient();
+            _line.textureMode = LineTextureMode.Tile;
+            _line.shadowCastingMode = UnityEngine.Rendering.ShadowCastingMode.Off;
+        }
+
         private void LateUpdate()
         {
-            if (!Active || Prefab == null) { if (_beam != null) _beam.SetActive(false); return; }
-            if (_beam == null)
-            {
-                _beam = Instantiate(Prefab);
-                _end = _beam.GetComponent<ChildLocator>()?.FindChild("LaserEnd");
-                _lines = _beam.GetComponentsInChildren<LineRenderer>(true);
-                foreach (LineRenderer l in _lines) l.widthMultiplier *= Width;
-            }
-            _beam.SetActive(true);
+            if (!Active) { if (_line != null) _line.enabled = false; return; }
+            if (_line == null) Build();
+            _line!.enabled = true;
             Vector3 from = Muzzle();
             Ray aim = _body.inputBank != null ? _body.inputBank.GetAimRay() : new Ray(_body.corePosition, transform.forward);
             Vector3 dir = Direction.sqrMagnitude > 0.01f ? Direction.normalized : aim.direction;
             End = BebopBeams.EndPoint(aim.origin, dir, Range * MysticExpansion.RadiusMultiplier(_body), HitEnemies, _body);
-            _beam.transform.position = from;
-            _beam.transform.rotation = Util.QuaternionSafeLookRotation(End - from);
-            if (_end != null) _end.position = End;
-            foreach (LineRenderer l in _lines)
-                if (l.positionCount >= 2 && l.useWorldSpace) { l.SetPosition(0, from); l.SetPosition(l.positionCount - 1, End); }
+            _line.SetPosition(0, from);
+            _line.SetPosition(1, End);
+            // A slight flicker in width, like a live beam.
+            _line.widthMultiplier = 0.25f * Width * (0.85f + 0.15f * Mathf.PerlinNoise(Time.time * 20f, 0f));
         }
 
         private Vector3 Muzzle()
@@ -501,7 +507,7 @@ namespace CursedAppleCuriosities.Survivors.Bebop
             return m != null ? m.position : _body.corePosition;
         }
 
-        private void OnDestroy() { if (_beam != null) Destroy(_beam); }
+        private void OnDestroy() { if (_line != null) Destroy(_line.gameObject); }
     }
 
     public static class BebopBeams

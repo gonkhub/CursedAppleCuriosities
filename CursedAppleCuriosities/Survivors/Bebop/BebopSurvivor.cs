@@ -165,7 +165,7 @@ namespace CursedAppleCuriosities.Survivors.Bebop
             var hyper = body.AddComponent<BebopHyperBeamFx>();
             hyper.Prefab = HyperBeamPrefab;
             hyper.Range = BebopData.HyperLength;
-            hyper.Width = 1.6f;
+            hyper.Width = 8f; // Deadlock BeamWidth 2.9 m: a wall of light
             hyper.HitEnemies = false; // it goes through everyone
             body.AddComponent<BebopStickyReticle>();
 
