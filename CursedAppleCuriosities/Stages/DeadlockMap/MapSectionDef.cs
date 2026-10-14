@@ -24,7 +24,7 @@ namespace CursedAppleCuriosities.Stages.DeadlockMap
         public int[] InteractableSpots = System.Array.Empty<int>();
         /// <summary>Doorways that send whoever walks in to the teleporter (min x, y, z, max x, y, z units).</summary>
         public int[] SubwayTeleports = System.Array.Empty<int>();
-        /// <summary>Newt altars: x, y, z, yaw per altar, in the section's Unity space (from cac_map_mark).</summary>
+        /// <summary>Newt altar spots: x, y, z, yaw each, in the section's Unity space (from cac_map_mark). One altar per stage, at one of them.</summary>
         public float[] NewtAltars = System.Array.Empty<float>();
         /// <summary>Lowest point of the playable area (units): anything below falls out of the map.</summary>
         public float FloorZ = -800f;
@@ -113,7 +113,7 @@ namespace CursedAppleCuriosities.Stages.DeadlockMap
         };
         /// <summary>Deadlock's subway "TELEPORTER" doorway (min x, y, z, max x, y, z units): walking in sends you to the teleporter.</summary>
         public static readonly int[] SubwayTeleports = { -3960, 1736, -144, -3848, 1848, -16 };
-        /// <summary>Hidden by hand in-game (cac_map_mark newt): x, y, z, yaw in section space.</summary>
+        /// <summary>Hidden by hand in-game (cac_map_mark newt): x, y, z, yaw in section space. Candidates: one is picked per stage.</summary>
         public static readonly float[] NewtAltars = {
             60.09f, 30.79f, -4.78f, -89.7f,
             15.35f, 29.38f, -43.29f, -117.3f,

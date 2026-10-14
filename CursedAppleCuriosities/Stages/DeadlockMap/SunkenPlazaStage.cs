@@ -275,14 +275,14 @@ namespace CursedAppleCuriosities.Stages.DeadlockMap
                 GameObject? world = GameObject.Find("DeadlockMap");
                 if (a.Length < 4 || world == null) return;
                 GameObject prefab = Addressables.LoadAssetAsync<GameObject>(NewtPrefab).WaitForCompletion();
-                for (int i = 0; i + 3 < a.Length; i += 4)
-                {
-                    Vector3 at = world.transform.TransformPoint(new Vector3(a[i], a[i + 1], a[i + 2]));
-                    GameObject altar = Instantiate(prefab, at, Quaternion.Euler(0f, a[i + 3] + world.transform.eulerAngles.y, 0f));
-                    SitOnFloor(altar, at.y);
-                    NetworkServer.Spawn(altar);
-                }
-                Log($"{a.Length / 4} newt altars placed");
+                // As in vanilla stages: the spots are candidates, one altar per stage at one of them (the stage's own RNG).
+                int spots = a.Length / 4;
+                int i = (Run.instance != null ? Run.instance.stageRng.RangeInt(0, spots) : UnityEngine.Random.Range(0, spots)) * 4;
+                Vector3 at = world.transform.TransformPoint(new Vector3(a[i], a[i + 1], a[i + 2]));
+                GameObject altar = Instantiate(prefab, at, Quaternion.Euler(0f, a[i + 3] + world.transform.eulerAngles.y, 0f));
+                SitOnFloor(altar, at.y);
+                NetworkServer.Spawn(altar);
+                Log($"newt altar placed at spot {i / 4 + 1} of {spots}");
             }
 
             /// <summary>
