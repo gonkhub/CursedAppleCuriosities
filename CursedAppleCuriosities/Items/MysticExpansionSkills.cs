@@ -80,10 +80,12 @@ namespace CursedAppleCuriosities.Items
                     int dot = reader.LastIndexOf('.');
                     Type? owner = dot < 0 ? type : game.GetType(reader.Substring(0, dot));
                     string methodName = dot < 0 ? reader : reader.Substring(dot + 1);
-                    MethodInfo? method = owner?.GetMethod(methodName, BindingFlags.Public | BindingFlags.NonPublic | BindingFlags.Instance | BindingFlags.DeclaredOnly);
-                    if (method == null) { Warn($"{reader} not found ({fieldName})"); continue; }
+                    // Every overload of that name (a name alone can be ambiguous): overloads that never read the field are left as they are.
+                    MethodInfo[] methods = owner == null ? Array.Empty<MethodInfo>() : Array.FindAll(
+                        owner.GetMethods(BindingFlags.Public | BindingFlags.NonPublic | BindingFlags.Instance | BindingFlags.DeclaredOnly), m => m.Name == methodName);
+                    if (methods.Length == 0) { Warn($"{reader} not found ({fieldName})"); continue; }
                     FieldInfo f = field;
-                    Hooks.Add(new ILHook(method, il => ScaleReads(il, f, reader)));
+                    foreach (MethodInfo method in methods) Hooks.Add(new ILHook(method, il => ScaleReads(il, f, reader)));
                 }
             }
         }

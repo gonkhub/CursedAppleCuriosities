@@ -209,7 +209,8 @@ namespace CursedAppleCuriosities.Stages.DeadlockMap
 
             // AI navigation from the geometry (cached after the first time), then the stage's own objects.
             Bounds area = t.Playable;
-            var (ground, air, spawns) = NavBuilder.Get(conv.NavFile, conv.Fingerprint ?? "", world.transform, section.Inside, section.NoWalk, area);
+            Vector3 arrival = world.transform.TransformPoint(DeadlockMaps.PlazaCenter(t.OriginUnits));
+            var (ground, air, spawns) = NavBuilder.Get(conv.NavFile, conv.Fingerprint ?? "", world.transform, section.Inside, section.NoWalk, area, arrival);
 
             var info = new GameObject("SceneInfo");
             info.SetActive(false);

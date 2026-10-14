@@ -67,7 +67,7 @@ namespace CursedAppleCuriosities.Stages.DeadlockMap
             Shader.SetGlobalFloat(LightmapOnId, on ? 1f : 0f);
             Shader.SetGlobalFloat(ExposureId, SunkenPlazaStage.Exposure?.Value ?? 1f);
             Shader.SetGlobalFloat(DynamicId, SunkenPlazaStage.DynamicLight?.Value ?? 0.15f);
-            Shader.SetGlobalColor(FallbackId, new Color(0.35f, 0.3f, 0.32f));
+            Shader.SetGlobalColor(FallbackId, new Color(0.45f, 0.38f, 0.4f)); // dusk: props off the lightmap, the far backdrop
         }
 
         /// <summary>A world material on our Deadlock shader: layer 2 and the world overlay when the material has them.</summary>
@@ -182,6 +182,16 @@ namespace CursedAppleCuriosities.Stages.DeadlockMap
                 mats[i] = glass ? MakeGlass(m, Tex(m.Texture)) : lit ? MakeWorld(m, Tex) : MakeMaterial(m, Tex(m.Texture));
             }
 
+            // The far backdrop was simplified by merging vertices, so its lightmap UVs are scrambled (a glittering speckle):
+            // past ~40 m from the outline it takes a flat dusk light instead.
+            var outline = new List<Vector2>();
+            float[] ol = conv.Def.Outline;
+            for (int i = 0; i + 1 < ol.Length; i += 2)
+            {
+                Vector3 u = MapCache.ToUnity(new Vector3(ol[i], ol[i + 1], 0f), cache.OriginUnits);
+                outline.Add(new Vector2(u.x, u.z));
+            }
+            int flatBackdrop = 0;
             var bake = new List<(Mesh Mesh, GameObject Holder)>();
             int world = LayerIndex.world.intVal;
             long tris = 0, backTris = 0;
@@ -218,7 +228,10 @@ namespace CursedAppleCuriosities.Stages.DeadlockMap
                 }
                 if (subs.Count > 0)
                 {
-                    Mesh mesh = Combine(subs, out var used);
+                    // From the chunk's centre, as the converter chose how coarsely to merge it (finest within 40 m).
+                    bool flat = c.Backdrop && DistanceToOutline(outline, (c.Min + c.Max) / 2f, 0f) >= 40f;
+                    if (flat) flatBackdrop++;
+                    Mesh mesh = Combine(subs, out var used, flat);
                     mesh.name = go.name;
                     go.AddComponent<MeshFilter>().sharedMesh = mesh;
                     var r = go.AddComponent<MeshRenderer>();
@@ -256,12 +269,26 @@ namespace CursedAppleCuriosities.Stages.DeadlockMap
             for (int i = 0; i < ids.Length; i++) ids[i] = bake[i].Mesh.GetInstanceID();
             Parallel.For(0, ids.Length, new ParallelOptions { MaxDegreeOfParallelism = 2 }, i => Physics.BakeMesh(ids[i], false));
             foreach (var (mesh, holder) in bake) holder.AddComponent<MeshCollider>().sharedMesh = mesh;
-            Log(lit ? $"lighting: Deadlock's baked lightmap ({cache.LightmapSize}x{cache.LightmapSize})" : "lighting: RoR2's standard shader (no lightmap)");
+            Log(lit ? $"lighting: Deadlock's baked lightmap ({cache.LightmapSize}x{cache.LightmapSize}), {flatBackdrop} far backdrop chunks flat-lit" : "lighting: RoR2's standard shader (no lightmap)");
             Log($"section built in {watch.ElapsedMilliseconds} ms: {tris} playable + {backTris} backdrop triangles drawn, {bake.Count} collision meshes ({clipTris.Length / 3} clip triangles), {textures.Count} textures" + (built.HasHidden ? $", hidden statue at {built.Hidden.center} size {built.Hidden.size}" : ", nothing hidden"));
             return built;
         }
 
-        private static Mesh Combine(List<MapSub> subs, out List<int> materials)
+        /// <summary>Horizontal distance from a chunk (centre, radius) to the nearest outline edge, 0 if it reaches it.</summary>
+        private static float DistanceToOutline(List<Vector2> outline, Vector3 centre, float radius)
+        {
+            var p = new Vector2(centre.x, centre.z);
+            float best = float.MaxValue;
+            for (int i = 0, j = outline.Count - 1; i < outline.Count; j = i++)
+            {
+                Vector2 a = outline[j], ab = outline[i] - a;
+                float t = Mathf.Clamp01(Vector2.Dot(p - a, ab) / Mathf.Max(1e-4f, ab.sqrMagnitude));
+                best = Mathf.Min(best, (a + ab * t - p).magnitude);
+            }
+            return Mathf.Max(0f, best - radius);
+        }
+
+        private static Mesh Combine(List<MapSub> subs, out List<int> materials, bool flatLight = false)
         {
             materials = new List<int>();
             int n = 0;
@@ -273,7 +300,8 @@ namespace CursedAppleCuriosities.Stages.DeadlockMap
                 Array.Copy(s.Pos, 0, pos, at, s.Pos.Length);
                 Array.Copy(s.Normal, 0, nrm, at, s.Normal.Length);
                 Array.Copy(s.Uv, 0, uv, at, s.Uv.Length);
-                Array.Copy(s.Lightmap, 0, lm, at, s.Lightmap.Length);
+                if (flatLight) for (int k = 0; k < s.Pos.Length; k++) lm[at + k] = new Vector2(-1f, -1f); // the shader's fallback light
+                else Array.Copy(s.Lightmap, 0, lm, at, s.Lightmap.Length);
                 Array.Copy(s.Color, 0, col, at, s.Color.Length);
                 at += s.Pos.Length;
             }

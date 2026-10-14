@@ -16,7 +16,7 @@ namespace CursedAppleCuriosities.Stages.DeadlockMap
     /// </summary>
     internal static class NavBuilder
     {
-        public const int Version = 6;
+        public const int Version = 10;
         private const float GroundSpacing = 4.5f, AirSpacing = 12f;
         private const float MaxLink = 15f, MaxAirLink = 30f;
         private const float LosRange = 140f;
@@ -38,7 +38,7 @@ namespace CursedAppleCuriosities.Stages.DeadlockMap
         /// The ground and air graphs for the section placed under root (local space = section space). inside tells
         /// whether a point (section space) is in the playable area; noWalk whether it's somewhere nobody may stand.
         /// </summary>
-        public static (NodeGraph Ground, NodeGraph Air, List<(Vector3 Pos, float Yaw)> Spawns) Get(string cacheFile, string fingerprint, Transform root, Func<Vector3, bool> inside, Func<Vector3, bool> noWalk, Bounds area)
+        public static (NodeGraph Ground, NodeGraph Air, List<(Vector3 Pos, float Yaw)> Spawns) Get(string cacheFile, string fingerprint, Transform root, Func<Vector3, bool> inside, Func<Vector3, bool> noWalk, Bounds area, Vector3 spawnAnchor)
         {
             Graph? ground = null, air = null;
             string key = fingerprint + ":nav" + Version + ":" + root.localScale.x.ToString("0.###");
@@ -47,7 +47,7 @@ namespace CursedAppleCuriosities.Stages.DeadlockMap
             if (ground == null || air == null)
             {
                 var watch = Stopwatch.StartNew();
-                ground = BuildGround(root, inside, noWalk, area);
+                ground = BuildGround(root, inside, noWalk, area, spawnAnchor);
                 air = BuildAir(root, inside, area, ground);
                 Log($"navigation built in {watch.ElapsedMilliseconds} ms: {ground.Pos.Length} ground nodes / {ground.Links.Count} links, {air.Pos.Length} air nodes / {air.Links.Count} links");
                 try { Write(cacheFile, key, ground, air); } catch (Exception e) { Log("couldn't cache navigation: " + e.Message); }
@@ -57,7 +57,7 @@ namespace CursedAppleCuriosities.Stages.DeadlockMap
 
         // ---------------------------------------------------------------- ground
 
-        private static Graph BuildGround(Transform root, Func<Vector3, bool> inside, Func<Vector3, bool> noWalk, Bounds area)
+        private static Graph BuildGround(Transform root, Func<Vector3, bool> inside, Func<Vector3, bool> noWalk, Bounds area, Vector3 spawnAnchor)
         {
             int mask = LayerIndex.world.mask;
             float s = root.lossyScale.x, step = GroundSpacing;
@@ -120,7 +120,7 @@ namespace CursedAppleCuriosities.Stages.DeadlockMap
                     }
                     if (hulls != 0) g.Links.Add((a, b, dist, dy > 1.2f ? dy + 0.5f : 0f, hulls, jumps));
                 }
-            Classify(g, normals, mask);
+            Classify(g, normals, mask, spawnAnchor);
             g.Los = LineOfSight(g.Pos, Vector3.up * 1.2f, mask);
             return g;
         }
@@ -137,7 +137,7 @@ namespace CursedAppleCuriosities.Stages.DeadlockMap
         /// </list>
         /// Also picks the player spawns.
         /// </summary>
-        private static void Classify(Graph g, List<Vector3> normals, int mask)
+        private static void Classify(Graph g, List<Vector3> normals, int mask, Vector3 spawnAnchor)
         {
             int n = g.Pos.Length, clipMask = LayerIndex.collideWithCharacterHullOnly.mask;
             const int rays = 12;
@@ -157,7 +157,7 @@ namespace CursedAppleCuriosities.Stages.DeadlockMap
                 Vector3 eye = g.Pos[i] + Vector3.up * 1.0f;
                 float min = reach, sum = 0f, best = -1f;
                 bool enclosed = Physics.Raycast(eye, Vector3.up, out RaycastHit up, 60f, mask, QueryTriggerInteraction.Ignore) && Vector3.Dot(up.normal, Vector3.up) > 0.01f;
-                int backs = 0; // one stray back face is a one-sided prop seen from behind; several mean we're inside something
+                int backs = 0; // back faces seen around: one-sided scenery from behind, or (nearly all of them) the inside of something
                 for (int k = 0; k < rays; k++)
                 {
                     float yaw = k * 360f / rays;
@@ -173,7 +173,7 @@ namespace CursedAppleCuriosities.Stages.DeadlockMap
                 avgClear[i] = sum / rays;
                 // On a clip, or inside one: a capsule wholly inside a clip box touches none of its faces, so a clip face more than
                 // a metre overhead (higher than any ramp over stairs) counts too: players can't get there (a chest in a prop's clip).
-                enclosed |= backs >= 4;
+                enclosed |= backs >= 10; // nearly every way: one-sided scenery (planters, railings) seen from behind is common in the open
                 onClip[i] = enclosed
                     || Physics.CheckCapsule(g.Pos[i] + Vector3.up * 0.3f, g.Pos[i] + Vector3.up * 1.7f, 0.45f, clipMask, QueryTriggerInteraction.Ignore)
                     || Physics.Raycast(g.Pos[i] + Vector3.up * 6f, Vector3.down, 5f, clipMask, QueryTriggerInteraction.Ignore);
@@ -233,27 +233,37 @@ namespace CursedAppleCuriosities.Stages.DeadlockMap
                         tele++;
                     }
 
-            // Player spawns: the most open roofless spot on the main region, plus up to three good neighbours, all facing
-            // that spot's longest clear view.
-            int bestNode = -1;
-            float bestScore = float.MinValue;
-            for (int i = 0; i < n; i++)
+            // Player spawns: the most open roofless spot on the main region that has room for the whole party (three good
+            // neighbours within 12 m on the same level).
+            bool SpawnOk(int i) => region[i] == main && !onClip[i] && (g.Flags[i] & (byte)NodeFlags.NoCeiling) != 0 && minClear[i] >= 3f;
+            List<int> Neighbours(int c)
             {
-                if (region[i] != main || onClip[i] || (g.Flags[i] & (byte)NodeFlags.NoCeiling) == 0 || minClear[i] < 3f) continue;
-                float score = avgClear[i] + minClear[i];
-                if (score > bestScore) { bestScore = score; bestNode = i; }
+                var near = new List<int>();
+                for (int i = 0; i < n; i++)
+                    if (i != c && region[i] == main && !onClip[i] && minClear[i] >= 2f && Mathf.Abs(g.Pos[i].y - g.Pos[c].y) < 1.5f
+                        && (g.Pos[i] - g.Pos[c]).sqrMagnitude < 12f * 12f)
+                        near.Add(i);
+                near.Sort((x, y) => (avgClear[y] + minClear[y]).CompareTo(avgClear[x] + minClear[x]));
+                return near;
+            }
+            // Near the section's arrival point (the plaza) first; anywhere on the main region if nothing there qualifies.
+            var candidates = new List<int>();
+            for (int i = 0; i < n; i++) if (SpawnOk(i)) candidates.Add(i);
+            float Away(int i) => new Vector2(g.Pos[i].x - spawnAnchor.x, g.Pos[i].z - spawnAnchor.z).magnitude > 40f ? 1f : 0f;
+            candidates.Sort((x, y) => Away(x) != Away(y) ? Away(x).CompareTo(Away(y)) : (avgClear[y] + minClear[y]).CompareTo(avgClear[x] + minClear[x]));
+            int bestNode = -1;
+            List<int>? party = null;
+            foreach (int c in candidates)
+            {
+                List<int> near = Neighbours(c);
+                if (bestNode < 0) { bestNode = c; party = near; } // the fallback: the most open spot, however few neighbours
+                if (near.Count >= 3) { bestNode = c; party = near; break; }
             }
             if (bestNode >= 0)
             {
-                float yaw = bestYaw[bestNode];
-                g.Spawns.Add((g.Pos[bestNode], yaw));
-                var near = new List<int>();
-                for (int i = 0; i < n; i++)
-                    if (i != bestNode && region[i] == main && !onClip[i] && minClear[i] >= 2f && Mathf.Abs(g.Pos[i].y - g.Pos[bestNode].y) < 1.5f
-                        && (g.Pos[i] - g.Pos[bestNode]).sqrMagnitude < 12f * 12f)
-                        near.Add(i);
-                near.Sort((a, b) => (avgClear[b] + minClear[b]).CompareTo(avgClear[a] + minClear[a]));
-                for (int k = 0; k < near.Count && g.Spawns.Count < 4; k++) g.Spawns.Add((g.Pos[near[k]], yaw));
+                // Each spawn faces its own longest clear view (from a neighbour, the best spot's view may be a wall).
+                g.Spawns.Add((g.Pos[bestNode], bestYaw[bestNode]));
+                for (int k = 0; k < party!.Count && g.Spawns.Count < 4; k++) g.Spawns.Add((g.Pos[party[k]], bestYaw[party[k]]));
             }
             Log($"spawn rules: {sizes.Count} walkable regions (main {sizes[main]} nodes), {isolated} isolated nodes off-limits, " +
                 $"{chests} chest spots, {shrines} shrine spots, {tele} teleporter spots, {g.Spawns.Count} player spawns" +
