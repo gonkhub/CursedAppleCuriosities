@@ -23,9 +23,10 @@ namespace CursedAppleMapConvert
         private const int BatchSize = 30;
 
         private readonly MapSectionDef _def;
-        private readonly string _cli, _citadel, _out, _fingerprint;
+        private readonly string _cli, _citadel, _out, _fingerprint, _modelsDir, _texDir;
         private readonly int _parallel;
-        private string TexFolder => Path.Combine(_out, "tex");
+        /// <summary>The map's shared texture folder (every district's textures and the lightmap).</summary>
+        private string TexFolder => _texDir;
 
         private V2[] _outline = Array.Empty<V2>();
         private V2 _oMin, _oMax;
@@ -50,9 +51,38 @@ namespace CursedAppleMapConvert
         // Extra textures to export by resource path (Deadlock's .vtex) -> wanted near the playable area.
         private readonly Dictionary<string, bool> _extraTextures = new Dictionary<string, bool>(StringComparer.OrdinalIgnoreCase);
 
-        public Converter(MapSectionDef def, string cli, string citadel, string outFolder, string fingerprint, int parallel)
+        public Converter(MapSectionDef def, string cli, string citadel, string outFolder, string fingerprint, int parallel, string modelsDir, string texDir)
         {
             _def = def; _cli = cli; _citadel = citadel; _out = outFolder; _fingerprint = fingerprint; _parallel = Math.Max(1, parallel);
+            _modelsDir = modelsDir; _texDir = texDir;
+        }
+
+        /// <summary>
+        /// The model store's fingerprint: the map build (from the section's fingerprint), the store format, and the districts
+        /// (textures are converted full size near any of them, so a new district refreshes the store).
+        /// </summary>
+        private string StoreFingerprint()
+        {
+            string[] f = _fingerprint.Split(':');
+            string build = f.Length >= 2 ? f[0] + ":" + f[1] : _fingerprint;
+            return $"{build}:store{ModelStore.Version}:{string.Join(",", MapSectionDef.All.Select(d => d.Id))}";
+        }
+
+        /// <summary>Whether a placement is near any district's playable area (its textures are converted full size).</summary>
+        private static bool NearAnyDistrict(WorldInstance inst, string map)
+        {
+            foreach (MapSectionDef d in MapSectionDef.All)
+            {
+                if (d.Map != map || d.Outline.Length < 2) continue;
+                float x0 = float.MaxValue, x1 = float.MinValue, y0 = float.MaxValue, y1 = float.MinValue;
+                for (int i = 0; i + 1 < d.Outline.Length; i += 2)
+                {
+                    x0 = Math.Min(x0, d.Outline[i]); x1 = Math.Max(x1, d.Outline[i]);
+                    y0 = Math.Min(y0, d.Outline[i + 1]); y1 = Math.Max(y1, d.Outline[i + 1]);
+                }
+                if (inst.Max.X >= x0 - 64 && inst.Min.X <= x1 + 64 && inst.Max.Y >= y0 - 64 && inst.Min.Y <= y1 + 64) return true;
+            }
+            return false;
         }
 
         private void Init()
@@ -115,6 +145,7 @@ namespace CursedAppleMapConvert
             // 2. Which placements matter: everything near the playable area, and the backdrop's larger pieces.
             var byModel = new Dictionary<string, List<WorldInstance>>(StringComparer.OrdinalIgnoreCase);
             var near = new HashSet<string>(StringComparer.OrdinalIgnoreCase);
+            var nearAny = new HashSet<string>(StringComparer.OrdinalIgnoreCase); // near some district: full-size textures
             int skipped = 0;
             foreach (WorldInstance inst in node.Instances)
             {
@@ -132,14 +163,18 @@ namespace CursedAppleMapConvert
                 if (!byModel.TryGetValue(inst.Model, out var list)) byModel[inst.Model] = list = new List<WorldInstance>();
                 list.Add(inst);
                 if (isNear) near.Add(inst.Model);
+                if (isNear || NearAnyDistrict(inst, _def.Map)) nearAny.Add(inst.Model);
             }
             Program.Log($"{byModel.Count} models to convert ({near.Count} near the playable area), {skipped} placements left out");
 
-            // 3. Export in batches (a couple of converter processes at once), near models first; read each batch as it lands.
+            // 3. The model store: Source2Viewer exports only the models it doesn't have yet (all of them on a map's first district
+            // after a Deadlock update, a few small props for the next ones). Batches of a couple of converter processes at once.
+            var store = new ModelStore(_modelsDir, StoreFingerprint());
             string tmp = Path.Combine(_out, "tmp");
             DeleteTree(tmp);
             Directory.CreateDirectory(TexFolder);
-            var order = byModel.Keys.OrderBy(m => near.Contains(m) ? 0 : 1).ThenBy(m => m, StringComparer.Ordinal).ToList();
+            var order = byModel.Keys.Where(m => !store.Has(m)).OrderBy(m => near.Contains(m) ? 0 : 1).ThenBy(m => m, StringComparer.Ordinal).ToList();
+            Program.Log($"model store: {store.Count} models kept, {order.Count} to export");
             var batches = new List<List<string>>();
             foreach (bool fromMap in new[] { true, false })
             {
@@ -175,7 +210,7 @@ namespace CursedAppleMapConvert
                 });
                 done.CompleteAdding();
             });
-            int read = 0, missing = 0, batchesDone = 0;
+            int exported = 0, failed = 0, batchesDone = 0;
             foreach (var (bi, dir) in done.GetConsumingEnumerable())
             {
                 try
@@ -183,21 +218,19 @@ namespace CursedAppleMapConvert
                     foreach (string model in batches[bi])
                     {
                         string glb = Path.Combine(dir, model.Replace(".vmdl_c", ".glb").Replace('/', Path.DirectorySeparatorChar));
-                        if (!File.Exists(glb)) { missing++; Program.Log($"missing: {model} ({byModel[model].Count} placements)"); continue; }
+                        if (!File.Exists(glb)) { failed++; Program.Log($"missing: {model} ({byModel[model].Count} placements)"); continue; }
                         Model mm;
                         try { mm = Glb.Read(glb); }
-                        catch (Exception e) { Program.Log($"{model}: {e.Message}"); missing++; continue; }
-                        Program.Mem($"read {Path.GetFileName(glb)} ({new FileInfo(glb).Length / 1024} KB, {mm.Prims.Sum(x => x.Tris.Length / 3)} tris, {byModel[model].Count} placements)");
-                        int[] mats = MaterialIndices(mm, near.Contains(model));
-                        Program.Mem("  textures done");
-                        foreach (WorldInstance inst in byModel[model]) Emit(mm, mats, inst);
-                        Program.Mem($"  emitted ({_chunks.Count} chunks, {_subIds} subs)");
-                        read++;
+                        catch (Exception e) { Program.Log($"{model}: {e.Message}"); failed++; continue; }
+                        Program.Mem($"read {Path.GetFileName(glb)} ({new FileInfo(glb).Length / 1024} KB, {mm.Prims.Sum(x => x.Tris.Length / 3)} tris)");
+                        ConvertTextures(mm, nearAny.Contains(model));
+                        store.Save(model, mm);
+                        exported++;
                     }
                 }
                 finally { try { DeleteTree(dir); } catch (Exception e) { Program.Log($"couldn't delete {dir}: {e.Message}"); } }
                 batchesDone++;
-                Program.Status($"converting: {batchesDone}/{batches.Count} batches");
+                Program.Status($"exporting models: {batchesDone}/{batches.Count} batches");
                 // The builders' big arrays fragment the large-object heap: compact it now and then, so the process's memory
                 // tracks what it really holds.
                 if (batchesDone % 4 == 0)
@@ -207,6 +240,26 @@ namespace CursedAppleMapConvert
                 }
             }
             exporter.Wait();
+            if (order.Count > 0) Program.Log($"{exported} models exported into the store, {failed} failed");
+
+            // 4. The district, cut from the stored models: its playable area in full, the rest as backdrop.
+            int read = 0, missing = 0;
+            foreach (string model in byModel.Keys.OrderBy(m => m, StringComparer.Ordinal))
+            {
+                if (!store.Has(model)) { missing++; continue; }
+                Model mm;
+                try { mm = store.Load(model); }
+                catch (Exception e) { Program.Log($"{model}: {e.Message}"); missing++; continue; }
+                int[] mats = MaterialIndices(mm, nearAny.Contains(model));
+                foreach (WorldInstance inst in byModel[model]) Emit(mm, mats, inst);
+                if (++read % 100 == 0)
+                {
+                    Program.Status($"cutting the district: {read}/{byModel.Count} models");
+                    Program.Mem($"  emitted ({_chunks.Count} chunks, {_subIds} subs)");
+                    System.Runtime.GCSettings.LargeObjectHeapCompactionMode = System.Runtime.GCLargeObjectHeapCompactionMode.CompactOnce;
+                    GC.Collect();
+                }
+            }
             Program.Log($"{read} models read, {missing} missing");
             ExportExtraTextures(mapVpk, Path.Combine(tmp, "extra"));
 
@@ -290,7 +343,6 @@ namespace CursedAppleMapConvert
         private int[] MaterialIndices(Model mm, bool near)
         {
             var o = new int[mm.Materials.Count];
-            var convert = new List<(string Png, string Cac)>();
             for (int i = 0; i < o.Length; i++)
             {
                 MaterialInfo info = mm.Materials[i];
@@ -304,18 +356,7 @@ namespace CursedAppleMapConvert
                     if (info.Translucent || info.Glass) flags |= Translucent; // drawn with the glass shader, still solid
                     if (info.DoubleSided) flags |= DoubleSided;
                     if (info.SelfIllum) flags |= SelfIllum;
-                    string tex = "";
-                    if (info.TexturePng != null)
-                    {
-                        string png = Path.GetFileName(info.TexturePng);
-                        if (!_textureDone.TryGetValue(png, out tex))
-                        {
-                            tex = Path.GetFileNameWithoutExtension(png) + ".cac";
-                            if (File.Exists(info.TexturePng)) convert.Add((info.TexturePng, Path.Combine(TexFolder, tex)));
-                            else { Program.Log($"texture missing: {png}"); tex = ""; }
-                            _textureDone[png] = tex;
-                        }
-                    }
+                    string tex = info.TextureCac ?? "";
                     idx = _materials.Count;
                     _materials.Add((info.Name, tex, flags, info.Cutoff));
                     _matInfo.Add(info);
@@ -324,13 +365,38 @@ namespace CursedAppleMapConvert
                 }
                 o[i] = idx;
             }
+            return o;
+        }
+
+        /// <summary>
+        /// A freshly exported model's base colour textures into the shared texture folder (full size near a district, small
+        /// for the backdrop; a texture already there is kept): its materials then carry the converted names.
+        /// </summary>
+        private void ConvertTextures(Model mm, bool near)
+        {
+            var convert = new List<(string Png, string Cac)>();
+            foreach (MaterialInfo info in mm.Materials)
+            {
+                if (info.TexturePng == null) continue;
+                string png = Path.GetFileName(info.TexturePng);
+                if (!_textureDone.TryGetValue(png, out string tex))
+                {
+                    tex = Path.GetFileNameWithoutExtension(png) + ".cac";
+                    string cac = Path.Combine(TexFolder, tex);
+                    if (File.Exists(cac)) { }
+                    else if (File.Exists(info.TexturePng)) convert.Add((info.TexturePng, cac));
+                    else { Program.Log($"texture missing: {png}"); tex = ""; }
+                    _textureDone[png] = tex;
+                }
+                info.TextureCac = tex.Length > 0 ? tex : null;
+                info.TexturePng = null;
+            }
             int size = near ? 1024 : 256;
             Parallel.ForEach(convert, new ParallelOptions { MaxDegreeOfParallelism = 2 }, t =>
             {
                 try { if (!Textures.ConvertToCache(t.Png, t.Cac, size)) Program.Log($"texture unreadable: {Path.GetFileName(t.Png)}"); }
                 catch (Exception e) { Program.Log($"texture {Path.GetFileName(t.Png)}: {e.Message}"); }
             });
-            return o;
         }
 
         /// <summary>The cache name of an extra Deadlock texture (exported after the models), or "".</summary>

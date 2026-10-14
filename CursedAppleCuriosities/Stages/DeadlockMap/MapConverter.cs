@@ -19,7 +19,7 @@ namespace CursedAppleCuriosities.Stages.DeadlockMap
     public class MapConverter
     {
         /// <summary>Bump when the cache content changes (players then convert again).</summary>
-        public const int PipelineVersion = 5;
+        public const int PipelineVersion = 6;
         private const int MaxMemoryMb = 2500;
 
         public readonly MapSectionDef Def;
@@ -30,7 +30,11 @@ namespace CursedAppleCuriosities.Stages.DeadlockMap
         public string CacheFile => Path.Combine(Folder, "section.bin");
         public string NavFile => Path.Combine(Folder, "nav.bin");
         public string Folder => Path.Combine(DeadlockInstall.CacheDir, "maps", Def.Map + "_" + Def.Id);
-        public string TexFolder => Path.Combine(Folder, "tex");
+        /// <summary>What the map's districts share: the model store (Deadlock's models, exported once) and the textures.</summary>
+        public string SharedFolder => Path.Combine(DeadlockInstall.CacheDir, "maps", Def.Map + "_shared");
+        public string TexFolder => Path.Combine(SharedFolder, "tex");
+        /// <summary>Where textures were before they were shared (a cache kept from an older version reads from here).</summary>
+        public string OwnTexFolder => Path.Combine(Folder, "tex");
 
         private static void Log(string s) => CursedAppleCuriositiesPlugin.Logger?.LogInfo("[DeadlockMap] " + s);
         private static void Warn(string s) => CursedAppleCuriositiesPlugin.Logger?.LogWarning("[DeadlockMap] " + s);
@@ -98,7 +102,8 @@ namespace CursedAppleCuriosities.Stages.DeadlockMap
             Status = "converting (first launch after a Deadlock map update: several minutes)";
             Log($"{Def.Id}: converting {Def.Map} ({fingerprint}, was {cached ?? "none"}) in {Path.GetFileName(exe)}...");
             var watch = Stopwatch.StartNew();
-            var psi = new ProcessStartInfo(exe, $"--cli \"{cli}\" --citadel \"{citadel}\" --section {Def.Id} --fingerprint \"{fingerprint}\" --out \"{folder}\" --max-mb {MaxMemoryMb} --parallel 2")
+            var psi = new ProcessStartInfo(exe, $"--cli \"{cli}\" --citadel \"{citadel}\" --section {Def.Id} --fingerprint \"{fingerprint}\" --out \"{folder}\" " +
+                $"--models \"{Path.Combine(SharedFolder, "models")}\" --tex \"{TexFolder}\" --max-mb {MaxMemoryMb} --parallel 2")
             { UseShellExecute = false, CreateNoWindow = true, RedirectStandardOutput = true, RedirectStandardError = true };
             int exit;
             using (Process p = Process.Start(psi))
@@ -134,6 +139,9 @@ namespace CursedAppleCuriosities.Stages.DeadlockMap
                 return;
             }
             if (File.Exists(Path.Combine(folder, "nav.bin"))) File.Delete(Path.Combine(folder, "nav.bin")); // built for the old geometry
+            // Textures are shared now: the district's own folder (from before) only took disk space.
+            try { if (Directory.Exists(OwnTexFolder)) Directory.Delete(OwnTexFolder, true); }
+            catch (Exception e) { Warn($"couldn't remove {OwnTexFolder}: {e.Message}"); }
             Fingerprint = fingerprint;
             State = MapState.Ready;
             Status = $"converted in {watch.Elapsed.TotalMinutes:0.0} min";

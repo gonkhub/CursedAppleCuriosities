@@ -41,7 +41,7 @@ namespace CursedAppleMapConvert
             if (!a.TryGetValue("cli", out string cli) || !a.TryGetValue("citadel", out string citadel) || !a.TryGetValue("section", out string id)
                 || !a.TryGetValue("fingerprint", out string fp) || !a.TryGetValue("out", out string outDir))
             {
-                Console.Error.WriteLine("usage: --cli <exe> --citadel <dir> --section <id> --fingerprint <fp> --out <folder> [--max-mb N] [--parallel N]");
+                Console.Error.WriteLine("usage: --cli <exe> --citadel <dir> --section <id> --fingerprint <fp> --out <folder> [--models <dir>] [--tex <dir>] [--max-mb N] [--parallel N]");
                 return 2;
             }
             MapSectionDef? def = MapSectionDef.Find(id);
@@ -57,7 +57,10 @@ namespace CursedAppleMapConvert
             try
             {
                 Directory.CreateDirectory(outDir);
-                var conv = new Converter(def, cli, citadel, outDir, fp, parallel);
+                // The map's model store and texture folder are shared by its districts (default: inside the district's own folder).
+                string models = a.TryGetValue("models", out string md) && md.Length > 0 ? md : Path.Combine(outDir, "models");
+                string tex = a.TryGetValue("tex", out string td) && td.Length > 0 ? td : Path.Combine(outDir, "tex");
+                var conv = new Converter(def, cli, citadel, outDir, fp, parallel, models, tex);
                 if (a.ContainsKey("clips-only")) conv.PatchClips(); else conv.Run();
                 Log($"done in {watch.Elapsed.TotalMinutes:0.0} min, peak memory {Process.GetCurrentProcess().PeakWorkingSet64 / (1024 * 1024)} MB");
                 return 0;

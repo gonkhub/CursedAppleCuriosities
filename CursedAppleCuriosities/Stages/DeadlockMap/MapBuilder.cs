@@ -39,7 +39,7 @@ namespace CursedAppleCuriosities.Stages.DeadlockMap
         /// </summary>
         private static Texture2D? Lightmap(MapCache cache, string texFolder)
         {
-            string file = System.IO.Path.Combine(texFolder, cache.LightmapFile);
+            string file = texFolder.Length > 0 ? System.IO.Path.Combine(texFolder, cache.LightmapFile) : "";
             if (_lightmap != null && _lightmapFor == file) return _lightmap;
             if (cache.LightmapFile.Length == 0 || cache.LightmapSize <= 0 || !File.Exists(file)) return null;
             if (!SystemInfo.SupportsTextureFormat(TextureFormat.BC6H)) { Log("this GPU can't sample BC6H: the map is lit without its lightmap"); return null; }
@@ -180,16 +180,23 @@ namespace CursedAppleCuriosities.Stages.DeadlockMap
             var built = new Built { Root = root, OriginUnits = cache.OriginUnits };
 
             var textures = new Dictionary<string, Texture2D?>();
+            // Shared by the map's districts; a cache from before textures were shared still has its own folder.
+            string TexPath(string name)
+            {
+                string shared = System.IO.Path.Combine(conv.TexFolder, name);
+                return File.Exists(shared) ? shared : System.IO.Path.Combine(conv.OwnTexFolder, name);
+            }
             Texture2D? Tex(string name)
             {
                 if (name.Length == 0) return null;
                 if (textures.TryGetValue(name, out Texture2D? t)) return t;
-                TexData? td = HeroTextures.ReadStandalone(System.IO.Path.Combine(conv.TexFolder, name));
+                TexData? td = HeroTextures.ReadStandalone(TexPath(name));
                 if (td != null) { t = HeroTextures.Make(td); t.wrapMode = TextureWrapMode.Repeat; t.anisoLevel = 4; built.Textures.Add(t); }
                 textures[name] = t;
                 return t;
             }
-            bool lit = DeadlockStages.WorldMaterial != null && Lightmap(cache, conv.TexFolder) != null;
+            bool lit = DeadlockStages.WorldMaterial != null && cache.LightmapFile.Length > 0
+                && Lightmap(cache, System.IO.Path.GetDirectoryName(TexPath(cache.LightmapFile)) ?? "") != null;
             ApplyLighting();
             var mats = new Material?[cache.Materials.Count];
             var hidden = new bool[cache.Materials.Count];

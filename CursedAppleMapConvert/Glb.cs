@@ -10,7 +10,8 @@ namespace CursedAppleMapConvert
     internal class MaterialInfo
     {
         public string Name = "";
-        public string? TexturePng;     // absolute path of the exported base colour PNG
+        public string? TexturePng;     // absolute path of the exported base colour PNG (only while exporting)
+        public string? TextureCac;     // its converted file in the shared texture folder (what the model store keeps)
         public string Shader = "";
         public bool Cutout, Translucent, Glass, DoubleSided, VertexPaint, SelfIllum, Skip;
         public float Cutoff = 0.5f;
