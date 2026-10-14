@@ -60,7 +60,15 @@ namespace CursedAppleCuriosities.Stages.DeadlockMap
             if (_template != null && _template.Root != null && _templateFor == d) return _template;
             MapConverter? c = d.Converter;
             if (c == null || c.State != MapState.Ready) return null;
-            if (_template != null) { _template.Release(); _template = null; _templateFor = null; }
+            if (_template != null)
+            {
+                var watch = Stopwatch.StartNew();
+                _template.Release();
+                _template = null; _templateFor = null;
+                GC.Collect();
+                GC.WaitForPendingFinalizers();
+                Log($"released the previous district in {watch.ElapsedMilliseconds} ms");
+            }
             _template = MapBuilder.Build(c, true);
             UnityEngine.Object.DontDestroyOnLoad(_template.Root);
             _templateFor = d;

@@ -158,10 +158,12 @@ namespace CursedAppleCuriosities.Stages.DeadlockMap
                 foreach (MeshFilter f in Root.GetComponentsInChildren<MeshFilter>(true)) if (f.sharedMesh != null) meshes.Add(f.sharedMesh);
                 foreach (MeshCollider c in Root.GetComponentsInChildren<MeshCollider>(true)) if (c.sharedMesh != null) meshes.Add(c.sharedMesh);
                 foreach (Renderer r in Root.GetComponentsInChildren<Renderer>(true)) foreach (Material m in r.sharedMaterials) if (m != null) materials.Add(m);
-                UnityEngine.Object.Destroy(Root);
-                foreach (Mesh m in meshes) UnityEngine.Object.Destroy(m);
-                foreach (Material m in materials) UnityEngine.Object.Destroy(m);
-                foreach (Texture2D t in Textures) if (t != null) UnityEngine.Object.Destroy(t);
+                // Immediately, not at the end of the frame: the next district is built right after, and two districts at once
+                // is gigabytes more than the game can spare.
+                UnityEngine.Object.DestroyImmediate(Root);
+                foreach (Mesh m in meshes) if (m != null) UnityEngine.Object.DestroyImmediate(m);
+                foreach (Material m in materials) if (m != null) UnityEngine.Object.DestroyImmediate(m);
+                foreach (Texture2D t in Textures) if (t != null) UnityEngine.Object.DestroyImmediate(t);
                 Textures.Clear();
                 Root = null!;
             }
