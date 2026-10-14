@@ -92,7 +92,7 @@ namespace CursedAppleCuriosities.Deadlock
 
         /// <summary>
         /// Turns hues between fromLo and fromHi degrees by shift degrees (feathered over 15 degrees at each end),
-        /// leaving greys (saturation under minSat) alone. Rotated about the grey axis, so brightness is kept.
+        /// leaving greys (saturation under minSat) alone. fromLo may be negative for a range that wraps through red. Rotated about the grey axis, so brightness is kept.
         /// </summary>
         public static Func<byte[], bool> HueShift(float fromLo, float fromHi, float shift, float minSat = 0.12f) => px =>
         {
@@ -109,6 +109,7 @@ namespace CursedAppleCuriosities.Deadlock
                 else if (max == g) h = 60f * ((b - r) / d + 2f);
                 else h = 60f * ((r - g) / d + 4f);
                 if (h < 0f) h += 360f;
+                if (fromLo < 0f && h > fromLo + 360f - Feather) h -= 360f; // a range across red (e.g. -25..20) wraps around 0
                 float w = Mathf.Clamp01((h - (fromLo - Feather)) / Feather) * Mathf.Clamp01(((fromHi + Feather) - h) / Feather);
                 if (w <= 0f) continue;
                 int deg = Mathf.RoundToInt(shift * w);
