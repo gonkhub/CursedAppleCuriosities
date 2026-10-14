@@ -80,6 +80,15 @@ namespace CursedAppleCuriosities.Deadlock
     {
         public string Id = "";
         public Func<byte[], bool> Recolor = _ => false;
+        /// <summary>Only textures whose file name contains one of these are recoloured (empty = every texture): a jacket can change without the skin tones.</summary>
+        public string[] Only = Array.Empty<string>();
+
+        public bool Applies(string file)
+        {
+            if (Only.Length == 0) return true;
+            foreach (string part in Only) if (file.IndexOf(part, StringComparison.OrdinalIgnoreCase) >= 0) return true;
+            return false;
+        }
 
         /// <summary>
         /// Turns hues between fromLo and fromHi degrees by shift degrees (feathered over 15 degrees at each end),

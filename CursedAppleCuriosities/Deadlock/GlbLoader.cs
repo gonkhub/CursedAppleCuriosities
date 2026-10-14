@@ -343,7 +343,8 @@ namespace CursedAppleCuriosities.Deadlock
                         byImage[img] = tex;
                         var skinTex = new TexData?[skinCount];
                         for (int k = 0; k < skinCount && found; k++)
-                            skinTex[k] = HeroTextures.PrepareSkin(path!, skinRecolors![k].Id, skinRecolors[k].Recolor);
+                            if (skinRecolors![k].Applies(Path.GetFileName(path!)))
+                                skinTex[k] = HeroTextures.PrepareSkin(path!, skinRecolors[k].Id, skinRecolors[k].Recolor);
                         skinsByImage[img] = skinTex;
                     }
                     mat.Tex = tex;
