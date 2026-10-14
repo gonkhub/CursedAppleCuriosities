@@ -161,10 +161,11 @@ namespace CursedAppleCuriosities.Survivors.Bebop
 
         public static readonly HashSet<string> Locked = FrameworkAnims.Locked("uppercut", "hyper_charge", "hyper_fire", "hyper_end");
 
+        // Before Sounds: static fields initialise in order, and BuildSounds reads this.
+        public static readonly string[] Jazz = { "a", "b", "c", "d", "e", "f", "g", "h" };
+
         /// <summary>Deadlock sounds (user 2026-10-12: I pick and wire them). Humble Pie layers its beam loop with one of eight jazz loops.</summary>
         public static readonly DeadlockSound[] Sounds = BuildSounds();
-
-        public static readonly string[] Jazz = { "a", "b", "c", "d", "e", "f", "g", "h" };
 
         private static DeadlockSound[] BuildSounds()
         {
