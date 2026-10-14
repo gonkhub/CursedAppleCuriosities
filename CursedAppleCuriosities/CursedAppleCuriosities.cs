@@ -4,6 +4,7 @@ using CursedAppleCuriosities.Artifacts;
 using CursedAppleCuriosities.Deadlock;
 using CursedAppleCuriosities.Items;
 using CursedAppleCuriosities.Survivors.Abrams;
+using CursedAppleCuriosities.Survivors.Bebop;
 using CursedAppleCuriosities.Survivors.Celeste;
 using CursedAppleCuriosities.Survivors.Framework;
 using CursedAppleCuriosities.Survivors.GreyTalon;
@@ -146,7 +147,8 @@ namespace CursedAppleCuriosities
                 ("Shiv", ShivSurvivor.Init),
                 ("Mina", MinaSurvivor.Init),
                 ("Paradox", ParadoxSurvivor.Init),
-                ("Bebop", NextHeroes.Bebop.Init),   // frameworks: kits not designed yet (user, 2026-10-14)
+                ("Bebop", BebopSurvivor.Init),
+                // frameworks: kits not designed yet (user, 2026-10-14)
                 ("Ivy", NextHeroes.Ivy.Init),
                 ("Apollo", NextHeroes.Apollo.Init),
             };
