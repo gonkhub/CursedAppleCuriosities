@@ -23,16 +23,22 @@ namespace CursedAppleCuriosities.Survivors.Mina
         public const float DamagePerLevel = 2.4f;
         public const float BaseSpeed = 6.5f;            // Deadlock EMaxMoveSpeed
         public const float BaseRegen = 2f;              // Deadlock EBaseHealthRegen
-        // Deadlock gives her 2 stamina; every hero here gets at least the 3 / 1 / 1 the user set for new heroes.
+        // Deadlock's 2 stamina (user), and her umbrella hover instead (MinaHover).
         public static readonly DeadlockMovementProfile Movement = new DeadlockMovementProfile
         {
             Hero = Hero,
             Anim = MinaModel.Play,
-            StaminaPips = 3,
+            StaminaPips = 2,                   // Deadlock EStamina
             OutOfCombatSpeed = 1.6f / 6.5f,    // Deadlock ESprintSpeed over her run
             WallJumpUp = 22f,
             WallJumpPowerMin = 0.6f,
         };
+
+        // ---- passive: the umbrella hover (Deadlock: aiming down sights in the air floats her, ability_vampirebat_steallife's
+        // "vampirebat_floating": FallSpeedMax 3, MaxFloatTime 4). User: in RoR2 it's holding jump in the air. ----
+        public static float HoverFallSpeed = 3f;        // m/s at most while floating (Deadlock FallSpeedMax)
+        public static float HoverSeconds = 4f;          // per time in the air (Deadlock MaxFloatTime)
+        public const float HoverHoldDelay = 0.15f;      // jump held this long, falling, before she opens the umbrella (a tap is a jump)
 
         // ---- primary: her pistol (citadel_weapon_vampirebat_set: 7.31 a shot, 0.252 s, falloff 787 -> 1811 hu to 10%) ----
         public static float GunDamage = 0.9f;           // user: low damage, her damage is Love Bites
@@ -90,6 +96,8 @@ namespace CursedAppleCuriosities.Survivors.Mina
         {
             Movement.Bind(c, Section);
             BaseHealth = c.Bind(Section, "Base Health", BaseHealth, "Mina max health at level 1 (+27 per level).").Value;
+            HoverFallSpeed = c.Bind(Section, "Umbrella Hover - Fall Speed", HoverFallSpeed, "Fastest fall (m/s) while holding jump in the air.").Value;
+            HoverSeconds = c.Bind(Section, "Umbrella Hover - Duration", HoverSeconds, "Seconds of hover per time in the air.").Value;
             GunDamage = c.Bind(Section, "Pistol - Damage", GunDamage, "Damage coefficient per shot.").Value;
             GunCycle = c.Bind(Section, "Pistol - Time Between Shots", GunCycle, "Seconds between shots before attack speed.").Value;
             RakeDamage = c.Bind(Section, "Rake - Damage", RakeDamage, "Damage coefficient of the swipe.").Value;
@@ -154,6 +162,8 @@ namespace CursedAppleCuriosities.Survivors.Mina
             ("retreat_end", "vampirebat_in_air_loop_glide", false, "in_air", "full"), // reforming mid-air under the umbrella
             ("nox", "vampirebat_ability_ult_start", false, "nox_loop", "full"),
             ("nox_loop", "vampirebat_ability_ult_loop", true, "", "full"),
+            ("hover.in_air", "vampirebat_in_air_loop_glide", true, "", "full"),   // the umbrella hover (MinaModel.LocoSet)
+            ("hover.falling", "vampirebat_in_air_loop_glide", true, "", "full"),
             ("parry", "vampirebat_parry_to_idle", false, "locomotion", "full"),
             ("parry_air", "vampirebat_parry_to_idle", false, "in_air", "full"),
             ("death", "vampirebat_knockdown_large", false, "hold", "full"),
@@ -184,6 +194,9 @@ namespace CursedAppleCuriosities.Survivors.Mina
             new DeadlockSound { Id = "mina_nox_end", VpkPrefix = "sounds/abilities/vampirebat/a4_nox_nostra/vampirebat_nox_nostra_channel_end", Range = 60f },
             new DeadlockSound { Id = "mina_bat_hit", VpkPrefix = "sounds/abilities/vampirebat/a4_nox_nostra/vampirebat_nox_nostra_impact", Volume = 0.4f, Range = 40f, MinGap = 0.06f, PitchJitter = 0.08f },
             new DeadlockSound { Id = "mina_bat_whizby", VpkPrefix = "sounds/abilities/vampirebat/a4_nox_nostra/vampirebat_nox_nostra_whizby", Volume = 0.3f, Range = 20f, MinGap = 0.15f },
+            new DeadlockSound { Id = "mina_hover_start", VpkPrefix = "sounds/player/movement/mina/mina_umbrella_flight_start", Volume = 0.8f, Range = 30f, MinGap = 0.2f },
+            new DeadlockSound { Id = "mina_hover_loop", VpkPrefix = "sounds/player/movement/mina/mina_umbrella_flight_lp", Volume = 0.6f, Range = 30f },
+            new DeadlockSound { Id = "mina_hover_end", VpkPrefix = "sounds/player/movement/mina/mina_umbrella_flight_end", Volume = 0.8f, Range = 30f, MinGap = 0.2f },
             new DeadlockSound { Id = "mina_umbrella_open", VpkPrefix = "sounds/player/movement/mina/mina_umbrella_open", Volume = 0.8f, Range = 30f },
             new DeadlockSound { Id = "mina_umbrella_close", VpkPrefix = "sounds/player/movement/mina/mina_umbrella_close", Volume = 0.8f, Range = 30f },
             // VO by ability (Deadlock's signature order): 1 Rake, 2 Sanguine Retreat, 3 Love Bites, 4 Nox Nostra.

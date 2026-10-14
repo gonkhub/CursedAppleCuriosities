@@ -27,7 +27,7 @@ namespace CursedAppleCuriosities.Survivors.Mina
 
         public static GameObject? BodyPrefab, DisplayPrefab, BatProjectile;
         public static SurvivorDef? Survivor;
-        public static BuffDef? LoveMark, LoveWait, LoveStacksBuff;
+        public static BuffDef? LoveMark, LoveWait, LoveStacksBuff, HoverBuff;
         public static GameObject? TracerEffect, HitEffect, MuzzleEffect, SwipeEffect, SlashEffect, BlinkEffect, LoveBitesEffect;
 
         private static SkillDef? _gun, _rake, _retreat, _nox;
@@ -91,6 +91,7 @@ namespace CursedAppleCuriosities.Survivors.Mina
             LoveMark = Buff("CursedAppleMinaLoveBitesMark", new Color(0.9f, 0.2f, 0.35f), debuff: true, stack: true);
             LoveWait = Buff("CursedAppleMinaLoveBitesWait", new Color(0.45f, 0.2f, 0.25f), debuff: true, stack: false);
             LoveStacksBuff = Buff("CursedAppleMinaLoveBites", Color, debuff: false, stack: true);
+            HoverBuff = Buff("CursedAppleMinaHover", Color, debuff: false, stack: false, hidden: true);
         }
 
         private static BuffDef Buff(string name, Color color, bool debuff, bool stack, bool hidden = false)
@@ -168,6 +169,7 @@ namespace CursedAppleCuriosities.Survivors.Mina
             DeadlockMovement.Apply(body, MinaData.Movement);
             body.AddComponent<MinaGunAudio>();
             body.AddComponent<MinaRetreatRecast>();
+            body.AddComponent<MinaHover>();
 
             Transform model = body.GetComponent<ModelLocator>().modelTransform;
             model.gameObject.AddComponent<DeadlockModelSwap>().HeroKey = MinaData.Hero;
@@ -265,7 +267,7 @@ namespace CursedAppleCuriosities.Survivors.Mina
 
             LanguageAPI.Add(Token + "PASSIVE_NAME", "Love Bites");
             LanguageAPI.Add(Token + "PASSIVE_DESC",
-                $"Your damage builds Love Bites on enemies. When full, it bursts for <style=cIsDamage>{D(MinaData.LoveBitesDamage)} damage</style> and you gain a stack (resets each stage). " +
+                $"<style=cIsUtility>Hold jump in the air</style> to float on your umbrella for up to {MinaData.HoverSeconds:0}s. Your damage builds Love Bites on enemies. When full, it bursts for <style=cIsDamage>{D(MinaData.LoveBitesDamage)} damage</style> and you gain a stack (resets each stage). " +
                 $"The same enemy can't be Love Bitten again for <style=cIsUtility>{MinaData.LoveBitesTargetCooldown:0}s</style>.");
 
             LanguageAPI.Add(Token + "GUN_NAME", "Pistol");

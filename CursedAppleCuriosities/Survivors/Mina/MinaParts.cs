@@ -216,4 +216,70 @@ namespace CursedAppleCuriosities.Survivors.Mina
             if (_slot != null && _slot.stock > 0) _slot.DeductStock(1);
         }
     }
+
+    /// <summary>
+    /// Her umbrella hover (Deadlock: aiming down sights in the air; user: holding jump in the air). Owner: once she's falling with
+    /// jump held, her fall is capped at Deadlock's FallSpeedMax, for up to MaxFloatTime per time in the air. Every client: the
+    /// umbrella's flight sounds from the synced buff (the glide pose comes from MinaModel.LocoSet).
+    /// </summary>
+    public class MinaHover : MonoBehaviour
+    {
+        private CharacterBody _body = null!;
+        private float _held, _used;
+        private bool _on, _shown;
+        private DeadlockVoice? _loop;
+
+        private void Awake() => _body = GetComponent<CharacterBody>();
+
+        private void FixedUpdate()
+        {
+            if (_body.hasEffectiveAuthority) Steer();
+            Show();
+        }
+
+        private void Steer()
+        {
+            CharacterMotor? motor = _body.characterMotor;
+            InputBankTest? input = _body.inputBank;
+            if (motor == null || input == null) return;
+            if (motor.isGrounded) { _used = 0f; _held = 0f; Set(false); return; }
+            _held = input.jump.down ? _held + Time.fixedDeltaTime : 0f;
+            // Only in her normal movement: an ability that moves her (Retreat, Nox Nostra) takes precedence.
+            bool free = EntityStateMachine.FindByCustomName(gameObject, "Body")?.state is EntityStates.CursedApple.Deadlock.DeadlockMain;
+            bool want = free && _held >= MinaData.HoverHoldDelay && motor.velocity.y <= 0f && _used < MinaData.HoverSeconds;
+            if (want)
+            {
+                _used += Time.fixedDeltaTime;
+                Vector3 v = motor.velocity;
+                if (v.y < -MinaData.HoverFallSpeed) motor.velocity = new Vector3(v.x, -MinaData.HoverFallSpeed, v.z);
+            }
+            Set(want);
+        }
+
+        private void Set(bool on)
+        {
+            if (on == _on) return;
+            _on = on;
+            MinaNet.ToServer(new MinaHoverMessage { Body = gameObject, On = on });
+        }
+
+        private void Show()
+        {
+            bool on = MinaSurvivor.HoverBuff != null && _body.HasBuff(MinaSurvivor.HoverBuff);
+            if (on == _shown) return;
+            _shown = on;
+            if (on)
+            {
+                DeadlockSounds.Play("mina_hover_start", transform.position, gameObject);
+                _loop = DeadlockSounds.Loop("mina_hover_loop", gameObject, MinaData.HoverSeconds + 1f);
+            }
+            else
+            {
+                DeadlockSounds.Stop(_loop);
+                DeadlockSounds.Play("mina_hover_end", transform.position, gameObject);
+            }
+        }
+
+        private void OnDestroy() => DeadlockSounds.Stop(_loop);
+    }
 }

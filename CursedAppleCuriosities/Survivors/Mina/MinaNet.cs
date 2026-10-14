@@ -23,6 +23,7 @@ namespace CursedAppleCuriosities.Survivors.Mina
         {
             NetworkingAPI.RegisterMessageType<MinaRakeMessage>();
             NetworkingAPI.RegisterMessageType<MinaRetreatMessage>();
+            NetworkingAPI.RegisterMessageType<MinaHoverMessage>();
             GlobalEventManager.onServerDamageDealt += MinaLoveBites.OnDamage;
             Stage.onServerStageBegin += _ => MinaLoveStacks.ResetAll();
             DeadlockFallGuard.Hook();
@@ -110,6 +111,23 @@ namespace CursedAppleCuriosities.Survivors.Mina
                 body.healthComponent.Heal(body.healthComponent.fullHealth * MinaData.RakeKillHeal * kills, default(ProcChainMask));
                 EquipmentFx.Sound("mina_rake_heal", body.corePosition, body.gameObject);
             }
+        }
+    }
+
+    /// <summary>Owner to server: she opened or closed her umbrella (the hover buff shows it to everyone).</summary>
+    public class MinaHoverMessage : INetMessage
+    {
+        public GameObject? Body;
+        public bool On;
+
+        public void Serialize(NetworkWriter w) { w.Write(Body); w.Write(On); }
+        public void Deserialize(NetworkReader r) { Body = r.ReadGameObject(); On = r.ReadBoolean(); }
+
+        public void OnReceived()
+        {
+            if (!NetworkServer.active || Body == null || MinaSurvivor.HoverBuff == null || !Body.TryGetComponent(out CharacterBody b)) return;
+            if (On && !b.HasBuff(MinaSurvivor.HoverBuff)) b.AddBuff(MinaSurvivor.HoverBuff);
+            else if (!On) while (b.HasBuff(MinaSurvivor.HoverBuff)) b.RemoveBuff(MinaSurvivor.HoverBuff);
         }
     }
 
