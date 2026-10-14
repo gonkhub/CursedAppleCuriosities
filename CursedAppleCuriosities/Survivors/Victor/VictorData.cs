@@ -73,7 +73,7 @@ namespace CursedAppleCuriosities.Survivors.Victor
         public static float AuraMaxDamage = 6f;         // per second once fully ramped: 600% at 8 s (user; Deadlock MaxDPS 58)
         public static float AuraSelfMin = 0.011f;       // share of his max health per second at the start (Deadlock: 70% of the enemy DPS)
         public static float AuraSelfMax = 0.05f;        // ...and once ramped
-        public const float AuraTick = 0.25f;            // Deadlock TickRate
+        public const float AuraTick = 0.25f;            // Deadlock TickRate; attack speed shortens it (user, 2.0)
         public static float AuraProc = 0.5f;            // per tick (4 ticks a second), like Torment Pulse
         public static float AuraCooldown = 2f;          // after it ends (Deadlock AbilityCooldown); it stays on until toggled off or he dies (user)
         public const float AuraEndGrace = 0.3f;         // special again after this ends it early (Deadlock "End Aura")

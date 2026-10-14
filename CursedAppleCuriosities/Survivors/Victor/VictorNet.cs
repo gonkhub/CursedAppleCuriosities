@@ -362,15 +362,18 @@ namespace CursedAppleCuriosities.Survivors.Victor
             _age += Time.fixedDeltaTime;
             _tick -= Time.fixedDeltaTime;
             if (_tick > 0f) return;
-            _tick += VictorData.AuraTick;
+            // Attack speed ticks it faster (user, 2.0): each tick hits as hard, so its damage and procs rise with it.
+            float interval = VictorData.AuraTick / Mathf.Max(0.1f, _body.attackSpeed / Mathf.Max(0.01f, _body.baseAttackSpeed));
+            _tick += interval;
 
             float ramp = Mathf.Clamp01(_age / Mathf.Max(0.1f, VictorData.AuraRampSeconds)); // up to max over 8 s, then holds
             float coeff = Mathf.Lerp(VictorData.AuraMinDamage, VictorData.AuraMaxDamage, ramp) * VictorData.AuraTick;
             float radius = VictorData.AuraRadius * MysticExpansion.RadiusMultiplier(_body);
             foreach (HealthComponent hc in VictorNet.EnemiesIn(_body.corePosition, radius, _body.teamComponent.teamIndex))
                 VictorNet.Hit(_body, hc, coeff * _body.damage, _body.RollCrit(), VictorData.AuraProc, DamageSource.Special);
-            // It hurts him too, and can kill him (user): Reanimation catches that when it's ready.
-            float self = Mathf.Lerp(VictorData.AuraSelfMin, VictorData.AuraSelfMax, ramp) * VictorData.AuraTick * _body.healthComponent.fullHealth;
+            // It hurts him too, and can kill him (user): Reanimation catches that when it's ready. Per second, so faster
+            // ticks don't hurt him faster.
+            float self = Mathf.Lerp(VictorData.AuraSelfMin, VictorData.AuraSelfMax, ramp) * interval * _body.healthComponent.fullHealth;
             VictorNet.HurtSelf(_body, self, payment: false);
         }
     }

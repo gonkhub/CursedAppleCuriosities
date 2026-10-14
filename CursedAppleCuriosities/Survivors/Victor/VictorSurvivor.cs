@@ -287,7 +287,7 @@ namespace CursedAppleCuriosities.Survivors.Victor
 
             LanguageAPI.Add(Token + "AURA_NAME", "Aura of Suffering");
             LanguageAPI.Add(Token + "AURA_DESC",
-                $"Toggle an aura dealing <style=cIsDamage>{D(VictorData.AuraMinDamage)}-{D(VictorData.AuraMaxDamage)} damage per second</style> to nearby enemies, ramping up over {VictorData.AuraRampSeconds:0}s. <style=cIsHealth>It hurts you too</style>.");
+                $"Toggle an aura dealing <style=cIsDamage>{D(VictorData.AuraMinDamage)}-{D(VictorData.AuraMaxDamage)} damage per second</style> to nearby enemies, ramping up over {VictorData.AuraRampSeconds:0}s and faster with attack speed. <style=cIsHealth>It hurts you too</style>.");
         }
     }
 
