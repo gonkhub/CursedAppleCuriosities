@@ -1,5 +1,5 @@
 """A district's data block for MapSectionDef.cs, from its outline: the outline itself, the vent tunnels and their openings
-(sealed, never walked), the shop counters, the interactable spots (neutral camps, their spawns, item crates) and the
+(sealed, never walked), the shop counters, the climb ropes, the interactable spots (neutral camps, their spawns, item crates) and the
 subway "TELEPORTER" doorways inside it.
 
 Usage: section_consts.py <outline.json> <entsfull.json> <trig.json> [margin units, default 200]
@@ -44,6 +44,7 @@ print("        public static readonly float[] Outline = {" + ", ".join(f"{x}, {y
 print(block("VentTunnels", boxes("citadel_tunnel_trigger"), "the small-hero vent tunnels: no walking there"), end="")
 print(block("VentOpenings", boxes("citadel_passthrough_fake_wall"), "their openings: sealed"), end="")
 print(block("Shops", boxes("trigger_item_shop"), "Deadlock's shop counters: Curiosity shops"), end="")
+print(block("Ropes", boxes("citadel_trigger_climb_rope"), "climb ropes: a RoR2 geyser at each one's foot launches you to its top"), end="")
 tele = boxes("citadel_trigger_teleport")
 if tele: print(block("SubwayTeleports", tele, 'subway "TELEPORTER" doorways: walking in sends you to the teleporter'), end="")
 else: print('        // SubwayTeleports: no citadel_trigger_teleport in trig.json near the outline: export those triggers or set the doorway by hand')

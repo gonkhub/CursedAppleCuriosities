@@ -1,4 +1,4 @@
-"""Trigger volumes of a whole map (read-only on Deadlock): every vent tunnel, vent opening, shop counter, shop tunnel and
+"""Trigger volumes of a whole map (read-only on Deadlock): every vent tunnel, vent opening, shop counter, shop tunnel, climb rope and
 subway teleporter doorway, as axis-aligned bounds around each trigger's origin. The input of section_consts.py.
 
 Usage: triggers.py <citadel dir> <map name> <entsfull.json> <work dir> <out trig.json>
@@ -9,7 +9,7 @@ sys.path.insert(0, os.path.dirname(os.path.abspath(__file__)))
 from mapscan import CLI, triangles
 
 CLASSES = {"citadel_tunnel_trigger", "citadel_passthrough_fake_wall", "trigger_item_shop", "citadel_trigger_shop_tunnel",
-           "citadel_trigger_teleport", "citadel_trigger_interior"}
+           "citadel_trigger_teleport", "citadel_trigger_interior", "citadel_trigger_climb_rope"}
 citadel, mapname, ents_p, work, out_p = sys.argv[1:6]
 def model_of(e): return e.get("model", "").split('"')[-1]  # the dump writes resource_name:"path"
 ents = [e for e in json.load(open(ents_p)) if e.get("classname") in CLASSES and model_of(e).endswith(".vmdl")]

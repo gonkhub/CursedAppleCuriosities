@@ -42,6 +42,8 @@ namespace CursedAppleCuriosities.Stages.DeadlockMap
         public string[] HiddenMaterials = System.Array.Empty<string>();
         /// <summary>Where interactables (chests, shrines...) may spawn: near these points (x, y, z units), Deadlock's neutral camps.</summary>
         public int[] InteractableSpots = System.Array.Empty<int>();
+        /// <summary>Deadlock's climb ropes (min x, y, z, max x, y, z units): a RoR2 geyser at each one's foot launches you to its top.</summary>
+        public int[] Ropes = System.Array.Empty<int>();
         /// <summary>Doorways that send whoever walks in to the teleporter (min x, y, z, max x, y, z units).</summary>
         public int[] SubwayTeleports = System.Array.Empty<int>();
         /// <summary>
@@ -77,6 +79,7 @@ namespace CursedAppleCuriosities.Stages.DeadlockMap
             NewtAltars = SunkenPlazaData.NewtAltars,
             InteractableSpots = SunkenPlazaData.InteractableSpots,
             SubwayTeleports = SunkenPlazaData.SubwayTeleports,
+            Ropes = SunkenPlazaData.Ropes,
         };
 
         /// <summary>Haunted Lot: the Hidden King side west of the blue lane, around the yellow lane's southern Walker (stage 1). Newt altars and player spawns: to be marked in game.</summary>
@@ -98,6 +101,7 @@ namespace CursedAppleCuriosities.Stages.DeadlockMap
             Shops = HauntedLotData.Shops,
             SubwayTeleports = HauntedLotData.SubwayTeleports,
             InteractableSpots = HauntedLotData.InteractableSpots,
+            Ropes = HauntedLotData.Ropes,
         };
 
         /// <summary>Umbria University: the Archmother side east of the blue lane, around the purple lane's northern Walker (stage 2). Newt altars and player spawns: to be marked in game.</summary>
@@ -119,6 +123,7 @@ namespace CursedAppleCuriosities.Stages.DeadlockMap
             Shops = UmbriaData.Shops,
             SubwayTeleports = UmbriaData.SubwayTeleports,
             InteractableSpots = UmbriaData.InteractableSpots,
+            Ropes = UmbriaData.Ropes,
         };
 
         /// <summary>
@@ -143,6 +148,7 @@ namespace CursedAppleCuriosities.Stages.DeadlockMap
             Shops = ChinatownData.Shops,
             SubwayTeleports = ChinatownData.SubwayTeleports,
             InteractableSpots = ChinatownData.InteractableSpots,
+            Ropes = ChinatownData.Ropes,
         };
 
         /// <summary>Every district, in the order they are converted (the first finishes first).</summary>
@@ -169,6 +175,11 @@ namespace CursedAppleCuriosities.Stages.DeadlockMap
 
     internal static class SunkenPlazaData
     {
+        public static readonly int[] Ropes = { // min x, y, z, max x, y, z
+            -4024, 744, 272, -3864, 904, 1088,
+            -6528, 2016, 256, -6336, 2208, 1056,
+            -1848, 4928, 446, -1656, 5120, 1351,
+        };
         // Outline (Deadlock units, x/y), from the yellow and blue lane ziplines (tools/mapstage/selpoly.py), widened by the
         // user 2026-10-13: the street outside the yellow-side base approach, the whole NYSE block, the strip west of the yellow lane; south edge on the railing over the trench;
         // then redrawn by the user (west and north to the map's natural edge, no kink at the Bank).
@@ -249,6 +260,15 @@ namespace CursedAppleCuriosities.Stages.DeadlockMap
     /// <summary>Haunted Lot: the Hidden King side west of the blue lane, around the yellow lane's southern Walker. Traced from the user's drawing (2026-10-14); data by tools/mapstage/section_consts.py.</summary>
     internal static class HauntedLotData
     {
+        public static readonly int[] Ropes = { // min x, y, z, max x, y, z
+            -832, -1184, -384, -672, -1024, 732,
+            -4024, -640, 272, -3864, -480, 1088,
+            -4752, -3104, 400, -4560, -2912, 1344,
+            -4192, -3600, 384, -4000, -3408, 1344,
+            -4664, -1160, 256, -4472, -968, 1200,
+            -3292, -2240, 270, -3100, -2112, 1030,
+            -7344, -2512, 271, -7152, -2320, 1152,
+        };
         public static readonly float[] Outline = {-9055, -157, -8268, -118, -7835, -197, -7717, -354, -7618, -236, -6004, -236, -4547, -276, -4331, -354, -925, -354, -472, -433, -433, -2283, -965, -2717, -1398, -2835, -1909, -2795, -2106, -2992, -1890, -3268, -1811, -3622, -1811, -4882, -2008, -5276, -2795, -5315, -2953, -5472, -3051, -6220, -3248, -6378, -3189, -7323, -4567, -7323, -5335, -6929, -5728, -6575, -6181, -6339, -6693, -5787, -6791, -5787, -7559, -4724, -7953, -4331, -8366, -4331, -8701, -4213, -8957, -3622, -9055, -2953 };
         public static readonly int[] VentTunnels = { // min x, y, z, max x, y, z
             -832, -1696, -640, 1280, -1408, -192,
@@ -323,6 +343,12 @@ namespace CursedAppleCuriosities.Stages.DeadlockMap
     /// <summary>Umbria University: the Archmother side east of the blue lane, around the purple lane's northern Walker. Traced from the user's drawing (2026-10-14); data by tools/mapstage/section_consts.py.</summary>
     internal static class UmbriaData
     {
+        public static readonly int[] Ropes = { // min x, y, z, max x, y, z
+            672, 1024, -384, 832, 1184, 728,
+            6704, 2432, 248, 6896, 2624, 1152,
+            3864, 480, 320, 4024, 640, 1088,
+            4336, 2784, -120, 4464, 2912, 1714,
+        };
         public static readonly float[] Outline = {669, 433, 650, 2402, 1083, 2717, 1280, 2717, 1654, 2913, 1929, 3189, 1949, 5039, 3071, 5118, 3425, 5394, 3445, 7441, 4311, 7362, 4764, 6969, 5138, 7008, 5413, 6850, 6378, 6732, 7323, 6299, 7776, 6260, 7815, 6181, 9252, 6142, 9311, 3701, 9134, 3543, 8878, 3543, 8701, 3346, 8701, 512, 8602, 394, 7480, 394, 7067, 512, 5276, 472, 5177, 394 };
         public static readonly int[] VentTunnels = { // min x, y, z, max x, y, z
             -1328, 1312, -640, 832, 1696, -184,
@@ -382,6 +408,11 @@ namespace CursedAppleCuriosities.Stages.DeadlockMap
     /// <summary>Chinatown: the Hidden King side east of the blue lane, around the purple lane's southern Walker. Traced from the user's drawing (2026-10-14); data by tools/mapstage/section_consts.py.</summary>
     internal static class ChinatownData
     {
+        public static readonly int[] Ropes = { // min x, y, z, max x, y, z
+            6336, -2400, 256, 6528, -2208, 1056,
+            3864, -904, 272, 4024, -744, 1130,
+            3008, -1968, 400, 3168, -1808, 2630,
+        };
         public static readonly float[] Outline = {-217, -5354, -177, -3386, 197, -3386, 433, -3110, 531, -472, 610, -433, 2480, -433, 3720, -591, 9114, -591, 9016, -1654, 9016, -3346, 8740, -5079, 8386, -5276, 7126, -5276, 6949, -5472, 6890, -6142, 6732, -6260, 5315, -6260, 5118, -6457, 5157, -7795, 5079, -7874, 1201, -7795, 1083, -7441, 925, -7283, 610, -7244, 492, -7087, 433, -5630, 276, -5472 };
         public static readonly int[] VentTunnels = { // min x, y, z, max x, y, z
             -832, -1696, -640, 1280, -1408, -192,

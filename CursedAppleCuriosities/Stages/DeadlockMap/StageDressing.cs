@@ -23,6 +23,7 @@ namespace CursedAppleCuriosities.Stages.DeadlockMap
             Barrier(root.transform, section, playable);
             Seals(root.transform, section);
             SubwayDoors(root.transform, section);
+            RopeGeysers(root.transform, section);
             KillFloor(root.transform, playable);
             Sun(scene, sky);
         }
@@ -73,6 +74,43 @@ namespace CursedAppleCuriosities.Stages.DeadlockMap
                 go.transform.localPosition = (p0 + p1) / 2f;
                 go.AddComponent<BoxCollider>().size = new Vector3(Mathf.Abs(p1.x - p0.x), Mathf.Abs(p1.y - p0.y), Mathf.Abs(p1.z - p0.z));
             }
+        }
+
+        private const string GeyserPrefab = "RoR2/Base/Common/Props/Geyser.prefab";
+
+        /// <summary>
+        /// Deadlock's climb ropes, as RoR2 geysers: one at the floor under each rope, launching you straight up to 3 m above
+        /// its top (air control on, so you steer onto the ledge; no fall damage on the way down). Every machine places its own.
+        /// </summary>
+        private static void RopeGeysers(Transform parent, SectionSpace section)
+        {
+            int[] b = section.Def.Ropes;
+            if (b.Length < 6) return;
+            GameObject? prefab = UnityEngine.AddressableAssets.Addressables.LoadAssetAsync<GameObject>(GeyserPrefab).WaitForCompletion();
+            if (prefab == null) { CursedAppleCuriositiesPlugin.Logger?.LogWarning("[DeadlockMap] no geyser prefab: ropes left as they are"); return; }
+            float g = Mathf.Max(1f, -Physics.gravity.y);
+            int placed = 0;
+            for (int i = 0; i + 5 < b.Length; i += 6)
+            {
+                Vector3 foot = parent.TransformPoint(section.ToSection(new Vector3((b[i] + b[i + 3]) / 2f, (b[i + 1] + b[i + 4]) / 2f, b[i + 2])));
+                Vector3 top = parent.TransformPoint(section.ToSection(new Vector3((b[i] + b[i + 3]) / 2f, (b[i + 1] + b[i + 4]) / 2f, b[i + 5])));
+                if (!Physics.Raycast(foot + Vector3.up * 3f, Vector3.down, out RaycastHit hit, 40f, LayerIndex.world.mask, QueryTriggerInteraction.Ignore)) continue;
+                float rise = Mathf.Max(4f, top.y - hit.point.y + 3f);
+                float v = Mathf.Sqrt(2f * g * rise);
+                GameObject geyser = UnityEngine.Object.Instantiate(prefab, hit.point, Quaternion.identity, parent);
+                geyser.name = "RopeGeyser";
+                foreach (JumpVolume jv in geyser.GetComponentsInChildren<JumpVolume>(true))
+                {
+                    jv.targetElevationTransform = null;
+                    jv.alignJumpVelocityToTransform = false;
+                    jv.jumpVelocity = Vector3.up * v;
+                    jv.time = v / g;
+                    jv.AllowAirControl = true;
+                    jv.disableFallDamage = true;
+                }
+                placed++;
+            }
+            CursedAppleCuriositiesPlugin.Logger?.LogInfo($"[DeadlockMap] {placed} climb ropes made geysers");
         }
 
         /// <summary>Deadlock's subway "TELEPORTER" doorways: whoever walks in comes out at the stage's teleporter.</summary>

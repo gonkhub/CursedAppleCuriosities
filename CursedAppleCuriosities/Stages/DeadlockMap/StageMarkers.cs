@@ -76,7 +76,7 @@ namespace CursedAppleCuriosities.Stages.DeadlockMap
         }
 
         [ConCommand(commandName = "cac_map_goto", flags = ConVarFlags.None,
-            helpText = "Cursed Apple: jump to a spot in the current Deadlock district: arrival (or plaza: where players arrive), statue, shop1, shop2, ..., subway (subwayin: into its doorway), or x y z (section space, as cac_map_mark writes it).")]
+            helpText = "Cursed Apple: jump to a spot in the current Deadlock district: arrival (or plaza: where players arrive), statue, shop1, shop2, ..., subway (subwayin: into its doorway), rope1, rope2, ... (onto a rope's geyser), or x y z (section space, as cac_map_mark writes it).")]
         private static void CCGoto(ConCommandArgs args)
         {
             CharacterBody? body = LocalUserManager.GetFirstLocalUser()?.cachedBody;
@@ -90,6 +90,13 @@ namespace CursedAppleCuriosities.Stages.DeadlockMap
             int[]? box = null;
             if (where.StartsWith("shop") && int.TryParse(where.Substring(4), out int n) && n >= 1 && n * 6 <= def.Shops.Length) box = def.Shops[((n - 1) * 6)..(n * 6)];
             else if (where.StartsWith("subway") && def.SubwayTeleports.Length >= 6) box = def.SubwayTeleports[0..6];
+            else if (where.StartsWith("rope") && int.TryParse(where.Substring(4), out int r) && r >= 1 && r * 6 <= def.Ropes.Length)
+            {
+                int[] rb = def.Ropes[((r - 1) * 6)..(r * 6)];
+                rb[1] = rb[4] = (rb[1] + rb[4]) / 2 + 200; // centred, then backed off as for the other boxes: onto its geyser
+                rb[5] = rb[2] + 120;                       // at its foot, not its top
+                box = rb;
+            }
             if (args.Count >= 3 && float.TryParse(args.GetArgString(0), NumberStyles.Float, CultureInfo.InvariantCulture, out float gx)
                 && float.TryParse(args.GetArgString(1), NumberStyles.Float, CultureInfo.InvariantCulture, out float gy)
                 && float.TryParse(args.GetArgString(2), NumberStyles.Float, CultureInfo.InvariantCulture, out float gz))
