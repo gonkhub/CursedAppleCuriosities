@@ -27,6 +27,8 @@ namespace CursedAppleCuriosities.Survivors.Apollo
             MuzzleName = ApolloSurvivor.MuzzleName,
             Anims = ApolloData.Anims,
             RootLocked = ApolloData.Locked,
+            ItemAnchors = ApolloItemDisplays.Anchors,
+            HideMeshes = new[] { "head_ui_smug_reduced", "head_ui_cocky", "head_ui_smug" }, // menu-portrait heads over his real one
         };
 
         public static void Play(GameObject bodyObject, string state) => DeadlockModelSwap.Play(bodyObject, state);
@@ -75,6 +77,7 @@ namespace CursedAppleCuriosities.Survivors.Apollo
             CreateSkills();
             BodyPrefab = CreateBody();
             DisplayPrefab = CreateDisplay();
+            ApolloItemDisplays.Register();
             CreateSurvivor();
             AddLanguage();
             ApolloNet.Register();

@@ -27,6 +27,7 @@ namespace CursedAppleCuriosities.Survivors.Ivy
             MuzzleName = IvySurvivor.MuzzleName,
             Anims = IvyData.Anims,
             RootLocked = IvyData.Locked,
+            ItemAnchors = IvyItemDisplays.Anchors,
         };
 
         public static void Play(GameObject bodyObject, string state) => DeadlockModelSwap.Play(bodyObject, state);
@@ -82,6 +83,7 @@ namespace CursedAppleCuriosities.Survivors.Ivy
             CreateSkills();
             BodyPrefab = CreateBody();
             DisplayPrefab = CreateDisplay();
+            IvyItemDisplays.Register();
             CreateSurvivor();
             AddLanguage();
             IvyNet.Register();

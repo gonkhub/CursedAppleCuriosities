@@ -28,7 +28,13 @@ HEROES = {"abrams": {"scale": 1.2, "hide": [], "skip": ("gun_model", "book_model
           # Paradox (hero_chrono): the holstered rifle is hidden in game; items skip the rifle in her hands.
           "paradox": {"scale": 1.08, "hide": ["chrono_gun_on_hip"], "skip": (".chrono_gun_model",), "glb": "chrono"},
           # Shiv: items skip his shotgun.
-          "shiv": {"scale": 1.08, "hide": [], "skip": (".gun",)}}
+          "shiv": {"scale": 1.08, "hide": [], "skip": (".gun",)},
+          # Bebop: a big robot; items skip his gun arm (gun, hand, forearm).
+          "bebop": {"scale": 1.2, "hide": [], "skip": (".bebop_gun_", ".bebop_hand", ".bebop_forearm")},
+          # Ivy: items skip her gun.
+          "ivy": {"scale": 1.08, "hide": [], "skip": (".gun",)},
+          # Apollo (hero_fencer): menu heads hidden as in game; items skip his sword.
+          "apollo": {"scale": 1.08, "hide": ["head_ui_smug_reduced", "head_ui_cocky", "head_ui_smug"], "skip": (".sword_model",), "glb": "fencer"}}
 GLB = os.environ.get("HERO_GLB") or os.path.join(os.environ["USERPROFILE"], "AppData", "LocalLow", "Hopoo Games, LLC", "Risk of Rain 2", "CursedApple", "deadlock", "models", HEROES[HERO].get("dir", HERO), HEROES[HERO].get("glb", HERO) + ".glb")
 BLENDER = r"C:\Program Files\Blender Foundation\Blender 5.1\blender.exe"
 
