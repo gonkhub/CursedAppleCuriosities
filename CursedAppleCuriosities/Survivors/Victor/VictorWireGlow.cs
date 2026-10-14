@@ -76,7 +76,7 @@ namespace CursedAppleCuriosities.Survivors.Victor
 
         private void LateUpdate()
         {
-            bool full = VictorSurvivor.BatteryBuff != null && _body.GetBuffCount(VictorSurvivor.BatteryBuff) >= VictorData.BatteryFull
+            bool full = VictorBatterySkillDef.Charges(_body) > 0 // a charge ready
                 && _body.healthComponent != null && _body.healthComponent.alive;
             if (full && _strands.Count == 0 && Time.unscaledTime >= _nextTry) { _nextTry = Time.unscaledTime + 2f; Build(); }
             bool show = full && _hero != null && _hero.activeInHierarchy && !VictorReassembly.IsHidden(_hero); // hidden with his model (Reanimation's parts, cloak)

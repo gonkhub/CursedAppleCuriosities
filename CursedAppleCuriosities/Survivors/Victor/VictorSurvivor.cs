@@ -31,7 +31,7 @@ namespace CursedAppleCuriosities.Survivors.Victor
 
         public static GameObject? BodyPrefab, DisplayPrefab;
         public static SurvivorDef? Survivor;
-        public static BuffDef? BatteryBuff, JumpstartBuff, AuraBuff, ReanimatingBuff, ReviveCooldownBuff, ReviveSlow;
+        public static BuffDef? BatteryBuff, BatteryChargesBuff, JumpstartBuff, AuraBuff, ReanimatingBuff, ReviveCooldownBuff, ReviveSlow;
 
         public static GameObject? TracerEffect, HitEffect, MuzzleEffect, BoltTracer, ZapEffect, WaveEffect, BlastEffect;
         public static Material? IndicatorMaterial; // the aura ring (Abrams' Siphon Life ring material)
@@ -86,7 +86,8 @@ namespace CursedAppleCuriosities.Survivors.Victor
 
         private static void CreateBuffs()
         {
-            BatteryBuff = Buff("CursedAppleVictorBattery", Color, debuff: false, stack: true);
+            BatteryBuff = Buff("CursedAppleVictorBattery", Color, debuff: false, stack: true); // the charge filling, 0..100 %
+            BatteryChargesBuff = Buff("CursedAppleVictorBatteryCharges", Color, debuff: false, stack: true, hidden: true); // charges ready
             JumpstartBuff = Buff("CursedAppleVictorJumpstart", new Color(0.5f, 0.85f, 0.5f), debuff: false, stack: true);
             AuraBuff = Buff("CursedAppleVictorAura", new Color(0.7f, 0.7f, 0.7f), debuff: false, stack: false);
             ReanimatingBuff = Buff("CursedAppleVictorReanimating", Color, debuff: false, stack: false);
@@ -127,6 +128,9 @@ namespace CursedAppleCuriosities.Survivors.Victor
             _battery = Skill<VictorBatterySkillDef>("Battery", typeof(FirePainBattery), "Weapon", VictorData.BatteryCooldown, InterruptPriority.Skill);
             _battery.mustKeyPress = true;
             _battery.cancelSprintingOnActivation = true;
+            // Its stock is the charges the battery holds (one per stock: Backup Magazine adds more), never time.
+            _battery.baseRechargeInterval = 0f;
+            _battery.rechargeStock = 0;
 
             _jumpstart = Skill<SkillDef>("Jumpstart", typeof(Jumpstart), "Weapon", VictorData.JumpstartCooldown, InterruptPriority.Skill);
             _jumpstart.mustKeyPress = true;
@@ -279,7 +283,7 @@ namespace CursedAppleCuriosities.Survivors.Victor
 
             LanguageAPI.Add(Token + "BATTERY_NAME", "Pain Battery");
             LanguageAPI.Add(Token + "BATTERY_DESC",
-                $"<style=cIsHealth>Charges from damage you take</style>. When full, fire {VictorData.BatteryBolts} bolts for <style=cIsDamage>{D(VictorData.BatteryDamage)} damage</style>. Each enemy hit <style=cIsHealing>heals {P(VictorData.BatteryHealMissing)} of missing health</style>.");
+                $"<style=cIsHealth>Charges from damage you take</style>. Each full charge fires {VictorData.BatteryBolts} bolts for <style=cIsDamage>{D(VictorData.BatteryDamage)} damage</style>. Each enemy hit <style=cIsHealing>heals {P(VictorData.BatteryHealMissing)} of missing health</style>.");
 
             LanguageAPI.Add(Token + "JUMPSTART_NAME", "Jumpstart");
             LanguageAPI.Add(Token + "JUMPSTART_DESC",
