@@ -70,6 +70,7 @@ namespace CursedAppleCuriosities.Survivors.Shiv
         public static float DashCooldownPerHit = 1f;    // user: -1 s per enemy struck
         public const float DashMetres = 12f;            // Deadlock DashRange
         public const float DashSpeed = 61f;             // Deadlock DashSpeed 2400 hu/s
+        public const float AirAimPitch = 80f;           // in the air, Slice'n'Dice and Killing Blow follow the aim this far up or down (user 2.5)
         public const float DashRadius = 2.5f;           // Deadlock DashRadius
         public const float DashCastDelay = 0.1f;        // Deadlock AbilityCastDelay 0.25: shortened, RoR2 is faster
 

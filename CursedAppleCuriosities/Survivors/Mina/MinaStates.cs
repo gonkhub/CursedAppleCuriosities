@@ -105,8 +105,10 @@ namespace EntityStates.CursedApple.Mina
                          .RefreshCandidates().FilterCandidatesByHurtBoxTeam(TeamMask.GetEnemyTeams(GetTeam())).FilterCandidatesByDistinctHurtBoxEntities().GetHurtBoxes())
             {
                 if (h.healthComponent == null) continue;
-                Vector3 to = h.transform.position - characterBody.corePosition;
-                if (to.sqrMagnitude > 1f && Vector3.Angle(aim.direction, to) > MinaData.RakeConeDeg * 0.5f) continue;
+                // To the nearest point of its hitbox, not its centre: big enemies' centres sat outside the cone (user 2.5).
+                Vector3 near = h.collider != null ? h.collider.ClosestPoint(characterBody.corePosition) : h.transform.position;
+                Vector3 to = near - characterBody.corePosition;
+                if (to.magnitude > MinaData.RakeCloseRange && Vector3.Angle(aim.direction, to) > MinaData.RakeConeDeg * 0.5f) continue;
                 if (!caught.Contains(h.healthComponent.gameObject)) caught.Add(h.healthComponent.gameObject);
             }
             if (MinaSurvivor.SwipeEffect != null)

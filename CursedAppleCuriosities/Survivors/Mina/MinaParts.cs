@@ -156,7 +156,7 @@ namespace CursedAppleCuriosities.Survivors.Mina
             var holder = new GameObject("MinaBatHolder").transform;
             holder.SetParent(transform, false);
             holder.localScale = Vector3.one / Mathf.Max(0.01f, transform.lossyScale.x);
-            MinaBatVisual.Build(holder, 0.3f); // much smaller (user 2.5; was 0.6)
+            MinaBatVisual.Build(holder, 0.14f); // much smaller again (user 2.5; was 0.6, then 0.3)
         }
     }
 

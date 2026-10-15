@@ -52,8 +52,9 @@ namespace CursedAppleCuriosities.Survivors.Mina
         public const float RakeMissingCap = 10f;        // that extra is capped at this many times her damage (bosses' huge health bars)
         public static float RakeKillHeal = 0.1f;        // share of her max health per kill (Deadlock RakeHealPerKill 25)
         public static float RakeCooldown = 6f;          // Deadlock 16
-        public static float RakeRange = 10f;            // Deadlock AbilityCastRange
-        public const float RakeConeDeg = 60f;           // Deadlock TargetingConeAngle (whole cone)
+        public static float RakeRange = 12f;            // Deadlock AbilityCastRange 10, a little more (user 2.5: too hard to hit)
+        public const float RakeConeDeg = 110f;          // whole cone (Deadlock TargetingConeAngle 60: too narrow from RoR2's camera, user 2.5)
+        public const float RakeCloseRange = 3.5f;       // anything this close is raked, whatever the angle
         public const float RakeHop = 5f;                // Deadlock MiniJumpVelocity 200 hu/s, in the air
         public const float RakeCastDelay = 0.1f;        // Deadlock AbilityCastDelay
 

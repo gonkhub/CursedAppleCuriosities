@@ -193,8 +193,11 @@ namespace EntityStates.CursedApple.Shiv
             DeadlockSounds.Play("shiv_dash_cast", transform.position, gameObject);
             DeadlockHeroVoice.Power("shiv_vo_power2", gameObject);
             Vector3 d = GetAimRay().direction;
-            // Deadlock: the dash follows the camera, but not straight up or down.
-            float pitch = Mathf.Clamp(Mathf.Asin(Mathf.Clamp(d.y, -1f, 1f)) * Mathf.Rad2Deg, -35f, 35f);
+            // Deadlock: the dash follows the camera, but not straight up or down. In the air it follows the camera's pitch much further
+            // (user 2.5), so he can cut enemies above or below him.
+            bool air = characterMotor != null && !characterMotor.isGrounded;
+            float maxPitch = air ? ShivData.AirAimPitch : 35f;
+            float pitch = Mathf.Clamp(Mathf.Asin(Mathf.Clamp(d.y, -1f, 1f)) * Mathf.Rad2Deg, -maxPitch, maxPitch);
             Vector3 flat = new Vector3(d.x, 0f, d.z);
             flat = flat.sqrMagnitude > 1e-4f ? flat.normalized : characterDirection.forward;
             _dir = Quaternion.AngleAxis(-pitch, Vector3.Cross(Vector3.up, flat)) * flat;
@@ -261,6 +264,7 @@ namespace EntityStates.CursedApple.Shiv
     public class KillingBlow : BaseSkillState
     {
         private Vector3 _dir;
+        private bool _air;
         private float _time, _windup = 0.12f;
         private bool _ended;
         private readonly HashSet<HealthComponent> _hit = new HashSet<HealthComponent>();
@@ -272,8 +276,12 @@ namespace EntityStates.CursedApple.Shiv
             DeadlockSounds.Play("shiv_lunge_cast", transform.position, gameObject);
             DeadlockHeroVoice.Power("shiv_vo_power4", gameObject);
             Vector3 d = GetAimRay().direction;
-            _dir = new Vector3(d.x, 0f, d.z);
-            _dir = _dir.sqrMagnitude > 1e-4f ? _dir.normalized : characterDirection.forward;
+            Vector3 flat = new Vector3(d.x, 0f, d.z);
+            flat = flat.sqrMagnitude > 1e-4f ? flat.normalized : characterDirection.forward;
+            // On the ground it runs along the ground with Deadlock's hop; in the air it goes where he aims, up or down (user 2.5).
+            _air = characterMotor != null && !characterMotor.isGrounded;
+            float pitch = _air ? Mathf.Clamp(Mathf.Asin(Mathf.Clamp(d.y, -1f, 1f)) * Mathf.Rad2Deg, -ShivData.AirAimPitch, ShivData.AirAimPitch) : 0f;
+            _dir = Quaternion.AngleAxis(-pitch, Vector3.Cross(Vector3.up, flat)) * flat;
             _time = ShivData.LungeMetres * MysticExpansion.RadiusMultiplier(characterBody) / ShivData.LungeSpeed;
             if (isAuthority && characterMotor != null)
             {
@@ -288,13 +296,13 @@ namespace EntityStates.CursedApple.Shiv
             base.FixedUpdate();
             if (!isAuthority || characterMotor == null || _ended) return;
             float dt = Time.fixedDeltaTime;
-            characterDirection.forward = _dir;
+            characterDirection.forward = new Vector3(_dir.x, 0f, _dir.z);
             characterMotor.moveDirection = Vector3.zero;
             if (fixedAge < _windup) { characterMotor.velocity = Vector3.zero; return; }
             float t = fixedAge - _windup;
             // Along the ground with Deadlock's hop: up and back down over the lunge (a parabola's slope each tick).
             float u = Mathf.Clamp01(t / _time);
-            float rise = ShivData.LungeHop * 4f * (1f - 2f * u) / Mathf.Max(0.05f, _time);
+            float rise = _air ? 0f : ShivData.LungeHop * 4f * (1f - 2f * u) / Mathf.Max(0.05f, _time);
             characterMotor.velocity = Vector3.zero;
             characterMotor.rootMotion += (_dir * ShivData.LungeSpeed + Vector3.up * rise) * dt;
             if (Contact()) return;

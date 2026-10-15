@@ -189,6 +189,14 @@ namespace CursedAppleCuriosities.Survivors.Shiv
         private float _nextTick;
         private CharacterBody _body = null!;
         [System.ThreadStatic] private static bool _ticking;
+        /// <summary>Bloodletting's own ticks: never deferred again, wherever and whenever they reach TakeDamage (user 2.5: it re-deferred itself).</summary>
+        private static readonly System.Runtime.CompilerServices.ConditionalWeakTable<DamageInfo, object> Ticks = new System.Runtime.CompilerServices.ConditionalWeakTable<DamageInfo, object>();
+
+        /// <summary>One of Bloodletting's ticks (by identity, or by its signature: a silent bleed-coloured DoT with no procs).</summary>
+        private static bool IsTick(DamageInfo info) =>
+            Ticks.TryGetValue(info, out _) ||
+            info.damageColorIndex == DamageColorIndex.Bleed && info.procCoefficient == 0f
+            && (info.damageType.damageType & (DamageType.DoT | DamageType.Silent)) == (DamageType.DoT | DamageType.Silent);
 
         /// <summary>Health still to drain (every client).</summary>
         public float Pending { get; set; }
@@ -201,7 +209,7 @@ namespace CursedAppleCuriosities.Survivors.Shiv
             {
                 ShivBloodletting? b = null;
                 Pool? added = null;
-                if (NetworkServer.active && !_ticking && info != null && !info.rejected && info.damage > 0f && self.alive && self.TryGetComponent(out b))
+                if (NetworkServer.active && !_ticking && info != null && !IsTick(info) && !info.rejected && info.damage > 0f && self.alive && self.TryGetComponent(out b))
                     added = b!.Defer(info);
                 orig(self, info);
                 if (added != null && info!.rejected) { b!._pools.Remove(added); b.Sync(); } // blocked after all (Tougher Times, a ward): nothing to drain
@@ -260,6 +268,7 @@ namespace CursedAppleCuriosities.Survivors.Shiv
                     damageColorIndex = DamageColorIndex.Bleed,
                     damageType = DamageType.DoT | DamageType.BypassBlock | DamageType.BypassOneShotProtection | DamageType.Silent,
                 };
+                Ticks.Add(di, di);
                 _ticking = true;
                 try { hc.TakeDamage(di); }
                 finally { _ticking = false; }

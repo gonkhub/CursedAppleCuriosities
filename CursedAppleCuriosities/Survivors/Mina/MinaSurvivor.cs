@@ -81,7 +81,7 @@ namespace CursedAppleCuriosities.Survivors.Mina
             if (pc == null) return;
             GameObject? ghost = Kit.Recoloured(pc.ghostPrefab ?? TryLoad<GameObject>("RoR2/Base/Mage/MageFireboltGhost.prefab"), "CursedAppleMinaBatGhost", Hue, effect: false);
             if (ghost == null) return;
-            ghost.transform.localScale *= 0.2f; // the glow around a bat, halved with the bat (user 2.5)
+            ghost.transform.localScale *= 0.1f; // the glow around a bat, shrunk with the bat (user 2.5)
             ghost.AddComponent<MinaBatGhost>();
             pc.ghostPrefab = ghost;
         }

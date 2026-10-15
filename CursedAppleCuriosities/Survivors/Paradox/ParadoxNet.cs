@@ -353,8 +353,9 @@ namespace CursedAppleCuriosities.Survivors.Paradox
             float scale = MysticExpansion.RadiusMultiplier(w.Owner);
             w._half = new Vector3(ParadoxData.WallWidth * scale, ParadoxData.WallHeight * scale, ParadoxData.WallDepth) * 0.5f;
             w._duration = ParadoxData.WallDuration * DurationExtender.Multiplier(w.Owner);
-            w.Draw();
-            Live.Add(w);
+            Live.Add(w); // it works whatever happens to its looks
+            try { w.Draw(); }
+            catch (System.Exception e) { CursedAppleCuriositiesPlugin.Logger?.LogWarning("[Paradox] Time Wall visual: " + e.Message); }
             EquipmentFx.Sound("paradox_wall_form", m.Position);
         }
 
@@ -386,11 +387,39 @@ namespace CursedAppleCuriosities.Survivors.Paradox
                 new Vector3(-_half.x, 0.05f, 0f), new Vector3(-_half.x, _half.y * 2f, 0f),
                 new Vector3(_half.x, _half.y * 2f, 0f), new Vector3(_half.x, 0.05f, 0f),
             });
-            _border.widthMultiplier = 0.14f;
+            _border.widthMultiplier = 0.22f;
             _border.numCornerVertices = 2;
             _border.sharedMaterial = _borderMaterial;
             _border.startColor = _border.endColor = BorderColor;
             _border.shadowCastingMode = UnityEngine.Rendering.ShadowCastingMode.Off;
+
+            // Its face, so the rectangle reads from any angle (user 2.5: still near invisible): faint amber lines across it, every metre.
+            int rows = Mathf.Max(2, Mathf.RoundToInt(_half.y * 2f));
+            int cols = Mathf.Max(2, Mathf.RoundToInt(_half.x * 2f / 1.5f));
+            for (int i = 1; i < rows; i++) Grid(new Vector3(-_half.x, _half.y * 2f * i / rows, 0f), new Vector3(_half.x, _half.y * 2f * i / rows, 0f));
+            for (int i = 1; i < cols; i++)
+            {
+                float x = -_half.x + _half.x * 2f * i / cols;
+                Grid(new Vector3(x, 0.05f, 0f), new Vector3(x, _half.y * 2f, 0f));
+            }
+        }
+
+        private readonly List<LineRenderer> _grid = new List<LineRenderer>();
+
+        private void Grid(Vector3 a, Vector3 b)
+        {
+            var go = new GameObject("Grid");
+            go.transform.SetParent(transform, false);
+            var l = go.AddComponent<LineRenderer>();
+            l.useWorldSpace = false;
+            l.positionCount = 2;
+            l.SetPosition(0, a);
+            l.SetPosition(1, b);
+            l.widthMultiplier = 0.06f;
+            l.sharedMaterial = _borderMaterial;
+            l.startColor = l.endColor = new Color(BorderColor.r, BorderColor.g, BorderColor.b, 0.35f);
+            l.shadowCastingMode = UnityEngine.Rendering.ShadowCastingMode.Off;
+            _grid.Add(l);
         }
 
         /// <summary>Does a line cross the wall (Liang-Barsky against the box, in the wall's frame)?</summary>
@@ -419,6 +448,7 @@ namespace CursedAppleCuriosities.Survivors.Paradox
             float a = Mathf.Clamp01(_age / ParadoxData.WallFormation) * Mathf.Clamp01((_duration - _age) / 0.5f);
             if (_fill.material.HasProperty("_TintColor")) _fill.material.SetColor("_TintColor", new Color(_tint.r, _tint.g, _tint.b, _tint.a * a));
             if (_border != null) _border.startColor = _border.endColor = new Color(BorderColor.r, BorderColor.g, BorderColor.b, a);
+            foreach (LineRenderer g in _grid) g.startColor = g.endColor = new Color(BorderColor.r, BorderColor.g, BorderColor.b, 0.35f * a);
         }
 
         private void FixedUpdate()

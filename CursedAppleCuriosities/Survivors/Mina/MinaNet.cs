@@ -298,7 +298,7 @@ namespace CursedAppleCuriosities.Survivors.Mina
     {
         private Rigidbody? _rb;
         private HurtBox? _target;
-        private float _age, _phase, _freq, _nextSeek;
+        private float _age, _phase, _freq, _nextSeek, _life = -1f, _seek;
         private bool _done;
 
         private void Awake()
@@ -314,8 +314,19 @@ namespace CursedAppleCuriosities.Survivors.Mina
         {
             if (!NetworkServer.active || _rb == null) return;
             float dt = Time.fixedDeltaTime;
+            if (_life < 0f)
+            {
+                // Her items reach her bats (user 2.5): Duration Extender keeps them flying longer, Mystic Expansion lets them find
+                // enemies farther off.
+                var owner = GetComponent<ProjectileController>().owner;
+                CharacterBody? by = owner != null ? owner.GetComponent<CharacterBody>() : null;
+                _life = MinaData.BatLifetime * DurationExtender.Multiplier(by);
+                _seek = MinaData.BatSeekRange * MysticExpansion.RadiusMultiplier(by);
+                var simple = GetComponent<ProjectileSimple>();
+                if (simple != null) simple.lifetime = _life + 0.5f;
+            }
             _age += dt;
-            if (_age > MinaData.BatLifetime) { Destroy(gameObject); return; }
+            if (_age > _life) { Destroy(gameObject); return; }
             if ((_target == null || _target.healthComponent == null || !_target.healthComponent.alive) && Time.time >= _nextSeek)
             {
                 _nextSeek = Time.time + 0.2f;
@@ -344,7 +355,7 @@ namespace CursedAppleCuriosities.Survivors.Mina
             {
                 searchOrigin = transform.position,
                 searchDirection = transform.forward,
-                maxDistanceFilter = MinaData.BatSeekRange,
+                maxDistanceFilter = _seek,
                 maxAngleFilter = MinaData.BatSeekConeDeg,
                 teamMaskFilter = TeamMask.GetEnemyTeams(team),
                 sortMode = BullseyeSearch.SortMode.DistanceAndAngle,

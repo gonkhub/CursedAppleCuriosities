@@ -136,8 +136,10 @@ namespace EntityStates.CursedApple.Paradox
                 Vector3 spot = characterBody.footPosition + flat * ParadoxData.WallDistance;
                 // Stand it on the ground under that spot (or where the view hits it first).
                 if (Physics.Raycast(spot + Vector3.up * 3f, Vector3.down, out RaycastHit ground, 12f, LayerIndex.world.mask, QueryTriggerInteraction.Ignore)) spot = ground.point;
-                ParadoxNet.ToServer(new ParadoxWallMessage { Owner = gameObject, Position = spot, Rotation = Quaternion.LookRotation(flat) });
+                // Leave the state before the wall is built: an error building it (on a host it builds right here) once left her
+                // weapon machine stuck in this state, her primary dead (user 2.5).
                 outer.SetNextStateToMain();
+                ParadoxNet.ToServer(new ParadoxWallMessage { Owner = gameObject, Position = spot, Rotation = Quaternion.LookRotation(flat) });
             }
         }
 
@@ -341,10 +343,13 @@ namespace EntityStates.CursedApple.Paradox
         public override void Update()
         {
             base.Update();
-            // Facing the enemy as they pass each other (every frame, so the turn is smooth).
-            if (_rig == null || Enemy == null || !Enemy.TryGetComponent(out CharacterBody e)) return;
-            Vector3 look = e.corePosition - _rig.transform.position;
-            if (look.sqrMagnitude < 0.01f || _rig.cameraMode is not RoR2.CameraModes.CameraModeBase mode) return;
+            // Facing the enemy as they pass each other. Aimed from her own body, not the camera (the camera chases her, and aiming
+            // from it fed back into itself: jittery, user 2.5), and eased toward it rather than snapped, with no roll of the pitch.
+            if (_rig == null || Enemy == null || !Enemy.TryGetComponent(out CharacterBody e) || characterBody == null) return;
+            Vector3 want = e.corePosition - characterBody.corePosition;
+            if (want.sqrMagnitude < 0.25f || _rig.cameraMode is not RoR2.CameraModes.CameraModeBase mode) return;
+            want.y = Mathf.Clamp(want.y, -want.magnitude * 0.6f, want.magnitude * 0.6f);
+            Vector3 look = Vector3.Slerp(_rig.transform.forward, want.normalized, 1f - Mathf.Exp(-8f * Time.deltaTime));
             // The player camera's own pitch/yaw setter (CameraModePlayerBasic.InstanceData, internal: reached by reflection).
             object? cam = mode.DebugGetInstanceData(_rig);
             if (cam == null) return;
