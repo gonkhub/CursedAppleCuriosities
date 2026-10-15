@@ -9,13 +9,55 @@ namespace CursedAppleCuriosities.Unlocks.Challenges
     /// </summary>
     public static class Masteries
     {
-        /// <summary>Abrams' mastery is his existing Green recolour (user).</summary>
+        /// <summary>Abrams' mastery is his existing Green recolour (user); Vyper, Viscous, Celeste, Mina and Paradox reuse theirs too, Seven's is the new Overcharged.</summary>
         public const string AbramsSkin = "Abrams.Mastery";
+        public const string SevenSkin = "Seven.Mastery";
+        public const string VyperSkin = "Vyper.Mastery";
+        public const string ViscousSkin = "Viscous.Mastery";
+        public const string CelesteSkin = "Celeste.Mastery";
+        public const string MinaSkin = "Mina.Mastery";
+        public const string ParadoxSkin = "Paradox.Mastery";
     }
 
     [RegisterAchievement("CursedAppleAbramsMastery", "CursedApple.Skins." + Masteries.AbramsSkin, null, 0, null)]
     public class AbramsMastery : BasePerSurvivorClearGameMonsoonAchievement
     {
         protected override BodyIndex LookUpRequiredBodyIndex() => BodyCatalog.FindBodyIndex("CursedAppleAbramsBody");
+    }
+
+    [RegisterAchievement("CursedAppleSevenMastery", "CursedApple.Skins." + Masteries.SevenSkin, null, 0, null)]
+    public class SevenMastery : BasePerSurvivorClearGameMonsoonAchievement
+    {
+        protected override BodyIndex LookUpRequiredBodyIndex() => BodyCatalog.FindBodyIndex("CursedAppleSevenBody");
+    }
+
+    [RegisterAchievement("CursedAppleVyperMastery", "CursedApple.Skins." + Masteries.VyperSkin, null, 0, null)]
+    public class VyperMastery : BasePerSurvivorClearGameMonsoonAchievement
+    {
+        protected override BodyIndex LookUpRequiredBodyIndex() => BodyCatalog.FindBodyIndex("CursedAppleVyperBody");
+    }
+
+    [RegisterAchievement("CursedAppleViscousMastery", "CursedApple.Skins." + Masteries.ViscousSkin, null, 0, null)]
+    public class ViscousMastery : BasePerSurvivorClearGameMonsoonAchievement
+    {
+        protected override BodyIndex LookUpRequiredBodyIndex() => BodyCatalog.FindBodyIndex("CursedAppleViscousBody");
+    }
+
+    [RegisterAchievement("CursedAppleCelesteMastery", "CursedApple.Skins." + Masteries.CelesteSkin, null, 0, null)]
+    public class CelesteMastery : BasePerSurvivorClearGameMonsoonAchievement
+    {
+        protected override BodyIndex LookUpRequiredBodyIndex() => BodyCatalog.FindBodyIndex("CursedAppleCelesteBody");
+    }
+
+    [RegisterAchievement("CursedAppleMinaMastery", "CursedApple.Skins." + Masteries.MinaSkin, null, 0, null)]
+    public class MinaMastery : BasePerSurvivorClearGameMonsoonAchievement
+    {
+        protected override BodyIndex LookUpRequiredBodyIndex() => BodyCatalog.FindBodyIndex("CursedAppleMinaBody");
+    }
+
+    [RegisterAchievement("CursedAppleParadoxMastery", "CursedApple.Skins." + Masteries.ParadoxSkin, null, 0, null)]
+    public class ParadoxMastery : BasePerSurvivorClearGameMonsoonAchievement
+    {
+        protected override BodyIndex LookUpRequiredBodyIndex() => BodyCatalog.FindBodyIndex("CursedAppleParadoxBody");
     }
 }

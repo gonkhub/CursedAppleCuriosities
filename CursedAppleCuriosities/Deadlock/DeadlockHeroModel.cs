@@ -109,9 +109,10 @@ namespace CursedAppleCuriosities.Deadlock
 
         /// <summary>
         /// Turns hues between fromLo and fromHi degrees by shift degrees (feathered over 15 degrees at each end),
-        /// leaving greys (saturation under minSat) alone. fromLo may be negative for a range that wraps through red. Rotated about the grey axis, so brightness is kept.
+        /// leaving greys (saturation under minSat) alone. fromLo may be negative for a range that wraps through red. Rotated about the grey axis, so brightness is kept,
+        /// unless lighten (0-1) also pulls the shifted colours toward white (Seven's Overcharged: orange to pale electric blue).
         /// </summary>
-        public static Func<byte[], bool> HueShift(float fromLo, float fromHi, float shift, float minSat = 0.12f) => px =>
+        public static Func<byte[], bool> HueShift(float fromLo, float fromHi, float shift, float minSat = 0.12f, float lighten = 0f) => px =>
         {
             const float Feather = 15f;
             bool changed = false;
@@ -138,9 +139,10 @@ namespace CursedAppleCuriosities.Deadlock
                     mats[deg] = m;
                 }
                 (float a0, float a1, float a2) = m; // rotation about (1,1,1): rows are cyclic shifts of (a0, a1, a2)
-                px[i] = (byte)Mathf.Clamp(Mathf.RoundToInt(a0 * r + a1 * g + a2 * b), 0, 255);
-                px[i + 1] = (byte)Mathf.Clamp(Mathf.RoundToInt(a2 * r + a0 * g + a1 * b), 0, 255);
-                px[i + 2] = (byte)Mathf.Clamp(Mathf.RoundToInt(a1 * r + a2 * g + a0 * b), 0, 255);
+                float lw = lighten * w;
+                px[i] = (byte)Mathf.Clamp(Mathf.RoundToInt(Mathf.Lerp(a0 * r + a1 * g + a2 * b, 255f, lw)), 0, 255);
+                px[i + 1] = (byte)Mathf.Clamp(Mathf.RoundToInt(Mathf.Lerp(a2 * r + a0 * g + a1 * b, 255f, lw)), 0, 255);
+                px[i + 2] = (byte)Mathf.Clamp(Mathf.RoundToInt(Mathf.Lerp(a1 * r + a2 * g + a0 * b, 255f, lw)), 0, 255);
                 changed = true;
             }
             return changed;

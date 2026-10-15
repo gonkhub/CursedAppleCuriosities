@@ -281,7 +281,7 @@ namespace CursedAppleCuriosities.Survivors.Viscous
             LanguageAPI.Add(Token + "NAME", "Viscous");
             LanguageAPI.Add(Token + "SUBTITLE", "The Goo");
             LanguageAPI.Add(Token + "SKIN_DEFAULT", "Default");
-            LanguageAPI.Add(Token + "SKIN_BLUE", "Blue");
+            LanguageAPI.Add(Token + "SKIN_BLUE", "Bluescous"); // user 3.0
             LanguageAPI.Add(Token + "DESCRIPTION",
                 "Viscous is a living blob of goo in a diving suit, here to help, mostly.<color=#CCD3E0>\n\n" +
                 "< ! > Goo Ball steers where you look. The faster it rolls, the harder it hits.\n\n" +

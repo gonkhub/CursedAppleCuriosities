@@ -286,7 +286,7 @@ namespace CursedAppleCuriosities.Survivors.Abrams
             LanguageAPI.Add(Token + "NAME", "Abrams");
             LanguageAPI.Add(Token + "SUBTITLE", "The Bull of the Cursed Apple");
             LanguageAPI.Add(Token + "SKIN_DEFAULT", "Default");
-            LanguageAPI.Add(Token + "SKIN_GREEN", "Green");
+            LanguageAPI.Add(Token + "SKIN_GREEN", "Greenbrams"); // user 3.0
             LanguageAPI.Add(Token + "DESCRIPTION",
                 "Abrams is a hard-boiled detective who settles his cases up close.<color=#CCD3E0>\n\n" +
                 "< ! > Get close: your shotgun's pellets fall off fast with range.\n\n" +

@@ -69,6 +69,18 @@ namespace CursedAppleCuriosities.Unlocks
             // Mastery skins (beat the game or obliterate on Monsoon as the hero).
             SkinUnlocks.Register(Challenges.Masteries.AbramsSkin, "CURSEDAPPLE_ABRAMS_SKIN_GREEN", "skinCursedAppleAbramsGREEN", "skinCursedAppleAbramsDISPLAYGREEN");
             Challenge("CursedAppleAbramsMastery", "Abrams: Mastery", "As Abrams, beat the game or obliterate on Monsoon.");
+            SkinUnlocks.Register(Challenges.Masteries.SevenSkin, "CURSEDAPPLE_SEVEN_SKIN_OVERCHARGED", "skinCursedAppleSevenOVERCHARGED", "skinCursedAppleSevenDISPLAYOVERCHARGED");
+            Challenge("CursedAppleSevenMastery", "Seven: Mastery", "As Seven, beat the game or obliterate on Monsoon.");
+            SkinUnlocks.Register(Challenges.Masteries.VyperSkin, "CURSEDAPPLE_VYPER_SKIN_CORAL", "skinCursedAppleVyperCORAL", "skinCursedAppleVyperDISPLAYCORAL");
+            Challenge("CursedAppleVyperMastery", "Vyper: Mastery", "As Vyper, beat the game or obliterate on Monsoon.");
+            SkinUnlocks.Register(Challenges.Masteries.ViscousSkin, "CURSEDAPPLE_VISCOUS_SKIN_BLUE", "skinCursedAppleViscousBLUE", "skinCursedAppleViscousDISPLAYBLUE");
+            Challenge("CursedAppleViscousMastery", "Viscous: Mastery", "As Viscous, beat the game or obliterate on Monsoon.");
+            SkinUnlocks.Register(Challenges.Masteries.CelesteSkin, "CURSEDAPPLE_CELESTE_SKIN_MINT", "skinCursedAppleCelesteMINT", "skinCursedAppleCelesteDISPLAYMINT");
+            Challenge("CursedAppleCelesteMastery", "Celeste: Mastery", "As Celeste, beat the game or obliterate on Monsoon.");
+            SkinUnlocks.Register(Challenges.Masteries.MinaSkin, "CURSEDAPPLE_MINA_SKIN_NIGHTSHADE", "skinCursedAppleMinaNIGHTSHADE", "skinCursedAppleMinaDISPLAYNIGHTSHADE");
+            Challenge("CursedAppleMinaMastery", "Mina: Mastery", "As Mina, beat the game or obliterate on Monsoon.");
+            SkinUnlocks.Register(Challenges.Masteries.ParadoxSkin, "CURSEDAPPLE_PARADOX_SKIN_TEAL", "skinCursedAppleParadoxTEAL", "skinCursedAppleParadoxDISPLAYTEAL");
+            Challenge("CursedAppleParadoxMastery", "Paradox: Mastery", "As Paradox, beat the game or obliterate on Monsoon.");
             ShotTracker.Init();
             RoR2Application.onLoad += UsePortraits;
         }
