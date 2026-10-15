@@ -22,6 +22,10 @@ namespace CursedAppleCuriosities.Stages.DeadlockMap
     public static class DeadlockStages
     {
         public static ConfigEntry<int>? ShopWhite, ShopGreen, ShopRed;
+        public static ConfigEntry<float>? ShopTax;
+
+        /// <summary>A shop price: the tier's base cost plus the shop tax (user 3.0: buying must cost more than looting a chest).</summary>
+        internal static int Taxed(int baseCost) => Mathf.Max(1, Mathf.RoundToInt(baseCost * (1f + Mathf.Max(0f, ShopTax?.Value ?? 0.2f))));
         public static ConfigEntry<float>? Exposure, DynamicLight;
         private static AssetBundle? _scenes, _assets;
         internal static Material? BarrierMaterial, GlassMaterial, WorldMaterial;
@@ -35,6 +39,7 @@ namespace CursedAppleCuriosities.Stages.DeadlockMap
             ShopWhite = config.Bind("Deadlock Map", "Shop White Base Cost", 25, "Curiosity shop on the map: base price of a white (a small chest's base cost; scaled by difficulty like chests).");
             ShopGreen = config.Bind("Deadlock Map", "Shop Green Base Cost", 50, "Base price of a green (a large chest's base cost).");
             ShopRed = config.Bind("Deadlock Map", "Shop Red Base Cost", 400, "Base price of a red (a legendary chest's base cost).");
+            ShopTax = config.Bind("Deadlock Map", "Shop Tax", 0.2f, "Extra charged on top of every shop base cost (0.2 = 20%), so buying an item costs more than looting the same tier from a chest.");
             Exposure = config.Bind("Deadlock Map", "Lightmap Exposure", 1f,
                 "Brightness of Deadlock's own baked lighting on the map (1 = as baked).");
             DynamicLight = config.Bind("Deadlock Map", "Dynamic Light Share", 0.15f,
@@ -613,7 +618,7 @@ namespace CursedAppleCuriosities.Stages.DeadlockMap
 
             /// <summary>
             /// A Curiosity shop at each of Deadlock's shop counters in the district: open to everyone, bought from as often
-            /// as you like, priced like chests (small / large / legendary base costs, scaled by difficulty the same way). Deadlock's
+            /// as you like, priced like chests (small / large / legendary base costs, scaled by difficulty the same way) plus the Shop Tax. Deadlock's
             /// own items only.
             /// </summary>
             private static void SpawnShops(District district)
@@ -630,7 +635,8 @@ namespace CursedAppleCuriosities.Stages.DeadlockMap
                     Vector3 top = world.transform.TransformPoint(MapCache.ToUnity(centre, t.OriginUnits));
                     if (!Physics.Raycast(top, Vector3.down, out RaycastHit hit, 12f, LayerIndex.world.mask, QueryTriggerInteraction.Ignore)) continue;
                     if (MapShop.Spawn(hit.point,
-                            DeadlockStages.ShopWhite?.Value ?? 25, DeadlockStages.ShopGreen?.Value ?? 50, DeadlockStages.ShopRed?.Value ?? 400) != null)
+                            DeadlockStages.Taxed(DeadlockStages.ShopWhite?.Value ?? 25), DeadlockStages.Taxed(DeadlockStages.ShopGreen?.Value ?? 50),
+                            DeadlockStages.Taxed(DeadlockStages.ShopRed?.Value ?? 400)) != null)
                         placed++;
                 }
                 Log($"{placed} curiosity shops placed at Deadlock's shop counters");
