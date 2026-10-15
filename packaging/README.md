@@ -11,8 +11,8 @@ Items, equipment and survivors adapted from Deadlock's item shop for Risk of Rai
   rest of the run
 - **Soul Urn**: appears on some stages far from the teleporter. Carry it to the teleporter before time runs out,
   without taking damage, for a pile of items (more the later the stage)
-- **Fourteen playable survivors** from Deadlock: **Abrams**, **Seven**, **Lash**, **Vyper**, **Grey Talon**, **Victor**,
-  **Viscous**, **Celeste**, **Shiv**, **Mina**, **Paradox**, **Bebop**, **Ivy** and **Apollo**, with Deadlock-style movement
+- **Thirteen playable survivors** from Deadlock: **Abrams**, **Seven**, **Lash**, **Vyper**, **Grey Talon**, **Victor**,
+  **Viscous**, **Celeste**, **Shiv**, **Mina**, **Paradox**, **Bebop** and **Apollo**, with Deadlock-style movement
   (stamina, air dashes, dash-jumps, slides, wall jumps). Abrams and Seven are free; the rest unlock through challenges or
   secrets hidden in the Deadlock district stages, along with alt skills and mastery skins
 - **Deadlock district stages** (needs Deadlock installed): Haunted Lot, Umbria University, Sunken Plaza and Chinatown can

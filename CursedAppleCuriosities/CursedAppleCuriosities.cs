@@ -8,7 +8,6 @@ using CursedAppleCuriosities.Survivors.Apollo;
 using CursedAppleCuriosities.Survivors.Bebop;
 using CursedAppleCuriosities.Survivors.Celeste;
 using CursedAppleCuriosities.Survivors.GreyTalon;
-using CursedAppleCuriosities.Survivors.Ivy;
 using CursedAppleCuriosities.Survivors.Lash;
 using CursedAppleCuriosities.Survivors.Mina;
 using CursedAppleCuriosities.Survivors.Paradox;
@@ -153,7 +152,7 @@ namespace CursedAppleCuriosities
                 ("Mina", MinaSurvivor.Init, () => MinaSurvivor.Survivor),
                 ("Paradox", ParadoxSurvivor.Init, () => ParadoxSurvivor.Survivor),
                 ("Bebop", BebopSurvivor.Init, () => BebopSurvivor.Survivor),
-                ("Ivy", IvySurvivor.Init, () => IvySurvivor.Survivor),
+                // Ivy is shelved (user 3.0: her animations never came right); her code stays in Survivors/Ivy, unregistered.
                 ("Apollo", ApolloSurvivor.Init, () => ApolloSurvivor.Survivor),
             };
             foreach (var hero in heroes)
@@ -187,7 +186,7 @@ namespace CursedAppleCuriosities
         /// Survivors ship one at a time: Release builds (the Thunderstore package) register only these.
         /// Debug builds (development) register every hero.
         /// </summary>
-        private static readonly string[] ReleasedSurvivors = { "Lash", "Abrams", "Seven", "Vyper", "Grey Talon", "Victor", "Viscous", "Celeste", "Shiv", "Mina", "Paradox", "Bebop", "Ivy", "Apollo" };
+        private static readonly string[] ReleasedSurvivors = { "Lash", "Abrams", "Seven", "Vyper", "Grey Talon", "Victor", "Viscous", "Celeste", "Shiv", "Mina", "Paradox", "Bebop", "Apollo" };
 
         private static bool IsReleased(string hero)
         {

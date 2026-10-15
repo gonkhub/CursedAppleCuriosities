@@ -392,7 +392,6 @@ namespace CursedAppleCuriosities.Survivors.Ivy
                         if (hc.alive) using (DurationExtender.From(b)) SetStateOnHurt.SetStunOnObject(hc.gameObject, IvyData.StoneStun);
                         else kills++;
                     }
-                    CursedAppleCuriosities.Unlocks.Challenges.IvyRockBottom.Slammed(b, kills);
                     break;
                 case IvyStoneKind.End:
                     b.ClearTimedBuffs(IvySurvivor.StoneBuff);

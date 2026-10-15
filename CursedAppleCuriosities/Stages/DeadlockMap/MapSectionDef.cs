@@ -159,7 +159,6 @@ namespace CursedAppleCuriosities.Stages.DeadlockMap
             PlayerSpawns = UmbriaData.PlayerSpawns,
             // East edge (user 3.0, mark umbriashopbarrier): along the low channel's east wall, so its shop and side passage are in.
             WalkerSlot = new[] { -21.83f, 9.56f, 27.21f, 35.5f }, // the Walker's spot (user's mark, 2026-10-14)
-            Secrets = new[] { new SecretSpot("Ivy", 77.83f, -2.43f, -118.25f, -90.1f) }, // user's mark umbriasecret, 2026-10-14
         };
 
         /// <summary>
@@ -417,6 +416,7 @@ namespace CursedAppleCuriosities.Stages.DeadlockMap
             87.79f, 23.23f, -36.62f, -88.80f,
             72.02f, 23.46f, -8.21f, -89.30f,
             57.74f, 17.89f, -112.69f, -43.90f,
+            77.83f, -2.43f, -118.25f, -90.10f, // Ivy's old secret spot (user 3.0: Ivy shelved; a newt altar may stand here instead)
         };
         public static readonly float[] PlayerSpawns = { // x, y, z, yaw in the section's Unity space (cac_map_mark, 2026-10-14)
             23.32f, 31.51f, 6.50f, 95.40f,

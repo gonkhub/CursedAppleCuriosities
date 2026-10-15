@@ -8,7 +8,7 @@ using UnityEngine;
 namespace CursedAppleCuriosities.Unlocks
 {
     /// <summary>
-    /// 3.0 (user): a fresh profile has Abrams and Seven only. Mina, Ivy, Bebop, Paradox and Lash are map secrets (a silhouette in a
+    /// 3.0 (user): a fresh profile has Abrams and Seven only. Mina, Bebop, Paradox and Lash are map secrets (a silhouette in a
     /// Deadlock district, see Stages/DeadlockMap/HeroSilhouette); every other hero unlocks through a challenge of their own.
     /// Everything stays locked for everyone: no unlock-all toggle (players who want it use an Unlockify-style mod).
     /// </summary>
@@ -21,7 +21,6 @@ namespace CursedAppleCuriosities.Unlocks
         private static readonly Dictionary<string, string> SecretWhere = new Dictionary<string, string>
         {
             ["Mina"] = "Chinatown",
-            ["Ivy"] = "Umbria University",
             ["Bebop"] = "the Haunted Lot",
             ["Paradox"] = "the Sunken Plaza",
             ["Lash"] = "the Sunken Plaza", // on its highest rooftop (user, 2026-10-15)
@@ -80,12 +79,8 @@ namespace CursedAppleCuriosities.Unlocks
             SkinUnlocks.Register(Challenges.Masteries.BebopSkin, "CURSEDAPPLE_BEBOP_SKIN_GOLDPLATED", "skinCursedAppleBebopGOLDPLATED", "skinCursedAppleBebopDISPLAYGOLDPLATED");
             Challenge("CursedAppleBebopMastery", "Bebop: Mastery", "As Bebop, beat the game or obliterate on Monsoon.");
             // Chrome: its own challenge (user 3.0), hook an enemy at the end of Grapple Arm's reach.
-            SkinUnlocks.Register(Challenges.Masteries.IvySkin, "CURSEDAPPLE_IVY_SKIN_JADE", "skinCursedAppleIvyJADE", "skinCursedAppleIvyDISPLAYJADE");
-            Challenge("CursedAppleIvyMastery", "Ivy: Mastery", "As Ivy, beat the game or obliterate on Monsoon.");
             SkinUnlocks.Register(Challenges.Masteries.ApolloSkin, "CURSEDAPPLE_APOLLO_SKIN_BLACKMORE", "skinCursedAppleApolloBLACKMORE", "skinCursedAppleApolloDISPLAYBLACKMORE");
             Challenge("CursedAppleApolloMastery", "Apollo: Mastery", "As Apollo, beat the game or obliterate on Monsoon.");
-            // Obsidian: its own challenge (user 3.0), Rock Bottom.
-            SkinUnlocks.Register(Challenges.Masteries.IvyObsidianSkin, "CURSEDAPPLE_IVY_SKIN_OBSIDIAN", "skinCursedAppleIvyOBSIDIAN", "skinCursedAppleIvyDISPLAYOBSIDIAN");
             SkinUnlocks.Register(Challenges.Masteries.BebopChromeSkin, "CURSEDAPPLE_BEBOP_SKIN_CHROME", "skinCursedAppleBebopCHROME", "skinCursedAppleBebopDISPLAYCHROME");
             SkinUnlocks.Register(Challenges.Masteries.SevenSkin, "CURSEDAPPLE_SEVEN_SKIN_OVERCHARGED", "skinCursedAppleSevenOVERCHARGED", "skinCursedAppleSevenDISPLAYOVERCHARGED");
             Challenge("CursedAppleSevenMastery", "Seven: Mastery", "As Seven, beat the game or obliterate on Monsoon.");
@@ -100,7 +95,6 @@ namespace CursedAppleCuriosities.Unlocks
             SkinUnlocks.Register(Challenges.Masteries.ParadoxSkin, "CURSEDAPPLE_PARADOX_SKIN_TEAL", "skinCursedAppleParadoxTEAL", "skinCursedAppleParadoxDISPLAYTEAL");
             Challenge("CursedAppleParadoxMastery", "Paradox: Mastery", "As Paradox, beat the game or obliterate on Monsoon.");
             Challenge(Challenges.BebopLongArm.Identifier, "Bebop: Long Arm of the Law", "As Bebop, hook an enemy with Grapple Arm within 10 m of its maximum reach.");
-            Challenge(Challenges.IvyRockBottom.Identifier, "Ivy: Rock Bottom", $"As Ivy, kill {Challenges.IvyRockBottom.Kills} enemies with a single Stone Form slam.");
             ShotTracker.Init();
             RoR2Application.onLoad += UsePortraits;
         }

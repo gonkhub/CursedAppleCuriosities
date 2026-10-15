@@ -2,7 +2,7 @@
   "name": "CursedAppleCuriosities",
   "version_number": "3.0.0",
   "website_url": "",
-  "description": "Items, equipment, two artifacts, a cursed shrine, the Soul Urn, Deadlock district stages and fourteen unlockable survivors adapted from Deadlock, as an expansion you can toggle in the lobby.",
+  "description": "Items, equipment, two artifacts, a cursed shrine, the Soul Urn, Deadlock district stages and thirteen unlockable survivors adapted from Deadlock, as an expansion you can toggle in the lobby.",
   "dependencies": [
     "RiskofThunder-RoR2BepInExPack-1.43.0",
     "RiskofThunder-R2API_Core-5.3.0",
