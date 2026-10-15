@@ -163,6 +163,16 @@ namespace CursedAppleCuriosities.Broker
 
         // ───────────────────────────────────── spawning ─────────────────────────────────────
 
+        /// <summary>Server: a broker at this exact spot (a fixed place, e.g. the Deadlock map's souls dealer). Null when off.</summary>
+        public static GameObject? SpawnAt(Vector3 position, Quaternion rotation)
+        {
+            if (!Enabled || !CuriositiesExpansion.Enabled || !NetworkServer.active || _prefab == null) return null;
+            GameObject go = UnityEngine.Object.Instantiate(_prefab, position, rotation);
+            NetworkServer.Spawn(go);
+            CursedAppleCuriositiesPlugin.Logger?.LogInfo($"[CursedBroker] Placed at {position}.");
+            return go;
+        }
+
         private static bool StageEligible(Run run)
         {
             SceneDef? scene = SceneCatalog.mostRecentSceneDef;

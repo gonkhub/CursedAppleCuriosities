@@ -68,6 +68,12 @@ namespace CursedAppleCuriosities.Stages.DeadlockMap
         /// that hero for everyone in the run.
         /// </summary>
         public SecretSpot[] Secrets = System.Array.Empty<SecretSpot>();
+        /// <summary>
+        /// Deadlock's souls dealer (its corrupted item shop, citadel_trigger_corrupted_item_shop) in this district: a Cursed Broker
+        /// stands there every visit (user 3.0). Deadlock units: the shop trigger's centre x, y, z, then the dealer's effect point
+        /// x, y (the way the broker faces). Empty = none.
+        /// </summary>
+        public float[] BrokerSpot = System.Array.Empty<float>();
         /// <summary>Newt altar spots: x, y, z, yaw each, in the section's Unity space (from cac_map_mark). One altar per stage, at one of them.</summary>
         public float[] NewtAltars = System.Array.Empty<float>();
         /// <summary>Lowest point of the playable area (units): anything below falls out of the map.</summary>
@@ -185,6 +191,8 @@ namespace CursedAppleCuriosities.Stages.DeadlockMap
             PlayerSpawns = ChinatownData.PlayerSpawns,
             WalkerSlot = new[] { 9.43f, 10.17f, 47.00f, -89.7f }, // the Walker's spot (user's mark, 2026-10-14)
             Secrets = new[] { new SecretSpot("Mina", -74.25f, 52.59f, -76.85f, -0.2f) }, // user's mark chinatownsecret, 2026-10-14
+            // The souls dealer's garage on the Hidden King side (Deadlock 3568_souls_dealer_shop_trigger and its fx point).
+            BrokerSpot = new[] { 1056f, -3108f, 464f, 1048f, -2977f },
         };
 
         /// <summary>Every district, in the order they are converted (the first finishes first).</summary>

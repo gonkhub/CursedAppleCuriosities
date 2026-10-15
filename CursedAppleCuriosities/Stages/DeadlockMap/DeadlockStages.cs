@@ -474,6 +474,7 @@ namespace CursedAppleCuriosities.Stages.DeadlockMap
                 WalkerSlot(District.Def);
                 ArmImpPit(District.Def);
                 SpawnShops(District);
+                SpawnBroker(District);
                 GameObject? map = GameObject.Find("DeadlockMap");
                 if (map != null) HeroSilhouette.SpawnAll(District.Def, map.transform);
                 Log($"director started (stage ready), {Spawns.Count} player spawns placed");
@@ -640,6 +641,26 @@ namespace CursedAppleCuriosities.Stages.DeadlockMap
                         placed++;
                 }
                 Log($"{placed} curiosity shops placed at Deadlock's shop counters");
+            }
+
+            /// <summary>The district's souls dealer (user 3.0): a Cursed Broker on its garage floor, facing the way the dealer did.</summary>
+            private static void SpawnBroker(District district)
+            {
+                float[] b = district.Def.BrokerSpot;
+                GameObject? world = GameObject.Find("DeadlockMap");
+                MapBuilder.Built? t = DeadlockMaps.Template(district);
+                if (b.Length < 5 || world == null || t == null) return;
+                Vector3 top = world.transform.TransformPoint(MapCache.ToUnity(new Vector3(b[0], b[1], b[2]), t.OriginUnits));
+                Vector3 faces = world.transform.TransformPoint(MapCache.ToUnity(new Vector3(b[3], b[4], b[2]), t.OriginUnits));
+                if (!Physics.Raycast(top, Vector3.down, out RaycastHit hit, 12f, LayerIndex.world.mask, QueryTriggerInteraction.Ignore))
+                {
+                    Warn("the souls dealer's spot has no floor under it: no broker");
+                    return;
+                }
+                Vector3 look = faces - top;
+                look.y = 0f;
+                Quaternion rot = look.sqrMagnitude > 1e-4f ? Quaternion.LookRotation(look.normalized, Vector3.up) : Quaternion.identity;
+                Log(Broker.CursedBroker.SpawnAt(hit.point, rot) != null ? "a Cursed Broker keeps the souls dealer's garage" : "no Cursed Broker (off, or the expansion is off)");
             }
 
             /// <summary>
