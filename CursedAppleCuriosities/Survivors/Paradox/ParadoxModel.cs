@@ -22,7 +22,14 @@ namespace CursedAppleCuriosities.Survivors.Paradox
             HideMeshes = new[] { "chrono_gun_on_hip" }, // the holstered copy of her rifle (she always has it out here)
             // Teal (skin 1): her maroon coat and trim turned deep teal; the tan leather, her skin and the brass stay (a narrow
             // range: her atlas holds all of them).
-            Skins = new[] { new DeadlockSkin { Id = "teal1", Recolor = DeadlockSkin.HueShift(-30f, -5f, -150f), Only = new[] { "chrono_v2_color" } } },
+            // Teal (user 3.0 revisit): her big tan coat (hues 12-40) AND the maroon trim (330-8) turn teal; teal1 only moved the trim,
+            // which barely showed. Coat first, then the reds (the order the preview was made in).
+            Skins = new[] { new DeadlockSkin { Id = "teal2", Only = new[] { "chrono_v2_color" }, Recolor = px =>
+            {
+                bool coat = DeadlockSkin.HueShift(12f, 40f, 160f)(px);
+                bool trim = DeadlockSkin.HueShift(-30f, 8f, -165f)(px);
+                return coat || trim;
+            } } },
         };
 
         public static Sprite DefaultIcon => _default ??= Kit.SkinIcon(new Color(0.45f, 0.1f, 0.15f), new Color(0.12f, 0.12f, 0.13f), new Color(0.75f, 0.5f, 0.3f), new Color(0.9f, 0.87f, 0.85f));
