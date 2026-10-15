@@ -44,6 +44,7 @@ namespace CursedAppleCuriosities.Unlocks
             Challenge(Challenges.GreyTalonOneShot.Identifier, "Big Game", "Kill a boss with a single hit from full health.");
             Challenge(Challenges.VictorPainBattery.Identifier, "Pain Battery", "In a single run, take 1,000 damage from yourself (not counting Shrines of Blood or falls).");
             Challenge(Challenges.ViscousCube.Identifier, "The Cube", "Survive a single hit that would have dealt more than your maximum health.");
+            Challenge(Challenges.CelesteShowstopper.Identifier, "Showstopper", "Kill 30 enemies within 5 seconds.");
             ShotTracker.Init();
             RoR2Application.onLoad += UsePortraits;
         }
