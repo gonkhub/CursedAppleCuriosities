@@ -116,14 +116,14 @@ namespace EntityStates.CursedApple.Ivy
 
     /// <summary>
     /// Stone Form (Deadlock citadel_ability_tengu_stone_form; reworked, user 2.5). She turns to stone (her statue: IvyStoneLook),
-    /// invulnerable and healing, and hangs a moment (AbilityCastDelay 0.25 s). On the ground she first rises 4.6 m over a second
-    /// (LiftHeight / LiftTime, eased out); then she drops like a statue, accelerating hard, steerable at up to 8 m/s, keeping only a
+    /// invulnerable and healing, leaping 4.6 m up as she transforms (Deadlock LiftHeight; from the ground or the air, user 2.5),
+    /// then drops like a statue, accelerating hard, steerable at up to 8 m/s, keeping only a
     /// quarter of her momentum (DampingFactor). The slam hurts and stuns in 5.75 m; she breaks out half a second later (user 2.5).
     /// </summary>
     public class StoneForm : BaseSkillState
     {
         private bool _lifting, _landed;
-        private float _landedAt, _liftStart;
+        private float _landedAt;
         private Vector3 _flat;
 
         public override void OnEnter()
@@ -140,7 +140,7 @@ namespace EntityStates.CursedApple.Ivy
             {
                 Vector3 v = characterMotor.velocity;
                 _flat = new Vector3(v.x, 0f, v.z) * IvyData.StoneDamping;
-                if (_lifting) characterMotor.Motor.ForceUnground();
+                characterMotor.Motor.ForceUnground();
                 characterMotor.disableAirControlUntilCollision = false;
             }
         }
@@ -157,17 +157,10 @@ namespace EntityStates.CursedApple.Ivy
                 if (fixedAge - _landedAt >= IvyData.StoneHoldAfterLanding) outer.SetNextStateToMain();
                 return;
             }
-            // Turning to stone: she hangs where she is.
-            if (fixedAge < IvyData.StoneCastDelay)
+            // She leaps up as she turns to stone (user 2.5: from the ground or the air), slowing to the top: h(s) = Lift (1 - (1 - s)^2).
+            if (fixedAge < IvyData.StoneLiftTime)
             {
-                characterMotor.velocity = new Vector3(_flat.x, 0f, _flat.z);
-                _liftStart = fixedAge;
-                return;
-            }
-            if (_lifting && fixedAge - _liftStart < IvyData.StoneLiftTime)
-            {
-                // h(s) = Lift (1 - (1 - s)^2): up fast, easing to a stop at the top.
-                float s = (fixedAge - _liftStart) / IvyData.StoneLiftTime;
+                float s = fixedAge / IvyData.StoneLiftTime;
                 characterMotor.velocity = new Vector3(_flat.x, 2f * IvyData.StoneLift * (1f - s) / IvyData.StoneLiftTime, _flat.z);
                 return;
             }
@@ -175,7 +168,7 @@ namespace EntityStates.CursedApple.Ivy
             _flat = Vector3.MoveTowards(_flat, new Vector3(steer.x, 0f, steer.z), 20f * dt);
             float vy = Mathf.Max(Mathf.Min(characterMotor.velocity.y, 0f) - IvyData.StoneFallAccel * dt, -IvyData.StoneFallMax);
             characterMotor.velocity = new Vector3(_flat.x, vy, _flat.z);
-            bool falling = fixedAge > IvyData.StoneCastDelay + (_lifting ? IvyData.StoneLiftTime : 0f) + 0.05f;
+            bool falling = fixedAge > IvyData.StoneLiftTime + 0.05f;
             if ((characterMotor.isGrounded && falling) || fixedAge >= 6f) Land();
         }
 

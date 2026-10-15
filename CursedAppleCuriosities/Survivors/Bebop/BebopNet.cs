@@ -45,7 +45,8 @@ namespace CursedAppleCuriosities.Survivors.Bebop
             RecalculateStatsAPI.GetStatCoefficients += (body, args) =>
             {
                 if (BebopSurvivor.HyperSlow != null && body.HasBuff(BebopSurvivor.HyperSlow)) args.moveSpeedReductionMultAdd += BebopData.HyperSlow;
-                if (BebopSurvivor.StickySpeedBuff != null && body.HasBuff(BebopSurvivor.StickySpeedBuff)) args.baseMoveSpeedAdd += BebopData.StickySpeed;
+                if (BebopSurvivor.StickySpeedBuff != null)
+                    args.baseMoveSpeedAdd += BebopData.StickySpeed * body.GetBuffCount(BebopSurvivor.StickySpeedBuff) / (float)BebopStickySpeed.Steps; // fades out (user 2.5)
             };
             // His beam barely procs (proc 0.05), but on a hooked enemy every proc is guaranteed while the hook's mark lasts (user 2.5):
             // that hit counts as proc 1 and every on-hit roll during it succeeds.
@@ -135,12 +136,13 @@ namespace CursedAppleCuriosities.Survivors.Bebop
             var body = Attacker.GetComponent<CharacterBody>();
             var hc = Target.GetComponent<HealthComponent>();
             if (body == null || hc == null || !hc.alive) return;
-            if (BebopSurvivor.StickySpeedBuff != null) body.AddTimedBuff(BebopSurvivor.StickySpeedBuff, BebopData.StickySpeedSeconds); // +12 m/s (user 2.5)
+            (body.GetComponent<BebopStickySpeed>() ?? body.gameObject.AddComponent<BebopStickySpeed>()).Begin(); // +8 m/s, fading out (user 2.5)
             var go = new GameObject("CursedAppleBebopStickyBomb");
             go.transform.position = BebopNet.Core(hc);
             var bomb = go.AddComponent<BebopStickyBomb>();
             bomb.By = body;
             bomb.Target = hc;
+            bomb.CarrierScale = BebopNet.IsElite(hc.body) ? BebopData.StickyEliteScale : 1f;
             bomb.Crit = Crit;
             bomb.Fuse = BebopData.StickyFuse * DurationExtender.Multiplier(body); // Duration Extender lengthens the fuse (user 2.5)
             bomb.Radius = BebopData.StickyRadius * MysticExpansion.RadiusMultiplier(body);
@@ -185,6 +187,8 @@ namespace CursedAppleCuriosities.Survivors.Bebop
         public HealthComponent? Target;
         public bool Crit;
         public float Fuse, Radius;
+        /// <summary>Its carrier's stack scale, read when it was stuck on (the body may be gone when it dies).</summary>
+        public float CarrierScale = 1f;
         private float _age;
         private bool _urgent;
 
@@ -195,10 +199,10 @@ namespace CursedAppleCuriosities.Survivors.Bebop
             bool carrierGone = Target == null || !Target.alive;
             if (!carrierGone) transform.position = BebopNet.Core(Target!);
             if (!_urgent && _age > Fuse - 1f) { _urgent = true; EquipmentFx.Sound("bebop_sticky_urgent", transform.position); }
-            if (carrierGone || _age >= Fuse) Blow();
+            if (carrierGone || _age >= Fuse) Blow(carrierGone);
         }
 
-        private void Blow()
+        private void Blow(bool carrierDied = false)
         {
             if (By != null && By.teamComponent != null)
             {
@@ -223,10 +227,45 @@ namespace CursedAppleCuriosities.Survivors.Bebop
                     float scale = BebopNet.IsElite(hc.body) ? BebopData.StickyEliteScale : 1f;
                     earned += (hc.alive ? BebopData.StickyPerHit : BebopData.StickyPerKill) * scale;
                 }
+                // An enemy that dies carrying the bomb counts as the bomb's kill (user 2.5): it's already dead, so the blast never saw it.
+                if (carrierDied && By.healthComponent != Target) earned += BebopData.StickyPerKill * CarrierScale;
                 if (stacks != null && earned > 0f) stacks.Add(earned);
                 CursedAppleCuriositiesPlugin.Logger?.LogInfo($"[Bebop] Sticky Bomb blew (x{bonus:0.00}): +{earned:0.#}% -> {(stacks != null ? stacks.Percent : 0f):0.#}%");
             }
             Destroy(gameObject);
+        }
+    }
+
+    /// <summary>
+    /// Server, on Bebop: Sticky Bomb's speed boost, fading out (user 2.5): the buff's stacks (Steps of them) count down over
+    /// StickySpeedSeconds, and his speed bonus is StickySpeed times the share left.
+    /// </summary>
+    public class BebopStickySpeed : MonoBehaviour
+    {
+        public const int Steps = 10;
+        private CharacterBody _body = null!;
+        private float _left;
+
+        private void Awake() => _body = GetComponent<CharacterBody>();
+
+        public void Begin()
+        {
+            _left = BebopData.StickySpeedSeconds;
+            Show();
+        }
+
+        private void FixedUpdate()
+        {
+            if (!NetworkServer.active || _left <= 0f) return;
+            _left = Mathf.Max(0f, _left - Time.fixedDeltaTime);
+            Show();
+        }
+
+        private void Show()
+        {
+            if (BebopSurvivor.StickySpeedBuff == null) return;
+            int want = Mathf.CeilToInt(Steps * _left / Mathf.Max(0.01f, BebopData.StickySpeedSeconds));
+            if (_body.GetBuffCount(BebopSurvivor.StickySpeedBuff) != want) _body.SetBuffCount(BebopSurvivor.StickySpeedBuff.buffIndex, want);
         }
     }
 
@@ -444,7 +483,8 @@ namespace CursedAppleCuriosities.Survivors.Bebop
                 BebopNet.Effect(BebopSurvivor.LandEffect, at, radius);
                 EquipmentFx.Sound("bebop_uppercut_land", at);
                 foreach (HealthComponent hc in BebopNet.EnemiesIn(at, radius, _by.teamComponent.teamIndex))
-                    BebopNet.Hit(_by, hc, BebopData.UppercutLandDamage * _by.damage, _crit, Vector3.up * 600f, DamageSource.Utility, 0.5f);
+                    if (hc != _body.healthComponent) // the landing hurts the others around it, not the one that landed (user 2.5)
+                        BebopNet.Hit(_by, hc, BebopData.UppercutLandDamage * _by.damage, _crit, Vector3.up * 600f, DamageSource.Utility, 0.5f);
             }
             if (_motor != null) _motor.disableAirControlUntilCollision = false;
             Destroy(this);
