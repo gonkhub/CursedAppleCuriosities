@@ -419,7 +419,9 @@ namespace CursedAppleCuriosities.Survivors.Shiv
         private void FixedUpdate()
         {
             if (!NetworkServer.active || _rage <= 0f) return;
-            if (Time.time - _lastDealt < ShivData.RageDrainDelay) return;
+            // Full rage holds longer before it starts to fall (user 3.0); once falling it drains at the usual rate.
+            float delay = _rage >= ShivData.RageMax ? ShivData.RageFullDrainDelay : ShivData.RageDrainDelay;
+            if (Time.time - _lastDealt < delay) return;
             _rage = Mathf.Max(0f, _rage - ShivData.RageMax / Mathf.Max(0.1f, ShivData.RageDrainSeconds) * Time.fixedDeltaTime);
             Show();
         }

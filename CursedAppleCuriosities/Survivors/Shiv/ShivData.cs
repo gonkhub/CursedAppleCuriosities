@@ -93,6 +93,7 @@ namespace CursedAppleCuriosities.Survivors.Shiv
         public const float RageMax = 100f;
         public static float RageFillDamage = 20f;       // full rage after dealing this many times his damage stat (user)
         public static float RageDrainDelay = 2f;        // user (Deadlock RageDrainDelayDuration 12)
+        public static float RageFullDrainDelay = 6f;    // user 3.0: full rage lasts longer before it starts to drain (my number)
         public static float RageDrainSeconds = 4f;      // from full to empty once draining (Deadlock RageDrainRate 0.25)
 
         public static void Bind(ConfigFile c)
@@ -123,6 +124,7 @@ namespace CursedAppleCuriosities.Survivors.Shiv
             DeferredShare = c.Bind(Section, "Bloodletting - Deferred Share", DeferredShare, "Share of damage taken that is dealt over 6 s instead.").Value;
             RageFillDamage = c.Bind(Section, "Rage - Damage To Fill", RageFillDamage, "Full rage after dealing this many times Shiv's damage stat.").Value;
             RageDrainDelay = c.Bind(Section, "Rage - Drain Delay", RageDrainDelay, "Seconds without dealing damage before rage drains.").Value;
+            RageFullDrainDelay = c.Bind(Section, "Rage - Full Drain Delay", RageFullDrainDelay, "Seconds without dealing damage before FULL rage starts to drain.").Value;
             RageDrainSeconds = c.Bind(Section, "Rage - Drain Time", RageDrainSeconds, "Seconds for full rage to drain to nothing.").Value;
         }
 
