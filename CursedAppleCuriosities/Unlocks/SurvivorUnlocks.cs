@@ -50,6 +50,8 @@ namespace CursedAppleCuriosities.Unlocks
             // Alternate skills (each unlocked by its hero's own challenge).
             SkillUnlocks.Register(Challenges.AbramsFreightTrain.Skill);
             Challenge(Challenges.AbramsFreightTrain.Identifier, "Abrams: Freight Train", $"As Abrams, slam {Challenges.AbramsFreightTrain.Enemies} or more enemies into a wall with one Shoulder Charge.");
+            SkillUnlocks.Register(Challenges.SevenLiveWire.Skill);
+            Challenge(Challenges.SevenLiveWire.Identifier, "Seven: Live Wire", $"As Seven, have one Lightning Ball shock {Challenges.SevenLiveWire.Enemies} different enemies.");
             ShotTracker.Init();
             RoR2Application.onLoad += UsePortraits;
         }

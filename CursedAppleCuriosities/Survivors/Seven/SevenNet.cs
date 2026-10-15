@@ -404,6 +404,9 @@ namespace CursedAppleCuriosities.Survivors.Seven
         private Rigidbody? _rb;
         private float _tick, _age;
         private bool _stuck;
+        /// <summary>Every enemy this ball has shocked (server), for Seven's Live Wire challenge.</summary>
+        private readonly HashSet<HealthComponent> _shocked = new HashSet<HealthComponent>();
+        private bool _reported;
 
         private void Awake()
         {
@@ -487,6 +490,12 @@ namespace CursedAppleCuriosities.Survivors.Seven
                 SevenNet.Hit(body, hc, SevenData.BallDps * SevenData.BallTickRoR2 * baseDamage, _pd != null && _pd.crit, Vector3.zero, DamageSource.Secondary, SevenData.BallProc);
                 if (hc.alive && hc.body != null) hc.body.AddTimedBuff(RoR2Content.Buffs.Slow80, SevenData.BallTickRoR2 + SevenData.BallSlowLinger);
                 SevenNet.Effect(SevenSurvivor.BoltEffect, SevenNet.Core(hc), 0.6f);
+                _shocked.Add(hc);
+            }
+            if (!_reported && _shocked.Count >= Unlocks.Challenges.SevenLiveWire.Enemies)
+            {
+                _reported = true;
+                Unlocks.Challenges.SevenLiveWire.BallFull(body);
             }
             if (_ps != null && !_stuck) _ps.desiredForwardSpeed = inside.Count > 0 ? SevenData.BallHitSpeed : SevenData.BallSpeed;
         }
