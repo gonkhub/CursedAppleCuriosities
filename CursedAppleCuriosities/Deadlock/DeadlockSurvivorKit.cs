@@ -38,7 +38,7 @@ namespace CursedAppleCuriosities.Deadlock
             ((ScriptableObject)family).name = bodyName + name + "Family";
             var variants = new SkillFamily.Variant[defs.Length];
             for (int i = 0; i < defs.Length; i++)
-                variants[i] = new SkillFamily.Variant { skillDef = defs[i], viewableNode = new ViewablesCatalog.Node(defs[i].skillNameToken, false, null) };
+                variants[i] = new SkillFamily.Variant { skillDef = defs[i], viewableNode = new ViewablesCatalog.Node(defs[i].skillNameToken, false, null), unlockableDef = Unlocks.SkillUnlocks.For(defs[i]) };
             family.variants = variants;
             ContentAddition.AddSkillFamily(family);
             var slot = body.AddComponent<GenericSkill>();

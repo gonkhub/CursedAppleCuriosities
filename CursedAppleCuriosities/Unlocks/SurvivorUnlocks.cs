@@ -47,6 +47,9 @@ namespace CursedAppleCuriosities.Unlocks
             Challenge(Challenges.CelesteShowstopper.Identifier, "Showstopper", "Kill 30 enemies within 5 seconds.");
             Challenge(Challenges.ShivKillingBlow.Identifier, "Killing Blow", "Kill a boss while below 10% health.");
             Challenge(Challenges.ApolloFlawless.Identifier, "Flawless Advance", "Complete a teleporter event without taking any damage.");
+            // Alternate skills (each unlocked by its hero's own challenge).
+            SkillUnlocks.Register(Challenges.AbramsFreightTrain.Skill);
+            Challenge(Challenges.AbramsFreightTrain.Identifier, "Abrams: Freight Train", $"As Abrams, slam {Challenges.AbramsFreightTrain.Enemies} or more enemies into a wall with one Shoulder Charge.");
             ShotTracker.Init();
             RoR2Application.onLoad += UsePortraits;
         }

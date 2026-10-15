@@ -153,14 +153,16 @@ namespace CursedAppleCuriosities.Survivors.Abrams
             var body = Attacker.GetComponent<CharacterBody>();
             if (body == null) return;
             bool crit = Wall && body.RollCrit();
+            int slammed = 0;
             foreach (AbramsCarry c in AbramsCarry.All.ToArray())
             {
                 if (c == null || c.By != body) continue;
                 // Slammed into a wall: every carried enemy takes the wall damage (user 2026-10-12), then is pinned and stunned.
                 var hc = c.GetComponent<HealthComponent>();
-                if (Wall && hc != null && hc.alive) AbramsNet.Hit(body, hc, AbramsData.ChargeWallDamage * body.damage, crit, Vector3.zero, DamageSource.Utility);
+                if (Wall && hc != null && hc.alive) { slammed++; AbramsNet.Hit(body, hc, AbramsData.ChargeWallDamage * body.damage, crit, Vector3.zero, DamageSource.Utility); }
                 c.Release(Stun, Fling);
             }
+            if (slammed > 0) Unlocks.Challenges.AbramsFreightTrain.WallSlam(body, slammed);
         }
     }
 
