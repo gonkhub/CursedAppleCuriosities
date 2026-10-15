@@ -184,7 +184,7 @@ namespace CursedAppleCuriosities.Survivors.Shiv
     /// </summary>
     public class ShivBloodletting : MonoBehaviour
     {
-        private class Pool { public float PerTick; public int TicksLeft; public GameObject? Attacker; public bool Crit; }
+        private class Pool { public float PerTick; public int TicksLeft; public GameObject? Attacker; }
         private readonly List<Pool> _pools = new List<Pool>();
         private float _nextTick;
         private CharacterBody _body = null!;
@@ -209,10 +209,25 @@ namespace CursedAppleCuriosities.Survivors.Shiv
             {
                 ShivBloodletting? b = null;
                 Pool? added = null;
+                float before = 0f, sent = 0f;
                 if (NetworkServer.active && !_ticking && info != null && !IsTick(info) && !info.rejected && info.damage > 0f && self.alive && self.TryGetComponent(out b))
+                {
+                    before = self.combinedHealth;
                     added = b!.Defer(info);
+                    sent = info!.damage;
+                }
                 orig(self, info);
-                if (added != null && info!.rejected) { b!._pools.Remove(added); b.Sync(); } // blocked after all (Tougher Times, a ward): nothing to drain
+                if (added == null) return;
+                if (info!.rejected) { b!._pools.Remove(added); b.Sync(); return; } // blocked after all (Tougher Times, a ward): nothing to drain
+                // The deferred share was taken off the raw hit, before the game's damage maths (armour, crits, curse and elite
+                // multipliers, the attacker's items). What the rest of the hit really cost tells how much the share is really worth,
+                // so the yellow bar shows the health that will actually drain (user 3.0: it came off both bars).
+                float lost = before - self.combinedHealth;
+                if (sent > 0.01f && lost > 0f)
+                {
+                    added.PerTick *= Mathf.Clamp(lost / sent, 0f, 10f);
+                    b!.Sync();
+                }
             };
         }
 
@@ -226,7 +241,7 @@ namespace CursedAppleCuriosities.Survivors.Shiv
             if (share <= 0f) return null;
             info.damage -= share;
             int ticks = Mathf.Max(1, Mathf.RoundToInt(ShivData.DeferredSeconds / ShivData.DeferredTick));
-            var pool = new Pool { PerTick = share / ticks, TicksLeft = ticks, Attacker = info.attacker, Crit = info.crit };
+            var pool = new Pool { PerTick = share / ticks, TicksLeft = ticks, Attacker = info.attacker };
             _pools.Add(pool);
             Sync();
             return pool;
@@ -253,7 +268,9 @@ namespace CursedAppleCuriosities.Survivors.Shiv
             if (_pools.Count == 0) return;
             HealthComponent hc = _body.healthComponent;
             if (hc == null || !hc.alive) { _pools.Clear(); Sync(); return; }
-            // Each pool keeps its own attacker and crit, so the kill (if it comes to that) is credited to whoever dealt it.
+            // Each pool keeps its own attacker, so the kill (if it comes to that) is credited to whoever dealt it. A tick is health
+            // already worked out (see the hook): it skips the damage maths (no crit, armour or multipliers a second time), so each
+            // tick takes exactly what it pays off the yellow bar.
             foreach (Pool p in _pools.ToArray())
             {
                 p.TicksLeft--;
@@ -262,11 +279,12 @@ namespace CursedAppleCuriosities.Survivors.Shiv
                 {
                     attacker = p.Attacker,
                     damage = p.PerTick,
-                    crit = p.Crit,
+                    crit = false,
                     position = _body.corePosition,
                     procCoefficient = 0f,
                     damageColorIndex = DamageColorIndex.Bleed,
-                    damageType = DamageType.DoT | DamageType.BypassBlock | DamageType.BypassOneShotProtection | DamageType.Silent,
+                    damageType = new DamageTypeCombo(DamageType.DoT | DamageType.BypassArmor | DamageType.BypassBlock | DamageType.BypassOneShotProtection | DamageType.Silent,
+                        DamageTypeExtended.BypassDamageCalculations, DamageSource.NoneSpecified),
                 };
                 Ticks.Add(di, di);
                 _ticking = true;

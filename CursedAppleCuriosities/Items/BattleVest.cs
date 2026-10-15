@@ -44,6 +44,7 @@ namespace CursedAppleCuriosities.Items
             On.RoR2.HealthComponent.orig_TakeDamage orig,
             HealthComponent self, DamageInfo damageInfo)
         {
+            if (FinalDamage(damageInfo)) { orig(self, damageInfo); return; } // already worked out (Bloodletting's ticks)
             if (NetworkServer.active
                 && damageInfo?.attacker != null
                 && damageInfo.damage > 0f)

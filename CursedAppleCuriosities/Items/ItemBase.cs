@@ -99,6 +99,13 @@ namespace CursedAppleCuriosities.Items
             return CreatePlaceholderSprite(fallback);
         }
 
+        /// <summary>
+        /// Damage flagged DamageTypeExtended.BypassDamageCalculations is final (vanilla skips armour, crits and every attacker
+        /// bonus for it): mod hooks must not rescale it either. Shiv's Bloodletting ticks use it (user 3.0).
+        /// </summary>
+        internal static bool FinalDamage(DamageInfo? info) =>
+            info != null && (info.damageType.damageTypeExtended & DamageTypeExtended.BypassDamageCalculations) != 0;
+
         internal static Sprite CreatePlaceholderSprite(Color color)
         {
             var tex = new Texture2D(1, 1);
