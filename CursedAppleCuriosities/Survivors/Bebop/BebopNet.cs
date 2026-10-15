@@ -547,6 +547,11 @@ namespace CursedAppleCuriosities.Survivors.Bebop
         /// <summary>Drawn as a solid coloured core and glow instead of the prefab's material (Humble Pie: red, the full reach; user 2.5).</summary>
         public Color? Solid;
         public bool HitEnemies = true;
+        /// <summary>
+        /// A plain ray (Humble Pie, user 3.0): one thin solid line, no glow or flicker, from the gun toward the point under the
+        /// crosshair, stopping at the first thing in the way along that line (within Range of the gun).
+        /// </summary>
+        public bool Simple;
         /// <summary>Set by a state (on every machine): the beam shows while true.</summary>
         public bool Active;
         /// <summary>The direction the beam points (Hyper Beam turns slower than the aim); zero = the aim.</summary>
@@ -568,6 +573,15 @@ namespace CursedAppleCuriosities.Survivors.Bebop
             _line.positionCount = 2;
             _line.useWorldSpace = true;
             _line.widthMultiplier = 0.25f * Width;
+            if (Simple)
+            {
+                _solid ??= CursedAppleCuriosities.Deadlock.DeadlockSurvivorKit.LineMaterial();
+                _line.sharedMaterial = _solid;
+                _line.startColor = _line.endColor = Solid ?? Color.red;
+                _line.shadowCastingMode = UnityEngine.Rendering.ShadowCastingMode.Off;
+                _line.numCapVertices = 2;
+                return;
+            }
             if (Solid is Color c)
             {
                 // No texture to fade out along it: a bright core inside a wider glow, end to end.
@@ -601,7 +615,21 @@ namespace CursedAppleCuriosities.Survivors.Bebop
             Vector3 from = Muzzle();
             Ray aim = _body.inputBank != null ? _body.inputBank.GetAimRay() : new Ray(_body.corePosition, transform.forward);
             Vector3 dir = Direction.sqrMagnitude > 0.01f ? Direction.normalized : aim.direction;
-            End = BebopBeams.EndPoint(aim.origin, dir, Range * MysticExpansion.RadiusMultiplier(_body), HitEnemies, _body);
+            float range = Range * MysticExpansion.RadiusMultiplier(_body);
+            if (Simple)
+            {
+                // The crosshair's point (camera ray), then a straight line to it from the gun: the first thing on that line ends it.
+                float reach = range + Vector3.Distance(aim.origin, from);
+                Vector3 cursor = BebopBeams.EndPoint(aim.origin, dir, reach, HitEnemies, _body);
+                Vector3 to = cursor - from;
+                float length = Mathf.Min(to.magnitude, range);
+                End = length > 0.01f ? BebopBeams.EndPoint(from, to / to.magnitude, length, HitEnemies, _body) : from;
+                _line.SetPosition(0, from);
+                _line.SetPosition(1, End);
+                _line.widthMultiplier = 0.05f * Width;
+                return;
+            }
+            End = BebopBeams.EndPoint(aim.origin, dir, range, HitEnemies, _body);
             _line.SetPosition(0, from);
             _line.SetPosition(1, End);
             // A slight flicker in width, like a live beam.

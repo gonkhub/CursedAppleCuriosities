@@ -168,7 +168,8 @@ namespace CursedAppleCuriosities.Survivors.Bebop
             gun.Prefab = GunBeamPrefab;
             gun.Range = BebopData.BeamRange;
             gun.Width = 2.4f;
-            gun.Solid = new Color(1f, 0.12f, 0.08f); // red, solid to its full reach (user 2.5)
+            gun.Solid = new Color(1f, 0.08f, 0.06f); // red (user 2.5)
+            gun.Simple = true; // a plain red ray from his gun to the crosshair, stopped by the first thing in the way (user 3.0)
             var hyper = body.AddComponent<BebopHyperBeamFx>();
             hyper.Prefab = HyperBeamPrefab;
             hyper.Range = BebopData.HyperLength;
