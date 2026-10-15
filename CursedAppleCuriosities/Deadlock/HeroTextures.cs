@@ -59,7 +59,7 @@ namespace CursedAppleCuriosities.Deadlock
         /// like the base texture under the skin's id. Null when the recolour leaves the texture as it was: the skin uses
         /// the base texture there (remembered as an empty cache entry).
         /// </summary>
-        public static TexData? PrepareSkin(string pngFile, string id, Func<byte[], bool> recolor)
+        public static TexData? PrepareSkin(string pngFile, string id, Func<byte[], int, int, bool> recolor)
         {
             var fi = new FileInfo(pngFile);
             var t = new TexData { Key = KeyOf(pngFile) + ":" + id, Name = Path.GetFileNameWithoutExtension(fi.Name) + "_" + id };
@@ -71,7 +71,7 @@ namespace CursedAppleCuriosities.Deadlock
             try { rgba = Png.Decode(File.ReadAllBytes(pngFile), out w, out h); }
             catch (Exception e) { CursedAppleCuriositiesPlugin.Logger?.LogWarning($"[Deadlock] {fi.Name} ({id}): {e.Message}"); }
             if (rgba == null) return null;
-            bool changed = recolor(rgba);
+            bool changed = recolor(rgba, w, h);
             if (changed) Encode(t, rgba, w, h);
             else t.Raw = Array.Empty<byte>();
             try { WriteCache(cache, fi, t); }

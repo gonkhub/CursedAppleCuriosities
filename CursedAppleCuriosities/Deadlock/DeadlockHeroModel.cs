@@ -97,6 +97,13 @@ namespace CursedAppleCuriosities.Deadlock
     {
         public string Id = "";
         public Func<byte[], bool> Recolor = _ => false;
+        /// <summary>
+        /// Instead of Recolor, when a skin needs to know which texture it's on and where a pixel is (Lash's Gilded: dark pixels
+        /// of his body texture turn gold, except on his face): (file name, RGBA pixels bottom row first, width, height).
+        /// </summary>
+        public Func<string, byte[], int, int, bool>? RecolorFile;
+
+        public bool Apply(string file, byte[] px, int w, int h) => RecolorFile != null ? RecolorFile(file, px, w, h) : Recolor(px);
         /// <summary>Only textures whose file name contains one of these are recoloured (empty = every texture): a jacket can change without the skin tones.</summary>
         public string[] Only = Array.Empty<string>();
 

@@ -30,6 +30,8 @@ namespace CursedAppleCuriosities.Survivors.Lash
         /// <summary>Skin icon in the hero's own palette (skin, dark leather, brown, the blue accent), not the stand-in's.</summary>
         private static Sprite DefaultSkinIcon => _defaultSkinIcon ??= Kit.SkinIcon(new Color(0.8f, 0.6f, 0.46f), new Color(0.28f, 0.2f, 0.17f), new Color(0.5f, 0.33f, 0.24f), new Color(0.15f, 0.45f, 0.8f));
         private static Sprite? _defaultSkinIcon;
+        private static Sprite GildedSkinIcon => _gildedSkinIcon ??= Kit.SkinIcon(new Color(0.8f, 0.6f, 0.46f), new Color(0.85f, 0.68f, 0.2f), new Color(0.5f, 0.33f, 0.24f), new Color(0.95f, 0.78f, 0.25f));
+        private static Sprite? _gildedSkinIcon;
 
         public static GameObject? BodyPrefab, DisplayPrefab;
         public static SurvivorDef? Survivor;
@@ -198,7 +200,7 @@ namespace CursedAppleCuriosities.Survivors.Lash
             // Reserve the muzzle slot now: ChildLocators can't grow after load. It points at the glove once Lash is on.
             var locatorChildren = model.GetComponent<ChildLocator>();
             if (locatorChildren != null && locatorChildren.FindChild(MuzzleName) == null) locatorChildren.AddChild(MuzzleName, model);
-            Kit.OwnSkin(model.gameObject, "skinCursedAppleLashDEFAULT", Token + "SKIN_DEFAULT", DefaultSkinIcon);
+            Kit.OwnSkin(model.gameObject, "skinCursedAppleLashDEFAULT", Token + "SKIN_DEFAULT", DefaultSkinIcon, ("skinCursedAppleLashGILDED", Token + "SKIN_GILDED", GildedSkinIcon));
 
             BiggerCamera(body);
             ContentAddition.AddBody(body);
@@ -228,7 +230,7 @@ namespace CursedAppleCuriosities.Survivors.Lash
                 var swap = cm.gameObject.AddComponent<DeadlockModelSwap>();
                 swap.HeroKey = LashData.Hero;
                 swap.IsDisplay = true;
-                Kit.OwnSkin(cm.gameObject, "skinCursedAppleLashDISPLAY", Token + "SKIN_DEFAULT", DefaultSkinIcon);
+                Kit.OwnSkin(cm.gameObject, "skinCursedAppleLashDISPLAY", Token + "SKIN_DEFAULT", DefaultSkinIcon, ("skinCursedAppleLashDISPLAYGILDED", Token + "SKIN_GILDED", GildedSkinIcon));
             }
             display.AddComponent<LashDisplayIntro>();
             return display;
@@ -307,6 +309,7 @@ namespace CursedAppleCuriosities.Survivors.Lash
             LanguageAPI.Add(Token + "NAME", "Lash");
             LanguageAPI.Add(Token + "SUBTITLE", "Showman of the Cursed Apple");
             LanguageAPI.Add(Token + "SKIN_DEFAULT", "Default");
+            LanguageAPI.Add(Token + "SKIN_GILDED", "Gilded");
             LanguageAPI.Add(Token + "DESCRIPTION",
                 "Jacob Lash is an Asshole<color=#CCD3E0>\n\n" +
                 "< ! > Ground Strike hits harder the further you fall. Grapple up, then strike back down.\n\n" +

@@ -11,6 +11,7 @@ namespace CursedAppleCuriosities.Unlocks.Challenges
     {
         /// <summary>Abrams' mastery is his existing Green recolour (user); Vyper, Viscous, Celeste, Mina and Paradox reuse theirs too, Seven's is the new Overcharged.</summary>
         public const string AbramsSkin = "Abrams.Mastery";
+        public const string LashSkin = "Lash.Mastery";
         public const string SevenSkin = "Seven.Mastery";
         public const string VyperSkin = "Vyper.Mastery";
         public const string ViscousSkin = "Viscous.Mastery";
@@ -59,5 +60,11 @@ namespace CursedAppleCuriosities.Unlocks.Challenges
     public class ParadoxMastery : BasePerSurvivorClearGameMonsoonAchievement
     {
         protected override BodyIndex LookUpRequiredBodyIndex() => BodyCatalog.FindBodyIndex("CursedAppleParadoxBody");
+    }
+
+    [RegisterAchievement("CursedAppleLashMastery", "CursedApple.Skins." + Masteries.LashSkin, null, 0, null)]
+    public class LashMastery : BasePerSurvivorClearGameMonsoonAchievement
+    {
+        protected override BodyIndex LookUpRequiredBodyIndex() => BodyCatalog.FindBodyIndex("CursedAppleLashBody");
     }
 }
