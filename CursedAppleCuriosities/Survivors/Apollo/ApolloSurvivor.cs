@@ -28,6 +28,10 @@ namespace CursedAppleCuriosities.Survivors.Apollo
             Anims = ApolloData.Anims,
             RootLocked = ApolloData.Locked,
             ItemAnchors = ApolloItemDisplays.Anchors,
+            // Blackmore Colors (skin 1, his mastery, user 3.0): his fencing whites become a Blackmore Academy uniform, after Graves'
+            // jacket (her burgundy blazer with dark forest-green panels, read from her Deadlock textures): his white jacket goes
+            // burgundy, his crimson panels forest green, his white trousers charcoal with burgundy piping. Skin and hair untouched.
+            Skins = new[] { new DeadlockSkin { Id = "blackmore1", Only = new[] { "fencer_upper", "fencer_lower" }, RecolorFile = ApolloSkins.Blackmore } },
             HideMeshes = new[] { "head_ui_smug_reduced", "head_ui_cocky", "head_ui_smug" }, // menu-portrait heads over his real one
             // His sword hangs off root_motion (weaponPivot/weapon); every clip puts its root exactly on weapon_target_hand_R (his right
             // hand's sword socket): snapped there, it stays in his hand whatever plays (user 2.5).
@@ -175,7 +179,7 @@ namespace CursedAppleCuriosities.Survivors.Apollo
             Kit.MuteStandIn(body, model.gameObject, ApolloData.Hero);
             var children = model.GetComponent<ChildLocator>();
             if (children != null && children.FindChild(MuzzleName) == null) children.AddChild(MuzzleName, model);
-            Kit.OwnSkin(model.gameObject, "skinCursedAppleApolloDEFAULT", Token + "SKIN_DEFAULT");
+            Kit.OwnSkin(model.gameObject, "skinCursedAppleApolloDEFAULT", Token + "SKIN_DEFAULT", null, ("skinCursedAppleApolloBLACKMORE", Token + "SKIN_BLACKMORE", ApolloSkins.BlackmoreIcon));
             ContentAddition.AddBody(body);
             return body;
         }
@@ -190,7 +194,7 @@ namespace CursedAppleCuriosities.Survivors.Apollo
                 var swap = cm.gameObject.AddComponent<DeadlockModelSwap>();
                 swap.HeroKey = ApolloData.Hero;
                 swap.IsDisplay = true;
-                Kit.OwnSkin(cm.gameObject, "skinCursedAppleApolloDISPLAY", Token + "SKIN_DEFAULT");
+                Kit.OwnSkin(cm.gameObject, "skinCursedAppleApolloDISPLAY", Token + "SKIN_DEFAULT", null, ("skinCursedAppleApolloDISPLAYBLACKMORE", Token + "SKIN_BLACKMORE", ApolloSkins.BlackmoreIcon));
             }
             display.AddComponent<ApolloDisplayIntro>(); // lobby entrance (user 2.5)
             return display;
@@ -241,6 +245,7 @@ namespace CursedAppleCuriosities.Survivors.Apollo
             LanguageAPI.Add(Token + "PASSIVE_DESC", Kit.MovementLine(ApolloData.Movement, alone: true));
             LanguageAPI.Add(Token + "SUBTITLE", "The Duelist");
             LanguageAPI.Add(Token + "SKIN_DEFAULT", "Default");
+            LanguageAPI.Add(Token + "SKIN_BLACKMORE", "Blackmore Colors");
             LanguageAPI.Add(Token + "DESCRIPTION",
                 "Apollo is the prince of North Ixia, sent away for his own safety and waiting to prove he's worthy of his family's ancestral blade.<color=#CCD3E0>\n\n" +
                 "< ! > Your sword waves cut through every enemy in a line: line them up.\n\n" +

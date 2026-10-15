@@ -82,6 +82,8 @@ namespace CursedAppleCuriosities.Unlocks
             // Chrome: its own challenge (user 3.0), hook an enemy at the end of Grapple Arm's reach.
             SkinUnlocks.Register(Challenges.Masteries.IvySkin, "CURSEDAPPLE_IVY_SKIN_JADE", "skinCursedAppleIvyJADE", "skinCursedAppleIvyDISPLAYJADE");
             Challenge("CursedAppleIvyMastery", "Ivy: Mastery", "As Ivy, beat the game or obliterate on Monsoon.");
+            SkinUnlocks.Register(Challenges.Masteries.ApolloSkin, "CURSEDAPPLE_APOLLO_SKIN_BLACKMORE", "skinCursedAppleApolloBLACKMORE", "skinCursedAppleApolloDISPLAYBLACKMORE");
+            Challenge("CursedAppleApolloMastery", "Apollo: Mastery", "As Apollo, beat the game or obliterate on Monsoon.");
             // Obsidian: its own challenge (user 3.0), Rock Bottom.
             SkinUnlocks.Register(Challenges.Masteries.IvyObsidianSkin, "CURSEDAPPLE_IVY_SKIN_OBSIDIAN", "skinCursedAppleIvyOBSIDIAN", "skinCursedAppleIvyDISPLAYOBSIDIAN");
             SkinUnlocks.Register(Challenges.Masteries.BebopChromeSkin, "CURSEDAPPLE_BEBOP_SKIN_CHROME", "skinCursedAppleBebopCHROME", "skinCursedAppleBebopDISPLAYCHROME");

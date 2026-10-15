@@ -141,6 +141,40 @@ namespace CursedAppleCuriosities.Deadlock
             return changed;
         };
 
+        /// <summary>
+        /// White and light-grey cloth (saturation under maxSat, value over minV) dyed hue at sat, value x valMul. Fully dyed well
+        /// under the saturation limit, so near-whites don't come out mottled (Apollo's Blackmore blazer).
+        /// </summary>
+        public static Func<byte[], bool> DyeWhites(float maxSat, float minV, float hue, float sat, float valMul) => px =>
+        {
+            bool changed = false;
+            for (int i = 0; i < px.Length; i += 4)
+            {
+                Color.RGBToHSV(new Color32(px[i], px[i + 1], px[i + 2], 255), out _, out float s, out float v);
+                if (s >= maxSat || v < minV) continue;
+                float w = Mathf.Clamp01((maxSat - s) / (maxSat * 0.4f)) * Mathf.Clamp01((v - minV) / 0.1f);
+                if (w <= 0f) continue;
+                Mix(px, i, Color.HSVToRGB(hue / 360f, sat, Mathf.Min(1f, v * valMul)), w);
+                changed = true;
+            }
+            return changed;
+        };
+
+        /// <summary>Greys (saturation under maxSat) darkened to valMul of their value, fully below 60% of the limit (charcoal cloth).</summary>
+        public static Func<byte[], bool> DarkenGreys(float maxSat, float valMul) => px =>
+        {
+            bool changed = false;
+            for (int i = 0; i < px.Length; i += 4)
+            {
+                Color.RGBToHSV(new Color32(px[i], px[i + 1], px[i + 2], 255), out _, out float s, out float v);
+                if (v <= 0f || s >= maxSat) continue;
+                float w = Mathf.Clamp01((maxSat - s) / (maxSat * 0.4f));
+                Mix(px, i, new Color(px[i] / 255f * valMul, px[i + 1] / 255f * valMul, px[i + 2] / 255f * valMul), w);
+                changed = true;
+            }
+            return changed;
+        };
+
         private static void Mix(byte[] px, int i, Color n, float w)
         {
             px[i] = (byte)Mathf.RoundToInt(Mathf.Lerp(px[i], n.r * 255f, w));
