@@ -58,6 +58,11 @@ namespace CursedAppleCuriosities.Stages.DeadlockMap
         /// important goes there every stage, the teleporter (Walker Teleporter Chance) or else one major interactable.
         /// </summary>
         public float[] WalkerSlot = System.Array.Empty<float>();
+        /// <summary>
+        /// Where an elite Imp Overlord always waits, every visit (x, y, z, yaw in the section's Unity space; cac_map_mark imp).
+        /// Sunken Plaza's purple pit.
+        /// </summary>
+        public float[] ImpLordSpot = System.Array.Empty<float>();
         /// <summary>Newt altar spots: x, y, z, yaw each, in the section's Unity space (from cac_map_mark). One altar per stage, at one of them.</summary>
         public float[] NewtAltars = System.Array.Empty<float>();
         /// <summary>Lowest point of the playable area (units): anything below falls out of the map.</summary>
@@ -391,7 +396,7 @@ namespace CursedAppleCuriosities.Stages.DeadlockMap
             3864, 480, 320, 4024, 640, 1088,
             4336, 2784, -120, 4464, 2912, 1714,
         };
-        public static readonly float[] Outline = {669, 433, 650, 2402, 1083, 2717, 1280, 2717, 1654, 2913, 1929, 3189, 1949, 5039, 3071, 5118, 3425, 5394, 3445, 7441, 4311, 7362, 4764, 6969, 5138, 7008, 5413, 6850, 6378, 6732, 7323, 6299, 7776, 6260, 7815, 6181, 9252, 6142, 9311, 3701, 9134, 3543, 8878, 3543, 8701, 3346, 8701, 512, 8602, 394, 7480, 394, 7067, 512, 5276, 472, 5177, 394 };
+        public static readonly float[] Outline = {669, 433, 650, 2402, 1083, 2717, 1280, 2717, 1654, 2913, 1929, 3189, 1949, 5039, 3071, 5118, 3425, 5394, 3445, 7441, 4311, 7362, 4764, 6969, 5138, 7008, 5413, 6850, 6378, 6732, 7323, 6299, 7776, 6260, 7815, 6181, 9252, 6142, 9311, 3701, 9134, 3543, 8878, 3543, 8600, 3346, 8600, 512, 8560, 394, 7480, 394, 7067, 512, 5276, 472, 5177, 394 };
         public static readonly int[] VentTunnels = { // min x, y, z, max x, y, z
             -1328, 1312, -640, 832, 1696, -184,
             296, 1024, -640, 640, 1312, -480,
@@ -463,7 +468,7 @@ namespace CursedAppleCuriosities.Stages.DeadlockMap
             3864, -904, 272, 4024, -744, 1130,
             3008, -1968, 400, 3168, -1808, 2630,
         };
-        public static readonly float[] Outline = {-217, -5354, -177, -3386, 197, -3386, 433, -3110, 531, -472, 610, -433, 2480, -433, 3720, -591, 9114, -591, 9016, -1654, 9016, -3346, 8740, -5079, 8386, -5276, 7126, -5276, 6949, -5472, 6890, -6142, 6732, -6260, 5315, -6260, 5118, -6457, 5157, -7795, 5079, -7874, 1201, -7795, 1083, -7441, 925, -7283, 610, -7244, 492, -7087, 433, -5630, 276, -5472 };
+        public static readonly float[] Outline = {-217, -5354, -200, -4520, 1076, -4520, 1076, -3230, 480, -3230, 531, -472, 610, -433, 2480, -433, 3720, -591, 9114, -591, 9016, -1654, 9016, -3346, 8740, -5079, 8386, -5276, 7126, -5276, 6949, -5472, 6890, -6142, 6732, -6260, 5315, -6260, 5118, -6457, 5157, -7795, 5079, -7874, 1201, -7795, 1083, -7441, 925, -7283, 610, -7244, 492, -7087, 433, -5630, 276, -5472 };
         public static readonly int[] VentTunnels = { // min x, y, z, max x, y, z
             -832, -1696, -640, 1280, -1408, -192,
             256, -1408, -640, 384, -1296, -448,

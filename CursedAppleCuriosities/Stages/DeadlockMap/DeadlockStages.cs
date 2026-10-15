@@ -382,6 +382,7 @@ namespace CursedAppleCuriosities.Stages.DeadlockMap
                 SpawnNewtAltars(District.Def);
                 SpawnFixed(District);
                 WalkerSlot(District.Def);
+                SpawnImpLord(District.Def);
                 SpawnShops(District);
                 Log($"director started (stage ready), {Spawns.Count} player spawns placed");
                 Destroy(gameObject);
@@ -401,6 +402,51 @@ namespace CursedAppleCuriosities.Stages.DeadlockMap
                 DeadlockStages.SitOnFloor(altar, at.y);
                 NetworkServer.Spawn(altar);
                 Log($"newt altar placed at spot {i / 4 + 1} of {spots}");
+            }
+
+            /// <summary>
+            /// An elite Imp Overlord at the district's <see cref="MapSectionDef.ImpLordSpot"/>, every visit: a random tier-1 elite
+            /// (fire, ice, lightning...), stats and rewards as the combat director gives an elite Overlord.
+            /// </summary>
+            private static void SpawnImpLord(MapSectionDef def)
+            {
+                float[] p = def.ImpLordSpot;
+                GameObject? world = GameObject.Find("DeadlockMap");
+                if (p.Length < 4 || world == null || Run.instance == null || DirectorCore.instance == null) return;
+                SpawnCard? card = Addressables.LoadAssetAsync<SpawnCard>("RoR2/Base/ImpBoss/cscImpBoss.asset").WaitForCompletion();
+                if (card == null) { Warn("no Imp Overlord spawn card"); return; }
+                var rng = new Xoroshiro128Plus(Run.instance.stageRng.nextUlong);
+                // Vanilla's first elite tier (private): its cost multiplier and a random elite of it available this run.
+                var tiers = typeof(CombatDirector).GetField("eliteTiers", BindingFlags.Static | BindingFlags.NonPublic)?.GetValue(null) as CombatDirector.EliteTierDef[];
+                CombatDirector.EliteTierDef? tier = tiers != null && tiers.Length > 1 ? tiers[1] : null;
+                EliteDef? elite = tier?.GetRandomAvailableEliteDef(rng);
+                float value = tier?.costMultiplier ?? 1f;
+                var anchor = new GameObject("ImpLordAnchor");
+                anchor.transform.SetPositionAndRotation(world.transform.TransformPoint(new Vector3(p[0], p[1], p[2])), Quaternion.Euler(0f, p[3] + world.transform.eulerAngles.y, 0f));
+                var request = new DirectorSpawnRequest(card, new DirectorPlacementRule { placementMode = DirectorPlacementRule.PlacementMode.Direct, spawnOnTarget = anchor.transform }, rng)
+                {
+                    teamIndexOverride = TeamIndex.Monster,
+                    ignoreTeamMemberLimit = true,
+                };
+                request.onSpawnedServer = result =>
+                {
+                    CharacterMaster? master = result.success && result.spawnedInstance != null ? result.spawnedInstance.GetComponent<CharacterMaster>() : null;
+                    if (master == null || master.inventory == null) return;
+                    if (elite?.eliteEquipmentDef != null) master.inventory.SetEquipmentIndex(elite.eliteEquipmentDef.equipmentIndex);
+                    master.inventory.GiveItemPermanent(RoR2Content.Items.BoostHp, Mathf.RoundToInt(((elite?.healthBoostCoefficient ?? 1f) - 1f) * 10f));
+                    master.inventory.GiveItemPermanent(RoR2Content.Items.BoostDamage, Mathf.RoundToInt(((elite?.damageBoostCoefficient ?? 1f) - 1f) * 10f));
+                    DeathRewards? rewards = master.GetBodyObject()?.GetComponent<DeathRewards>();
+                    if (rewards != null)
+                    {
+                        float worth = card.directorCreditCost * value * 0.2f; // the scene director's exp reward coefficient
+                        rewards.spawnValue = (int)Mathf.Max(1f, worth);
+                        rewards.expReward = (uint)Mathf.Max(1f, worth * Run.instance.compensatedDifficultyCoefficient);
+                        rewards.goldReward = (uint)Mathf.Max(1f, worth * 2f * Run.instance.compensatedDifficultyCoefficient);
+                    }
+                    Log($"an elite Imp Overlord ({(elite != null ? elite.name : "no elite available")}) waits in its pit");
+                };
+                if (DirectorCore.instance.TrySpawnObject(request) == null) Warn($"the Imp Overlord couldn't be placed at {anchor.transform.position}");
+                Destroy(anchor);
             }
 
             /// <summary>
