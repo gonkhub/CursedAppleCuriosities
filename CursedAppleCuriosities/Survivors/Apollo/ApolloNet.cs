@@ -20,10 +20,18 @@ namespace CursedAppleCuriosities.Survivors.Apollo
             NetworkingAPI.RegisterMessageType<ApolloParryMessage>();
             NetworkingAPI.RegisterMessageType<ApolloRiposteMessage>();
             NetworkingAPI.RegisterMessageType<ApolloRingMessage>();
+            NetworkingAPI.RegisterMessageType<ApolloUltMessage>();
             RecalculateStatsAPI.GetStatCoefficients += (body, args) =>
             {
                 if (ApolloSurvivor.SigilSlow != null && body.HasBuff(ApolloSurvivor.SigilSlow)) args.moveSpeedReductionMultAdd += ApolloData.SigilSlow;
                 if (ApolloSurvivor.RiposteSlow != null && body.HasBuff(ApolloSurvivor.RiposteSlow)) args.moveSpeedReductionMultAdd += ApolloData.RiposteSlow;
+            };
+            // Itani Lo Sahn: masked, he takes 70% less damage (Deadlock IncomingDamageReductionPercent).
+            On.RoR2.HealthComponent.TakeDamage += (orig, self, info) =>
+            {
+                if (NetworkServer.active && info != null && ApolloSurvivor.UltMaskBuff != null && self.body != null && self.body.HasBuff(ApolloSurvivor.UltMaskBuff))
+                    info.damage *= ApolloData.UltDamageTaken;
+                orig(self, info);
             };
             // Riposte: the first hit Apollo takes in the stance is deflected (Deadlock: the next incoming attack), and he counters.
             On.RoR2.HealthComponent.TakeDamage += (orig, self, info) =>

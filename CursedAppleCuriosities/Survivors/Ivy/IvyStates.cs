@@ -53,29 +53,60 @@ namespace EntityStates.CursedApple.Ivy
         public override InterruptPriority GetMinimumInterruptPriority() => InterruptPriority.Skill;
     }
 
-    // ================= Secondary: Entangling Thorns =================
+    // ================= Secondary: Kudzu Bomb =================
 
-    /// <summary>Entangling Thorns (Deadlock citadel_ability_tengu_urn): toss a seed in an arc; a thorn patch grows where it lands (IvySeed).</summary>
+    /// <summary>
+    /// Kudzu Bomb (Deadlock citadel_ability_tengu_urn): hold to aim, with the arc and the patch it will grow previewed (Deadlock's
+    /// generic_arc and stone squall preview; user 2.5); release to throw. The bomb flies at 1800 hu/s with a little loft (10 deg)
+    /// and grows a kudzu patch where it lands (IvySeed).
+    /// </summary>
     public class ThrowThorns : BaseSkillState
     {
+        private IvyThrowPreview? _preview;
+        private DeadlockVoice? _aimLoop;
+
         public override void OnEnter()
         {
             base.OnEnter();
+            DeadlockSounds.Play("ivy_bomb_select", transform.position, gameObject);
+            _aimLoop = DeadlockSounds.Loop("ivy_bomb_aim_loop", gameObject, 30f);
+            if (isAuthority && characterBody.isPlayerControlled)
+                _preview = new IvyThrowPreview(IvyData.ThornsRadius * MysticExpansion.RadiusMultiplier(characterBody), showArc: true);
+        }
+
+        private Ray Throw()
+        {
+            Ray aim = GetAimRay();
+            Vector3 right = Vector3.Cross(Vector3.up, aim.direction);
+            Vector3 dir = right.sqrMagnitude > 1e-4f ? Quaternion.AngleAxis(-IvyData.ThornsThrowUp, right.normalized) * aim.direction : aim.direction;
+            return new Ray(aim.origin + aim.direction, dir);
+        }
+
+        public override void FixedUpdate()
+        {
+            base.FixedUpdate();
+            StartAimMode(0.5f);
+            if (!isAuthority) return;
+            Ray t = Throw();
+            _preview?.Update(t.origin, t.direction * IvyData.ThornsThrowSpeed, IvyData.ThornsRadius * MysticExpansion.RadiusMultiplier(characterBody));
+            if (inputBank != null && inputBank.skill2.down && fixedAge < IvyData.ThornsMaxAim) return;
             IvyModel.Play(gameObject, "cast");
+            DeadlockSounds.Play("ivy_bomb_throw", transform.position, gameObject);
             DeadlockHeroVoice.Power("ivy_vo_power1", gameObject);
-            StartAimMode(1f);
-            if (isAuthority && IvySurvivor.SeedProjectile != null)
-            {
-                Ray aim = GetAimRay();
-                Vector3 right = Vector3.Cross(Vector3.up, aim.direction);
-                Vector3 dir = right.sqrMagnitude > 1e-4f ? Quaternion.AngleAxis(-IvyData.ThornsThrowUp, right.normalized) * aim.direction : aim.direction;
+            if (IvySurvivor.SeedProjectile != null)
                 ProjectileManager.instance.FireProjectile(new FireProjectileInfo
                 {
-                    projectilePrefab = IvySurvivor.SeedProjectile, position = aim.origin + aim.direction, rotation = Quaternion.LookRotation(dir),
+                    projectilePrefab = IvySurvivor.SeedProjectile, position = t.origin, rotation = Quaternion.LookRotation(t.direction),
                     owner = gameObject, damage = damageStat, crit = RollCrit(), force = 0f, speedOverride = IvyData.ThornsThrowSpeed,
                 });
-            }
-            if (isAuthority) outer.SetNextStateToMain();
+            outer.SetNextStateToMain();
+        }
+
+        public override void OnExit()
+        {
+            _preview?.Destroy();
+            DeadlockSounds.Stop(_aimLoop);
+            base.OnExit();
         }
 
         public override InterruptPriority GetMinimumInterruptPriority() => InterruptPriority.Skill;
@@ -84,14 +115,17 @@ namespace EntityStates.CursedApple.Ivy
     // ================= Utility: Stone Form =================
 
     /// <summary>
-    /// Stone Form (Deadlock citadel_ability_tengu_stone_form): she turns to stone (invulnerable, healing), rises a little if she's on the
-    /// ground, then slams straight down, steering a bit; the impact hurts and stuns everything around (5.75 m). She stays stone a moment
-    /// after landing, then breaks out.
+    /// Stone Form (Deadlock citadel_ability_tengu_stone_form; reworked, user 2.5). She turns to stone (her statue: IvyStoneLook),
+    /// invulnerable and healing, and hangs a moment (AbilityCastDelay 0.25 s). On the ground she first rises 4.6 m over a second
+    /// (LiftHeight / LiftTime, eased out); then she drops like a statue, accelerating hard, steerable at up to 8 m/s, keeping only a
+    /// quarter of her momentum (DampingFactor). The slam hurts and stuns in 5.75 m. She stays a statue for the rest of the 3 s
+    /// (AbilityDuration); utility or jump breaks out early once she has landed.
     /// </summary>
     public class StoneForm : BaseSkillState
     {
         private bool _lifting, _landed;
-        private float _landedAt;
+        private float _landedAt, _liftStart;
+        private Vector3 _flat;
 
         public override void OnEnter()
         {
@@ -99,42 +133,68 @@ namespace EntityStates.CursedApple.Ivy
             _lifting = characterMotor != null && characterMotor.isGrounded;
             IvyModel.Play(gameObject, _lifting ? "stone" : "stone_air");
             DeadlockSounds.Play("ivy_stone_cast", transform.position, gameObject);
+            DeadlockSounds.Play("ivy_stone_cast_layer", transform.position, gameObject);
             DeadlockHeroVoice.Power("ivy_vo_power3", gameObject);
             if (!isAuthority) return;
             IvyNet.ToServer(new IvyStoneMessage { Ivy = gameObject, Kind = IvyStoneKind.Start });
-            if (_lifting && characterMotor != null) characterMotor.Motor.ForceUnground();
+            if (characterMotor != null)
+            {
+                Vector3 v = characterMotor.velocity;
+                _flat = new Vector3(v.x, 0f, v.z) * IvyData.StoneDamping;
+                if (_lifting) characterMotor.Motor.ForceUnground();
+                characterMotor.disableAirControlUntilCollision = false;
+            }
         }
 
         public override void FixedUpdate()
         {
             base.FixedUpdate();
             if (!isAuthority || characterMotor == null) return;
+            float dt = Time.fixedDeltaTime;
             if (_landed)
             {
                 characterMotor.velocity = Vector3.zero;
-                if (fixedAge - _landedAt >= IvyData.StoneHoldAfterLanding) outer.SetNextStateToMain();
+                characterMotor.moveDirection = Vector3.zero;
+                float since = fixedAge - _landedAt;
+                bool breakOut = since >= IvyData.StoneHoldAfterLanding && inputBank != null && (inputBank.skill3.justPressed || inputBank.jump.justPressed);
+                bool timeUp = fixedAge >= IvyData.StoneMaxSeconds * DurationExtender.Multiplier(characterBody) && since >= IvyData.StoneHoldAfterLanding;
+                if (breakOut || timeUp) outer.SetNextStateToMain();
                 return;
             }
-            if (_lifting && fixedAge < IvyData.StoneLiftTime)
+            // Turning to stone: she hangs where she is.
+            if (fixedAge < IvyData.StoneCastDelay)
             {
-                characterMotor.velocity = Vector3.up * (IvyData.StoneLift / IvyData.StoneLiftTime);
+                characterMotor.velocity = new Vector3(_flat.x, 0f, _flat.z);
+                _liftStart = fixedAge;
+                return;
+            }
+            if (_lifting && fixedAge - _liftStart < IvyData.StoneLiftTime)
+            {
+                // h(s) = Lift (1 - (1 - s)^2): up fast, easing to a stop at the top.
+                float s = (fixedAge - _liftStart) / IvyData.StoneLiftTime;
+                characterMotor.velocity = new Vector3(_flat.x, 2f * IvyData.StoneLift * (1f - s) / IvyData.StoneLiftTime, _flat.z);
                 return;
             }
             Vector3 steer = inputBank != null ? inputBank.moveVector * IvyData.StoneSteer : Vector3.zero;
-            characterMotor.velocity = new Vector3(steer.x, -IvyData.StoneSlamSpeed, steer.z);
-            if ((characterMotor.isGrounded && fixedAge > 0.1f) || fixedAge >= IvyData.StoneMaxSeconds) Land();
+            _flat = Vector3.MoveTowards(_flat, new Vector3(steer.x, 0f, steer.z), 20f * dt);
+            float vy = Mathf.Max(Mathf.Min(characterMotor.velocity.y, 0f) - IvyData.StoneFallAccel * dt, -IvyData.StoneFallMax);
+            characterMotor.velocity = new Vector3(_flat.x, vy, _flat.z);
+            bool falling = fixedAge > IvyData.StoneCastDelay + (_lifting ? IvyData.StoneLiftTime : 0f) + 0.05f;
+            if ((characterMotor.isGrounded && falling) || fixedAge >= 6f) Land();
         }
 
         private void Land()
         {
             _landed = true;
             _landedAt = fixedAge;
+            IvyModel.Play(gameObject, "stone_hold");
             IvyNet.ToServer(new IvyStoneMessage { Ivy = gameObject, Kind = IvyStoneKind.Slam, At = characterBody.footPosition, Crit = RollCrit() });
         }
 
         public override void OnExit()
         {
             if (isAuthority) IvyNet.ToServer(new IvyStoneMessage { Ivy = gameObject, Kind = IvyStoneKind.End });
+            IvyModel.Play(gameObject, "idle");
             base.OnExit();
         }
 
@@ -154,6 +214,7 @@ namespace EntityStates.CursedApple.Ivy
         private float _limit;
         private bool _dropped;
         private DeadlockVoice? _loop;
+        private IvyThrowPreview? _preview;
 
         public override void OnEnter()
         {
@@ -170,7 +231,16 @@ namespace EntityStates.CursedApple.Ivy
                 characterMotor.disableAirControlUntilCollision = false;
             }
             if (UnityEngine.Networking.NetworkServer.active) DeadlockFallGuard.ProtectNextLanding(gameObject, _limit + 6f);
+            // Where the bomb would land, and how wide it blows (user 2.5).
+            if (isAuthority && characterBody.isPlayerControlled) _preview = new IvyThrowPreview(Radius, showArc: true);
         }
+
+        private float Radius => IvyData.AirDropRadius * MysticExpansion.RadiusMultiplier(characterBody);
+
+        private Vector3 ReleasePoint => characterBody.footPosition + Vector3.down * 0.5f;
+
+        /// <summary>The toss: along her aim (much farther, user 2.5), on top of the way she's flying.</summary>
+        private Vector3 TossVelocity() => _vel + (inputBank != null ? inputBank.aimDirection : characterDirection.forward) * IvyData.BombToss;
 
         public override void FixedUpdate()
         {
@@ -189,6 +259,7 @@ namespace EntityStates.CursedApple.Ivy
             _vel = Vector3.MoveTowards(_vel, want, IvyData.FlyAccel * 4f * dt);
             characterMotor.velocity = _vel;
             characterDirection.forward = flat;
+            _preview?.Update(ReleasePoint, TossVelocity(), Radius);
             bool press = fixedAge > 0.3f && (inputBank.skill4.justPressed || inputBank.skill1.justPressed);
             if (!_dropped && (press || fixedAge >= _limit)) Drop();
             if (_dropped && fixedAge > 0.1f) outer.SetNextStateToMain();
@@ -198,8 +269,9 @@ namespace EntityStates.CursedApple.Ivy
         {
             _dropped = true;
             IvyModel.Play(gameObject, "fly_drop");
-            Vector3 v = new Vector3(_vel.x, 0f, _vel.z) * 0.6f + Vector3.down * IvyData.BombSpeed * 0.3f;
-            IvyNet.ToServer(new IvyBombMessage { Ivy = gameObject, At = characterBody.footPosition + Vector3.down * 0.5f, Velocity = v, Crit = RollCrit() });
+            _preview?.Destroy();
+            _preview = null;
+            IvyNet.ToServer(new IvyBombMessage { Ivy = gameObject, At = ReleasePoint, Velocity = TossVelocity(), Crit = RollCrit() });
         }
 
         public override void OnExit()
@@ -207,7 +279,13 @@ namespace EntityStates.CursedApple.Ivy
             DeadlockSounds.Stop(_loop);
             DeadlockSounds.Play("ivy_airdrop_end", transform.position, gameObject);
             if (isAuthority && !_dropped) Drop(); // interrupted: the bomb still falls
-            if (isAuthority && characterMotor != null) characterMotor.velocity = new Vector3(_vel.x * 0.5f, Mathf.Min(_vel.y, 2f), _vel.z * 0.5f);
+            _preview?.Destroy();
+            // She keeps her momentum after the throw (user 2.5), and air control.
+            if (isAuthority && characterMotor != null)
+            {
+                characterMotor.velocity = _vel;
+                characterMotor.disableAirControlUntilCollision = false;
+            }
             base.OnExit();
         }
 

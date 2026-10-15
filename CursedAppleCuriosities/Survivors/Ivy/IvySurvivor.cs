@@ -34,7 +34,7 @@ namespace CursedAppleCuriosities.Survivors.Ivy
     }
 
     /// <summary>
-    /// Ivy from Deadlock (hero_tengu) as a RoR2 survivor. The user asked me to design her (2026-10-14): Protector's Hand, Entangling Thorns,
+    /// Ivy from Deadlock (hero_tengu) as a RoR2 survivor. The user asked me to design her (2026-10-14): Protector's Hand, Kudzu Bomb,
     /// Stone Form, Air Drop; passive Kudzu Connection, always bound to the nearest ally (players, drones, minions: user 2.5).
     /// </summary>
     public static class IvySurvivor
@@ -48,7 +48,7 @@ namespace CursedAppleCuriosities.Survivors.Ivy
         public static GameObject? BodyPrefab, DisplayPrefab, SeedProjectile, BombProjectile;
         public static SurvivorDef? Survivor;
         public static BuffDef? TetherBuff, ThornsSlow, StoneBuff, AirDropBuff;
-        public static GameObject? TracerEffect, HitEffect, MuzzleEffect, SlamEffect, BombEffect;
+        public static GameObject? TracerEffect, HitEffect, MuzzleEffect, SlamEffect, BombEffect, KudzuBurstEffect, StoneSlamEffect;
         public static Material? VineMaterial;
 
         private static SkillDef? _gun, _thorns, _stone, _airdrop;
@@ -63,11 +63,15 @@ namespace CursedAppleCuriosities.Survivors.Ivy
                 DeadlockInstall.WantIcon(icon);
             DeadlockHeroes.Register(IvyModel.Def);
             DeadlockInstall.WantModel(IvyModel.Def.ModelRequest());
+            DeadlockInstall.WantModel(new DeadlockInstall.ModelRequest { Hero = IvyData.StatueKey, DlModel = IvyData.DlStatueModel }); // her Stone Form statue
 
             TracerEffect = TryLoad<GameObject>("RoR2/Base/Commando/TracerCommandoDefault.prefab");
             HitEffect = TryLoad<GameObject>("RoR2/Base/Commando/HitsparkCommando.prefab");
             MuzzleEffect = TryLoad<GameObject>("RoR2/Base/Bandit2/MuzzleflashBandit2.prefab");
             SlamEffect = TryLoad<GameObject>("RoR2/Base/Common/VFX/OmniExplosionVFXQuick.prefab");
+            // Kudzu Bomb's burst: REX's plant shockwave (green growth). Stone Form's landing: the Parent's ground slam (dust and debris).
+            KudzuBurstEffect = TryLoad<GameObject>("RoR2/Base/Treebot/TreebotPlantShockwaveEffect.prefab", "RoR2/Base/Characters/Treebot/Skills/TreebotPlantShockwaveEffect.prefab");
+            StoneSlamEffect = TryLoad<GameObject>("RoR2/Base/Parent/ParentSlamEffect.prefab", "RoR2/Base/Characters/Parent/ParentSlamEffect.prefab");
             BombEffect = Kit.Recoloured(TryLoad<GameObject>("RoR2/Base/Commando/OmniExplosionVFXCommandoGrenade.prefab"), "CursedAppleIvyBombBlast", Hue, effect: true);
             VineMaterial = TryLoad<Material>("RoR2/Base/Common/VFX/matLaserPointerBeam.mat");
             CreateBuffs();
@@ -89,7 +93,6 @@ namespace CursedAppleCuriosities.Survivors.Ivy
             IvyNet.Register();
             DeadlockHeroVoice.Track(BodyName, IvyData.Hero, "tengu");
             DeadlockPingVoice.Track(BodyName, IvyData.Hero, "tengu");
-            EquipmentFx.RegisterBuffFx(StoneBuff, "RoR2/Base/GainArmor/ElephantDefense.prefab", null); // a stone shell, as Vyper's petrify
             host.AddComponent<IvyIcons>();
         }
 
@@ -165,6 +168,7 @@ namespace CursedAppleCuriosities.Survivors.Ivy
             DeadlockMovement.Apply(body, IvyData.Movement);
             body.AddComponent<IvyGunAudio>();
             body.AddComponent<IvyStoneHeal>();
+            body.AddComponent<IvyStoneLook>();
             body.AddComponent<IvyKudzuPassive>();
             Transform model = body.GetComponent<ModelLocator>().modelTransform;
             model.gameObject.AddComponent<DeadlockModelSwap>().HeroKey = IvyData.Hero;
@@ -240,7 +244,7 @@ namespace CursedAppleCuriosities.Survivors.Ivy
             LanguageAPI.Add(Token + "SKIN_DEFAULT", "Default");
             LanguageAPI.Add(Token + "DESCRIPTION",
                 "Ivy guards those she cares about. Out here, that's whoever is standing next to her.<color=#CCD3E0>\n\n" +
-                "< ! > Thorn patches slow and grind down crowds: throw them where enemies are heading.\n\n" +
+                "< ! > Kudzu Bomb slows and grinds down crowds: hold to see where it lands, throw it where enemies are heading.\n\n" +
                 "< ! > Kudzu Connection binds you to whichever ally is nearest: drones, turrets and minions count too.\n\n" +
                 "< ! > Stone Form makes you invulnerable while you fall: use it to escape and to slam.\n\n" +
                 "< ! > Air Drop flies you over the fight; drop the bomb on the biggest crowd.</color>\n");
@@ -248,9 +252,9 @@ namespace CursedAppleCuriosities.Survivors.Ivy
             LanguageAPI.Add(Token + "FAILURE", "..and so she vanished, turned to stone for good.");
             LanguageAPI.Add(Token + "GUN_NAME", "Protector's Hand");
             LanguageAPI.Add(Token + "GUN_DESC", $"Rapidly shoot for <style=cIsDamage>{D(IvyData.GunDamage)} damage</style>.");
-            LanguageAPI.Add(Token + "THORNS_NAME", "Entangling Thorns");
+            LanguageAPI.Add(Token + "THORNS_NAME", "Kudzu Bomb");
             LanguageAPI.Add(Token + "THORNS_DESC",
-                $"Throw a seed that grows a {IvyData.ThornsRadius:0} m patch of thorns for {IvyData.ThornsDuration:0}s, dealing <style=cIsDamage>{D(IvyData.ThornsDps)} damage per second</style> and <style=cIsUtility>slowing</style> enemies in it.");
+                $"Hold to aim, release to throw a bomb that grows a {IvyData.ThornsRadius:0} m kudzu patch for {IvyData.ThornsDuration:0}s, dealing <style=cIsDamage>{D(IvyData.ThornsDps)} damage per second</style> and <style=cIsUtility>slowing</style> enemies in it.");
             LanguageAPI.Add(Token + "KUDZU_NAME", "Kudzu Connection");
             LanguageAPI.Add(Token + "KUDZU_DESC",
                 $"Always bound to the nearest ally within {IvyData.TetherRange:0} m: both gain <style=cIsDamage>+{D(IvyData.TetherAttackSpeed)} attack speed</style> and <style=cIsHealing>{D(IvyData.TetherLifesteal)} lifesteal</style>, and share <style=cIsHealing>{D(IvyData.TetherSharedHeal)}</style> of healing. Alone, half the bonuses.");
@@ -259,7 +263,7 @@ namespace CursedAppleCuriosities.Survivors.Ivy
                 $"Turn to stone: <style=cIsUtility>invulnerable</style> and <style=cIsHealing>healing {D(IvyData.StoneHeal)} max health per second</style>. Slam down for <style=cIsDamage>{D(IvyData.StoneDamage)} damage</style>, <style=cIsUtility>stunning</style>.");
             LanguageAPI.Add(Token + "AIRDROP_NAME", "Air Drop");
             LanguageAPI.Add(Token + "AIRDROP_DESC",
-                $"Fly for up to {IvyData.AirDropSeconds:0}s carrying a bomb. Press again to drop it: <style=cIsDamage>{D(IvyData.AirDropDamage)} damage</style> in {IvyData.AirDropRadius:0} m. Afterwards deal <style=cIsDamage>+{D(IvyData.AirDropBuff)} damage</style> for {IvyData.AirDropBuffSeconds:0}s.");
+                $"Fly for up to {IvyData.AirDropSeconds:0}s carrying a bomb. Press again to toss it: <style=cIsDamage>{D(IvyData.AirDropDamage)} damage</style> in {IvyData.AirDropRadius:0} m. Afterwards deal <style=cIsDamage>+{D(IvyData.AirDropBuff)} damage</style> for {IvyData.AirDropBuffSeconds:0}s.");
         }
     }
 

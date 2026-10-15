@@ -40,6 +40,12 @@ namespace CursedAppleCuriosities.Deadlock
         /// offset the clip gave it after the aim bend moves the hand. Null for a hero whose gun is part of the arm (Lash's glove).
         /// </summary>
         public (string Weapon, string Hand)? HandIK;
+        /// <summary>
+        /// While an overlay (the shot) plays, keep the grip the base pose had instead of the overlay's. Apollo's swing is a delta
+        /// clip on both his arm and his sword's own chain: added onto another pose they disagree and the sword flicked a metre
+        /// past his hand (user 2.5). His arm swings; the sword stays in his hand.
+        /// </summary>
+        public bool HandGripFromBase;
         /// <summary>A locomotion set, e.g. "siphon": locomotion state X becomes "siphon.X" when the table has it.</summary>
         public Func<CharacterBody, string?>? LocoSet;
         /// <summary>
@@ -846,6 +852,7 @@ namespace CursedAppleCuriosities.Deadlock
         private void GripCapture()
         {
             if (_ikWeapon == null || _ikHand == null) return;
+            if (_def.HandGripFromBase && _overWeight > 0f) return; // the last base-pose grip stands
             Quaternion inv = Quaternion.Inverse(_ikHand.rotation);
             _ikRot = inv * _ikWeapon.rotation;
             _ikPos = inv * (_ikWeapon.position - _ikHand.position);
@@ -900,7 +907,10 @@ namespace CursedAppleCuriosities.Deadlock
                     }
                     if (hasP && ut.SamplePos(_over.T, out Vector3 up))
                     {
-                        if (cloth) up -= ut.Pos![0];
+                        // A true additive offset starts near zero. Some landing clips store a whole pose offset instead (Mina's
+                        // and Ivy's pelvis sits 1.6-2 m off from frame one): read those relative to their first frame too, or
+                        // the model jumps off the body on landing.
+                        if (cloth || ut.Pos![0].sqrMagnitude > 0.25f) up -= ut.Pos![0];
                         p += up * _overWeight;
                     }
                 }
@@ -917,9 +927,29 @@ namespace CursedAppleCuriosities.Deadlock
         private bool SamplePos(Layer l, AnimTrack t, out Vector3 p)
         {
             if (!t.SamplePos(l.T, out p)) return false;
-            if (t.Bone == "pelvis" && t.Pos != null && t.Pos.Length > 0 && _def.IsRootLocked(l.Row.State)) { p.x = t.Pos[0].x; p.z = t.Pos[0].z; }
+            if (t.Bone == "pelvis" && t.Pos != null && t.Pos.Length > 0 && _def.IsRootLocked(l.Row.State))
+            {
+                // Pin the horizontal, keep the height. "Up" in the pelvis's parent frame: Apollo's pelvis hangs off a turned
+                // root_motion, where height runs along local z (pinning x and z froze his height and let him slide: user 2.5).
+                Vector3 up = PelvisUp();
+                Vector3 d = p - t.Pos[0];
+                p = t.Pos[0] + up * Vector3.Dot(d, up);
+            }
             else if (l.ClothShift != Vector3.zero && t.Bone.StartsWith("$cloth", StringComparison.Ordinal)) p -= l.ClothShift;
             return true;
+        }
+
+        private Vector3? _pelvisUp;
+
+        /// <summary>World up in the pelvis's parent frame (the model's own frame, or a turned root_motion's).</summary>
+        private Vector3 PelvisUp()
+        {
+            if (_pelvisUp.HasValue) return _pelvisUp.Value;
+            Vector3 up = Vector3.up;
+            if (_bones.TryGetValue("pelvis", out Transform pelvis) && pelvis.parent != null && pelvis.parent.name == "root_motion")
+                up = (Quaternion.Inverse(pelvis.parent.localRotation) * Vector3.up).normalized;
+            _pelvisUp = up;
+            return up;
         }
 
         /// <summary>

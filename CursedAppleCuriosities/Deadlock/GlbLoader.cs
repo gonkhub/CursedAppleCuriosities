@@ -198,6 +198,7 @@ namespace CursedAppleCuriosities.Deadlock
                 PinStrayBones(clip, restPos, restRot, underRoot, besideRoot);
                 clips[name] = clip;
             }
+            Recenter(clips, underRoot, besideRoot);
             return clips;
         }
 
@@ -272,6 +273,41 @@ namespace CursedAppleCuriosities.Deadlock
                         root.SampleRot(t.RotTimes![k], out Quaternion rr);
                         t.Rot[k] = turn0 * Quaternion.Inverse(rr) * t.Rot[k];
                     }
+            }
+        }
+
+        /// <summary>
+        /// A full clip that starts with the body well away from the hero's idle stance: Apollo's ability_lunge_aim holds his pelvis
+        /// (and his sword's chain) 1.4 m off the spot his idle stands on. RoR2 keeps the body on the capsule; his coat's cloth points
+        /// stayed with it and stretched across the gap (user 2.5: "completely contorts"). Such a clip is moved back, horizontally,
+        /// onto the idle's spot: every bone in the pelvis's frame shifts by the same amount.
+        /// </summary>
+        private static void Recenter(Dictionary<string, AnimClip> clips, HashSet<string> underRoot, HashSet<string> besideRoot)
+        {
+            AnimTrack? Pelvis(AnimClip c) => c.Tracks.Find(x => x.Bone == "pelvis" && x.Pos != null && x.Pos.Length > 0);
+            AnimClip? idle = null;
+            foreach (var kv in clips)
+                if (kv.Key.Contains("stand_idle") || idle == null && kv.Key.EndsWith("idle") && Pelvis(kv.Value) is AnimTrack ip && ip.Pos![0].y > 0.5f)
+                    idle = kv.Value;
+            AnimTrack? reference = idle != null ? Pelvis(idle) : null;
+            if (reference == null) return;
+            HashSet<string> frame = underRoot.Contains("pelvis") ? underRoot : besideRoot;
+            Vector3 home = reference.Pos![0];
+            foreach (var kv in clips)
+            {
+                string name = kv.Key;
+                AnimClip c = kv.Value;
+                AnimTrack? p = Pelvis(c);
+                if (p == null || p.Pos![0].magnitude < 0.05f) continue; // an additive clip: offsets, not a pose
+                Vector3 off = p.Pos[0] - home;
+                off.y = 0f;
+                // 1 m: Abrams' leap and Lash's slam start half a metre off on purpose; runs carry their own travel.
+                if (off.magnitude < 1f || name.Contains("run") || name.Contains("sprint")) continue;
+                foreach (AnimTrack t in c.Tracks)
+                {
+                    if (t.Pos == null || !frame.Contains(t.Bone) || t.Bone.StartsWith("$cloth", StringComparison.Ordinal)) continue;
+                    for (int k = 0; k < t.Pos.Length; k++) t.Pos[k] -= off;
+                }
             }
         }
 

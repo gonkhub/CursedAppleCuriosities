@@ -29,6 +29,8 @@ namespace CursedAppleCuriosities.Survivors.Apollo
             RootLocked = ApolloData.Locked,
             ItemAnchors = ApolloItemDisplays.Anchors,
             HideMeshes = new[] { "head_ui_smug_reduced", "head_ui_cocky", "head_ui_smug" }, // menu-portrait heads over his real one
+            HandIK = ("weapon", "hand_L"), // his sword hangs off root_motion (weaponPivot/weapon), held in his left hand
+            HandGripFromBase = true,
         };
 
         public static void Play(GameObject bodyObject, string state) => DeadlockModelSwap.Play(bodyObject, state);
@@ -48,8 +50,8 @@ namespace CursedAppleCuriosities.Survivors.Apollo
 
         public static GameObject? BodyPrefab, DisplayPrefab;
         public static SurvivorDef? Survivor;
-        public static BuffDef? SigilSlow, RiposteSlow, ParryBuff, RiposteLifestealBuff;
-        public static GameObject? WaveTracer, SlashEffect, SigilEffect, UltEffect;
+        public static BuffDef? SigilSlow, RiposteSlow, ParryBuff, RiposteLifestealBuff, UltMaskBuff;
+        public static GameObject? WaveTracer, SlashEffect, SigilEffect, UltEffect, WaveProjectile, UltStreak;
 
         private static SkillDef? _wave, _sigil, _advance, _riposte, _ult;
 
@@ -63,14 +65,23 @@ namespace CursedAppleCuriosities.Survivors.Apollo
                 DeadlockInstall.WantIcon(icon);
             DeadlockHeroes.Register(ApolloModel.Def);
             DeadlockInstall.WantModel(ApolloModel.Def.ModelRequest());
+            DeadlockInstall.WantModel(new DeadlockInstall.ModelRequest { Hero = ApolloData.MaskKey, DlModel = ApolloData.DlMaskModel }); // Itani Lo Sahn's mask
 
             WaveTracer = Kit.Recoloured(TryLoad<GameObject>("RoR2/Base/Bandit2/TracerBandit2Rifle.prefab"), "CursedAppleApolloWave", Hue, effect: true);
+            // The sword wave flies (user 2.5): the Lil Reaper's big slash as its look, recoloured gold; the old tracer only if that's missing.
+            WaveProjectile = Kit.CloneProjectile(TryLoad<GameObject>("RoR2/DLC4/Characters/LilReaper/Skills/Primary/BigSlash/BigSlashProjectile.prefab"),
+                "CursedAppleApolloWaveShot", typeof(ApolloWaveShot), ApolloData.WaveSpeed, ApolloData.WaveRange / ApolloData.WaveSpeed, gravity: false, triggers: true, steer: false);
+            if (WaveProjectile != null && WaveProjectile.GetComponent<RoR2.Projectile.ProjectileController>() is RoR2.Projectile.ProjectileController wpc && wpc.ghostPrefab != null)
+                wpc.ghostPrefab = Kit.Recoloured(wpc.ghostPrefab, "CursedAppleApolloWaveGhost", Hue, effect: false) ?? wpc.ghostPrefab;
             SlashEffect = Kit.Recoloured(TryLoad<GameObject>("RoR2/Base/Merc/OmniImpactVFXSlashMerc.prefab"), "CursedAppleApolloSlash", Hue, effect: true);
             SigilEffect = Kit.Recoloured(TryLoad<GameObject>("RoR2/Base/Common/VFX/OmniExplosionVFXQuick.prefab"), "CursedAppleApolloSigil", Hue, effect: true);
             UltEffect = Kit.Recoloured(TryLoad<GameObject>("RoR2/Base/Merc/ImpactMercEvis.prefab"), "CursedAppleApolloUlt", Hue, effect: true);
             SigilSlow = Buff("CursedAppleApolloSigilSlow", new Color(0.9f, 0.8f, 0.5f), debuff: true);
             RiposteSlow = Buff("CursedAppleApolloRiposteSlow", new Color(0.8f, 0.7f, 0.4f), debuff: true);
             ParryBuff = Buff("CursedAppleApolloParry", Color, debuff: false);
+            UltMaskBuff = Buff("CursedAppleApolloUltMask", new Color(0.9f, 0.1f, 0.1f), debuff: false);
+            // Itani Lo Sahn's streak from where he stood to where he lands: the Huntress's snipe tracer, made red.
+            UltStreak = Kit.Recoloured(TryLoad<GameObject>("RoR2/Base/Huntress/TracerHuntressSnipe.prefab", "RoR2/Base/Characters/Huntress/TracerHuntressSnipe.prefab"), "CursedAppleApolloUltStreak", 0f, effect: true);
             RiposteLifestealBuff = Buff("CursedAppleApolloRiposteLifesteal", new Color(0.9f, 0.25f, 0.3f), debuff: false);
 
             foreach (Type t in new[] { typeof(FireWave), typeof(DrawSigil), typeof(AdvanceReady), typeof(AdvanceStab), typeof(Riposte), typeof(RiposteDash), typeof(ItaniLoSahn) })
@@ -140,6 +151,7 @@ namespace CursedAppleCuriosities.Survivors.Apollo
             locator.passiveSkill = new SkillLocator.PassiveSkill { enabled = false };
             DeadlockMovement.Apply(body, ApolloData.Movement);
             body.AddComponent<ApolloAdvanceRecast>();
+            body.AddComponent<ApolloUltLook>();
             body.AddComponent<ApolloSwing>();
             Transform model = body.GetComponent<ModelLocator>().modelTransform;
             model.gameObject.AddComponent<DeadlockModelSwap>().HeroKey = ApolloData.Hero;
@@ -230,7 +242,7 @@ namespace CursedAppleCuriosities.Survivors.Apollo
                 $"Ready a parry. The next hit is <style=cIsUtility>deflected</style>; you dash at the attacker and slash for <style=cIsDamage>{D(ApolloData.RiposteDamage)} damage</style>, <style=cIsUtility>stunning</style> and slowing, then <style=cIsHealing>steal {D(ApolloData.RiposteLifesteal)} of damage dealt</style> for {ApolloData.RiposteLifestealSeconds:0}s.");
             LanguageAPI.Add(Token + "ULT_NAME", "Itani Lo Sahn");
             LanguageAPI.Add(Token + "ULT_DESC",
-                $"Charge, then slash a long line for <style=cIsDamage>{D(ApolloData.UltImpact)} damage</style>. Struck enemies freeze in slow motion, then take <style=cIsDamage>{D(ApolloData.UltDelayed)} damage</style> " +
+                $"Don your mask (<style=cIsUtility>70% less damage taken</style>) and hold; release to <style=cIsUtility>teleport</style> through a long line, slashing for <style=cIsDamage>{D(ApolloData.UltImpact)} damage</style>. Struck enemies freeze in slow motion, then take <style=cIsDamage>{D(ApolloData.UltDelayed)} damage</style> " +
                 $"(<style=cIsDamage>+{D(ApolloData.UltLowHealthBonus)}</style> under half health). You are <style=cIsUtility>invulnerable</style> meanwhile.");
         }
     }

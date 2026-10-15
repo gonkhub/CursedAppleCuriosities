@@ -1,7 +1,6 @@
 using System.Collections.Generic;
 using CursedAppleCuriosities.Deadlock;
 using CursedAppleCuriosities.Items;
-using CursedAppleCuriosities.Survivors.Seven;
 using R2API;
 using R2API.Networking;
 using R2API.Networking.Interfaces;
@@ -20,6 +19,7 @@ namespace CursedAppleCuriosities.Survivors.Ivy
         public static void Register()
         {
             NetworkingAPI.RegisterMessageType<IvyTetherFxMessage>();
+            NetworkingAPI.RegisterMessageType<IvyPatchSoundMessage>();
             NetworkingAPI.RegisterMessageType<IvyStoneMessage>();
             NetworkingAPI.RegisterMessageType<IvyBombMessage>();
             NetworkingAPI.RegisterMessageType<IvyRingMessage>();
@@ -113,23 +113,21 @@ namespace CursedAppleCuriosities.Survivors.Ivy
 
         public void OnReceived()
         {
-            var go = new GameObject("CursedAppleIvyRing");
-            go.transform.position = Point;
-            var ring = go.AddComponent<SevenRing>(); // Seven's countdown ring, in Ivy's green
-            ring.Follow = Follow;
-            ring.Radius = Radius;
-            ring.Seconds = Seconds;
-            ring.Color = new Color(0.45f, 0.9f, 0.35f, 0.85f);
+            IvyGroundRing.Spawn(Point, Radius, Seconds).Follow = Follow; // her own marker (user 2.5: not Seven's ring and its hum)
         }
     }
 
-    // ================= Secondary: Entangling Thorns =================
+    // ================= Secondary: Kudzu Bomb =================
 
-    /// <summary>Server, on the thrown seed: it lands, and a patch of thorns grows there that hurts and slows every enemy in it.</summary>
+    /// <summary>On the thrown Kudzu Bomb: it hums in flight (every client); on the server it lands and a 6 m kudzu patch grows there that hurts and slows every enemy in it.</summary>
     [RequireComponent(typeof(ProjectileController))]
     public class IvySeed : MonoBehaviour, IProjectileImpactBehavior
     {
         private bool _done;
+        private DeadlockVoice? _hum;
+
+        private void Start() => _hum = DeadlockSounds.Loop("ivy_bomb_proj_loop", gameObject, 6f);
+        private void OnDestroy() => DeadlockSounds.Stop(_hum);
 
         public void OnProjectileImpact(ProjectileImpactInfo info)
         {
@@ -150,8 +148,10 @@ namespace CursedAppleCuriosities.Survivors.Ivy
                 patch.Crit = pd != null && pd.crit;
                 patch.Radius = IvyData.ThornsRadius * MysticExpansion.RadiusMultiplier(by);
                 patch.Duration = IvyData.ThornsDuration * DurationExtender.Multiplier(by);
-                EquipmentFx.Sound("ivy_thorns_cast", at);
+                EquipmentFx.Sound("ivy_bomb_impact", at);
                 IvyNet.Ring(at, patch.Radius, patch.Duration);
+                IvyNet.Effect(IvySurvivor.KudzuBurstEffect, at, patch.Radius);
+                new IvyPatchSoundMessage { At = at, Seconds = patch.Duration }.Send(NetworkDestination.Clients);
             }
             Destroy(gameObject);
         }
@@ -176,8 +176,25 @@ namespace CursedAppleCuriosities.Survivors.Ivy
             {
                 IvyNet.Hit(By, hc, IvyData.ThornsDps * IvyData.ThornsTick * By.damage, Crit, Vector3.zero, DamageSource.Secondary, 0.5f);
                 if (hc.alive && hc.body != null && IvySurvivor.ThornsSlow != null) hc.body.AddTimedBuff(IvySurvivor.ThornsSlow, IvyData.ThornsTick * 2f);
-                EquipmentFx.Sound("ivy_thorns_hit", IvyNet.Core(hc));
             }
+        }
+    }
+
+    /// <summary>Every client: the kudzu patch's loop (Deadlock's stone squall aoe loop) for as long as it lasts.</summary>
+    public class IvyPatchSoundMessage : INetMessage
+    {
+        public Vector3 At;
+        public float Seconds;
+
+        public void Serialize(NetworkWriter w) { w.Write(At); w.Write(Seconds); }
+        public void Deserialize(NetworkReader r) { At = r.ReadVector3(); Seconds = r.ReadSingle(); }
+
+        public void OnReceived()
+        {
+            var go = new GameObject("CursedAppleIvyPatchSound");
+            go.transform.position = At;
+            DeadlockSounds.Loop("ivy_bomb_aoe_loop", go, Seconds);
+            Object.Destroy(go, Seconds + 0.5f);
         }
     }
 
@@ -355,14 +372,16 @@ namespace CursedAppleCuriosities.Survivors.Ivy
             switch (Kind)
             {
                 case IvyStoneKind.Start:
-                    b.AddTimedBuff(IvySurvivor.StoneBuff, IvyData.StoneMaxSeconds + 0.5f);
-                    b.AddTimedBuff(RoR2Content.Buffs.HiddenInvincibility, IvyData.StoneMaxSeconds + 0.5f);
-                    DeadlockFallGuard.ProtectNextLanding(Ivy, IvyData.StoneMaxSeconds + 1f);
+                    // Until she breaks out (End): a fall can last a while, the timers only back that up.
+                    b.AddTimedBuff(IvySurvivor.StoneBuff, 10f);
+                    b.AddTimedBuff(RoR2Content.Buffs.HiddenInvincibility, 10f);
+                    DeadlockFallGuard.ProtectNextLanding(Ivy, 10f);
                     break;
                 case IvyStoneKind.Slam:
                     float radius = IvyData.StoneRadius * MysticExpansion.RadiusMultiplier(b);
-                    IvyNet.Effect(IvySurvivor.SlamEffect, At, radius);
+                    IvyNet.Effect(IvySurvivor.StoneSlamEffect ?? IvySurvivor.SlamEffect, At, radius);
                     EquipmentFx.Sound("ivy_stone_impact", At);
+                    EquipmentFx.Sound("ivy_stone_explosion", At);
                     IvyNet.Ring(At, radius, 0.6f);
                     if (b.teamComponent == null) break;
                     foreach (HealthComponent hc in IvyNet.EnemiesIn(At, radius, b.teamComponent.teamIndex))

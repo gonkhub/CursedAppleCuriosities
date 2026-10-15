@@ -35,6 +35,7 @@ namespace CursedAppleCuriosities.Survivors.Apollo
         public static float WaveCycle = 0.38f;          // Deadlock m_flCycleTime
         public static float WaveRange = 25.4f;          // Deadlock falloff ranges 1000 hu: the wave's reach
         public const float WaveRadius = 1f;             // a wide slash; it passes through enemies
+        public const float WaveSpeed = 50f;             // m/s: slower than Deadlock's 5000 hu/s (127 m/s), which read as instant (user 2.5)
 
         // ---- secondary: Disengaging Sigil (ability_fencer_throwblade: 0.5 s cast, 6.5 m sigil 300 hu ahead, 85 damage, 24% slow 4 s, leap back 16 m/s, 12 s) ----
         public static float SigilDamage = 5f;
@@ -80,6 +81,10 @@ namespace CursedAppleCuriosities.Survivors.Apollo
         public const float UltDash = 27f;               // Deadlock DashRange
         public const float UltRadius = 7f;              // Deadlock DashRadius
         public const float UltLock = 1.8f;              // Deadlock DebuffDuration / CasterLockDuration
+        public const float UltMaxHold = 6f;             // seconds ready before he strikes by himself (Deadlock's channel has no end: 9999)
+        public const float UltDamageTaken = 0.3f;       // while masked: Deadlock IncomingDamageReductionPercent 70
+        public const string MaskKey = "apollo_mask";
+        public const string DlMaskModel = "models/abilities/fencer_mask_model_fx.vmdl_c"; // the mask he dons for Itani Lo Sahn
         public static float UltCooldown = 40f;
 
         public static void Bind(ConfigFile c)
@@ -151,6 +156,7 @@ namespace CursedAppleCuriosities.Survivors.Apollo
             Add("riposte_success", "sounds/abilities/fencer/riposte/fencer_riposte_success", 1f, 50f);
             Add("riposte_dash", "sounds/abilities/fencer/riposte/fencer_riposte_counterattack_cast", 1f, 50f);
             Add("riposte_hit", "sounds/abilities/fencer/riposte/fencer_riposte_counterattack_impact", 1f, 50f);
+            Add("ult_voice", "sounds/vo/fencer/fencer_use_power4_start_02", 1f, 80f); // "Itani lo sahn..." (Deadlock's captions)
             Add("ult_cast", "sounds/abilities/fencer/super_slash/fencer_super_slash_cast", 1f, 80f);
             Add("ult_charge", "sounds/abilities/fencer/super_slash/fencer_super_slash_cast_delay", 1f, 80f);
             Add("ult_hit", "sounds/abilities/fencer/super_slash/fencer_super_slash_hit_confirm", 1f, 70f, 0.05f);

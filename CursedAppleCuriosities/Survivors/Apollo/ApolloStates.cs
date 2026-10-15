@@ -3,6 +3,7 @@ using CursedAppleCuriosities.Deadlock;
 using CursedAppleCuriosities.Items;
 using CursedAppleCuriosities.Survivors.Apollo;
 using RoR2;
+using RoR2.Projectile;
 using UnityEngine;
 
 // Entity states live in the EntityStates namespace tree, as RoR2's own do.
@@ -66,6 +67,16 @@ namespace EntityStates.CursedApple.Apollo
             StartAimMode(2f);
             if (!isAuthority) return;
             Ray aim = GetAimRay();
+            if (ApolloSurvivor.WaveProjectile != null)
+            {
+                // A flying wave (ApolloWaveShot), from the camera ray like his old shot, so it goes where the crosshair is.
+                ProjectileManager.instance.FireProjectile(new FireProjectileInfo
+                {
+                    projectilePrefab = ApolloSurvivor.WaveProjectile, position = aim.origin, rotation = Util.QuaternionSafeLookRotation(aim.direction),
+                    owner = gameObject, damage = ApolloData.WaveDamage * damageStat, crit = RollCrit(), force = 200f, speedOverride = ApolloData.WaveSpeed,
+                });
+                return;
+            }
             new BulletAttack
             {
                 owner = gameObject, weapon = gameObject, origin = aim.origin, aimVector = aim.direction, minSpread = 0f, maxSpread = 0f,
@@ -314,16 +325,18 @@ namespace EntityStates.CursedApple.Apollo
     // ================= Special: Itani Lo Sahn =================
 
     /// <summary>
-    /// Itani Lo Sahn (Deadlock ability_fencer_ultimate): a 1.5 s charge, hanging in the air, then one 27 m dash-slash, 7 m wide. Everything
-    /// struck is stuck in slow motion for 1.8 s (stunned, unless a boss) while he holds his pose, untouchable; then they take the blow
-    /// (ApolloUltMark), harder if they're under half health.
+    /// Itani Lo Sahn (Deadlock ability_fencer_ultimate): masked, he channels, then teleports 27 m along a 7 m-wide line on release.
+    /// Everything struck is stuck in slow motion for 1.8 s (stunned, unless a boss) while he holds his pose, untouchable; then they take
+    /// the blow (ApolloUltMark), harder if they're under half health.
     /// </summary>
     public class ItaniLoSahn : BaseSkillState
     {
-        private bool _dashed, _dashing;
-        private Vector3 _dir;
-        private float _dashedAt, _travelled;
-        private readonly HashSet<GameObject> _hit = new HashSet<GameObject>();
+        // Itani Lo Sahn (Deadlock ability_fencer_ultimate; reworked, user 2.5): he dons his mask, glowing red, says the line and
+        // channels in place (ChannelMoveSpeed 0, FallSpeedMax 1, 70% less damage taken). After the 1.5 s cast delay he is ready;
+        // letting go of the key strikes: at DashSpeed 10000 hu/s it is a teleport, 27 m along his aim (short of walls), slashing
+        // everything within 7 m of the line. Let go early and he strikes the moment he's ready. Then the 1.8 s lock as before.
+        private bool _ready, _released, _struck;
+        private float _struckAt;
         private DeadlockVoice? _lock;
 
         public override void OnEnter()
@@ -332,7 +345,8 @@ namespace EntityStates.CursedApple.Apollo
             ApolloModel.Play(gameObject, "ult_start");
             DeadlockSounds.Play("apollo_ult_cast", transform.position, gameObject);
             DeadlockSounds.Play("apollo_ult_charge", transform.position, gameObject);
-            DeadlockHeroVoice.Power("apollo_vo_power4", gameObject);
+            DeadlockSounds.Play("apollo_ult_voice", transform.position, gameObject); // "Itani lo sahn..." (fencer_use_power4_start_02)
+            if (isAuthority) ApolloNet.ToServer(new ApolloUltMessage { Apollo = gameObject, Kind = ApolloUltKind.Channel });
         }
 
         public override void FixedUpdate()
@@ -340,55 +354,51 @@ namespace EntityStates.CursedApple.Apollo
             base.FixedUpdate();
             StartAimMode(0.5f);
             if (!isAuthority || characterMotor == null) return;
-            float dt = Time.fixedDeltaTime;
-            if (!_dashed)
+            if (!_struck)
             {
                 ApolloShared.Float(characterMotor);
+                characterMotor.velocity = new Vector3(0f, Mathf.Max(characterMotor.velocity.y, -1f), 0f); // rooted, falling 1 m/s at most
                 characterMotor.moveDirection = Vector3.zero;
-                if (fixedAge >= ApolloData.UltCharge) StartDash();
-                return;
-            }
-            if (_dashing)
-            {
-                float step = ApolloData.UltDash / 0.15f * dt; // Deadlock DashSpeed 10000 hu/s: near enough instant
-                Collect(characterBody.corePosition, step);
-                characterMotor.velocity = Vector3.zero;
-                characterMotor.rootMotion += _dir * step;
-                _travelled += step;
-                if (_travelled >= ApolloData.UltDash * MysticExpansion.RadiusMultiplier(characterBody)) EndDash();
+                if (inputBank == null || !inputBank.skill4.down) _released = true;
+                if (!_ready && fixedAge >= ApolloData.UltCharge)
+                {
+                    _ready = true;
+                    DeadlockSounds.Play("apollo_lunge_glint", transform.position, gameObject); // ready to strike
+                }
+                if (_ready && (_released || fixedAge >= ApolloData.UltCharge + ApolloData.UltMaxHold)) Strike();
                 return;
             }
             characterMotor.velocity = Vector3.zero; // holding the finish while they're in slow motion
-            if (fixedAge - _dashedAt >= ApolloData.UltLock) outer.SetNextStateToMain();
+            if (fixedAge - _struckAt >= ApolloData.UltLock) outer.SetNextStateToMain();
         }
 
-        private void StartDash()
+        private void Strike()
         {
-            _dashed = _dashing = true;
-            _dir = GetAimRay().direction;
-            _dir = Vector3.Normalize(new Vector3(_dir.x, Mathf.Clamp(_dir.y, -0.5f, 0.5f), _dir.z));
+            _struck = true;
+            _struckAt = fixedAge;
+            Vector3 dir = GetAimRay().direction;
+            dir = Vector3.Normalize(new Vector3(dir.x, Mathf.Clamp(dir.y, -0.5f, 0.5f), dir.z));
+            Vector3 from = characterBody.corePosition;
+            float range = ApolloData.UltDash * MysticExpansion.RadiusMultiplier(characterBody);
+            // Short of walls (Deadlock GapDistanceToWall), with his body's room.
+            float reach = range;
+            if (Physics.SphereCast(from, 0.6f, dir, out RaycastHit wall, range, LayerIndex.world.mask, QueryTriggerInteraction.Ignore)) reach = Mathf.Max(0f, wall.distance - 0.5f);
+            var targets = ApolloShared.Along(from, dir, reach + 1f, ApolloData.UltRadius * MysticExpansion.RadiusMultiplier(characterBody), GetTeam());
+            Vector3 to = from + dir * reach;
             ApolloModel.Play(gameObject, "ult_dash");
             characterMotor.Motor.ForceUnground();
-        }
-
-        private void Collect(Vector3 from, float step)
-        {
-            foreach (GameObject g in ApolloShared.Along(from, _dir, step + 1f, ApolloData.UltRadius * MysticExpansion.RadiusMultiplier(characterBody), GetTeam())) _hit.Add(g);
-        }
-
-        private void EndDash()
-        {
-            _dashing = false;
-            _dashedAt = fixedAge;
-            var targets = new List<GameObject>(_hit);
-            ApolloNet.ToServer(new ApolloHitMessage { Kind = ApolloHitKind.Ult, Attacker = gameObject, Targets = targets.ToArray(), Coefficient = ApolloData.UltImpact, Dir = _dir, Crit = RollCrit() });
+            characterMotor.Motor.SetPosition(characterBody.footPosition + (to - from), true);
+            characterDirection.forward = ApolloShared.Flat(dir, characterDirection.forward);
+            ApolloNet.ToServer(new ApolloUltMessage { Apollo = gameObject, Kind = ApolloUltKind.Strike, From = from, To = to });
+            ApolloNet.ToServer(new ApolloHitMessage { Kind = ApolloHitKind.Ult, Attacker = gameObject, Targets = targets.ToArray(), Coefficient = ApolloData.UltImpact, Dir = dir, Crit = RollCrit() });
             _lock = DeadlockSounds.Loop("apollo_ult_lock", gameObject, ApolloData.UltLock); // (the server makes him untouchable on that message)
         }
 
         public override void OnExit()
         {
             DeadlockSounds.Stop(_lock);
-            ApolloModel.Play(gameObject, "ult_finale");
+            if (isAuthority) ApolloNet.ToServer(new ApolloUltMessage { Apollo = gameObject, Kind = ApolloUltKind.End });
+            ApolloModel.Play(gameObject, _struck ? "ult_finale" : "idle");
             base.OnExit();
         }
 
