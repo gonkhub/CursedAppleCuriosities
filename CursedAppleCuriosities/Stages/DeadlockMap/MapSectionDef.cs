@@ -157,6 +157,7 @@ namespace CursedAppleCuriosities.Stages.DeadlockMap
             Ropes = UmbriaData.Ropes,
             NewtAltars = UmbriaData.NewtAltars,
             PlayerSpawns = UmbriaData.PlayerSpawns,
+            // East edge (user 3.0, mark umbriashopbarrier): along the low channel's east wall, so its shop and side passage are in.
             WalkerSlot = new[] { -21.83f, 9.56f, 27.21f, 35.5f }, // the Walker's spot (user's mark, 2026-10-14)
             Secrets = new[] { new SecretSpot("Ivy", 77.83f, -2.43f, -118.25f, -90.1f) }, // user's mark umbriasecret, 2026-10-14
         };
@@ -427,7 +428,7 @@ namespace CursedAppleCuriosities.Stages.DeadlockMap
             3864, 480, 320, 4024, 640, 1088,
             4336, 2784, -120, 4464, 2912, 1714,
         };
-        public static readonly float[] Outline = {669, 433, 650, 2402, 1083, 2717, 1280, 2717, 1654, 2913, 1929, 3189, 1949, 5039, 3071, 5118, 3425, 5394, 3445, 7441, 4311, 7362, 4764, 6969, 5138, 7008, 5413, 6850, 6378, 6732, 7323, 6299, 7776, 6260, 7815, 6181, 9252, 6142, 9311, 3701, 9134, 3543, 8878, 3543, 8600, 3346, 8600, 512, 8560, 394, 7480, 394, 7067, 512, 5276, 472, 5177, 394 };
+        public static readonly float[] Outline = {669, 433, 650, 2402, 1083, 2717, 1280, 2717, 1654, 2913, 1929, 3189, 1949, 5039, 3071, 5118, 3425, 5394, 3445, 7441, 4311, 7362, 4764, 6969, 5138, 7008, 5413, 6850, 6378, 6732, 7323, 6299, 7776, 6260, 7815, 6181, 9252, 6142, 9311, 3701, 9134, 3543, 9040, 3430, 9040, 2570, 9235, 2530, 9235, 560, 9060, 394, 8560, 394, 7480, 394, 7067, 512, 5276, 472, 5177, 394 };
         public static readonly int[] VentTunnels = { // min x, y, z, max x, y, z
             -1328, 1312, -640, 832, 1696, -184,
             296, 1024, -640, 640, 1312, -480,
