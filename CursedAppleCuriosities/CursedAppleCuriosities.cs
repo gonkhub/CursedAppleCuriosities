@@ -137,22 +137,22 @@ namespace CursedAppleCuriosities
         {
             DeadlockInstall.Bind(Config);
             DeadlockSounds.Ensure(gameObject);
-            var heroes = new (string Name, Action<BepInEx.Configuration.ConfigFile, UnityEngine.GameObject> Init)[]
+            var heroes = new (string Name, Action<BepInEx.Configuration.ConfigFile, UnityEngine.GameObject> Init, Func<RoR2.SurvivorDef?> Def)[]
             {
-                ("Lash", LashSurvivor.Init),
-                ("Abrams", AbramsSurvivor.Init),
-                ("Seven", SevenSurvivor.Init),
-                ("Vyper", VyperSurvivor.Init),
-                ("Grey Talon", GreyTalonSurvivor.Init),
-                ("Victor", VictorSurvivor.Init),
-                ("Viscous", ViscousSurvivor.Init),
-                ("Celeste", CelesteSurvivor.Init),
-                ("Shiv", ShivSurvivor.Init),
-                ("Mina", MinaSurvivor.Init),
-                ("Paradox", ParadoxSurvivor.Init),
-                ("Bebop", BebopSurvivor.Init),
-                ("Ivy", IvySurvivor.Init),
-                ("Apollo", ApolloSurvivor.Init),
+                ("Lash", LashSurvivor.Init, () => LashSurvivor.Survivor),
+                ("Abrams", AbramsSurvivor.Init, () => AbramsSurvivor.Survivor),
+                ("Seven", SevenSurvivor.Init, () => SevenSurvivor.Survivor),
+                ("Vyper", VyperSurvivor.Init, () => VyperSurvivor.Survivor),
+                ("Grey Talon", GreyTalonSurvivor.Init, () => GreyTalonSurvivor.Survivor),
+                ("Victor", VictorSurvivor.Init, () => VictorSurvivor.Survivor),
+                ("Viscous", ViscousSurvivor.Init, () => ViscousSurvivor.Survivor),
+                ("Celeste", CelesteSurvivor.Init, () => CelesteSurvivor.Survivor),
+                ("Shiv", ShivSurvivor.Init, () => ShivSurvivor.Survivor),
+                ("Mina", MinaSurvivor.Init, () => MinaSurvivor.Survivor),
+                ("Paradox", ParadoxSurvivor.Init, () => ParadoxSurvivor.Survivor),
+                ("Bebop", BebopSurvivor.Init, () => BebopSurvivor.Survivor),
+                ("Ivy", IvySurvivor.Init, () => IvySurvivor.Survivor),
+                ("Apollo", ApolloSurvivor.Init, () => ApolloSurvivor.Survivor),
             };
             foreach (var hero in heroes)
             {
@@ -165,6 +165,7 @@ namespace CursedAppleCuriosities
                 try
                 {
                     hero.Init(Config, gameObject);
+                    Unlocks.SurvivorUnlocks.Lock(hero.Name, hero.Def());
                     Logger?.LogInfo($"  + [Survivor] {hero.Name} ({clock.ElapsedMilliseconds} ms)");
                 }
                 catch (Exception e)

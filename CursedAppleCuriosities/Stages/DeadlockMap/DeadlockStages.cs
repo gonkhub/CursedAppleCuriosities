@@ -41,9 +41,12 @@ namespace CursedAppleCuriosities.Stages.DeadlockMap
                 "How much the game's own lights (the sun, explosions, glows) light the map on top of Deadlock's baked lighting (0 = none).");
             WalkerTeleporter = config.Bind("Deadlock Map", "Walker Teleporter Chance", 0.5f,
                 "Chance (0-1) that a district's Walker spot holds the teleporter; otherwise a major interactable stands there (Large Chest, Large Multishop or Shrine of the Mountain).");
+            SecretChance = config.Bind("Deadlock Map", "Unfound Secret Chance", 0.5f,
+                "Chance that a district replaces its stage while it still hides a hero someone in the run hasn't unlocked (used instead of the district's own chance when higher; a district set to 0 stays off).");
             ImpPitRadius = config.Bind("Deadlock Map", "Imp Pit Radius", 20f,
                 "Sunken Plaza's purple pit: using an interactable within this many metres of it wakes an elite Imp Overlord nearby (once per visit).");
             MapShop.Init();
+            HeroSilhouette.Init(districts.Select(d => d.Def));
             _scenes = LoadBundle("cac_stagescenes");
             _assets = LoadBundle("cac_stageassets");
             BarrierMaterial = _assets?.LoadAsset<Material>("matBarrier");
@@ -65,6 +68,15 @@ namespace CursedAppleCuriosities.Stages.DeadlockMap
         }
 
         public static ConfigEntry<float>? WalkerTeleporter;
+        public static ConfigEntry<float>? SecretChance;
+
+        /// <summary>True while the district hides a hero that someone in the run hasn't unlocked yet.</summary>
+        private static bool HasUnfoundSecret(MapSectionDef def)
+        {
+            foreach (SecretSpot s in def.Secrets)
+                if (Unlocks.SurvivorUnlocks.Of(s.Hero) != null && !Unlocks.SurvivorUnlocks.EveryoneHas(s.Hero)) return true;
+            return false;
+        }
         /// <summary>This stage's teleporter spot when it goes to the Walker's (server, set before the director populates).</summary>
         internal static (Vector3 Pos, float Yaw)? _walkerTeleporter;
 
@@ -198,6 +210,7 @@ namespace CursedAppleCuriosities.Stages.DeadlockMap
                 {
                     SceneDef? def = d.Stage.Def;
                     float chance = Mathf.Clamp(d.Stage.Chance?.Value ?? 0f, 0f, 0.95f);
+                    if (chance > 0f && HasUnfoundSecret(d.Def)) chance = Mathf.Max(chance, Mathf.Clamp(SecretChance?.Value ?? 0f, 0f, 0.95f));
                     if (def == null || chance <= 0f || order != d.Def.StageOrder || Offered(choices, def) || vanilla <= 0f) continue;
                     // A weight that makes it this likely against the slot's vanilla stages: w / (vanilla + w) = chance.
                     if (PartyCheck.AllReady(d, out string why)) choices.AddChoice(def, vanilla * chance / (1f - chance));
@@ -456,6 +469,8 @@ namespace CursedAppleCuriosities.Stages.DeadlockMap
                 WalkerSlot(District.Def);
                 ArmImpPit(District.Def);
                 SpawnShops(District);
+                GameObject? map = GameObject.Find("DeadlockMap");
+                if (map != null) HeroSilhouette.SpawnAll(District.Def, map.transform);
                 Log($"director started (stage ready), {Spawns.Count} player spawns placed");
                 Destroy(gameObject);
             }

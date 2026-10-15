@@ -63,6 +63,11 @@ namespace CursedAppleCuriosities.Stages.DeadlockMap
         /// Sunken Plaza's purple pit.
         /// </summary>
         public float[] ImpLordSpot = System.Array.Empty<float>();
+        /// <summary>
+        /// The district's secrets: a blacked-out silhouette of each hero stands at its spot (cac_map_mark). Touching one unlocks
+        /// that hero for everyone in the run.
+        /// </summary>
+        public SecretSpot[] Secrets = System.Array.Empty<SecretSpot>();
         /// <summary>Newt altar spots: x, y, z, yaw each, in the section's Unity space (from cac_map_mark). One altar per stage, at one of them.</summary>
         public float[] NewtAltars = System.Array.Empty<float>();
         /// <summary>Lowest point of the playable area (units): anything below falls out of the map.</summary>
@@ -92,6 +97,11 @@ namespace CursedAppleCuriosities.Stages.DeadlockMap
             Ropes = SunkenPlazaData.Ropes,
             // The sunken square in the plaza's middle (~30 x 30 m, 8 m below the street; Deadlock -2750, 2550, floor -1.1 m).
             ImpLordSpot = new[] { 16.51f, -1.10f, 24.13f, 0f },
+            Secrets = new[]
+            {
+                new SecretSpot("Paradox", 20.45f, 6.51f, 2.05f, 88.0f),    // user's mark paradoxsecret2, 2026-10-15
+                new SecretSpot("Lash", 19.76f, 210.12f, -38.88f, -1.8f),   // user's mark paradoxsecret: the top of the district's highest building (user: "perfect for him")
+            },
         };
 
         /// <summary>Haunted Lot: the Hidden King side west of the blue lane, around the yellow lane's southern Walker (stage 1). Newt altars and player spawns: to be marked in game.</summary>
@@ -116,6 +126,7 @@ namespace CursedAppleCuriosities.Stages.DeadlockMap
             Ropes = HauntedLotData.Ropes,
             NewtAltars = HauntedLotData.NewtAltars,
             PlayerSpawns = HauntedLotData.PlayerSpawns,
+            Secrets = new[] { new SecretSpot("Bebop", 37.31f, 30.90f, 41.68f, -32.0f) }, // user's mark bebopsecret, 2026-10-15
         };
 
         /// <summary>Umbria University: the Archmother side east of the blue lane, around the purple lane's northern Walker (stage 2). Newt altars and player spawns: to be marked in game.</summary>
@@ -141,6 +152,7 @@ namespace CursedAppleCuriosities.Stages.DeadlockMap
             NewtAltars = UmbriaData.NewtAltars,
             PlayerSpawns = UmbriaData.PlayerSpawns,
             WalkerSlot = new[] { -21.83f, 9.56f, 27.21f, 35.5f }, // the Walker's spot (user's mark, 2026-10-14)
+            Secrets = new[] { new SecretSpot("Ivy", 77.83f, -2.43f, -118.25f, -90.1f) }, // user's mark umbriasecret, 2026-10-14
         };
 
         /// <summary>
@@ -172,6 +184,7 @@ namespace CursedAppleCuriosities.Stages.DeadlockMap
             NewtAltars = ChinatownData.NewtAltars,
             PlayerSpawns = ChinatownData.PlayerSpawns,
             WalkerSlot = new[] { 9.43f, 10.17f, 47.00f, -89.7f }, // the Walker's spot (user's mark, 2026-10-14)
+            Secrets = new[] { new SecretSpot("Mina", -74.25f, 52.59f, -76.85f, -0.2f) }, // user's mark chinatownsecret, 2026-10-14
         };
 
         /// <summary>Every district, in the order they are converted (the first finishes first).</summary>
@@ -185,6 +198,14 @@ namespace CursedAppleCuriosities.Stages.DeadlockMap
             foreach (MapSectionDef d in All) if (d.Id == id) return d;
             return null;
         }
+    }
+
+    /// <summary>A hero's silhouette: who (the survivor's name, as the plugin lists it) and where (x, y, z, yaw in the section's Unity space).</summary>
+    public class SecretSpot
+    {
+        public string Hero;
+        public float X, Y, Z, Yaw;
+        public SecretSpot(string hero, float x, float y, float z, float yaw) { Hero = hero; X = x; Y = y; Z = z; Yaw = yaw; }
     }
 
     /// <summary>One interactable a district always has at a spot (see <see cref="MapSectionDef.FixedInteractables"/>).</summary>
