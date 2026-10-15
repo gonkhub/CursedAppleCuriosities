@@ -170,7 +170,7 @@ namespace CursedAppleCuriosities
         /// Survivors ship one at a time: Release builds (the Thunderstore package) register only these.
         /// Debug builds (development) register every hero.
         /// </summary>
-        private static readonly string[] ReleasedSurvivors = { "Lash", "Abrams", "Seven" };
+        private static readonly string[] ReleasedSurvivors = { "Lash", "Abrams", "Seven", "Vyper", "Grey Talon", "Victor", "Viscous", "Celeste" };
 
         private static bool IsReleased(string hero)
         {
