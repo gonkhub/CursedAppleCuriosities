@@ -29,7 +29,24 @@ namespace CursedAppleCuriosities.Survivors.Ivy
             Anims = IvyData.Anims,
             RootLocked = IvyData.Locked,
             ItemAnchors = IvyItemDisplays.Anchors,
+            // Skin 1, Jade (her mastery, user 3.0): her stone (she's a gargoyle: it's her skin) turns jade, her maroon cloth gold.
+            // Skin 2, Obsidian (its own challenge, user 3.0): charcoal stone, violet cloth. Stone first: the cloth's new colour
+            // must not be caught by the stone's range. Body, gear and wings only (her gun and vines keep their colours).
+            Skins = new[]
+            {
+                new DeadlockSkin { Id = "jade1", Only = new[] { "ivy_bodyv3", "ivy_gearv3", "ivy_wingsv3" }, Recolor = Recolour(stone: (150f, 1.6f, 0.3f, 0.9f), cloth: (45f, 1.2f, 0.6f, 1.4f)) },
+                new DeadlockSkin { Id = "obsidian1", Only = new[] { "ivy_bodyv3", "ivy_gearv3", "ivy_wingsv3" }, Recolor = Recolour(stone: (260f, 0.3f, 0.08f, 0.45f), cloth: (280f, 1.1f, 0.55f, 1.2f)) },
+            },
         };
+
+
+        private static System.Func<byte[], bool> Recolour((float Hue, float SatMul, float MinSat, float ValMul) stone, (float Hue, float SatMul, float MinSat, float ValMul) cloth)
+        {
+            var s = DeadlockSkin.SetHue(20f, 100f, stone.Hue, stone.SatMul, stone.MinSat, stone.ValMul);
+            var c1 = DeadlockSkin.SetHue(320f, 360f, cloth.Hue, cloth.SatMul, cloth.MinSat, cloth.ValMul);
+            var c2 = DeadlockSkin.SetHue(-5f, 10f, cloth.Hue, cloth.SatMul, cloth.MinSat, cloth.ValMul); // the maroon wraps through red
+            return px => s(px) | c1(px) | c2(px);
+        }
 
         public static void Play(GameObject bodyObject, string state) => DeadlockModelSwap.Play(bodyObject, state);
     }
@@ -48,6 +65,10 @@ namespace CursedAppleCuriosities.Survivors.Ivy
 
         public static GameObject? BodyPrefab, DisplayPrefab, SeedProjectile, BombProjectile;
         public static SurvivorDef? Survivor;
+        private static Sprite JadeSkinIcon => _jadeSkinIcon ??= Kit.SkinIcon(new Color(0.38f, 0.72f, 0.56f), new Color(0.8f, 0.62f, 0.25f), new Color(0.25f, 0.5f, 0.38f), new Color(0.68f, 0.52f, 0.2f));
+        private static Sprite? _jadeSkinIcon;
+        private static Sprite ObsidianSkinIcon => _obsidianSkinIcon ??= Kit.SkinIcon(new Color(0.22f, 0.21f, 0.25f), new Color(0.55f, 0.25f, 0.7f), new Color(0.32f, 0.31f, 0.35f), new Color(0.42f, 0.18f, 0.55f));
+        private static Sprite? _obsidianSkinIcon;
         public static BuffDef? TetherBuff, ThornsSlow, StoneBuff, AirDropBuff;
         public static GameObject? TracerEffect, HitEffect, MuzzleEffect, SlamEffect, BombEffect, KudzuBurstEffect, StoneSlamEffect;
         public static Material? VineMaterial;
@@ -176,7 +197,8 @@ namespace CursedAppleCuriosities.Survivors.Ivy
             Kit.MuteStandIn(body, model.gameObject, IvyData.Hero);
             var children = model.GetComponent<ChildLocator>();
             if (children != null && children.FindChild(MuzzleName) == null) children.AddChild(MuzzleName, model);
-            Kit.OwnSkin(model.gameObject, "skinCursedAppleIvyDEFAULT", Token + "SKIN_DEFAULT");
+            Kit.OwnSkin(model.gameObject, "skinCursedAppleIvyDEFAULT", Token + "SKIN_DEFAULT", null,
+                ("skinCursedAppleIvyJADE", Token + "SKIN_JADE", JadeSkinIcon), ("skinCursedAppleIvyOBSIDIAN", Token + "SKIN_OBSIDIAN", ObsidianSkinIcon));
             ContentAddition.AddBody(body);
             return body;
         }
@@ -191,7 +213,8 @@ namespace CursedAppleCuriosities.Survivors.Ivy
                 var swap = cm.gameObject.AddComponent<DeadlockModelSwap>();
                 swap.HeroKey = IvyData.Hero;
                 swap.IsDisplay = true;
-                Kit.OwnSkin(cm.gameObject, "skinCursedAppleIvyDISPLAY", Token + "SKIN_DEFAULT");
+                Kit.OwnSkin(cm.gameObject, "skinCursedAppleIvyDISPLAY", Token + "SKIN_DEFAULT", null,
+                    ("skinCursedAppleIvyDISPLAYJADE", Token + "SKIN_JADE", JadeSkinIcon), ("skinCursedAppleIvyDISPLAYOBSIDIAN", Token + "SKIN_OBSIDIAN", ObsidianSkinIcon));
             }
             display.AddComponent<IvyDisplayIntro>(); // lobby entrance (user 2.5)
             return display;
@@ -243,6 +266,8 @@ namespace CursedAppleCuriosities.Survivors.Ivy
             LanguageAPI.Add(Token + "NAME", "Ivy");
             LanguageAPI.Add(Token + "SUBTITLE", "The Gargoyle");
             LanguageAPI.Add(Token + "SKIN_DEFAULT", "Default");
+            LanguageAPI.Add(Token + "SKIN_JADE", "Jade");
+            LanguageAPI.Add(Token + "SKIN_OBSIDIAN", "Obsidian");
             LanguageAPI.Add(Token + "DESCRIPTION",
                 "Ivy is a gargoyle who spent eighteen years freeing Spanish Harlem from the Mendoza Syndicate. Now she wants to see what else is out there.<color=#CCD3E0>\n\n" +
                 "< ! > Kudzu Bomb slows and grinds down crowds: hold to see where it lands, throw it where enemies are heading.\n\n" +

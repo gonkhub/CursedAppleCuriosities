@@ -18,6 +18,9 @@ namespace CursedAppleCuriosities.Unlocks.Challenges
         public const string BebopSkin = "Bebop.Mastery";
         /// <summary>Bebop's Chrome skin: its own challenge (BebopLongArm), not a mastery.</summary>
         public const string BebopChromeSkin = "Bebop.Chrome";
+        public const string IvySkin = "Ivy.Mastery";
+        /// <summary>Ivy's Obsidian skin: its own challenge (to be pitched), not a mastery.</summary>
+        public const string IvyObsidianSkin = "Ivy.Obsidian";
         public const string SevenSkin = "Seven.Mastery";
         public const string VyperSkin = "Vyper.Mastery";
         public const string ViscousSkin = "Viscous.Mastery";
@@ -96,5 +99,11 @@ namespace CursedAppleCuriosities.Unlocks.Challenges
     public class BebopMastery : BasePerSurvivorClearGameMonsoonAchievement
     {
         protected override BodyIndex LookUpRequiredBodyIndex() => BodyCatalog.FindBodyIndex("CursedAppleBebopBody");
+    }
+
+    [RegisterAchievement("CursedAppleIvyMastery", "CursedApple.Skins." + Masteries.IvySkin, null, 0, null)]
+    public class IvyMastery : BasePerSurvivorClearGameMonsoonAchievement
+    {
+        protected override BodyIndex LookUpRequiredBodyIndex() => BodyCatalog.FindBodyIndex("CursedAppleIvyBody");
     }
 }

@@ -80,6 +80,10 @@ namespace CursedAppleCuriosities.Unlocks
             SkinUnlocks.Register(Challenges.Masteries.BebopSkin, "CURSEDAPPLE_BEBOP_SKIN_GOLDPLATED", "skinCursedAppleBebopGOLDPLATED", "skinCursedAppleBebopDISPLAYGOLDPLATED");
             Challenge("CursedAppleBebopMastery", "Bebop: Mastery", "As Bebop, beat the game or obliterate on Monsoon.");
             // Chrome: its own challenge (user 3.0), hook an enemy at the end of Grapple Arm's reach.
+            SkinUnlocks.Register(Challenges.Masteries.IvySkin, "CURSEDAPPLE_IVY_SKIN_JADE", "skinCursedAppleIvyJADE", "skinCursedAppleIvyDISPLAYJADE");
+            Challenge("CursedAppleIvyMastery", "Ivy: Mastery", "As Ivy, beat the game or obliterate on Monsoon.");
+            // Obsidian: locked now; its challenge is pitched separately (user 3.0).
+            SkinUnlocks.Register(Challenges.Masteries.IvyObsidianSkin, "CURSEDAPPLE_IVY_SKIN_OBSIDIAN", "skinCursedAppleIvyOBSIDIAN", "skinCursedAppleIvyDISPLAYOBSIDIAN");
             SkinUnlocks.Register(Challenges.Masteries.BebopChromeSkin, "CURSEDAPPLE_BEBOP_SKIN_CHROME", "skinCursedAppleBebopCHROME", "skinCursedAppleBebopDISPLAYCHROME");
             SkinUnlocks.Register(Challenges.Masteries.SevenSkin, "CURSEDAPPLE_SEVEN_SKIN_OVERCHARGED", "skinCursedAppleSevenOVERCHARGED", "skinCursedAppleSevenDISPLAYOVERCHARGED");
             Challenge("CursedAppleSevenMastery", "Seven: Mastery", "As Seven, beat the game or obliterate on Monsoon.");
