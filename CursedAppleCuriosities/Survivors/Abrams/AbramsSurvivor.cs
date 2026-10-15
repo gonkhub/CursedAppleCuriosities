@@ -178,7 +178,7 @@ namespace CursedAppleCuriosities.Survivors.Abrams
             locator.primary = Kit.Slot(body, BodyName, "Primary", _shotgun!);
             locator.secondary = Kit.Slot(body, BodyName, "Secondary", _siphon!);
             locator.utility = Kit.Slot(body, BodyName, "Utility", _charge!);
-            locator.special = Kit.Slot(body, BodyName, "Special", _melee!, _slam!);
+            locator.special = Kit.Slot(body, BodyName, "Special", _slam!, _melee!); // Seismic Impact default, Heavy Melee the alt (user, 2026-10-15)
             locator.passiveSkill = new SkillLocator.PassiveSkill
             {
                 enabled = true,
