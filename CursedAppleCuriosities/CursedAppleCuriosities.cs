@@ -137,6 +137,7 @@ namespace CursedAppleCuriosities
         {
             DeadlockInstall.Bind(Config);
             DeadlockSounds.Ensure(gameObject);
+            Unlocks.SurvivorUnlocks.Init();
             var heroes = new (string Name, Action<BepInEx.Configuration.ConfigFile, UnityEngine.GameObject> Init, Func<RoR2.SurvivorDef?> Def)[]
             {
                 ("Lash", LashSurvivor.Init, () => LashSurvivor.Survivor),

@@ -2,6 +2,7 @@ using System;
 using System.Collections.Generic;
 using R2API;
 using RoR2;
+using CursedAppleCuriosities.Items;
 using UnityEngine;
 
 namespace CursedAppleCuriosities.Unlocks
@@ -33,6 +34,35 @@ namespace CursedAppleCuriosities.Unlocks
         /// <summary>A registered hero's SurvivorDef (free heroes too).</summary>
         public static SurvivorDef? SurvivorOf(string hero) => _survivors.TryGetValue(hero, out SurvivorDef d) ? d : null;
 
+        /// <summary>
+        /// Once, before the heroes register: the challenges' names and descriptions (RoR2 reads ACHIEVEMENT_&lt;ID&gt;_NAME /
+        /// _DESCRIPTION; the achievements themselves are found by their [RegisterAchievement]) and the shot tracker they use.
+        /// </summary>
+        public static void Init()
+        {
+            Challenge(Challenges.VyperRattler.Identifier, "Rattler", $"Fire {Challenges.VyperRattler.Shots} shots within 1 second.");
+            ShotTracker.Init();
+            RoR2Application.onLoad += UsePortraits;
+        }
+
+        private static void Challenge(string id, string name, string description)
+        {
+            string token = "ACHIEVEMENT_" + id.ToUpperInvariant();
+            LanguageAPI.Add(token + "_NAME", name);
+            LanguageAPI.Add(token + "_DESCRIPTION", description);
+        }
+
+        /// <summary>Each unlock's icon (challenges menu, unlock popup) is the hero's portrait once the catalogs are up.</summary>
+        private static void UsePortraits()
+        {
+            foreach (var pair in _byHero)
+            {
+                Texture? portrait = SurvivorOf(pair.Key)?.bodyPrefab?.GetComponent<CharacterBody>()?.portraitIcon;
+                if (portrait is Texture2D tex)
+                    pair.Value.achievementIcon = Sprite.Create(tex, new Rect(0f, 0f, tex.width, tex.height), new Vector2(0.5f, 0.5f));
+            }
+        }
+
         public static bool IsSecret(string hero) => SecretWhere.ContainsKey(hero);
 
         /// <summary>The hero's unlockable (null for a free hero or one that isn't registered).</summary>
@@ -52,6 +82,7 @@ namespace CursedAppleCuriosities.Unlocks
             def.nameToken = survivor.displayNameToken;
             def.hidden = false;
             def.sortScore = 200;
+            def.achievementIcon = ItemBase.CreatePlaceholderSprite(survivor.primaryColor);
 
             LanguageAPI.Add(token + "_HOW", SecretWhere.TryGetValue(hero, out string where)
                 ? $"Something of theirs waits in {where}, a Deadlock district."
