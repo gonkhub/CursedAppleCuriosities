@@ -90,6 +90,8 @@ namespace CursedAppleCuriosities.Stages.DeadlockMap
             InteractableSpots = SunkenPlazaData.InteractableSpots,
             SubwayTeleports = SunkenPlazaData.SubwayTeleports,
             Ropes = SunkenPlazaData.Ropes,
+            // The sunken square in the plaza's middle (~30 x 30 m, 8 m below the street; Deadlock -2750, 2550, floor -1.1 m).
+            ImpLordSpot = new[] { 16.51f, -1.10f, 24.13f, 0f },
         };
 
         /// <summary>Haunted Lot: the Hidden King side west of the blue lane, around the yellow lane's southern Walker (stage 1). Newt altars and player spawns: to be marked in game.</summary>

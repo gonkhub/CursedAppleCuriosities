@@ -41,7 +41,7 @@ namespace CursedAppleCuriosities.Stages.DeadlockMap
                 "How much the game's own lights (the sun, explosions, glows) light the map on top of Deadlock's baked lighting (0 = none).");
             WalkerTeleporter = config.Bind("Deadlock Map", "Walker Teleporter Chance", 0.5f,
                 "Chance (0-1) that a district's Walker spot holds the teleporter; otherwise a major interactable stands there (Large Chest, Large Multishop or Shrine of the Mountain).");
-            ImpPitRadius = config.Bind("Deadlock Map", "Imp Pit Radius", 15f,
+            ImpPitRadius = config.Bind("Deadlock Map", "Imp Pit Radius", 20f,
                 "Sunken Plaza's purple pit: using an interactable within this many metres of it wakes an elite Imp Overlord nearby (once per visit).");
             _scenes = LoadBundle("cac_stagescenes");
             _assets = LoadBundle("cac_stageassets");
@@ -119,7 +119,7 @@ namespace CursedAppleCuriosities.Stages.DeadlockMap
             if (!NetworkServer.active || _impPit == null || used == null) return;
             var (stage, pit) = _impPit.Value;
             if (stage != Stage.instance) { _impPit = null; return; }
-            if ((used.transform.position - pit).sqrMagnitude > Mathf.Pow(ImpPitRadius?.Value ?? 15f, 2f)) return;
+            if ((used.transform.position - pit).sqrMagnitude > Mathf.Pow(ImpPitRadius?.Value ?? 20f, 2f)) return;
             _impPit = null;
             SpawnImpLord(used.transform.position, pit);
         }
