@@ -42,6 +42,7 @@ namespace CursedAppleCuriosities.Unlocks
         {
             Challenge(Challenges.VyperRattler.Identifier, "Rattler", $"Fire {Challenges.VyperRattler.Shots} shots within 1 second.");
             Challenge(Challenges.GreyTalonOneShot.Identifier, "Big Game", "Kill a boss with a single hit from full health.");
+            Challenge(Challenges.VictorPainBattery.Identifier, "Pain Battery", "In a single run, take 1,000 damage from yourself (not counting Shrines of Blood or falls).");
             ShotTracker.Init();
             RoR2Application.onLoad += UsePortraits;
         }

@@ -162,6 +162,7 @@ namespace CursedAppleCuriosities.Items
 
             var di = new DamageInfo();
             di.damage           = dmg;
+            di.inflictor        = _body.gameObject; // self-inflicted (counts toward Victor's Pain Battery challenge)
             di.procCoefficient  = 0f;
             di.position         = _body.transform.position;
             di.damageType       = DamageType.BypassArmor;
