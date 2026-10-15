@@ -14,7 +14,7 @@ using UnityEngine.Networking;
 namespace CursedAppleCuriosities.Broker
 {
     /// <summary>
-    /// The Cursed Broker: a rare shrine (user, 1.7: 10% on any stage, 50% on stage 3 of every loop, and 50% per Bazaar
+    /// The Cursed Broker: a rare shrine (user, 1.7; 3.0: 2% on any stage, 50% on stage 3 of every loop, and 50% per Bazaar
     /// visit until one has appeared there this loop). Each player may curse
     /// one non-lunar item in their inventory once per broker. Opening it rolls one penalty per eligible item for
     /// that player (kept for that broker, so reopening can't reroll); the menu's tooltips show what each curse would
@@ -41,8 +41,8 @@ namespace CursedAppleCuriosities.Broker
         {
             Enabled = config.Bind("Cursed Broker", "Enabled", true,
                 "Spawn the Cursed Broker, a rare shrine that curses one of your items: a far stronger item, a harsh penalty.").Value;
-            SpawnChance = config.Bind("Cursed Broker", "Spawn Chance", 0.1f,
-                "Chance that a Cursed Broker appears on any stage (0.1 = 10%). Stage 3 of each loop uses its own chance.").Value;
+            SpawnChance = config.Bind("Cursed Broker", "Spawn Chance", 0.02f, // user 3.0 (was 10%)
+                "Chance that a Cursed Broker appears on any stage (0.02 = 2%). Stage 3 of each loop uses its own chance.").Value;
             StageThreeChance = config.Bind("Cursed Broker", "Stage 3 Chance", 0.5f,
                 "Chance that a Cursed Broker appears on stage 3 of every loop (0.5 = 50%).").Value;
             BazaarChance = config.Bind("Cursed Broker", "Bazaar Chance", 0.5f,
