@@ -149,8 +149,9 @@ namespace CursedAppleCuriosities.Stages.DeadlockMap
             SubwayTeleports = ChinatownData.SubwayTeleports,
             InteractableSpots = ChinatownData.InteractableSpots,
             Ropes = ChinatownData.Ropes,
-            // The bell tower's footprint (its top pieces, measured from the map): the legendary chest on its highest flat spot.
-            FixedInteractables = new[] { FixedSpawn.OnTop(FixedSpawn.LegendaryChest, 2636f, -2532f, 3532f, -1256f) },
+            // The legendary chest on the bell tower's top floor: inside the tower's footprint, under its roof (rays from just
+            // above the top of its climb rope, ChinatownData.Ropes[2]), beside where the rope's geyser lands you.
+            FixedInteractables = new[] { FixedSpawn.OnTop(FixedSpawn.LegendaryChest, 2636f, -2532f, 3532f, -1256f, below: 2630f + 120f, besideX: 3088f, besideY: -1888f) },
         };
 
         /// <summary>Every district, in the order they are converted (the first finishes first).</summary>
@@ -172,11 +173,16 @@ namespace CursedAppleCuriosities.Stages.DeadlockMap
         public const string LegendaryChest = "RoR2/Base/GoldChest/iscGoldChest.asset";
         public string Card = "";
         public float X, Y, Z, Yaw;
-        /// <summary>Instead of a marked spot: the highest flat spot inside this box (x0, y0, x1, y1 Deadlock units), e.g. a roof.</summary>
+        /// <summary>
+        /// Instead of a marked spot: the highest flat spot inside this box (x0, y0, x1, y1 Deadlock units), e.g. a roof; with a
+        /// 5th value, the highest under that height (a top floor under a roof); with 6th and 7th, the spot of that floor nearest
+        /// this point that still leaves it clear (e.g. beside a geyser's landing).
+        /// </summary>
         public float[]? Atop;
         public FixedSpawn(string card, float x, float y, float z, float yaw) { Card = card; X = x; Y = y; Z = z; Yaw = yaw; }
-        /// <summary>On top of whatever stands in the box (Deadlock units): the highest flat spot found there.</summary>
-        public static FixedSpawn OnTop(string card, float x0, float y0, float x1, float y1) => new FixedSpawn(card, 0f, 0f, 0f, 0f) { Atop = new[] { x0, y0, x1, y1 } };
+        /// <summary>On top of whatever stands in the box (Deadlock units): the highest flat spot found there (see <see cref="Atop"/>).</summary>
+        public static FixedSpawn OnTop(string card, float x0, float y0, float x1, float y1, float below = float.NaN, float besideX = float.NaN, float besideY = float.NaN) =>
+            new FixedSpawn(card, 0f, 0f, 0f, 0f) { Atop = float.IsNaN(below) ? new[] { x0, y0, x1, y1 } : float.IsNaN(besideX) ? new[] { x0, y0, x1, y1, below } : new[] { x0, y0, x1, y1, below, besideX, besideY } };
     }
 
     internal static class SunkenPlazaData

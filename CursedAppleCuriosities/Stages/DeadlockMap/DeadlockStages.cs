@@ -1,6 +1,7 @@
 using System;
 using System.Collections.Generic;
 using System.IO;
+using System.Linq;
 using System.Reflection;
 using BepInEx.Configuration;
 using R2API;
@@ -396,19 +397,48 @@ namespace CursedAppleCuriosities.Stages.DeadlockMap
             private static bool HighestFlat(Transform world, Vector3 originUnits, float[] box, out Vector3 best)
             {
                 best = default;
-                bool found = false;
-                const int n = 12;
+                const int n = 24;
+                bool under = box.Length >= 5;
+                // Every flat hit, then the highest floor among them.
+                var hits = new List<Vector3>();
                 for (int i = 0; i <= n; i++)
                     for (int j = 0; j <= n; j++)
                     {
                         float x = Mathf.Lerp(box[0], box[2], i / (float)n), y = Mathf.Lerp(box[1], box[3], j / (float)n);
-                        Vector3 from = world.TransformPoint(MapCache.ToUnity(new Vector3(x, y, 0f), originUnits)) + Vector3.up * 400f;
-                        if (!Physics.Raycast(from, Vector3.down, out RaycastHit hit, 800f, LayerIndex.world.mask, QueryTriggerInteraction.Ignore)) continue;
-                        if (hit.normal.y < 0.9f) continue; // a slope or a spire: not somewhere to stand a chest
-                        if (!found || hit.point.y > best.y) { best = hit.point; found = true; }
+                        Vector3 from = under
+                            ? world.TransformPoint(MapCache.ToUnity(new Vector3(x, y, box[4]), originUnits)) // under the roof
+                            : world.TransformPoint(MapCache.ToUnity(new Vector3(x, y, 0f), originUnits)) + Vector3.up * 400f;
+                        if (FlatBelow(from, out Vector3 p)) hits.Add(p);
                     }
-                if (found) Log($"highest flat spot of the box at {best}");
-                return found;
+                if (hits.Count == 0) return false;
+                float top = hits.Max(h => h.y);
+                List<Vector3> floor = hits.Where(h => h.y > top - 0.5f).ToList();
+                if (box.Length >= 7)
+                {
+                    // Nearest the point that still leaves the chest's footprint (1.5 m around) flat and 3 m clear of the point.
+                    Vector3 near = world.TransformPoint(MapCache.ToUnity(new Vector3(box[5], box[6], 0f), originUnits));
+                    float Flat2(Vector3 h) => new Vector2(h.x - near.x, h.z - near.z).magnitude;
+                    bool Roomy(Vector3 h)
+                    {
+                        foreach (Vector3 d in new[] { Vector3.forward, Vector3.back, Vector3.left, Vector3.right })
+                            if (!FlatBelow(h + d * 1.5f + Vector3.up * 1.5f, out Vector3 q) || Mathf.Abs(q.y - h.y) > 0.3f) return false;
+                        return true;
+                    }
+                    List<Vector3> ok = floor.Where(h => Flat2(h) >= 3f && Roomy(h)).OrderBy(Flat2).ToList();
+                    best = ok.Count > 0 ? ok[0] : floor.OrderByDescending(Flat2).First();
+                }
+                else best = floor[0];
+                Log($"fixed interactable spot at {best} (top floor {top:0.##}, {floor.Count} spots on it)");
+                return true;
+            }
+
+            private static bool FlatBelow(Vector3 from, out Vector3 p)
+            {
+                p = default;
+                if (!Physics.Raycast(from, Vector3.down, out RaycastHit hit, 800f, LayerIndex.world.mask, QueryTriggerInteraction.Ignore)) return false;
+                if (hit.normal.y < 0.9f) return false; // a slope or a spire: not somewhere to stand a chest
+                p = hit.point;
+                return true;
             }
 
             /// <summary>
