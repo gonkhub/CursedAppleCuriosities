@@ -64,6 +64,8 @@ namespace CursedAppleCuriosities.Unlocks
             Challenge(Challenges.ParadoxDisplacement.Identifier, "Paradox: Temporal Displacement", "As Paradox, swap places with a boss using Paradoxical Swap, then kill it within 5 seconds.");
             SkillUnlocks.Register(Challenges.BebopBombSquad.Skill);
             Challenge(Challenges.BebopBombSquad.Identifier, "Bebop: Bomb Squad", "As Bebop, build up +200% Sticky Bomb damage without dying.");
+            SkillUnlocks.Register(Challenges.ApolloEnGarde.Skill);
+            Challenge(Challenges.ApolloEnGarde.Identifier, "Apollo: En Garde", "As Apollo, heal 1,000 health from Flawless Advance's perfect stabs in a single stage.");
             ShotTracker.Init();
             RoR2Application.onLoad += UsePortraits;
         }

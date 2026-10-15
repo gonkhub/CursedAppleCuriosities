@@ -281,14 +281,28 @@ namespace EntityStates.CursedApple.Apollo
     // ================= Utility alt: Riposte =================
 
     /// <summary>
-    /// Riposte (Deadlock ability_fencer_riposte): a 0.8 s stance; the first hit that lands on him is deflected (ApolloNet), and he dashes
-    /// at whoever threw it (RiposteDash). Nothing comes: the stance just ends.
+    /// Riposte (Deadlock ability_fencer_riposte): a 0.8 s stance; the first hit that lands on him is deflected (ApolloNet). Nothing
+    /// comes: the stance just ends. A parry no longer dashes on its own (user 3.0): it opens the counter (ApolloCounter), and pressing
+    /// Riposte again then dashes into the counter slash (RiposteDash) on the enemy nearest the crosshair within 50 m.
     /// </summary>
     public class Riposte : BaseSkillState
     {
         public override void OnEnter()
         {
             base.OnEnter();
+            if (isAuthority && TryGetComponent(out ApolloCounter counter) && counter.Open)
+            {
+                CharacterBody? target = ApolloCounter.Target(characterBody);
+                if (target == null)
+                {
+                    activatorSkillSlot?.AddOneStock(); // nobody in reach: keep the counter for a better moment
+                    outer.SetNextStateToMain();
+                    return;
+                }
+                counter.Use();
+                outer.SetNextState(new RiposteDash { Target = target.gameObject });
+                return;
+            }
             ApolloModel.Play(gameObject, "riposte");
             DeadlockSounds.Play("apollo_riposte_cast", transform.position, gameObject);
             DeadlockHeroVoice.Power("apollo_vo_power3", gameObject); // Riposte's lines are use_power3 (Deadlock's captions)
@@ -313,7 +327,7 @@ namespace EntityStates.CursedApple.Apollo
         public override InterruptPriority GetMinimumInterruptPriority() => InterruptPriority.PrioritySkill;
     }
 
-    /// <summary>Riposte's counter: a fast dash to the attacker (35 m at most), then a slash that stuns and slows everything close.</summary>
+    /// <summary>Riposte's counter: a fast dash to the chosen enemy (50 m at most), then a slash that stuns and slows everything close.</summary>
     public class RiposteDash : BaseState
     {
         public GameObject? Target;
@@ -332,8 +346,8 @@ namespace EntityStates.CursedApple.Apollo
             if (!isAuthority || characterMotor == null) return;
             Vector3 goal = Target != null && Target.TryGetComponent(out CharacterBody t) ? t.corePosition : characterBody.corePosition + characterDirection.forward * 3f;
             Vector3 to = goal - characterBody.corePosition;
-            bool far = to.magnitude > 2.5f && to.magnitude < ApolloData.RiposteRange * 1.5f;
-            if (!_slashed && far && fixedAge < 0.6f)
+            bool far = to.magnitude > 2.5f && to.magnitude < ApolloData.RiposteCounterRange * 1.5f;
+            if (!_slashed && far && fixedAge < 0.9f) // 50 m at 76 m/s takes ~0.66 s
             {
                 characterMotor.velocity = Vector3.zero;
                 characterMotor.rootMotion += to.normalized * Mathf.Min(to.magnitude - 2f, ApolloData.RiposteDashSpeed * Time.fixedDeltaTime);

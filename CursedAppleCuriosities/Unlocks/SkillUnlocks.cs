@@ -9,7 +9,7 @@ namespace CursedAppleCuriosities.Unlocks
 {
     /// <summary>
     /// 3.0 (user): alternate skills start locked and unlock through a challenge played as that hero. An unlock is registered
-    /// by the skill's name before the heroes build their skill families; <see cref="Deadlock.Kit.Slot"/> then puts it on that
+    /// by the skill's name before the heroes build their skill families; <see cref="Deadlock.DeadlockSurvivorKit.Slot"/> then puts it on that
     /// skill's variant, which is what greys it out in the loadout.
     /// </summary>
     public static class SkillUnlocks

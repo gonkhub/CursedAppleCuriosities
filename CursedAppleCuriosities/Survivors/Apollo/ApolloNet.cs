@@ -133,7 +133,11 @@ namespace CursedAppleCuriosities.Survivors.Apollo
                 EquipmentFx.Sound("apollo_lunge_perfect", body.corePosition, Attacker);
                 // A perfect stab that lands heals him, once a stab (user 2.5).
                 if (body.healthComponent != null && System.Array.Exists(Targets, t => t != null && t.TryGetComponent(out HealthComponent h) && h.alive))
+                {
+                    float before = body.healthComponent.health;
                     body.healthComponent.HealFraction(ApolloData.PerfectHeal, default(ProcChainMask));
+                    CursedAppleCuriosities.Unlocks.Challenges.ApolloEnGarde.PerfectHeal(body, body.healthComponent.health - before);
+                }
             }
             // Itani Lo Sahn: Apollo is invulnerable while his targets are in slow motion (Deadlock).
             if (Kind == ApolloHitKind.Ult) body.AddTimedBuff(RoR2Content.Buffs.HiddenInvincibility, ApolloData.UltLock * DurationExtender.Multiplier(body));
@@ -227,7 +231,7 @@ namespace CursedAppleCuriosities.Survivors.Apollo
         }
     }
 
-    /// <summary>Server to every client: Apollo parried; his owner dashes to the attacker (RiposteDash).</summary>
+    /// <summary>Server to every client: Apollo parried; his owner's stance ends and the counter opens (ApolloCounter, user 3.0).</summary>
     public class ApolloRiposteMessage : INetMessage
     {
         public GameObject? Apollo, Target;
@@ -238,7 +242,9 @@ namespace CursedAppleCuriosities.Survivors.Apollo
         public void OnReceived()
         {
             if (Apollo == null || !Apollo.TryGetComponent(out CharacterBody b) || !b.hasEffectiveAuthority) return;
-            EntityStateMachine.FindByCustomName(Apollo, "Body")?.SetInterruptState(new EntityStates.CursedApple.Apollo.RiposteDash { Target = Target }, EntityStates.InterruptPriority.Frozen);
+            EntityStateMachine? machine = EntityStateMachine.FindByCustomName(Apollo, "Body");
+            if (machine != null && machine.state is EntityStates.CursedApple.Apollo.Riposte) machine.SetNextStateToMain();
+            (Apollo.GetComponent<ApolloCounter>() ?? Apollo.AddComponent<ApolloCounter>()).Arm();
         }
     }
 

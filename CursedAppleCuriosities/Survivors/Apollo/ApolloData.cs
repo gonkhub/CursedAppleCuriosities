@@ -67,7 +67,9 @@ namespace CursedAppleCuriosities.Survivors.Apollo
         public const float RiposteWindow = 0.8f;        // Deadlock AbilityChannelTime
         public static float RiposteDamage = 2.5f;       // user 2.5 (was 600%)
         public const float RiposteDashSpeed = 76f;      // Deadlock DashSpeed 3000 hu/s
-        public const float RiposteRange = 35f;          // Deadlock DashRange
+        public const float RiposteCounterRange = 50f;   // user 3.0: after a parry, pick the counter's target near the crosshair within 50 m
+        public const float RiposteCounterConeDeg = 20f;
+        public const float RiposteCounterWindow = 3f;   // seconds to press Riposte again after a parry (my number, 3.0)
         public const float RiposteSlashRadius = 6f;     // Deadlock SlashRadius
         public const float RiposteStun = 2.5f;          // user 2.5 (Deadlock 0.8 s)
         public const float RiposteSlow = 0.4f, RiposteSlowSeconds = 4f;
