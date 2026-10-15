@@ -35,25 +35,28 @@ namespace CursedAppleCuriosities.Survivors.Apollo
         public static float WaveCycle = 0.38f;          // Deadlock m_flCycleTime
         public static float WaveRange = 25.4f;          // Deadlock falloff ranges 1000 hu: the wave's reach
         public const float WaveRadius = 1f;             // a wide slash; it passes through enemies
-        public const float WaveSpeed = 50f;             // m/s: slower than Deadlock's 5000 hu/s (127 m/s), which read as instant (user 2.5)
+        public const float WaveSpeed = 35f;             // m/s: a slow blade (user 2.5; Deadlock 5000 hu/s = 127 m/s read as instant)
 
         // ---- secondary: Disengaging Sigil (ability_fencer_throwblade: 0.5 s cast, 6.5 m sigil 300 hu ahead, 85 damage, 24% slow 4 s, leap back 16 m/s, 12 s) ----
-        public static float SigilDamage = 5f;
+        public static float SigilDamage = 3f;           // user 2.5 (was 500%)
         public static float SigilRadius = 6.5f;
         public const float SigilAhead = 7.6f;           // Deadlock m_flForwardPlacementDistance 300 hu
         public const float SigilCast = 0.5f;            // Deadlock AbilityCastDelay
         public const float SigilSlow = 0.24f, SigilSlowSeconds = 4f;
-        public const float SigilLeap = 16f;             // Deadlock JumpVelocityHidden
+        public const float SigilLeap = 26f;             // Deadlock JumpVelocityHidden 16: much higher (user 2.5), straight away from the sigil
+        public const float SigilLift = 8f;              // and a little up on top, so a level cast still flips him high
+        public static float SigilHaste = 0.25f;         // +25% fire rate after casting it (user 2.5)
+        public const float SigilHasteSeconds = 5f;      // (my number; Duration Extender lengthens it)
         public static float SigilCooldown = 6f;
 
         // ---- utility: Flawless Advance (ability_fencer_lunge: hold 0.25-1.1 s, perfect 0.525-0.775 s; 25 -> 40 / perfect 65; a 13 m stab; 3 stabs
         // within 5 s; 26 s) ----
         public static float StabMin = 2.5f, StabMax = 4f, StabPerfect = 6.5f;
-        public static float PerfectHeal = 0.08f;        // user 2.5: a perfect stab that lands heals this share of max health (my number)
+        public static float PerfectHeal = 0.2f;         // user 2.5: a perfect stab that lands heals 20% of max health
         public const float HoldMin = 0.25f, PerfectStart = 0.525f, PerfectLength = 0.25f, HoldMax = 1.1f; // Deadlock's timings
         public const float StabLength = 13f;            // Deadlock SlashLength
         public const float StabRadius = 1.6f;           // Deadlock SlashRadius
-        public const float StabDash = 3f, StabDashSpeed = 56f; // Deadlock AttackDashRange / AttackingDashSpeed 2200 hu/s
+        public const float StabDash = 4f, StabDashSpeed = 56f; // Deadlock AttackDashRange 3 m (a little more: user 2.5, toward his held direction) / AttackingDashSpeed 2200 hu/s
         public const int Stabs = 3;                     // Deadlock MaxStabs
         public const float StabRecastWindow = 5f;       // Deadlock RecastTime
         public static float AdvanceCooldown = 9f;
@@ -95,6 +98,7 @@ namespace CursedAppleCuriosities.Survivors.Apollo
             WaveCycle = c.Bind(Section, "Sword Wave - Time Between Slashes", WaveCycle, "Seconds before attack speed.").Value;
             SigilDamage = c.Bind(Section, "Disengaging Sigil - Damage", SigilDamage, "Damage coefficient of the sigil's blast.").Value;
             SigilCooldown = c.Bind(Section, "Disengaging Sigil - Cooldown", SigilCooldown, "Seconds.").Value;
+            SigilHaste = c.Bind(Section, "Disengaging Sigil - Fire Rate Bonus", SigilHaste, "Attack speed bonus for a few seconds after casting it.").Value;
             StabMin = c.Bind(Section, "Flawless Advance - Min Damage", StabMin, "Damage coefficient of a quick stab.").Value;
             StabMax = c.Bind(Section, "Flawless Advance - Max Damage", StabMax, "Damage coefficient of a fully held stab (outside the perfect window).").Value;
             StabPerfect = c.Bind(Section, "Flawless Advance - Perfect Damage", StabPerfect, "Damage coefficient of a stab released in the perfect window.").Value;
@@ -123,7 +127,7 @@ namespace CursedAppleCuriosities.Survivors.Apollo
             ("shoot_left", "shoot_left_idle", false, "locomotion", "delta"),
             ("sigil", "ability_sigil_start", false, "locomotion", "full"),
             ("sigil_jump", "ability_sigil_jump", false, "in_air", "full"),
-            ("lunge_aim", "ability_lunge_aim", true, "", "full"),
+            ("lunge_aim", "ability_lunge_aim", true, "", "additive"), // an additive clip (only the hips carry a pose): as a full pose it collapsed him into a point (user 2.5)
             ("lunge", "ability_lunge_attack_n", false, "locomotion", "full"),
             ("riposte", "ability_riposte", false, "hold", "full"),
             ("riposte_dash", "ability_riposte_counterattack_dash", false, "riposte_hit", "full"),
@@ -142,7 +146,8 @@ namespace CursedAppleCuriosities.Survivors.Apollo
             var l = FrameworkAnims.CommonSounds(Hero, "fencer", "sounds/player/footsteps/fencer/fencer_footstep", "sounds/player/footsteps/fencer/fencer_footstep_jumpland", "sounds/player/movement/apollo/apollo_dash_sweetener", lowHealthInEmote: true);
             void Add(string id, string path, float volume = 0.9f, float range = 40f, float gap = 0.1f, string? fallback = null) =>
                 l.Add(new DeadlockSound { Id = "apollo_" + id, VpkPrefix = path, Volume = volume, Range = range, MinGap = gap, Fallback = fallback });
-            Add("wave", "sounds/abilities/fencer/weapon_swipe", 0.6f, 50f, 0.08f, "Play_merc_sword_swing");
+            Add("wave", "sounds/weapons/fencer/fencer_wpn_fire", 0.7f, 60f, 0.08f, "Play_merc_sword_swing"); // his gun's own fire (Fencer.Wpn.Fire; user 2.5)
+            Add("wave_mech", "sounds/weapons/fencer/fencer_weapon_mech", 0.4f, 25f, 0.08f);
             Add("sigil_cast", "sounds/abilities/fencer/sigil/fencer_sigil_cast");
             Add("sigil_charge", "sounds/abilities/fencer/sigil/fencer_sigil_cast_delay");
             Add("sigil_blast", "sounds/abilities/fencer/sigil/fencer_sigil_aoe_start", 1f, 60f);

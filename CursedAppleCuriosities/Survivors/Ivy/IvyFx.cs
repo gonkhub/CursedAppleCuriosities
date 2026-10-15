@@ -15,13 +15,12 @@ namespace CursedAppleCuriosities.Survivors.Ivy
         public GameObject? Follow;
 
         private const int Points = 64;
-        private static Material? _material;
-        private LineRenderer? _rim;
-        private MeshFilter? _disc;
-        private MeshRenderer? _discRenderer;
+        private LineRenderer? _rim, _inner;
+        private Transform? _disc;
+        private Material? _discMaterial;
         private float _age, _builtRadius = -1f;
 
-        public static Material Material => _material ??= new Material(Shader.Find("Sprites/Default")) { name = "matCursedAppleIvyGround" };
+        public static Material Material => CursedAppleCuriosities.Deadlock.DeadlockSurvivorKit.LineMaterial();
 
         /// <summary>A ring on the ground at <paramref name="at"/> (every client draws its own).</summary>
         public static IvyGroundRing Spawn(Vector3 at, float radius, float seconds, Color? color = null)
@@ -35,46 +34,56 @@ namespace CursedAppleCuriosities.Survivors.Ivy
             return r;
         }
 
+        private LineRenderer Rim(string name, float width)
+        {
+            var go = new GameObject(name);
+            go.transform.SetParent(transform, false);
+            var lr = go.AddComponent<LineRenderer>();
+            lr.useWorldSpace = false;
+            lr.loop = true;
+            lr.positionCount = Points;
+            lr.widthMultiplier = width;
+            lr.sharedMaterial = Material;
+            lr.shadowCastingMode = UnityEngine.Rendering.ShadowCastingMode.Off;
+            return lr;
+        }
+
         private void Build()
         {
-            _rim = gameObject.AddComponent<LineRenderer>();
-            _rim.useWorldSpace = false;
-            _rim.loop = true;
-            _rim.positionCount = Points;
-            _rim.widthMultiplier = 0.12f;
-            _rim.sharedMaterial = Material;
-            _rim.shadowCastingMode = UnityEngine.Rendering.ShadowCastingMode.Off;
-            var disc = new GameObject("Disc", typeof(MeshFilter), typeof(MeshRenderer));
-            disc.transform.SetParent(transform, false);
-            _disc = disc.GetComponent<MeshFilter>();
-            _discRenderer = disc.GetComponent<MeshRenderer>();
-            _discRenderer.sharedMaterial = Material;
-            _discRenderer.shadowCastingMode = UnityEngine.Rendering.ShadowCastingMode.Off;
+            _rim = Rim("Rim", 0.16f);
+            _inner = Rim("Inner", 0.06f);
+            // The filled area: RoR2's own range indicator on a flat cylinder.
+            _discMaterial = CursedAppleCuriosities.Deadlock.DeadlockSurvivorKit.AreaMaterial(new Color(Color.r, Color.g, Color.b, 0.35f));
+            if (_discMaterial != null)
+            {
+                var disc = GameObject.CreatePrimitive(PrimitiveType.Cylinder);
+                Destroy(disc.GetComponent<Collider>());
+                disc.transform.SetParent(transform, false);
+                var r = disc.GetComponent<MeshRenderer>();
+                r.sharedMaterial = _discMaterial;
+                r.shadowCastingMode = UnityEngine.Rendering.ShadowCastingMode.Off;
+                _disc = disc.transform;
+            }
         }
 
         private void Reshape()
         {
             _builtRadius = Radius;
             var rim = new Vector3[Points];
+            var inner = new Vector3[Points];
             for (int i = 0; i < Points; i++)
             {
                 float a = i * Mathf.PI * 2f / Points;
-                rim[i] = new Vector3(Mathf.Cos(a) * Radius, 0.08f, Mathf.Sin(a) * Radius);
+                rim[i] = new Vector3(Mathf.Cos(a) * Radius, 0.1f, Mathf.Sin(a) * Radius);
+                inner[i] = new Vector3(rim[i].x * 0.92f, 0.1f, rim[i].z * 0.92f);
             }
             _rim!.SetPositions(rim);
-            // A fan: clear in the middle, tinted toward the edge (vertex colours; Sprites/Default reads them).
-            var verts = new Vector3[Points + 1];
-            var cols = new Color[Points + 1];
-            var tris = new int[Points * 3];
-            verts[0] = new Vector3(0f, 0.06f, 0f);
-            for (int i = 0; i < Points; i++)
+            _inner!.SetPositions(inner);
+            if (_disc != null)
             {
-                verts[i + 1] = new Vector3(rim[i].x, 0.06f, rim[i].z);
-                tris[i * 3] = 0; tris[i * 3 + 1] = (i + 1) % Points + 1; tris[i * 3 + 2] = i + 1;
+                _disc.localScale = new Vector3(Radius * 2f, 0.05f, Radius * 2f);
+                _disc.localPosition = new Vector3(0f, 0.05f, 0f);
             }
-            var mesh = new Mesh { name = "IvyDisc", vertices = verts, triangles = tris, colors = cols };
-            mesh.RecalculateBounds();
-            _disc!.sharedMesh = mesh;
         }
 
         private void LateUpdate()
@@ -88,16 +97,14 @@ namespace CursedAppleCuriosities.Survivors.Ivy
             float pulse = 0.85f + 0.15f * Mathf.Sin(Time.time * 6f);
             Color rim = new Color(Color.r, Color.g, Color.b, Color.a * fade * pulse);
             _rim!.startColor = _rim.endColor = rim;
-            Mesh m = _disc!.sharedMesh;
-            var cols = new Color[m.vertexCount];
-            cols[0] = new Color(Color.r, Color.g, Color.b, 0.04f * fade);
-            for (int i = 1; i < cols.Length; i++) cols[i] = new Color(Color.r, Color.g, Color.b, 0.3f * fade);
-            m.colors = cols;
+            _inner!.startColor = _inner.endColor = new Color(rim.r, rim.g, rim.b, rim.a * 0.6f);
+            if (_discMaterial != null && _discMaterial.HasProperty("_TintColor"))
+                _discMaterial.SetColor("_TintColor", new Color(Color.r, Color.g, Color.b, 0.35f * fade));
         }
 
         private void OnDestroy()
         {
-            if (_disc != null && _disc.sharedMesh != null) Destroy(_disc.sharedMesh);
+            if (_discMaterial != null) Destroy(_discMaterial);
         }
     }
 

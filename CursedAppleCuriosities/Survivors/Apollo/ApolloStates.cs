@@ -64,6 +64,7 @@ namespace EntityStates.CursedApple.Apollo
             bool left = swing != null && (swing.Left = !swing.Left);
             ApolloModel.Play(gameObject, left ? "shoot_left" : "shoot");
             DeadlockSounds.Play("apollo_wave", transform.position, gameObject);
+            DeadlockSounds.Play("apollo_wave_mech", transform.position, gameObject);
             StartAimMode(2f);
             if (!isAuthority) return;
             Ray aim = GetAimRay();
@@ -116,10 +117,13 @@ namespace EntityStates.CursedApple.Apollo
             DeadlockSounds.Play("apollo_sigil_cast", transform.position, gameObject);
             DeadlockSounds.Play("apollo_sigil_charge", transform.position, gameObject);
             DeadlockHeroVoice.Power("apollo_vo_power1", gameObject);
-            Vector3 flat = ApolloShared.Flat(GetAimRay().direction, characterDirection.forward);
-            _back = -flat;
-            _at = characterBody.footPosition + flat * ApolloData.SigilAhead;
-            if (Physics.Raycast(_at + Vector3.up * 3f, Vector3.down, out RaycastHit ground, 15f, LayerIndex.world.mask, QueryTriggerInteraction.Ignore)) _at = ground.point;
+            // Along his aim, pitch and all (user 2.5): looking down puts it under him or diagonally below; terrain stops it short.
+            Ray aim = GetAimRay();
+            float ahead = ApolloData.SigilAhead;
+            if (Physics.Raycast(aim.origin, aim.direction, out RaycastHit wall, ahead + 2f, LayerIndex.world.mask, QueryTriggerInteraction.Ignore))
+                ahead = Mathf.Max(0f, wall.distance - 0.3f);
+            _at = aim.origin + aim.direction * ahead;
+            if (isAuthority) ApolloNet.ToServer(new ApolloUltMessage { Apollo = gameObject, Kind = ApolloUltKind.SigilHaste });
             ApolloRingMessage.Show(_at, ApolloData.SigilRadius * MysticExpansion.RadiusMultiplier(characterBody), ApolloData.SigilCast); // every machine draws its own
         }
 
@@ -138,13 +142,27 @@ namespace EntityStates.CursedApple.Apollo
             float radius = ApolloData.SigilRadius * MysticExpansion.RadiusMultiplier(characterBody);
             DeadlockSounds.Play("apollo_sigil_blast", _at);
             var hit = ApolloShared.Around(_at, radius, GetTeam());
-            if (hit.Count > 0) ApolloNet.ToServer(new ApolloHitMessage { Kind = ApolloHitKind.Sigil, Attacker = gameObject, Targets = hit.ToArray(), Coefficient = ApolloData.SigilDamage, Dir = -_back, Crit = RollCrit() });
+            // The flip goes straight away from the sigil (user 2.5), plus a little lift.
+            Vector3 away = characterBody.corePosition - _at;
+            _back = away.sqrMagnitude > 0.01f ? away.normalized : Vector3.up;
+            if (hit.Count > 0)
+            {
+                ApolloNet.ToServer(new ApolloHitMessage { Kind = ApolloHitKind.Sigil, Attacker = gameObject, Targets = hit.ToArray(), Coefficient = ApolloData.SigilDamage, Dir = -_back, Crit = RollCrit() });
+                // A hit gives back a stamina pip and his air jumps and dashes (user 2.5).
+                if (TryGetComponent(out DeadlockMover mover))
+                {
+                    mover.Refund(1);
+                    mover.AirDashes = 0;
+                }
+                if (characterMotor != null) characterMotor.jumpCount = Mathf.Min(characterMotor.jumpCount, 1);
+            }
             if (ApolloSurvivor.SigilEffect != null) EffectManager.SpawnEffect(ApolloSurvivor.SigilEffect, new EffectData { origin = _at, scale = radius }, true);
             ApolloModel.Play(gameObject, "sigil_jump");
             if (characterMotor != null)
             {
                 characterMotor.Motor.ForceUnground();
-                characterMotor.velocity = _back * ApolloData.SigilLeap + Vector3.up * ApolloData.SigilLeap * 0.6f; // back and up, away from it
+                characterMotor.velocity = _back * ApolloData.SigilLeap + Vector3.up * ApolloData.SigilLift;
+                characterMotor.disableAirControlUntilCollision = false;
             }
         }
 
@@ -168,7 +186,7 @@ namespace EntityStates.CursedApple.Apollo
             ApolloModel.Play(gameObject, "lunge_aim");
             DeadlockSounds.Play("apollo_lunge_charge", transform.position, gameObject);
             var recast = GetComponent<ApolloAdvanceRecast>();
-            if (recast == null || recast.Used == 0) DeadlockHeroVoice.Power("apollo_vo_power3", gameObject);
+            if (recast == null || recast.Used == 0) DeadlockHeroVoice.Power("apollo_vo_power2", gameObject); // the lunge's lines are use_power2 (Deadlock's captions)
         }
 
         public override void FixedUpdate()
@@ -177,7 +195,13 @@ namespace EntityStates.CursedApple.Apollo
             StartAimMode(0.5f);
             if (!_glinted && fixedAge >= ApolloData.PerfectStart) { _glinted = true; DeadlockSounds.Play("apollo_lunge_glint", transform.position, gameObject); }
             if (!isAuthority) return;
-            ApolloShared.Float(characterMotor, 3f);
+            // Gravity doesn't touch him while he readies it (user 2.5): he hangs where he is, still free to move.
+            if (characterMotor != null)
+            {
+                Vector3 v = characterMotor.velocity;
+                characterMotor.velocity = new Vector3(v.x, 0f, v.z);
+                characterMotor.disableAirControlUntilCollision = false;
+            }
             bool released = inputBank == null || !inputBank.skill3.down;
             if ((released && fixedAge >= ApolloData.HoldMin) || fixedAge >= ApolloData.HoldMax) outer.SetNextState(new AdvanceStab { Held = fixedAge });
         }
@@ -188,7 +212,7 @@ namespace EntityStates.CursedApple.Apollo
     public class AdvanceStab : BaseSkillState
     {
         public float Held;
-        private Vector3 _dir;
+        private Vector3 _dir, _dash;
         private bool _stabbed;
 
         public override void OnEnter()
@@ -197,6 +221,9 @@ namespace EntityStates.CursedApple.Apollo
             ApolloModel.Play(gameObject, "lunge");
             DeadlockSounds.Play("apollo_lunge_cast", transform.position, gameObject);
             _dir = GetAimRay().direction;
+            // A short dash the way he's moving, or straight ahead if he isn't (user 2.5); the stab itself goes where he looks.
+            Vector3 move = inputBank != null ? inputBank.moveVector : Vector3.zero;
+            _dash = move.sqrMagnitude > 0.01f ? new Vector3(move.x, 0f, move.z).normalized : ApolloShared.Flat(_dir, characterDirection.forward);
             if (isAuthority && characterMotor != null) characterMotor.disableAirControlUntilCollision = false;
         }
 
@@ -208,7 +235,7 @@ namespace EntityStates.CursedApple.Apollo
             if (fixedAge < dashTime)
             {
                 characterMotor.velocity = Vector3.zero;
-                characterMotor.rootMotion += _dir * ApolloData.StabDashSpeed * Time.fixedDeltaTime;
+                characterMotor.rootMotion += _dash * ApolloData.StabDashSpeed * Time.fixedDeltaTime;
                 return;
             }
             if (!_stabbed) Stab();
@@ -228,7 +255,7 @@ namespace EntityStates.CursedApple.Apollo
             if (ApolloSurvivor.WaveTracer != null)
                 EffectManager.SpawnEffect(ApolloSurvivor.WaveTracer, new EffectData { origin = characterBody.corePosition + _dir * length, start = characterBody.corePosition }, true);
             GetComponent<ApolloAdvanceRecast>()?.Stabbed();
-            if (characterMotor != null) characterMotor.velocity = _dir * characterBody.moveSpeed;
+            if (characterMotor != null) characterMotor.velocity = _dash * characterBody.moveSpeed;
         }
 
         public override void OnSerialize(UnityEngine.Networking.NetworkWriter writer) { base.OnSerialize(writer); writer.Write(Held); }
@@ -250,7 +277,7 @@ namespace EntityStates.CursedApple.Apollo
             base.OnEnter();
             ApolloModel.Play(gameObject, "riposte");
             DeadlockSounds.Play("apollo_riposte_cast", transform.position, gameObject);
-            DeadlockHeroVoice.Power("apollo_vo_power2", gameObject);
+            DeadlockHeroVoice.Power("apollo_vo_power3", gameObject); // Riposte's lines are use_power3 (Deadlock's captions)
             if (isAuthority) ApolloNet.ToServer(new ApolloParryMessage { Apollo = gameObject, On = true });
         }
 

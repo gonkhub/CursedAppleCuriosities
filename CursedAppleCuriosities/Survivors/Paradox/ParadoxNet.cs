@@ -374,7 +374,7 @@ namespace CursedAppleCuriosities.Survivors.Paradox
             _fill.shadowCastingMode = UnityEngine.Rendering.ShadowCastingMode.Off;
 
             // A bright amber border round its edges, so its bounds read clearly (user 2.5).
-            _borderMaterial ??= new Material(Shader.Find("Sprites/Default")) { name = "matCursedAppleParadoxWallBorder" };
+            _borderMaterial ??= CursedAppleCuriosities.Deadlock.DeadlockSurvivorKit.LineMaterial();
             var edge = new GameObject("Border");
             edge.transform.SetParent(transform, false);
             _border = edge.AddComponent<LineRenderer>();

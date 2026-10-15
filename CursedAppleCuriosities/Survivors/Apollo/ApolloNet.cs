@@ -25,6 +25,7 @@ namespace CursedAppleCuriosities.Survivors.Apollo
             {
                 if (ApolloSurvivor.SigilSlow != null && body.HasBuff(ApolloSurvivor.SigilSlow)) args.moveSpeedReductionMultAdd += ApolloData.SigilSlow;
                 if (ApolloSurvivor.RiposteSlow != null && body.HasBuff(ApolloSurvivor.RiposteSlow)) args.moveSpeedReductionMultAdd += ApolloData.RiposteSlow;
+                if (ApolloSurvivor.SigilHasteBuff != null && body.HasBuff(ApolloSurvivor.SigilHasteBuff)) args.attackSpeedMultAdd += ApolloData.SigilHaste;
             };
             // Itani Lo Sahn: masked, he takes 70% less damage (Deadlock IncomingDamageReductionPercent).
             On.RoR2.HealthComponent.TakeDamage += (orig, self, info) =>

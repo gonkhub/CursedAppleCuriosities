@@ -118,8 +118,7 @@ namespace EntityStates.CursedApple.Ivy
     /// Stone Form (Deadlock citadel_ability_tengu_stone_form; reworked, user 2.5). She turns to stone (her statue: IvyStoneLook),
     /// invulnerable and healing, and hangs a moment (AbilityCastDelay 0.25 s). On the ground she first rises 4.6 m over a second
     /// (LiftHeight / LiftTime, eased out); then she drops like a statue, accelerating hard, steerable at up to 8 m/s, keeping only a
-    /// quarter of her momentum (DampingFactor). The slam hurts and stuns in 5.75 m. She stays a statue for the rest of the 3 s
-    /// (AbilityDuration); utility or jump breaks out early once she has landed.
+    /// quarter of her momentum (DampingFactor). The slam hurts and stuns in 5.75 m; she breaks out half a second later (user 2.5).
     /// </summary>
     public class StoneForm : BaseSkillState
     {
@@ -155,10 +154,7 @@ namespace EntityStates.CursedApple.Ivy
             {
                 characterMotor.velocity = Vector3.zero;
                 characterMotor.moveDirection = Vector3.zero;
-                float since = fixedAge - _landedAt;
-                bool breakOut = since >= IvyData.StoneHoldAfterLanding && inputBank != null && (inputBank.skill3.justPressed || inputBank.jump.justPressed);
-                bool timeUp = fixedAge >= IvyData.StoneMaxSeconds * DurationExtender.Multiplier(characterBody) && since >= IvyData.StoneHoldAfterLanding;
-                if (breakOut || timeUp) outer.SetNextStateToMain();
+                if (fixedAge - _landedAt >= IvyData.StoneHoldAfterLanding) outer.SetNextStateToMain();
                 return;
             }
             // Turning to stone: she hangs where she is.

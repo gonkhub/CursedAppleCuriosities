@@ -66,8 +66,7 @@ namespace CursedAppleCuriosities.Survivors.Ivy
         public const float StoneSteer = 8f;              // Deadlock MoveSpeedMax 8 m
         public const float StoneDamping = 0.25f;         // Deadlock DampingFactor: the momentum she keeps going in
         public static float StoneHeal = 0.06f;           // max health per second while stone (Deadlock MaxHealthRegen 6)
-        public const float StoneHoldAfterLanding = 0.6f; // at least this long a statue after the slam (then utility or jump breaks out early)
-        public const float StoneMaxSeconds = 3f;         // Deadlock AbilityDuration: a statue until it runs out
+        public const float StoneHoldAfterLanding = 0.5f; // a statue this long after the slam, then she breaks out (user 2.5: 3 s was much too long)
         public static float StoneCooldown = 10f;
 
         // ---- special: Air Drop (citadel_ability_tengu_airlift: fly 10-22 m/s carrying a bomb, drop it: 115 damage in 16-20 m, +20% damage 8 s, 100 s) ----
@@ -110,8 +109,6 @@ namespace CursedAppleCuriosities.Survivors.Ivy
         public const string IconPortrait = "panorama/images/heroes/tengu_sm_psd.vtex_c";
         public const string IconThorns = "panorama/images/hud/abilities/tengu/tengu_storm_flask_psd.vtex_c";
         public const string IconTether = "panorama/images/hud/abilities/tengu/tengu_tether_psd.vtex_c";
-        public const string StatueKey = "ivy_statue";
-        public const string DlStatueModel = "models/particle/tengu_stone_form_model_fx.vmdl_c"; // Deadlock's Stone Form statue (tengu_stone_form_model.vpcf)
         public const string IconStone = "panorama/images/hud/abilities/tengu/tengu_stone_form_psd.vtex_c";
         public const string IconAirDrop = "panorama/images/hud/abilities/tengu/tengu_lightning_crash_psd.vtex_c";
 

@@ -27,7 +27,7 @@ namespace CursedAppleCuriosities.Survivors.Bebop
 
         public static GameObject? BodyPrefab, DisplayPrefab, GunBeamPrefab, HyperBeamPrefab, HookHead;
         public static SurvivorDef? Survivor;
-        public static BuffDef? StickyStacksBuff, HookAmpBuff, UppercutBuff, HyperSlow;
+        public static BuffDef? StickyStacksBuff, HookAmpBuff, UppercutBuff, HyperSlow, StickySpeedBuff;
         public static GameObject? BeamHitEffect, StickyEffect, PunchEffect, LandEffect;
         public static Material? ChainMaterial;
         internal static SkillDef? StickySkill;
@@ -84,6 +84,7 @@ namespace CursedAppleCuriosities.Survivors.Bebop
             HookAmpBuff = Buff("CursedAppleBebopHooked", new Color(0.9f, 0.5f, 0.2f), debuff: true, stack: false);
             UppercutBuff = Buff("CursedAppleBebopUppercut", new Color(1f, 0.75f, 0.3f), debuff: false, stack: false);
             HyperSlow = Buff("CursedAppleBebopHyperSlow", Color.gray, debuff: true, stack: false, hidden: true);
+            StickySpeedBuff = Buff("CursedAppleBebopStickySpeed", new Color(1f, 0.3f, 0.2f), debuff: false, stack: false);
         }
 
         private static BuffDef Buff(string name, Color color, bool debuff, bool stack, bool hidden = false)
@@ -161,7 +162,8 @@ namespace CursedAppleCuriosities.Survivors.Bebop
             var gun = body.AddComponent<BebopGunBeam>();
             gun.Prefab = GunBeamPrefab;
             gun.Range = BebopData.BeamRange;
-            gun.Width = 2.4f; // about 0.6 m: Engi's laser material is faint when thin
+            gun.Width = 2.4f;
+            gun.Solid = new Color(1f, 0.12f, 0.08f); // red, solid to its full reach (user 2.5)
             var hyper = body.AddComponent<BebopHyperBeamFx>();
             hyper.Prefab = HyperBeamPrefab;
             hyper.Range = BebopData.HyperLength;
@@ -250,21 +252,21 @@ namespace CursedAppleCuriosities.Survivors.Bebop
             LanguageAPI.Add(Token + "FAILURE", "..and so he vanished, in pieces.");
             LanguageAPI.Add(Token + "BEAM_NAME", "Humble Pie");
             LanguageAPI.Add(Token + "BEAM_DESC",
-                $"Fire a continuous beam that deals <style=cIsDamage>{D(BebopData.BeamDamage / BebopData.BeamTick)} damage per second</style> to the first enemy it touches, up to {BebopData.BeamRange:0} m.");
+                $"Fire a continuous beam that deals <style=cIsDamage>{D(BebopData.BeamDamage / BebopData.BeamTick)} damage per second</style> to the first enemy it touches, up to {BebopData.BeamRange:0} m. Barely procs, but <style=cIsDamage>always procs</style> on a hooked enemy.");
             LanguageAPI.Add(Token + "STICKY_NAME", "Sticky Bomb");
             LanguageAPI.Add(Token + "STICKY_DESC",
-                $"Stick a bomb on a nearby enemy. After {BebopData.StickyFuse:0.#}s it explodes for <style=cIsDamage>{D(BebopData.StickyDamage)} damage</style>. Each enemy it hits gives Sticky Bomb " +
+                $"Stick a bomb on a nearby enemy (hold: on yourself) and gain <style=cIsUtility>+{BebopData.StickySpeed:0} m/s</style> briefly. After {BebopData.StickyFuse:0.#}s it explodes for <style=cIsDamage>{D(BebopData.StickyDamage)} damage</style>. Each enemy it hits gives Sticky Bomb " +
                 $"<style=cIsDamage>+{BebopData.StickyPerHit:0}%</style> damage, each kill <style=cIsDamage>+{BebopData.StickyPerKill:0}%</style> (elites x{BebopData.StickyEliteScale:0.#}), <style=cIsHealth>lost on death</style>.");
             LanguageAPI.Add(Token + "HOOK_NAME", "Grapple Arm");
             LanguageAPI.Add(Token + "HOOK_DESC",
-                $"Launch your hand. The first enemy hit takes <style=cIsDamage>{D(BebopData.HookDamage)} damage</style>, is <style=cIsUtility>pulled in</style> and takes <style=cIsDamage>+{D(BebopData.HookAmp)}</style> beam damage for {BebopData.HookAmpSeconds:0}s. Press again to cancel.");
+                $"Launch your hand up to {BebopData.HookRange:0} m. The first enemy hit takes <style=cIsDamage>{D(BebopData.HookDamage)} damage</style>, is <style=cIsUtility>pulled in</style> and takes <style=cIsDamage>+{D(BebopData.HookAmp)}</style> beam damage for {BebopData.HookAmpSeconds:0}s. Press again to cancel.");
             LanguageAPI.Add(Token + "UPPERCUT_NAME", "Exploding Uppercut");
             LanguageAPI.Add(Token + "UPPERCUT_DESC",
                 $"Uppercut enemies in a wide cone for <style=cIsDamage>{D(BebopData.UppercutDamage)} damage</style>, launching them where you look. Each <style=cIsDamage>explodes for {D(BebopData.UppercutLandDamage)}</style> on landing. " +
                 $"Landing a hit gives <style=cIsDamage>+{D(BebopData.UppercutBuffDamage)}</style> beam damage and <style=cIsHealing>heals {D(BebopData.UppercutHeal)} of missing health</style>.");
             LanguageAPI.Add(Token + "HYPER_NAME", "Hyper Beam");
             LanguageAPI.Add(Token + "HYPER_DESC",
-                $"Charge, then channel a huge beam for {BebopData.HyperDuration:0}s that deals <style=cIsDamage>{D(BebopData.HyperDps)} damage per second</style> to everything in it and <style=cIsUtility>slows</style>. You move slowly.");
+                $"Charge, then channel a huge beam for {BebopData.HyperDuration:0}s that deals <style=cIsDamage>{D(BebopData.HyperDps)} damage per second</style> to everything in it and around where it lands, <style=cIsUtility>slowing</style> them and <style=cIsHealing>healing you for all of it</style>. No procs. You move slowly.");
         }
     }
 
@@ -279,6 +281,7 @@ namespace CursedAppleCuriosities.Survivors.Bebop
     {
         private CharacterBody _body = null!;
         private Indicator? _indicator;
+        private static GameObject? _red;
 
         private void Awake() => _body = GetComponent<CharacterBody>();
 
@@ -295,7 +298,8 @@ namespace CursedAppleCuriosities.Survivors.Bebop
             if (_indicator == null)
             {
                 if (at == null) return;
-                _indicator = new Indicator(gameObject, EquipmentTargeting.IndicatorPrefab);
+                _red ??= Kit.Recoloured(EquipmentTargeting.IndicatorPrefab, "CursedAppleBebopStickyIndicator", 0f, effect: false) ?? EquipmentTargeting.IndicatorPrefab; // red (user 2.5)
+                _indicator = new Indicator(gameObject, _red);
             }
             _indicator.targetTransform = at;
             _indicator.active = at != null;

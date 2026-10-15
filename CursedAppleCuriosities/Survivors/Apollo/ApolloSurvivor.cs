@@ -29,8 +29,10 @@ namespace CursedAppleCuriosities.Survivors.Apollo
             RootLocked = ApolloData.Locked,
             ItemAnchors = ApolloItemDisplays.Anchors,
             HideMeshes = new[] { "head_ui_smug_reduced", "head_ui_cocky", "head_ui_smug" }, // menu-portrait heads over his real one
-            HandIK = ("weapon", "hand_L"), // his sword hangs off root_motion (weaponPivot/weapon), held in his left hand
-            HandGripFromBase = true,
+            // His sword hangs off root_motion (weaponPivot/weapon); every clip puts its root exactly on weapon_target_hand_R (his right
+            // hand's sword socket): snapped there, it stays in his hand whatever plays (user 2.5).
+            HandIK = ("weapon", "weapon_target_hand_R"),
+            HandSnap = true,
         };
 
         public static void Play(GameObject bodyObject, string state) => DeadlockModelSwap.Play(bodyObject, state);
@@ -50,7 +52,7 @@ namespace CursedAppleCuriosities.Survivors.Apollo
 
         public static GameObject? BodyPrefab, DisplayPrefab;
         public static SurvivorDef? Survivor;
-        public static BuffDef? SigilSlow, RiposteSlow, ParryBuff, RiposteLifestealBuff, UltMaskBuff;
+        public static BuffDef? SigilSlow, RiposteSlow, ParryBuff, RiposteLifestealBuff, UltMaskBuff, SigilHasteBuff;
         public static GameObject? WaveTracer, SlashEffect, SigilEffect, UltEffect, WaveProjectile, UltStreak;
 
         private static SkillDef? _wave, _sigil, _advance, _riposte, _ult;
@@ -68,17 +70,23 @@ namespace CursedAppleCuriosities.Survivors.Apollo
             DeadlockInstall.WantModel(new DeadlockInstall.ModelRequest { Hero = ApolloData.MaskKey, DlModel = ApolloData.DlMaskModel }); // Itani Lo Sahn's mask
 
             WaveTracer = Kit.Recoloured(TryLoad<GameObject>("RoR2/Base/Bandit2/TracerBandit2Rifle.prefab"), "CursedAppleApolloWave", Hue, effect: true);
-            // The sword wave flies (user 2.5): the Lil Reaper's big slash as its look, recoloured gold; the old tracer only if that's missing.
-            WaveProjectile = Kit.CloneProjectile(TryLoad<GameObject>("RoR2/DLC4/Characters/LilReaper/Skills/Primary/BigSlash/BigSlashProjectile.prefab"),
+            // The sword wave flies, a slow blade (user 2.5): Commando's grenade for the flight and networking (as Ivy's bombs), straight,
+            // with Alloy Vulture's wind blade, gold, for its look. (Lil Reaper's slash is a DLC4 asset this game can't load.)
+            WaveProjectile = Kit.CloneProjectile(TryLoad<GameObject>("RoR2/Base/Commando/CommandoGrenadeProjectile.prefab", "RoR2/Base/Characters/Commando/Skills/CommandoGrenadeProjectile.prefab"),
                 "CursedAppleApolloWaveShot", typeof(ApolloWaveShot), ApolloData.WaveSpeed, ApolloData.WaveRange / ApolloData.WaveSpeed, gravity: false, triggers: true, steer: false);
-            if (WaveProjectile != null && WaveProjectile.GetComponent<RoR2.Projectile.ProjectileController>() is RoR2.Projectile.ProjectileController wpc && wpc.ghostPrefab != null)
-                wpc.ghostPrefab = Kit.Recoloured(wpc.ghostPrefab, "CursedAppleApolloWaveGhost", Hue, effect: false) ?? wpc.ghostPrefab;
+            if (WaveProjectile != null && WaveProjectile.GetComponent<RoR2.Projectile.ProjectileController>() is RoR2.Projectile.ProjectileController wpc)
+            {
+                GameObject? blade = Kit.Recoloured(TryLoad<GameObject>("RoR2/Base/Vulture/WindbladeProjectileGhost.prefab", "RoR2/Base/Characters/Vulture/Skills/WindbladeProjectileGhost.prefab"),
+                    "CursedAppleApolloWaveGhost", Hue, effect: false);
+                if (blade != null) { blade.transform.localScale *= 2.2f; wpc.ghostPrefab = blade; }
+            }
             SlashEffect = Kit.Recoloured(TryLoad<GameObject>("RoR2/Base/Merc/OmniImpactVFXSlashMerc.prefab"), "CursedAppleApolloSlash", Hue, effect: true);
             SigilEffect = Kit.Recoloured(TryLoad<GameObject>("RoR2/Base/Common/VFX/OmniExplosionVFXQuick.prefab"), "CursedAppleApolloSigil", Hue, effect: true);
             UltEffect = Kit.Recoloured(TryLoad<GameObject>("RoR2/Base/Merc/ImpactMercEvis.prefab"), "CursedAppleApolloUlt", Hue, effect: true);
             SigilSlow = Buff("CursedAppleApolloSigilSlow", new Color(0.9f, 0.8f, 0.5f), debuff: true);
             RiposteSlow = Buff("CursedAppleApolloRiposteSlow", new Color(0.8f, 0.7f, 0.4f), debuff: true);
             ParryBuff = Buff("CursedAppleApolloParry", Color, debuff: false);
+            SigilHasteBuff = Buff("CursedAppleApolloSigilHaste", new Color(0.95f, 0.8f, 0.4f), debuff: false);
             UltMaskBuff = Buff("CursedAppleApolloUltMask", new Color(0.9f, 0.1f, 0.1f), debuff: false);
             // Itani Lo Sahn's streak from where he stood to where he lands: the Huntress's snipe tracer, made red.
             UltStreak = Kit.Recoloured(TryLoad<GameObject>("RoR2/Base/Huntress/TracerHuntressSnipe.prefab", "RoR2/Base/Characters/Huntress/TracerHuntressSnipe.prefab"), "CursedAppleApolloUltStreak", 0f, effect: true);
@@ -233,7 +241,7 @@ namespace CursedAppleCuriosities.Survivors.Apollo
             LanguageAPI.Add(Token + "WAVE_NAME", "Pride of Ixia");
             LanguageAPI.Add(Token + "WAVE_DESC", $"Slash a sword wave that <style=cIsDamage>pierces</style> enemies for <style=cIsDamage>{D(ApolloData.WaveDamage)} damage</style>, up to {ApolloData.WaveRange:0} m.");
             LanguageAPI.Add(Token + "SIGIL_NAME", "Disengaging Sigil");
-            LanguageAPI.Add(Token + "SIGIL_DESC", $"Draw a sigil ahead that bursts for <style=cIsDamage>{D(ApolloData.SigilDamage)} damage</style> and <style=cIsUtility>slows</style>, as you <style=cIsUtility>leap back</style>.");
+            LanguageAPI.Add(Token + "SIGIL_DESC", $"Draw a sigil ahead that bursts for <style=cIsDamage>{D(ApolloData.SigilDamage)} damage</style> and <style=cIsUtility>slows</style>, as you <style=cIsUtility>flip away</style> from it (look down to cast it below you). Gain <style=cIsDamage>+{D(ApolloData.SigilHaste)} fire rate</style>; a hit gives back <style=cIsUtility>1 stamina</style> and your air jumps.");
             LanguageAPI.Add(Token + "ADVANCE_NAME", "Flawless Advance");
             LanguageAPI.Add(Token + "ADVANCE_DESC",
                 $"Hold to ready a stab, release to lunge through enemies for <style=cIsDamage>{D(ApolloData.StabMin)}-{D(ApolloData.StabMax)} damage</style>; on the glint, <style=cIsDamage>{D(ApolloData.StabPerfect)}</style> and <style=cIsHealing>heal {D(ApolloData.PerfectHeal)} max health</style>. Up to <style=cIsUtility>{ApolloData.Stabs} stabs</style> in a row.");

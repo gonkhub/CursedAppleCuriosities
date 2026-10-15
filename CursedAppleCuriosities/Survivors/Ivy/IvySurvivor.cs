@@ -19,6 +19,7 @@ namespace CursedAppleCuriosities.Survivors.Ivy
         public static readonly DeadlockHeroDef Def = new DeadlockHeroDef
         {
             Hero = IvyData.Hero,
+            CenterIdle = true, // her idle stood ~0.2 m to the side of her body (user 2.5)
             DisplayName = "Ivy",
             DlModel = IvyData.DlModel,
             ModelHeightScale = IvyData.ModelHeightScale,
@@ -63,7 +64,6 @@ namespace CursedAppleCuriosities.Survivors.Ivy
                 DeadlockInstall.WantIcon(icon);
             DeadlockHeroes.Register(IvyModel.Def);
             DeadlockInstall.WantModel(IvyModel.Def.ModelRequest());
-            DeadlockInstall.WantModel(new DeadlockInstall.ModelRequest { Hero = IvyData.StatueKey, DlModel = IvyData.DlStatueModel }); // her Stone Form statue
 
             TracerEffect = TryLoad<GameObject>("RoR2/Base/Commando/TracerCommandoDefault.prefab");
             HitEffect = TryLoad<GameObject>("RoR2/Base/Commando/HitsparkCommando.prefab");

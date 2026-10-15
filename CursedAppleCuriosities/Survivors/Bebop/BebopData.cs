@@ -21,14 +21,14 @@ namespace CursedAppleCuriosities.Survivors.Bebop
         public const float BaseArmor = 0f;
         public const float BaseDamage = 12f;
         public const float DamagePerLevel = 2.4f;
-        public const float BaseSpeed = 6.45f;
+        public const float BaseSpeed = 4.45f;           // Deadlock 6.45, -2 m/s (user 2.5): he sprints fast instead
         public const float BaseRegen = 2.5f;
         public static readonly DeadlockMovementProfile Movement = new DeadlockMovementProfile
         {
             Hero = Hero,
             Anim = BebopModel.Play,
             StaminaPips = 3,
-            OutOfCombatSpeed = 1.6f / 6.45f,
+            OutOfCombatSpeed = 7.5f / 4.45f,   // a very fast sprint (user 2.5): about 12 m/s once it builds (Deadlock +1.6 m/s)
             WallJumpUp = 22f,
             WallJumpPowerMin = 0.6f,
         };
@@ -37,7 +37,7 @@ namespace CursedAppleCuriosities.Survivors.Bebop
         // 0.3 s wind-up, 0.05 s when picked straight back up; falloff 787 -> 2000 hu to 10%) ----
         public static float BeamDamage = 0.28f;          // per tick (Deadlock 59 DPS, about the other guns' damage per second)
         public static float BeamTick = 0.084f;           // Deadlock m_flCycleTime
-        public static float BeamProc = 0.6f;             // 12 ticks a second
+        public static float BeamProc = 0.05f;            // 12 ticks a second: barely procs (user 2.5)... except on a hooked enemy (guaranteed: BebopNet)
         public static float BeamRange = 32f;             // Deadlock m_flRange 1259.84 hu
         public const float BeamWindUp = 0.3f;            // Deadlock WindUpTime
         public const float BeamQuickWindUp = 0.05f;      // Deadlock NoWindUpTime: firing again soon after letting go
@@ -56,18 +56,22 @@ namespace CursedAppleCuriosities.Survivors.Bebop
         public static float StickyCooldown = 6f;         // Deadlock 18
         public static float StickyPerHit = 1f;           // % per enemy damaged (user)
         public static float StickyPerKill = 5f;          // % per kill (user)
+        public const float StickySelfHold = 0.35f;       // hold the key this long and he sticks it on himself (user 2.5; Deadlock's self-cast)
+        public static float StickySpeed = 12f;           // m/s added after casting it (user 2.5)
+        public const float StickySpeedSeconds = 3f;      // (my number)
         public const float StickyEliteScale = 1.5f;      // elites and minibosses (user)
 
         // ---- secondary alt: Grapple Arm / hook (citadel_ability_hook: 30 m, 2850 hu/s, 33 hu wide, 23 s). User: pulls in the first
         // enemy it hits, which then takes more from his primary; press again to cancel; works with Backup Magazine (charges). ----
-        public static float HookRange = 30f;             // Deadlock AbilityCastRange
-        public const float HookSpeed = 72.4f;            // Deadlock m_flBulletSpeed 2850 hu/s
+        public static float HookRange = 200f;            // user 2.5 (Deadlock AbilityCastRange 30 m)
+        public const float HookSpeed = 140f;             // m/s: Deadlock's 2850 hu/s (72 m/s) took 3 s to cross the new 200 m
         public const float HookRadius = 0.84f;           // Deadlock m_flBulletRadius 33 hu
         public const float HookReturnSpeed = 50.8f;      // Deadlock m_flReturnSpeed 2000 hu/s
         public static float HookDamage = 2f;             // the latch (Deadlock Damage scales 0.7 with spirit)
         public static float HookAmp = 0.5f;              // +50% primary damage to the hooked enemy (user; Deadlock's BulletAmp upgrade)
         public static float HookAmpSeconds = 6f;
-        public const float HookPullSpeed = 30f;          // m/s the hooked enemy is reeled in
+        public const float HookPullSpeed = 30f;          // m/s the hooked enemy is reeled in, at least...
+        public const float HookPullTime = 1.5f;          // ...fast enough to arrive within this (a 200 m hook)
         public const float HookPullStop = 3f;            // metres from Bebop where the pull ends
         public static float HookCooldown = 8f;           // Deadlock 23
 
@@ -88,7 +92,9 @@ namespace CursedAppleCuriosities.Survivors.Bebop
 
         // ---- special: Hyper Beam (citadel_ability_bebop_laser_beam: 1 s cast, 11 s channel, 160 DPS, 70 m x 2.9 m, ticks 0.1 s, turns 55 deg/s,
         // hovers (FallSpeedMax 1), 1.8 m/s, 20% slow, bosses x0.5, 120 s) ----
-        public static float HyperDps = 6f;               // damage coefficient per second
+        public static float HyperDps = 8f;               // damage coefficient per second (user 2.5: 800%)
+        public static float HyperLifesteal = 1f;         // share of its damage he heals (user 2.5)
+        public static float HyperImpactRadius = 5f;      // where it meets terrain it hurts all around (user 2.5; my number)
         public const float HyperTick = 0.1f;             // Deadlock Interval
         public static float HyperDuration = 11f;         // Deadlock AbilityChannelTime
         public const float HyperCast = 1f;               // Deadlock AbilityCastDelay
@@ -99,7 +105,7 @@ namespace CursedAppleCuriosities.Survivors.Bebop
         public const float HyperFall = 1f;               // Deadlock FallSpeedMax
         public const float HyperSlow = 0.2f, HyperSlowSeconds = 0.5f;
         public const float HyperBossScale = 0.5f;        // Deadlock m_flBossDamageScale
-        public const float HyperProc = 0.5f;
+        public const float HyperProc = 0f;               // no procs (user 2.5)
         public const float HyperCancelAfter = 0.5f;
         public static float HyperCooldown = 40f;         // Deadlock 120
 
@@ -129,6 +135,9 @@ namespace CursedAppleCuriosities.Survivors.Bebop
             UppercutHeal = c.Bind(Section, "Uppercut - Missing Health Heal", UppercutHeal, "Share of missing health healed after landing an uppercut.").Value;
             UppercutCooldown = c.Bind(Section, "Uppercut - Cooldown", UppercutCooldown, "Seconds.").Value;
             HyperDps = c.Bind(Section, "Hyper Beam - Damage Per Second", HyperDps, "Damage coefficient per second (bosses: half).").Value;
+            HyperLifesteal = c.Bind(Section, "Hyper Beam - Lifesteal", HyperLifesteal, "Share of its damage healed (1 = 100%).").Value;
+            HyperImpactRadius = c.Bind(Section, "Hyper Beam - Impact Radius", HyperImpactRadius, "Metres around where it meets terrain that it also hits.").Value;
+            StickySpeed = c.Bind(Section, "Sticky Bomb - Speed Boost", StickySpeed, "Move speed (m/s) added for a few seconds after casting it.").Value;
             HyperDuration = c.Bind(Section, "Hyper Beam - Duration", HyperDuration, "Seconds of beam.").Value;
             HyperLength = c.Bind(Section, "Hyper Beam - Length", HyperLength, "Metres.").Value;
             HyperCooldown = c.Bind(Section, "Hyper Beam - Cooldown", HyperCooldown, "Seconds.").Value;
@@ -155,8 +164,9 @@ namespace CursedAppleCuriosities.Survivors.Bebop
             ("uppercut", "ability_uppercut", false, "locomotion", "full"),
             ("sticky", "throw", false, "locomotion", "delta"),
             ("hook", "ability_hook_cast", false, "locomotion", "delta"),
-            ("hyper_charge", "hyperbeam_charge", false, "hyper_fire", "full"),
-            ("hyper_fire", "hyperbeam_fire_loop", true, "", "full"),
+            // The converter skips hyperbeam_fire_loop (it never came through): the charge holds its last frame, then the firing stance.
+            ("hyper_charge", "hyperbeam_charge", false, "hold", "full"),
+            ("hyper_fire", "hyperbeam_fire_idle", true, "", "full"),
             ("hyper_end", "hyperbeam_fire", false, "locomotion", "full"));
 
         public static readonly HashSet<string> Locked = FrameworkAnims.Locked("uppercut", "hyper_charge", "hyper_fire", "hyper_end");
@@ -187,6 +197,10 @@ namespace CursedAppleCuriosities.Survivors.Bebop
             Add("sticky_alarm", "sounds/abilities/bebop/bebop_stickybomb_alarm_loop", 0.7f, 40f);
             Add("sticky_urgent", "sounds/abilities/bebop/bebop_stickybomb_alarm_urgent", 0.8f, 40f);
             Add("sticky_explode", "sounds/abilities/bebop/a2_sticky_bomb/explode", 1f, 80f);
+            // Hook lines: Deadlock gives the hook its own (bebop_use_hook, bebop_hook_lands; desperate: desperation_power2). Sticky Bomb is power3.
+            l.Add(new DeadlockSound { Id = "bebop_vo_power_hook", VpkPrefix = "sounds/vo/bebop/bebop_use_hook", Range = 40f, Chance = 0.5f, MinGap = 4f, Voice = true });
+            l.Add(new DeadlockSound { Id = "bebop_vo_desperation_power_hook", VpkPrefix = "sounds/vo/bebop/bebop_desperation_power2", Range = 40f, Chance = 0.7f, MinGap = 4f, Voice = true });
+            l.Add(new DeadlockSound { Id = "bebop_vo_hook_lands", VpkPrefix = "sounds/vo/bebop/bebop_hook_lands", Range = 50f, Chance = 0.6f, MinGap = 4f, Voice = true });
             Add("hook_shoot", "sounds/abilities/bebop/bebop_hook_shoot");
             Add("hook_loop", "sounds/abilities/bebop/a3_hook/proj_mono_lp", 0.6f, 40f);
             Add("hook_hit", "sounds/abilities/bebop/a3_hook/impact_success", 1f, 60f);

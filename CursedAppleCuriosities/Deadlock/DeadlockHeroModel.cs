@@ -47,6 +47,16 @@ namespace CursedAppleCuriosities.Deadlock
         /// past his hand (user 2.5). His arm swings; the sword stays in his hand.
         /// </summary>
         public bool HandGripFromBase;
+        /// <summary>
+        /// The weapon sits exactly on the HandIK bone (no grip offset): Apollo's clips put his sword's root exactly on
+        /// weapon_target_hand_R (0.1 deg apart in every clip), so it's snapped there each frame, whatever layers play.
+        /// </summary>
+        public bool HandSnap;
+        /// <summary>
+        /// Stand the idle over the spot the runs use: Ivy's idle holds her hips ~0.2 m to the side of where her run clips do, so she
+        /// stepped sideways off her body whenever she stopped (user 2.5). The idle's pelvis is moved horizontally onto run_n's.
+        /// </summary>
+        public bool CenterIdle;
         /// <summary>A locomotion set, e.g. "siphon": locomotion state X becomes "siphon.X" when the table has it.</summary>
         public Func<CharacterBody, string?>? LocoSet;
         /// <summary>
@@ -623,7 +633,12 @@ namespace CursedAppleCuriosities.Deadlock
                 _overWeight = Mathf.Max(_overWeight, 0.01f);
                 if (overSlide && _cur.Row.State != "slide_start") Switch("slide", 0.1f);
             }
-            else Switch(id, blend);
+            else
+            {
+                // A looping overlay (Apollo's additive lunge aim) has no end of its own: a full-body state ends it.
+                if (_over.Valid && _over.Row.Loop) _overEnding = true;
+                Switch(id, blend);
+            }
         }
 
         private EntityStateMachine? _bodyMachine;
@@ -650,8 +665,11 @@ namespace CursedAppleCuriosities.Deadlock
             Play(id);
         }
 
+        private bool _overEnding;
+
         private bool SetLayer(Layer l, Row row)
         {
+            if (l == _over) _overEnding = false;
             l.Row = row;
             l.T = 0f;
             l.Valid = _clips!.TryGetValue(row.Clip, out l.Clip);
@@ -809,7 +827,7 @@ namespace CursedAppleCuriosities.Deadlock
             if (_over.Valid)
             {
                 Advance(_over, dt);
-                bool done = _over.T >= _over.Clip.Length;
+                bool done = _over.T >= _over.Clip.Length && !_over.Row.Loop || _overEnding;
                 _overWeight = Mathf.MoveTowards(_overWeight, done ? 0f : 1f, dt / 0.08f);
                 if (done && _overWeight <= 0f) _over.Valid = false;
             }
@@ -853,6 +871,7 @@ namespace CursedAppleCuriosities.Deadlock
         private void GripCapture()
         {
             if (_ikWeapon == null || _ikHand == null) return;
+            if (_def.HandSnap) { _ikPos = Vector3.zero; _ikRot = Quaternion.identity; return; }
             if (_def.HandGripFromBase && _overWeight > 0f) return; // the last base-pose grip stands
             Quaternion inv = Quaternion.Inverse(_ikHand.rotation);
             _ikRot = inv * _ikWeapon.rotation;
@@ -947,6 +966,7 @@ namespace CursedAppleCuriosities.Deadlock
                 p = t.Pos[0] + up * Vector3.Dot(d, up);
             }
             else if (l.ClothShift != Vector3.zero && t.Bone.StartsWith("$cloth", StringComparison.Ordinal)) p -= l.ClothShift;
+            if (t.Bone == "pelvis" && _def.CenterIdle && l.Row.State == "idle") p -= IdleShift(t);
             return true;
         }
 
@@ -962,6 +982,24 @@ namespace CursedAppleCuriosities.Deadlock
                     foreach (Transform t in spine.GetComponentsInChildren<Transform>(true)) _upper.Add(t.name);
             }
             return _upper.Contains(bone);
+        }
+
+        private Vector3? _idleShift;
+
+        /// <summary>How far the idle's pelvis sits off run_n's, horizontally (see DeadlockHeroDef.CenterIdle).</summary>
+        private Vector3 IdleShift(AnimTrack idlePelvis)
+        {
+            if (_idleShift.HasValue) return _idleShift.Value;
+            Vector3 shift = Vector3.zero;
+            if (_clips != null && _states.TryGetValue("run_n", out Row run) && _clips.TryGetValue(run.Clip, out AnimClip rc)
+                && Find(rc, "pelvis") is AnimTrack rp && rp.Pos != null && rp.Pos.Length > 0 && idlePelvis.Pos != null && idlePelvis.Pos.Length > 0)
+            {
+                Vector3 up = PelvisUp();
+                Vector3 d = idlePelvis.Pos[0] - rp.Pos[0];
+                shift = d - up * Vector3.Dot(d, up);
+            }
+            _idleShift = shift;
+            return shift;
         }
 
         private Vector3? _pelvisUp;

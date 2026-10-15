@@ -124,19 +124,22 @@ namespace EntityStates.CursedApple.Bebop
     // ================= Secondary: Sticky Bomb =================
 
     /// <summary>
-    /// Sticky Bomb, the user's version: Seven's Static Charge flow with a very short reach (Deadlock's 6 m) and no stun. Stick it on the
-    /// enemy nearest the crosshair (reticle shows it); no one in reach = no cast, no cooldown. BebopStickyBomb does the rest.
+    /// Sticky Bomb, the user's version: Seven's Static Charge flow with a very short reach (Deadlock's 6 m) and no stun. A tap sticks it
+    /// on the enemy nearest the crosshair (reticle shows it; no one in reach = no cast, no cooldown); holding the key sticks it on
+    /// himself (user 2.5, Deadlock's self-cast). Casting gives him +12 m/s for a moment. BebopStickyBomb does the rest.
     /// </summary>
     public class ThrowStickyBomb : BaseSkillState
     {
         public static CharacterBody? Target(CharacterBody body) =>
             EquipmentTargeting.FindEnemy(body, BebopData.StickyRange * MysticExpansion.RadiusMultiplier(body), BebopData.StickyConeDeg, _ => true);
 
-        public override void OnEnter()
+        public override void FixedUpdate()
         {
-            base.OnEnter();
+            base.FixedUpdate();
             if (!isAuthority) return;
-            CharacterBody? target = Target(characterBody);
+            bool held = inputBank != null && inputBank.skill2.down;
+            if (held && fixedAge < BebopData.StickySelfHold) return; // tap or hold? not yet known
+            CharacterBody? target = held ? characterBody : Target(characterBody);
             if (target == null)
             {
                 activatorSkillSlot?.AddOneStock(); // refund
@@ -145,7 +148,7 @@ namespace EntityStates.CursedApple.Bebop
             }
             BebopModel.Play(gameObject, "sticky");
             DeadlockSounds.Play("bebop_sticky_cast", transform.position, gameObject);
-            DeadlockHeroVoice.Power("bebop_vo_power2", gameObject);
+            DeadlockHeroVoice.Power("bebop_vo_power3", gameObject); // Deadlock's Sticky Bomb lines are use_power3 (its captions)
             StartAimMode(1f);
             BebopNet.ToServer(new BebopStickyMessage { Attacker = gameObject, Target = target.gameObject, Crit = RollCrit() });
             outer.SetNextStateToMain();
@@ -177,11 +180,11 @@ namespace EntityStates.CursedApple.Bebop
             base.OnEnter();
             BebopModel.Play(gameObject, "hook");
             DeadlockSounds.Play("bebop_hook_shoot", transform.position, gameObject);
-            DeadlockHeroVoice.Power("bebop_vo_power3", gameObject);
-            _loop = DeadlockSounds.Loop("bebop_hook_loop", gameObject, 4f);
+            DeadlockHeroVoice.Power("bebop_vo_power_hook", gameObject); // the hook's own lines (bebop_use_hook)
             Ray aim = GetAimRay();
             _dir = aim.direction;
             _point = BebopShared.Muzzle(gameObject);
+            _loop = DeadlockSounds.Loop("bebop_hook_loop", gameObject, BebopData.HookRange / BebopData.HookSpeed * 2f + 2f);
             StartAimMode(1.5f);
             Build();
         }
@@ -234,7 +237,7 @@ namespace EntityStates.CursedApple.Bebop
                 case Phase.Latched:
                     if (_target != null && _target.alive) _point = BebopNet.Core(_target);
                     bool close = _target == null || !_target.alive || Vector3.Distance(_point, characterBody.corePosition) <= BebopData.HookPullStop + 1.5f;
-                    if (isAuthority && (close || fixedAge - _latchedAt > 2f)) outer.SetNextStateToMain();
+                    if (isAuthority && (close || fixedAge - _latchedAt > BebopData.HookPullTime + 1f)) outer.SetNextStateToMain();
                     break;
                 case Phase.Return:
                     Vector3 home = BebopShared.Muzzle(gameObject);
@@ -383,6 +386,7 @@ namespace EntityStates.CursedApple.Bebop
             _firing = true;
             _nextTick = fixedAge;
             if (_fx != null) _fx.Active = true;
+            BebopModel.Play(gameObject, "hyper_fire");
             DeadlockSounds.Play("bebop_hyper_launch", transform.position, gameObject);
             DeadlockSounds.Play("bebop_hyper_launch_jazz", transform.position, gameObject);
             _loop = DeadlockSounds.Loop("bebop_hyper_loop", gameObject, _duration + 1f);
@@ -406,9 +410,13 @@ namespace EntityStates.CursedApple.Bebop
             float length = BebopData.HyperLength * MysticExpansion.RadiusMultiplier(characterBody);
             float radius = BebopData.HyperRadius * MysticExpansion.RadiusMultiplier(characterBody);
             Vector3 from = GetAimRay().origin;
-            // Terrain stops it; everything on the way is hit.
-            if (Physics.Raycast(from, _dir, out RaycastHit wall, length, LayerIndex.world.mask, QueryTriggerInteraction.Ignore)) length = wall.distance;
+            // Terrain stops it; everything on the way is hit, and everything around where it meets the terrain (user 2.5).
+            bool blocked = Physics.Raycast(from, _dir, out RaycastHit wall, length, LayerIndex.world.mask, QueryTriggerInteraction.Ignore);
+            if (blocked) length = wall.distance;
             var targets = new List<GameObject>();
+            if (blocked)
+                foreach (HurtBox h in BebopShared.Enemies(wall.point, BebopData.HyperImpactRadius * MysticExpansion.RadiusMultiplier(characterBody), GetTeam()))
+                    if (h.healthComponent != null && !targets.Contains(h.healthComponent.gameObject)) targets.Add(h.healthComponent.gameObject);
             foreach (RaycastHit h in Physics.SphereCastAll(from, radius, _dir, length, LayerIndex.entityPrecise.mask, QueryTriggerInteraction.Ignore))
             {
                 var box = h.collider.GetComponent<HurtBox>();
@@ -422,11 +430,8 @@ namespace EntityStates.CursedApple.Bebop
         {
             if (_fx != null) { _fx.Active = false; _fx.Direction = Vector3.zero; }
             DeadlockSounds.Stop(_loop);
-            if (_firing)
-            {
-                DeadlockSounds.Play("bebop_hyper_end", transform.position, gameObject);
-                DeadlockSounds.Play("bebop_hyper_end_jazz", transform.position, gameObject);
-            }
+            // The end hum only (its jazz sting, a rising warbly synth, is gone: user 2.5).
+            if (_firing) DeadlockSounds.Play("bebop_hyper_end", transform.position, gameObject);
             BebopModel.Play(gameObject, "hyper_end");
             base.OnExit();
         }

@@ -498,6 +498,8 @@ namespace CursedAppleCuriosities.Survivors.Seven
         public GameObject? Follow;
         public float Radius = 5f, Seconds = 3.5f;
         public Color Color = Color.cyan;
+        /// <summary>No Static Charge hum (Bebop's Sticky Bomb borrows the ring: user 2.5).</summary>
+        public bool Mute;
         private LineRenderer _outer = null!, _inner = null!;
         private float _age;
 
@@ -505,7 +507,7 @@ namespace CursedAppleCuriosities.Survivors.Seven
         {
             _outer = SevenFx.Line("ring", Color, 0.12f, transform);
             _inner = SevenFx.Line("count", Color, 0.08f, transform);
-            _hum = DeadlockSounds.Loop("seven_static_loop", gameObject, Seconds);
+            if (!Mute) _hum = DeadlockSounds.Loop("seven_static_loop", gameObject, Seconds);
         }
 
         private DeadlockVoice? _hum;

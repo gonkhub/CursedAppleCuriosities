@@ -7,7 +7,7 @@ using UnityEngine.Networking;
 
 namespace CursedAppleCuriosities.Survivors.Apollo
 {
-    public enum ApolloUltKind : byte { Channel, Strike, End }
+    public enum ApolloUltKind : byte { Channel, Strike, End, SigilHaste }
 
     /// <summary>
     /// Owner to server: Itani Lo Sahn's channel began (the mask: 70% less damage taken, Deadlock IncomingDamageReductionPercent),
@@ -37,6 +37,9 @@ namespace CursedAppleCuriosities.Survivors.Apollo
                     break;
                 case ApolloUltKind.End:
                     b.ClearTimedBuffs(ApolloSurvivor.UltMaskBuff);
+                    break;
+                case ApolloUltKind.SigilHaste: // Disengaging Sigil: +25% fire rate for a while (user 2.5)
+                    if (ApolloSurvivor.SigilHasteBuff != null) b.AddTimedBuff(ApolloSurvivor.SigilHasteBuff, ApolloData.SigilHasteSeconds * Items.DurationExtender.Multiplier(b));
                     break;
             }
         }

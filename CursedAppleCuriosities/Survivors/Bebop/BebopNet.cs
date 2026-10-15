@@ -45,9 +45,27 @@ namespace CursedAppleCuriosities.Survivors.Bebop
             RecalculateStatsAPI.GetStatCoefficients += (body, args) =>
             {
                 if (BebopSurvivor.HyperSlow != null && body.HasBuff(BebopSurvivor.HyperSlow)) args.moveSpeedReductionMultAdd += BebopData.HyperSlow;
+                if (BebopSurvivor.StickySpeedBuff != null && body.HasBuff(BebopSurvivor.StickySpeedBuff)) args.baseMoveSpeedAdd += BebopData.StickySpeed;
             };
+            // His beam barely procs (proc 0.05), but on a hooked enemy every proc is guaranteed while the hook's mark lasts (user 2.5):
+            // that hit counts as proc 1 and every on-hit roll during it succeeds.
+            On.RoR2.GlobalEventManager.OnHitEnemy += (orig, self, info, victim) =>
+            {
+                bool force = info != null && info.attacker != null && victim != null && info.damageType.damageSource == DamageSource.Primary
+                    && BebopSurvivor.HookAmpBuff != null && victim.TryGetComponent(out CharacterBody vb) && vb.HasBuff(BebopSurvivor.HookAmpBuff)
+                    && IsBebop(info.attacker.GetComponent<CharacterBody>());
+                if (!force) { orig(self, info, victim); return; }
+                info!.procCoefficient = 1f;
+                _forceRolls++;
+                try { orig(self, info, victim); }
+                finally { _forceRolls--; }
+            };
+            On.RoR2.Util.CheckRoll_float_float_CharacterMaster += (orig, chance, luck, master) => _forceRolls > 0 && chance > 0f || orig(chance, luck, master);
+            On.RoR2.Util.CheckRoll_float_CharacterMaster += (orig, chance, master) => _forceRolls > 0 && chance > 0f || orig(chance, master);
             DeadlockFallGuard.Hook();
         }
+
+        private static int _forceRolls;
 
         public static bool IsBebop(CharacterBody? b) => b != null && BodyCatalog.GetBodyName(b.bodyIndex) == BebopSurvivor.BodyName;
 
@@ -117,6 +135,7 @@ namespace CursedAppleCuriosities.Survivors.Bebop
             var body = Attacker.GetComponent<CharacterBody>();
             var hc = Target.GetComponent<HealthComponent>();
             if (body == null || hc == null || !hc.alive) return;
+            if (BebopSurvivor.StickySpeedBuff != null) body.AddTimedBuff(BebopSurvivor.StickySpeedBuff, BebopData.StickySpeedSeconds); // +12 m/s (user 2.5)
             var go = new GameObject("CursedAppleBebopStickyBomb");
             go.transform.position = BebopNet.Core(hc);
             var bomb = go.AddComponent<BebopStickyBomb>();
@@ -131,7 +150,7 @@ namespace CursedAppleCuriosities.Survivors.Bebop
         }
     }
 
-    /// <summary>Every client: the countdown ring and alarm on the bomb's carrier (Seven's Static Charge ring, in Bebop's orange).</summary>
+    /// <summary>Every client: the countdown ring and alarm on the bomb's carrier (Seven's Static Charge ring, red, without Seven's electric hum: user 2.5).</summary>
     public class BebopStickyFxMessage : INetMessage
     {
         public GameObject? Target;
@@ -149,7 +168,8 @@ namespace CursedAppleCuriosities.Survivors.Bebop
             ring.Follow = Target;
             ring.Radius = Radius;
             ring.Seconds = Fuse;
-            ring.Color = new Color(1f, 0.55f, 0.1f, 0.9f);
+            ring.Color = new Color(1f, 0.12f, 0.1f, 0.9f);
+            ring.Mute = true;
             DeadlockSounds.Loop("bebop_sticky_alarm", Target, Fuse);
         }
     }
@@ -251,6 +271,7 @@ namespace CursedAppleCuriosities.Survivors.Bebop
             if (!hc.alive) return;
             EquipmentFx.Sound("bebop_hook_hit", BebopNet.Core(hc));
             EquipmentFx.Sound("bebop_hook_latched", BebopNet.Core(hc));
+            EquipmentFx.Sound("bebop_vo_hook_lands", body.corePosition, Attacker); // "Come here!" (bebop_hook_lands)
             BebopNet.Hit(body, hc, BebopData.HookDamage * body.damage, Crit, Vector3.zero, DamageSource.Secondary);
             if (!hc.alive || hc.body == null) return;
             using (DurationExtender.From(body))
@@ -267,7 +288,7 @@ namespace CursedAppleCuriosities.Survivors.Bebop
         private CharacterBody? _by, _body;
         private CharacterMotor? _motor;
         private Rigidbody? _rb;
-        private float _until;
+        private float _until, _speed;
 
         public void Grab(CharacterBody by)
         {
@@ -275,9 +296,12 @@ namespace CursedAppleCuriosities.Survivors.Bebop
             _body = GetComponent<CharacterBody>();
             _motor = GetComponent<CharacterMotor>();
             _rb = GetComponent<Rigidbody>();
-            _until = Time.time + 2f;
-            SetStateOnHurt.SetStunOnObject(gameObject, 2f);
-            DeadlockFallGuard.Protect(gameObject, 3f);
+            // A 200 m hook (user 2.5): reeled in fast enough to arrive in about HookPullTime.
+            float dist = _body != null ? Vector3.Distance(_body.corePosition, by.corePosition) : 10f;
+            _speed = Mathf.Max(BebopData.HookPullSpeed, dist / BebopData.HookPullTime);
+            _until = Time.time + BebopData.HookPullTime + 0.5f;
+            SetStateOnHurt.SetStunOnObject(gameObject, BebopData.HookPullTime + 0.5f);
+            DeadlockFallGuard.Protect(gameObject, BebopData.HookPullTime + 1.5f);
             EquipmentFx.Sound("bebop_hook_yank", transform.position, gameObject);
         }
 
@@ -287,7 +311,7 @@ namespace CursedAppleCuriosities.Survivors.Bebop
             if (_by == null || _body == null || _body.healthComponent == null || !_body.healthComponent.alive || Time.time > _until) { Drop(); return; }
             Vector3 to = _by.corePosition + _by.transform.forward * BebopData.HookPullStop * 0.5f - _body.corePosition;
             if (to.magnitude <= BebopData.HookPullStop) { Drop(); return; }
-            Vector3 v = to.normalized * BebopData.HookPullSpeed;
+            Vector3 v = to.normalized * _speed;
             if (_motor != null) { _motor.Motor.ForceUnground(); _motor.velocity = v; _motor.disableAirControlUntilCollision = true; }
             else if (_rb != null && !_rb.isKinematic) _rb.velocity = v;
             else transform.position += v * Time.fixedDeltaTime;
@@ -435,7 +459,9 @@ namespace CursedAppleCuriosities.Survivors.Bebop
                 var hc = t != null ? t.GetComponent<HealthComponent>() : null;
                 if (hc == null || !hc.alive) continue;
                 float scale = BebopNet.IsBig(hc.body) ? BebopData.HyperBossScale : 1f;
-                BebopNet.Hit(body, hc, BebopData.HyperDps * BebopData.HyperTick * scale * body.damage, Crit, Vector3.zero, DamageSource.Special, BebopData.HyperProc);
+                DamageInfo? di = BebopNet.Hit(body, hc, BebopData.HyperDps * BebopData.HyperTick * scale * body.damage, Crit, Vector3.zero, DamageSource.Special, BebopData.HyperProc);
+                if (di != null && !di.rejected && body.healthComponent != null && body.healthComponent.alive) // 100% lifesteal (user 2.5)
+                    body.healthComponent.Heal(di.damage * BebopData.HyperLifesteal, default(ProcChainMask));
                 if (hc.alive && hc.body != null && BebopSurvivor.HyperSlow != null)
                     using (DurationExtender.From(body)) hc.body.AddTimedBuff(BebopSurvivor.HyperSlow, BebopData.HyperSlowSeconds);
                 EquipmentFx.Sound("bebop_hyper_hit", BebopNet.Core(hc));
@@ -453,6 +479,8 @@ namespace CursedAppleCuriosities.Survivors.Bebop
     {
         public GameObject? Prefab;
         public float Range = 32f, Width = 1f;
+        /// <summary>Drawn as a solid coloured core and glow instead of the prefab's material (Humble Pie: red, the full reach; user 2.5).</summary>
+        public Color? Solid;
         public bool HitEnemies = true;
         /// <summary>Set by a state (on every machine): the beam shows while true.</summary>
         public bool Active;
@@ -460,7 +488,8 @@ namespace CursedAppleCuriosities.Survivors.Bebop
         public Vector3 Direction;
         public Vector3 End { get; private set; }
 
-        private LineRenderer? _line;
+        private LineRenderer? _line, _glow;
+        private static Material? _solid;
         private CharacterBody _body = null!;
         private ChildLocator? _children;
 
@@ -474,6 +503,23 @@ namespace CursedAppleCuriosities.Survivors.Bebop
             _line.positionCount = 2;
             _line.useWorldSpace = true;
             _line.widthMultiplier = 0.25f * Width;
+            if (Solid is Color c)
+            {
+                // No texture to fade out along it: a bright core inside a wider glow, end to end.
+                _solid ??= CursedAppleCuriosities.Deadlock.DeadlockSurvivorKit.LineMaterial();
+                _line.sharedMaterial = _solid;
+                _line.startColor = _line.endColor = Color.Lerp(c, Color.white, 0.45f);
+                _line.shadowCastingMode = UnityEngine.Rendering.ShadowCastingMode.Off;
+                var g = new GameObject("BebopBeamGlow");
+                g.transform.SetParent(go.transform, false);
+                _glow = g.AddComponent<LineRenderer>();
+                _glow.positionCount = 2;
+                _glow.useWorldSpace = true;
+                _glow.sharedMaterial = _solid;
+                _glow.startColor = _glow.endColor = new Color(c.r, c.g, c.b, 0.35f);
+                _glow.shadowCastingMode = UnityEngine.Rendering.ShadowCastingMode.Off;
+                return;
+            }
             LineRenderer? source = Prefab != null ? Prefab.GetComponentInChildren<LineRenderer>(true) : null;
             _line.material = source != null && source.sharedMaterial != null ? source.sharedMaterial : BebopSurvivor.ChainMaterial;
             _line.colorGradient = source != null ? source.colorGradient : new Gradient();
@@ -483,9 +529,10 @@ namespace CursedAppleCuriosities.Survivors.Bebop
 
         private void LateUpdate()
         {
-            if (!Active) { if (_line != null) _line.enabled = false; return; }
+            if (!Active) { if (_line != null) _line.enabled = false; if (_glow != null) _glow.enabled = false; return; }
             if (_line == null) Build();
             _line!.enabled = true;
+            if (_glow != null) _glow.enabled = true;
             Vector3 from = Muzzle();
             Ray aim = _body.inputBank != null ? _body.inputBank.GetAimRay() : new Ray(_body.corePosition, transform.forward);
             Vector3 dir = Direction.sqrMagnitude > 0.01f ? Direction.normalized : aim.direction;
@@ -493,7 +540,14 @@ namespace CursedAppleCuriosities.Survivors.Bebop
             _line.SetPosition(0, from);
             _line.SetPosition(1, End);
             // A slight flicker in width, like a live beam.
-            _line.widthMultiplier = 0.25f * Width * (0.85f + 0.15f * Mathf.PerlinNoise(Time.time * 20f, 0f));
+            float flicker = 0.85f + 0.15f * Mathf.PerlinNoise(Time.time * 20f, 0f);
+            _line.widthMultiplier = (Solid.HasValue ? 0.06f : 0.25f) * Width * flicker;
+            if (_glow != null)
+            {
+                _glow.SetPosition(0, from);
+                _glow.SetPosition(1, End);
+                _glow.widthMultiplier = 0.2f * Width * flicker;
+            }
         }
 
         private Vector3 Muzzle()
@@ -508,6 +562,8 @@ namespace CursedAppleCuriosities.Survivors.Bebop
         }
 
         private void OnDestroy() { if (_line != null) Destroy(_line.gameObject); }
+
+        private void OnDisable() { if (_glow != null) _glow.enabled = false; }
     }
 
     public static class BebopBeams
