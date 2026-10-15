@@ -59,7 +59,7 @@ namespace CursedAppleCuriosities.Stages.DeadlockMap
         /// </summary>
         public float[] WalkerSlot = System.Array.Empty<float>();
         /// <summary>
-        /// Where an elite Imp Overlord always waits, every visit (x, y, z, yaw in the section's Unity space; cac_map_mark imp).
+        /// The centre of a pit where using any interactable wakes an elite Imp Overlord nearby, once per visit (x, y, z, yaw in the section's Unity space; cac_map_mark imp).
         /// Sunken Plaza's purple pit.
         /// </summary>
         public float[] ImpLordSpot = System.Array.Empty<float>();
