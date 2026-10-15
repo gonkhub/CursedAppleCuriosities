@@ -304,7 +304,7 @@ namespace CursedAppleCuriosities.Survivors.Viscous
 
             LanguageAPI.Add(Token + "SPLATTER_NAME", "Splatter");
             LanguageAPI.Add(Token + "SPLATTER_DESC",
-                $"Throw a bouncing ball of goo that bursts for <style=cIsDamage>{D(ViscousData.SplatterDamage)} damage</style> each bounce, <style=cIsUtility>{ViscousData.SplatterBounces} times</style>.");
+                $"Throw a bouncing ball of goo that bursts for <style=cIsDamage>{D(ViscousData.SplatterDamage)} damage</style> each bounce, <style=cIsUtility>{ViscousData.SplatterBounces} times</style>. It passes through enemies, hitting each for <style=cIsDamage>{D(ViscousData.SplatterPassDamage)} damage</style>.");
             LanguageAPI.Add(Token + "PUNCH_NAME", "Puddle Punch");
             LanguageAPI.Add(Token + "PUNCH_DESC",
                 $"Punch up from the ground where you aim for <style=cIsDamage>{D(ViscousData.PunchDamage)} damage</style>, <style=cIsUtility>launching</style> everything above it, you included.");
