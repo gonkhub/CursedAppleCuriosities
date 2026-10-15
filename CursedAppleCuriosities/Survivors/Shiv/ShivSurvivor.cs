@@ -158,6 +158,7 @@ namespace CursedAppleCuriosities.Survivors.Shiv
             body.AddComponent<ShivBloodletting>();
             body.AddComponent<ShivRage>();
             body.AddComponent<ShivRageGlow>();
+            body.AddComponent<ShivExecuteMarks>();
 
             Transform model = body.GetComponent<ModelLocator>().modelTransform;
             model.gameObject.AddComponent<DeadlockModelSwap>().HeroKey = ShivData.Hero;
@@ -238,7 +239,7 @@ namespace CursedAppleCuriosities.Survivors.Shiv
             LanguageAPI.Add(Token + "SUBTITLE", "The Bloody Cleaner");
             LanguageAPI.Add(Token + "SKIN_DEFAULT", "Default");
             LanguageAPI.Add(Token + "DESCRIPTION",
-                "Shiv cleans up messes for the Cursed Apple's worst. This planet is a mess.<color=#CCD3E0>\n\n" +
+                "Shiv is a cleaner for the city's crime families, kept on his feet by the cursed reliquary on his belt.<color=#CCD3E0>\n\n" +
                 "< ! > Half of every hit you take bleeds out over time instead: the yellow on your health bar is what's still coming.\n\n" +
                 "< ! > Keep dealing damage to build Rage. Full Rage doubles your bleeds and Slice'n'Dice, and Killing Blow executes much higher.\n\n" +
                 "< ! > Land a Killing Blow execute to wash away your bleeding, fill your Rage and get the ability straight back.\n\n" +
@@ -250,7 +251,7 @@ namespace CursedAppleCuriosities.Survivors.Shiv
             LanguageAPI.Add(Token + "PASSIVE_NAME", "Bloodletting & Rage");
             LanguageAPI.Add(Token + "PASSIVE_DESC",
                 $"<style=cIsHealing>{ShivData.DeferredShare * 100f:0}%</style> of damage taken is dealt over <style=cIsUtility>{ShivData.DeferredSeconds:0}s</style> instead. " +
-                $"Dealing damage builds <style=cIsDamage>Rage</style>; at full Rage, bleeds and Slice'n'Dice deal <style=cIsDamage>double</style> and Killing Blow executes below <style=cIsHealth>{ShivData.ExecuteThresholdRage * 100f:0}%</style>.");
+                $"Dealing damage builds <style=cIsDamage>Rage</style>; at full Rage, bleeds and Slice'n'Dice deal <style=cIsDamage>double</style> and Killing Blow executes below <style=cIsHealth>{ShivData.ExecuteThresholdRage * 100f:0}%</style>." + Kit.MovementLine(ShivData.Movement));
 
             LanguageAPI.Add(Token + "GUN_NAME", "Shotgun");
             LanguageAPI.Add(Token + "GUN_DESC",

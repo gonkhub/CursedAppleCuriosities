@@ -191,6 +191,7 @@ namespace CursedAppleCuriosities.Survivors.Apollo
             _until = Time.time + lockFor;
             var hc = GetComponent<HealthComponent>();
             if (hc != null && !ApolloNet.IsBig(hc.body)) SetStateOnHurt.SetStunOnObject(gameObject, lockFor);
+            if (hc != null && hc.body != null && ApolloSurvivor.UltMarkedBuff != null) hc.body.AddTimedBuff(ApolloSurvivor.UltMarkedBuff, lockFor + 0.2f); // its red glow (user 2.5)
             EquipmentFx.Sound("apollo_ult_timer", transform.position, gameObject);
         }
 

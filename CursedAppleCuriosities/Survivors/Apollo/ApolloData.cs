@@ -34,8 +34,8 @@ namespace CursedAppleCuriosities.Survivors.Apollo
         public static float WaveDamage = 1.3f;
         public static float WaveCycle = 0.38f;          // Deadlock m_flCycleTime
         public static float WaveRange = 25.4f;          // Deadlock falloff ranges 1000 hu: the wave's reach
-        public const float WaveRadius = 1f;             // a wide slash; it passes through enemies
-        public const float WaveSpeed = 35f;             // m/s: a slow blade (user 2.5; Deadlock 5000 hu/s = 127 m/s read as instant)
+        public const float WaveRadius = 0.6f;           // the little blade's reach either side of its line
+        public const float WaveSpeed = 60f;             // m/s: Celeste's blade speed (user 2.5: 127 read as instant, 35 far too slow)
 
         // ---- secondary: Disengaging Sigil (ability_fencer_throwblade: 0.5 s cast, 6.5 m sigil 300 hu ahead, 85 damage, 24% slow 4 s, leap back 16 m/s, 12 s) ----
         public static float SigilDamage = 3f;           // user 2.5 (was 500%)
@@ -56,7 +56,8 @@ namespace CursedAppleCuriosities.Survivors.Apollo
         public const float HoldMin = 0.25f, PerfectStart = 0.525f, PerfectLength = 0.25f, HoldMax = 1.1f; // Deadlock's timings
         public const float StabLength = 13f;            // Deadlock SlashLength
         public const float StabRadius = 1.6f;           // Deadlock SlashRadius
-        public const float StabDash = 4f, StabDashSpeed = 56f; // Deadlock AttackDashRange 3 m (a little more: user 2.5, toward his held direction) / AttackingDashSpeed 2200 hu/s
+        public const float StabDash = 3f, StabDashSpeed = 56f; // Deadlock AttackDashRange / AttackingDashSpeed 2200 hu/s: the stab's own lunge, where he aims
+        public const float ReadyDash = 4f, ReadyDashTime = 0.2f; // the hop as he readies it, the way he's moving (user 2.5; Deadlock's lunge_start_<dir>)
         public const int Stabs = 3;                     // Deadlock MaxStabs
         public const float StabRecastWindow = 5f;       // Deadlock RecastTime
         public static float AdvanceCooldown = 9f;
@@ -127,7 +128,12 @@ namespace CursedAppleCuriosities.Survivors.Apollo
             ("shoot_left", "shoot_left_idle", false, "locomotion", "delta"),
             ("sigil", "ability_sigil_start", false, "locomotion", "full"),
             ("sigil_jump", "ability_sigil_jump", false, "in_air", "full"),
-            ("lunge_aim", "ability_lunge_aim", true, "", "additive"), // an additive clip (only the hips carry a pose): as a full pose it collapsed him into a point (user 2.5)
+            // Flawless Advance as Deadlock plays it: a start clip per direction of the hop he makes as he readies (held until the stab),
+            // then the attack. (ability_lunge_aim is only an additive layer: it turned him sideways and isn't the readying pose.)
+            ("lunge_start_n", "ability_lunge_start_n", false, "hold", "full"),
+            ("lunge_start_e", "ability_lunge_start_e", false, "hold", "full"),
+            ("lunge_start_s", "ability_lunge_start_s", false, "hold", "full"),
+            ("lunge_start_w", "ability_lunge_start_w", false, "hold", "full"),
             ("lunge", "ability_lunge_attack_n", false, "locomotion", "full"),
             ("riposte", "ability_riposte", false, "hold", "full"),
             ("riposte_dash", "ability_riposte_counterattack_dash", false, "riposte_hit", "full"),
@@ -137,7 +143,7 @@ namespace CursedAppleCuriosities.Survivors.Apollo
             ("ult_dash", "ability_superslash_ult_dash", false, "ult_finale", "full"),
             ("ult_finale", "ability_superslash_ult_finale", false, "locomotion", "full"));
 
-        public static readonly HashSet<string> Locked = FrameworkAnims.Locked("sigil", "lunge", "riposte_dash", "riposte_hit", "ult_dash", "ult_finale");
+        public static readonly HashSet<string> Locked = FrameworkAnims.Locked("sigil", "lunge", "riposte_dash", "riposte_hit", "ult_dash", "ult_finale", "lunge_start_n", "lunge_start_e", "lunge_start_s", "lunge_start_w");
 
         public static readonly DeadlockSound[] Sounds = BuildSounds();
 

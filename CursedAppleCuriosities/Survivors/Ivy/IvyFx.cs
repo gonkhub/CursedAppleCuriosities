@@ -119,8 +119,9 @@ namespace CursedAppleCuriosities.Survivors.Ivy
         private readonly IvyGroundRing _ring;
         private readonly List<Vector3> _points = new List<Vector3>();
 
-        public IvyThrowPreview(float radius, bool showArc)
+        public IvyThrowPreview(float radius, bool showArc, Color? color = null)
         {
+            Color c = color ?? new Color(0.55f, 1f, 0.45f, 0.9f);
             _root = new GameObject("CursedAppleIvyPreview");
             if (showArc)
             {
@@ -128,11 +129,11 @@ namespace CursedAppleCuriosities.Survivors.Ivy
                 _arc.useWorldSpace = true;
                 _arc.widthMultiplier = 0.08f;
                 _arc.sharedMaterial = IvyGroundRing.Material;
-                _arc.startColor = new Color(0.55f, 1f, 0.45f, 0.9f);
-                _arc.endColor = new Color(0.55f, 1f, 0.45f, 0.3f);
+                _arc.startColor = c;
+                _arc.endColor = new Color(c.r, c.g, c.b, 0.3f);
                 _arc.shadowCastingMode = UnityEngine.Rendering.ShadowCastingMode.Off;
             }
-            _ring = IvyGroundRing.Spawn(Vector3.zero, radius, 0f, new Color(0.55f, 1f, 0.45f, 0.75f));
+            _ring = IvyGroundRing.Spawn(Vector3.zero, radius, 0f, new Color(c.r, c.g, c.b, 0.75f));
         }
 
         /// <summary>Where a projectile from <paramref name="from"/> at <paramref name="velocity"/> comes down (and the arc on the way).</summary>

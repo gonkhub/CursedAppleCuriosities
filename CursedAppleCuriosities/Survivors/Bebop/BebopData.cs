@@ -57,7 +57,8 @@ namespace CursedAppleCuriosities.Survivors.Bebop
         public static float StickyPerHit = 1f;           // % per enemy damaged (user)
         public static float StickyPerKill = 5f;          // % per kill (user)
         public const float StickySelfHold = 0.35f;       // hold the key this long and he sticks it on himself (user 2.5; Deadlock's self-cast)
-        public static float StickySpeed = 12f;           // m/s added after casting it (user 2.5)
+        public static float StickySpeed = 8f;            // m/s added after casting it (user 2.5: 12, then 8)
+        public const float StickySelfDamage = 0.1f;      // self-cast: he takes this share of the blast (user 2.5)
         public const float StickySpeedSeconds = 3f;      // (my number)
         public const float StickyEliteScale = 1.5f;      // elites and minibosses (user)
 
@@ -72,7 +73,7 @@ namespace CursedAppleCuriosities.Survivors.Bebop
         public static float HookAmpSeconds = 6f;
         public const float HookPullSpeed = 30f;          // m/s the hooked enemy is reeled in, at least...
         public const float HookPullTime = 1.5f;          // ...fast enough to arrive within this (a 200 m hook)
-        public const float HookPullStop = 3f;            // metres from Bebop where the pull ends
+        public const float HookPullStop = 3f;            // metres in front of Bebop where the hooked enemy is set down (user 2.5: lined up for an uppercut)
         public static float HookCooldown = 8f;           // Deadlock 23
 
         // ---- utility: Exploding Uppercut (citadel_ability_uppercut: 60 deg half-cone, 6 m, toss 25 m/s, landing 75 damage in 14 m, 22 s).
@@ -93,7 +94,7 @@ namespace CursedAppleCuriosities.Survivors.Bebop
         // ---- special: Hyper Beam (citadel_ability_bebop_laser_beam: 1 s cast, 11 s channel, 160 DPS, 70 m x 2.9 m, ticks 0.1 s, turns 55 deg/s,
         // hovers (FallSpeedMax 1), 1.8 m/s, 20% slow, bosses x0.5, 120 s) ----
         public static float HyperDps = 8f;               // damage coefficient per second (user 2.5: 800%)
-        public static float HyperLifesteal = 1f;         // share of its damage he heals (user 2.5)
+        public static float HyperLifesteal = 0.4f;       // share of its damage he heals (user 2.5: 100%, then 40%)
         public static float HyperImpactRadius = 5f;      // where it meets terrain it hurts all around (user 2.5; my number)
         public const float HyperTick = 0.1f;             // Deadlock Interval
         public static float HyperDuration = 11f;         // Deadlock AbilityChannelTime
@@ -135,7 +136,7 @@ namespace CursedAppleCuriosities.Survivors.Bebop
             UppercutHeal = c.Bind(Section, "Uppercut - Missing Health Heal", UppercutHeal, "Share of missing health healed after landing an uppercut.").Value;
             UppercutCooldown = c.Bind(Section, "Uppercut - Cooldown", UppercutCooldown, "Seconds.").Value;
             HyperDps = c.Bind(Section, "Hyper Beam - Damage Per Second", HyperDps, "Damage coefficient per second (bosses: half).").Value;
-            HyperLifesteal = c.Bind(Section, "Hyper Beam - Lifesteal", HyperLifesteal, "Share of its damage healed (1 = 100%).").Value;
+            HyperLifesteal = c.Bind(Section, "Hyper Beam - Lifesteal", HyperLifesteal, "Share of its damage healed (0.4 = 40%).").Value;
             HyperImpactRadius = c.Bind(Section, "Hyper Beam - Impact Radius", HyperImpactRadius, "Metres around where it meets terrain that it also hits.").Value;
             StickySpeed = c.Bind(Section, "Sticky Bomb - Speed Boost", StickySpeed, "Move speed (m/s) added for a few seconds after casting it.").Value;
             HyperDuration = c.Bind(Section, "Hyper Beam - Duration", HyperDuration, "Seconds of beam.").Value;

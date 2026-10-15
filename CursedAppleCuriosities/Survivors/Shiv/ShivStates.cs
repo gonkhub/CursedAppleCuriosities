@@ -184,6 +184,7 @@ namespace EntityStates.CursedApple.Shiv
         private Vector3 _dir;
         private float _dashTime, _travelled;
         private bool _dashing;
+        private LayerMask? _collide;
         private readonly HashSet<HealthComponent> _hit = new HashSet<HealthComponent>();
 
         public override void OnEnter()
@@ -202,7 +203,13 @@ namespace EntityStates.CursedApple.Shiv
             flat = flat.sqrMagnitude > 1e-4f ? flat.normalized : characterDirection.forward;
             _dir = Quaternion.AngleAxis(-pitch, Vector3.Cross(Vector3.up, flat)) * flat;
             _dashTime = ShivData.DashMetres * MysticExpansion.RadiusMultiplier(characterBody) / ShivData.DashSpeed;
-            if (isAuthority && characterMotor != null) characterMotor.disableAirControlUntilCollision = false;
+            if (isAuthority && characterMotor != null)
+            {
+                characterMotor.disableAirControlUntilCollision = false;
+                // Straight through bodies, cutting them on the way (user 2.5): no collision with characters for the dash.
+                _collide = characterMotor.Motor.CollidableLayers;
+                characterMotor.Motor.CollidableLayers = characterMotor.Motor.CollidableLayers & ~(LayerIndex.enemyBody.mask | LayerIndex.playerBody.mask);
+            }
         }
 
         public override void FixedUpdate()
@@ -241,6 +248,7 @@ namespace EntityStates.CursedApple.Shiv
 
         public override void OnExit()
         {
+            if (characterMotor != null && _collide.HasValue) characterMotor.Motor.CollidableLayers = _collide.Value;
             if (isAuthority && characterMotor != null)
             {
                 characterMotor.velocity = _dir * characterBody.moveSpeed * 1.5f; // a little of the dash carries on

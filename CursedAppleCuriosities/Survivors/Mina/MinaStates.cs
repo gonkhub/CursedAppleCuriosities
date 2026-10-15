@@ -251,13 +251,30 @@ namespace EntityStates.CursedApple.Mina
             if (fixedAge >= Duration) outer.SetNextStateToMain();
         }
 
+        private Transform? _umbrella;
+
+        /// <summary>Where the bats leave from: the canopy of her umbrella (its bone, a little above), or over her head without the model.</summary>
+        private Vector3 Umbrella()
+        {
+            if (_umbrella == null)
+            {
+                Transform? mt = characterBody.modelLocator != null ? characterBody.modelLocator.modelTransform : null;
+                GameObject? hero = mt != null && mt.GetComponent<DeadlockModelSwap>() is DeadlockModelSwap swap ? swap.HeroObject : null;
+                if (hero != null) foreach (Transform t in hero.GetComponentsInChildren<Transform>(true)) if (t.name == "umbrella") { _umbrella = t; break; }
+            }
+            return _umbrella != null ? _umbrella.position + Vector3.up * 0.4f : characterBody.corePosition + Vector3.up * 1.2f;
+        }
+
         private void Launch()
         {
             _launched++;
             if (MinaSurvivor.BatProjectile == null) return;
             Ray aim = GetAimRay();
-            Vector3 from = characterBody.corePosition + Vector3.up * 0.8f + Random.insideUnitSphere * 1.5f; // Deadlock BatSpawnRadius
-            Vector3 dir = Quaternion.Euler(Random.Range(-12f, 12f), Random.Range(-18f, 18f), 0f) * Quaternion.LookRotation(aim.direction) * Vector3.forward;
+            // Off her umbrella (user 2.5), each on its own arc out from the line to the crosshair.
+            Vector3 from = Umbrella() + Random.insideUnitSphere * 0.4f;
+            Vector3 goal = Physics.Raycast(aim, out RaycastHit hit, 150f, LayerIndex.world.mask | LayerIndex.entityPrecise.mask, QueryTriggerInteraction.Ignore) ? hit.point : aim.GetPoint(150f);
+            Vector3 dir = Quaternion.Euler(Random.Range(-MinaData.BatArcPitch, MinaData.BatArcPitch * 0.5f), Random.Range(-MinaData.BatArcYaw, MinaData.BatArcYaw), 0f)
+                * Quaternion.LookRotation(goal - from) * Vector3.forward;
             ProjectileManager.instance.FireProjectile(new FireProjectileInfo
             {
                 projectilePrefab = MinaSurvivor.BatProjectile,

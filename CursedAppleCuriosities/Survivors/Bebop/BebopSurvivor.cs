@@ -156,7 +156,7 @@ namespace CursedAppleCuriosities.Survivors.Bebop
             locator.secondary = Kit.Slot(body, BodyName, "Secondary", _sticky!, _hook!);
             locator.utility = Kit.Slot(body, BodyName, "Utility", _uppercut!);
             locator.special = Kit.Slot(body, BodyName, "Special", _hyper!);
-            locator.passiveSkill = new SkillLocator.PassiveSkill { enabled = false };
+            locator.passiveSkill = new SkillLocator.PassiveSkill { enabled = true, skillNameToken = Token + "PASSIVE_NAME", skillDescriptionToken = Token + "PASSIVE_DESC", icon = ItemBase.CreatePlaceholderSprite(Color) }; // his/her Deadlock movement (user 2.5: every survivor shows it)
             DeadlockMovement.Apply(body, BebopData.Movement);
 
             var gun = body.AddComponent<BebopGunBeam>();
@@ -240,10 +240,12 @@ namespace CursedAppleCuriosities.Survivors.Bebop
         {
             string D(float coeff) => $"{coeff * 100f:0}%";
             LanguageAPI.Add(Token + "NAME", "Bebop");
+            LanguageAPI.Add(Token + "PASSIVE_NAME", "Deadlock Movement");
+            LanguageAPI.Add(Token + "PASSIVE_DESC", Kit.MovementLine(BebopData.Movement, alone: true));
             LanguageAPI.Add(Token + "SUBTITLE", "The Wrecking Ball");
             LanguageAPI.Add(Token + "SKIN_DEFAULT", "Default");
             LanguageAPI.Add(Token + "DESCRIPTION",
-                "Bebop was built to demolish things. He's very good at his job.<color=#CCD3E0>\n\n" +
+                "Bebop is a demolition robot with a jazz habit, built to knock things down and still very good at it.<color=#CCD3E0>\n\n" +
                 "< ! > Humble Pie is a beam: keep it on target. It reaches 32 m and hits the first thing it touches.\n\n" +
                 "< ! > Every enemy a Sticky Bomb hurts makes all your future Sticky Bombs stronger, kills most of all. Dying loses all of it.\n\n" +
                 "< ! > Hook an enemy and it takes extra beam damage. Press again to let go.\n\n" +

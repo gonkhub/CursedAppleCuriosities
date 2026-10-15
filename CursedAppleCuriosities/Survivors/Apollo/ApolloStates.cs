@@ -179,11 +179,18 @@ namespace EntityStates.CursedApple.Apollo
     public class AdvanceReady : BaseSkillState
     {
         private bool _glinted;
+        private Vector3 _hop, _facing;
 
         public override void OnEnter()
         {
             base.OnEnter();
-            ApolloModel.Play(gameObject, "lunge_aim");
+            // A short hop the way he's moving (or straight ahead), with Deadlock's start clip for that direction (user 2.5).
+            _facing = ApolloShared.Flat(GetAimRay().direction, characterDirection.forward);
+            Vector3 move = inputBank != null ? new Vector3(inputBank.moveVector.x, 0f, inputBank.moveVector.z) : Vector3.zero;
+            _hop = move.sqrMagnitude > 0.01f ? move.normalized : _facing;
+            Vector3 local = Quaternion.Inverse(Quaternion.LookRotation(_facing)) * _hop;
+            string dir = Mathf.Abs(local.z) >= Mathf.Abs(local.x) ? (local.z >= 0f ? "n" : "s") : (local.x > 0f ? "e" : "w");
+            ApolloModel.Play(gameObject, "lunge_start_" + dir);
             DeadlockSounds.Play("apollo_lunge_charge", transform.position, gameObject);
             var recast = GetComponent<ApolloAdvanceRecast>();
             if (recast == null || recast.Used == 0) DeadlockHeroVoice.Power("apollo_vo_power2", gameObject); // the lunge's lines are use_power2 (Deadlock's captions)
@@ -195,12 +202,21 @@ namespace EntityStates.CursedApple.Apollo
             StartAimMode(0.5f);
             if (!_glinted && fixedAge >= ApolloData.PerfectStart) { _glinted = true; DeadlockSounds.Play("apollo_lunge_glint", transform.position, gameObject); }
             if (!isAuthority) return;
-            // Gravity doesn't touch him while he readies it (user 2.5): he hangs where he is, still free to move.
+            // The hop, then he hangs there while he readies it: gravity doesn't touch him (user 2.5).
             if (characterMotor != null)
             {
-                Vector3 v = characterMotor.velocity;
-                characterMotor.velocity = new Vector3(v.x, 0f, v.z);
+                characterDirection.forward = _facing;
                 characterMotor.disableAirControlUntilCollision = false;
+                if (fixedAge < ApolloData.ReadyDashTime)
+                {
+                    characterMotor.velocity = Vector3.zero;
+                    characterMotor.rootMotion += _hop * (ApolloData.ReadyDash / ApolloData.ReadyDashTime) * Time.fixedDeltaTime;
+                }
+                else
+                {
+                    Vector3 v = characterMotor.velocity;
+                    characterMotor.velocity = new Vector3(v.x, 0f, v.z);
+                }
             }
             bool released = inputBank == null || !inputBank.skill3.down;
             if ((released && fixedAge >= ApolloData.HoldMin) || fixedAge >= ApolloData.HoldMax) outer.SetNextState(new AdvanceStab { Held = fixedAge });
@@ -221,9 +237,7 @@ namespace EntityStates.CursedApple.Apollo
             ApolloModel.Play(gameObject, "lunge");
             DeadlockSounds.Play("apollo_lunge_cast", transform.position, gameObject);
             _dir = GetAimRay().direction;
-            // A short dash the way he's moving, or straight ahead if he isn't (user 2.5); the stab itself goes where he looks.
-            Vector3 move = inputBank != null ? inputBank.moveVector : Vector3.zero;
-            _dash = move.sqrMagnitude > 0.01f ? new Vector3(move.x, 0f, move.z).normalized : ApolloShared.Flat(_dir, characterDirection.forward);
+            _dash = ApolloShared.Flat(_dir, characterDirection.forward); // the stab lunges where he aims (the hop was when he readied it)
             if (isAuthority && characterMotor != null) characterMotor.disableAirControlUntilCollision = false;
         }
 

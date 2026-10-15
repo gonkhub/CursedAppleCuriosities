@@ -290,8 +290,9 @@ namespace CursedAppleCuriosities.Survivors.Mina
     // ================= Special: Nox Nostra's bats =================
 
     /// <summary>
-    /// Server, on a Nox Nostra bat: it flies out, swerving, and turns toward the nearest enemy in its view (Deadlock: bats track
-    /// enemies, retargeting when theirs dies). A bat that touches an enemy deals 1% of its max health (bosses half: user).
+    /// Server, on a Nox Nostra bat: it flies off on its own arc toward her crosshair (followed as she aims), fluttering; an enemy that
+    /// comes within a few metres catches it and it turns onto that enemy at a moderate rate (user 2.5: tracking was far too eager).
+    /// A bat that touches an enemy deals 1% of its max health (bosses half: user).
     /// </summary>
     [RequireComponent(typeof(ProjectileController))]
     public class MinaBat : MonoBehaviour, IProjectileImpactBehavior
@@ -299,6 +300,16 @@ namespace CursedAppleCuriosities.Survivors.Mina
         private Rigidbody? _rb;
         private HurtBox? _target;
         private float _age, _phase, _freq, _nextSeek, _life = -1f, _seek;
+        private Vector3? _goal;
+        private CharacterBody? _owner;
+
+        /// <summary>Where her crosshair meets the world now (her aim is synced to the server).</summary>
+        private Vector3? Crosshair()
+        {
+            if (_owner == null || _owner.inputBank == null) return null;
+            Ray aim = _owner.inputBank.GetAimRay();
+            return Physics.Raycast(aim, out RaycastHit hit, 150f, LayerIndex.world.mask, QueryTriggerInteraction.Ignore) ? hit.point : aim.GetPoint(150f);
+        }
         private bool _done;
 
         private void Awake()
@@ -320,6 +331,8 @@ namespace CursedAppleCuriosities.Survivors.Mina
                 // enemies farther off.
                 var owner = GetComponent<ProjectileController>().owner;
                 CharacterBody? by = owner != null ? owner.GetComponent<CharacterBody>() : null;
+                _owner = by;
+                _goal = Crosshair();
                 _life = MinaData.BatLifetime * DurationExtender.Multiplier(by);
                 _seek = MinaData.BatSeekRange * MysticExpansion.RadiusMultiplier(by);
                 var simple = GetComponent<ProjectileSimple>();
@@ -329,14 +342,20 @@ namespace CursedAppleCuriosities.Survivors.Mina
             if (_age > _life) { Destroy(gameObject); return; }
             if ((_target == null || _target.healthComponent == null || !_target.healthComponent.alive) && Time.time >= _nextSeek)
             {
-                _nextSeek = Time.time + 0.2f;
+                _nextSeek = Time.time + 0.15f;
                 _target = Seek();
+                _goal = Crosshair() ?? _goal;
             }
             Vector3 fwd = transform.forward;
-            if (_target != null && _age > 0.15f)
+            if (_target != null)
             {
                 Vector3 to = (_target.transform.position - transform.position).normalized;
                 fwd = Vector3.RotateTowards(fwd, to, MinaData.BatTurnDegPerSec * Mathf.Deg2Rad * dt, 0f);
+            }
+            else if (_goal.HasValue && _age > 0.1f)
+            {
+                Vector3 to = _goal.Value - transform.position;
+                if (to.sqrMagnitude > 1f) fwd = Vector3.RotateTowards(fwd, to.normalized, MinaData.BatCursorTurn * Mathf.Deg2Rad * dt, 0f);
             }
             // A flutter around its line (Deadlock's sine-amplitude curl), stronger before it locks on.
             Vector3 side = Vector3.Cross(fwd, Vector3.up);

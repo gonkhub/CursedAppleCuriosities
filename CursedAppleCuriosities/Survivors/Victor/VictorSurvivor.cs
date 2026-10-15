@@ -275,7 +275,7 @@ namespace CursedAppleCuriosities.Survivors.Victor
             LanguageAPI.Add(Token + "PASSIVE_NAME", "Shocking Reanimation");
             LanguageAPI.Add(Token + "PASSIVE_DESC",
                 $"When you would die, go down instead, <style=cIsUtility>invulnerable</style> for {VictorData.ReviveChannel:0}s, then revive with <style=cIsHealing>{P(VictorData.ReviveHealth)} health</style>, " +
-                $"dealing <style=cIsDamage>{D(VictorData.ReviveDamage)} damage</style> and <style=cIsUtility>stunning</style> nearby enemies. Recharges in <style=cIsUtility>{VictorData.ReviveCooldown:0}s</style> or each stage.");
+                $"dealing <style=cIsDamage>{D(VictorData.ReviveDamage)} damage</style> and <style=cIsUtility>stunning</style> nearby enemies. Recharges in <style=cIsUtility>{VictorData.ReviveCooldown:0}s</style> or each stage." + Kit.MovementLine(VictorData.Movement));
 
             LanguageAPI.Add(Token + "GUN_NAME", "Memento Mori");
             LanguageAPI.Add(Token + "GUN_DESC",

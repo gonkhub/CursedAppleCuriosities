@@ -179,7 +179,20 @@ namespace CursedAppleCuriosities.Deadlock
             foreach (MonoBehaviour b in display.GetComponentsInChildren<MonoBehaviour>(true))
                 if (b is AnimationEvents || b is PlaySoundOnEvent || b.GetType().Name == "AkEvent" || b.GetType().Name == "AkAmbient") b.enabled = false;
             display.AddComponent<SilentStandInAnimator>();
+            // The twirl's PlaySoundOnEnter is set up by the Animator after Awake, so blanking it there found nothing and Commando's gun
+            // spin played for every hero but Mina (whose intro starts her far out of earshot). Skip it at the source instead (user 2.5).
+            if (!_twirlHooked)
+            {
+                _twirlHooked = true;
+                On.RoR2.Mecanim.PlaySoundOnEnter.OnStateEnter += (orig, self, animator, info, layer) =>
+                {
+                    if (animator != null && animator.GetComponentInParent<SilentStandInAnimator>() != null) return;
+                    orig(self, animator, info, layer);
+                };
+            }
         }
+
+        private static bool _twirlHooked;
 
         /// <summary>
         /// The twirl sound is a PlaySoundOnEnter on the stand-in's animator controller, which is shared with the
@@ -303,6 +316,17 @@ namespace CursedAppleCuriosities.Deadlock
 
         /// <summary>The first of several Addressables keys that loads (a missing asset costs its effect, never the hero).</summary>
         private static Material? _line, _area;
+
+        /// <summary>
+        /// The one line every survivor's passive ends with: their Deadlock movement, from their own numbers (user 2.5: these were
+        /// written a dozen different ways, or missing). Call it after the config is bound.
+        /// </summary>
+        public static string MovementLine(DeadlockMovementProfile p, bool alone = false)
+        {
+            string Times(int n) => n == 1 ? "" : $" x{n}";
+            string dash = p.GroundDash ? "Dash, slide" : "Slide";
+            return (alone ? "" : "\n\n") + $"<style=cIsUtility>{p.StaminaPips} stamina</style>: {dash}, air jump{Times(p.AirJumps)} and air dash{Times(p.AirDashesPerAir)}. Sprints automatically out of combat.";
+        }
 
         /// <summary>
         /// A plain glowing line material for LineRenderers coloured by their start/end colours. Shader.Find is off limits in RoR2

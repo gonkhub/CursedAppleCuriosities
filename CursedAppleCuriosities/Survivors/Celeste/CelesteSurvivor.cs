@@ -365,7 +365,7 @@ namespace CursedAppleCuriosities.Survivors.Celeste
 
             LanguageAPI.Add(Token + "PASSIVE_NAME", "Showstopper");
             LanguageAPI.Add(Token + "PASSIVE_DESC",
-                $"Falls <style=cIsUtility>25% slower</style> with better air control, and <style=cIsUtility>hovers</style> while casting. <style=cIsUtility>{CelesteData.Movement.StaminaPips} stamina</style>; air jump and air dash twice.");
+                $"Falls <style=cIsUtility>25% slower</style> with better air control, and <style=cIsUtility>hovers</style> while casting." + Kit.MovementLine(CelesteData.Movement));
 
             LanguageAPI.Add(Token + "BLADE_NAME", "Carny Life");
             LanguageAPI.Add(Token + "BLADE_DESC",

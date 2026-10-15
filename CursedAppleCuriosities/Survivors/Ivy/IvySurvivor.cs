@@ -64,6 +64,7 @@ namespace CursedAppleCuriosities.Survivors.Ivy
                 DeadlockInstall.WantIcon(icon);
             DeadlockHeroes.Register(IvyModel.Def);
             DeadlockInstall.WantModel(IvyModel.Def.ModelRequest());
+            DeadlockInstall.WantModel(new DeadlockInstall.ModelRequest { Hero = IvyData.StatueKey, DlModel = IvyData.DlStatueModel, Clips = new[] { IvyData.StatueClip } });
 
             TracerEffect = TryLoad<GameObject>("RoR2/Base/Commando/TracerCommandoDefault.prefab");
             HitEffect = TryLoad<GameObject>("RoR2/Base/Commando/HitsparkCommando.prefab");
@@ -243,7 +244,7 @@ namespace CursedAppleCuriosities.Survivors.Ivy
             LanguageAPI.Add(Token + "SUBTITLE", "The Gargoyle");
             LanguageAPI.Add(Token + "SKIN_DEFAULT", "Default");
             LanguageAPI.Add(Token + "DESCRIPTION",
-                "Ivy guards those she cares about. Out here, that's whoever is standing next to her.<color=#CCD3E0>\n\n" +
+                "Ivy is a gargoyle who woke from centuries of stone to watch over her friends.<color=#CCD3E0>\n\n" +
                 "< ! > Kudzu Bomb slows and grinds down crowds: hold to see where it lands, throw it where enemies are heading.\n\n" +
                 "< ! > Kudzu Connection binds you to whichever ally is nearest: drones, turrets and minions count too.\n\n" +
                 "< ! > Stone Form makes you invulnerable while you fall: use it to escape and to slam.\n\n" +
@@ -257,7 +258,7 @@ namespace CursedAppleCuriosities.Survivors.Ivy
                 $"Hold to aim, release to throw a bomb that grows a {IvyData.ThornsRadius:0} m kudzu patch for {IvyData.ThornsDuration:0}s, dealing <style=cIsDamage>{D(IvyData.ThornsDps)} damage per second</style> and <style=cIsUtility>slowing</style> enemies in it.");
             LanguageAPI.Add(Token + "KUDZU_NAME", "Kudzu Connection");
             LanguageAPI.Add(Token + "KUDZU_DESC",
-                $"Always bound to the nearest ally within {IvyData.TetherRange:0} m: both gain <style=cIsDamage>+{D(IvyData.TetherAttackSpeed)} attack speed</style> and <style=cIsHealing>{D(IvyData.TetherLifesteal)} lifesteal</style>, and share <style=cIsHealing>{D(IvyData.TetherSharedHeal)}</style> of healing. Alone, half the bonuses.");
+                $"Always bound to the nearest ally within {IvyData.TetherRange:0} m: both gain <style=cIsDamage>+{D(IvyData.TetherAttackSpeed)} attack speed</style> and <style=cIsHealing>{D(IvyData.TetherLifesteal)} lifesteal</style>, and share <style=cIsHealing>{D(IvyData.TetherSharedHeal)}</style> of healing. Alone, half the bonuses." + Kit.MovementLine(IvyData.Movement));
             LanguageAPI.Add(Token + "STONE_NAME", "Stone Form");
             LanguageAPI.Add(Token + "STONE_DESC",
                 $"Turn to stone: <style=cIsUtility>invulnerable</style> and <style=cIsHealing>healing {D(IvyData.StoneHeal)} max health per second</style>. Slam down for <style=cIsDamage>{D(IvyData.StoneDamage)} damage</style>, <style=cIsUtility>stunning</style>.");

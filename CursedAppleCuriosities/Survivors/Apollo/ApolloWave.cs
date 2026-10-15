@@ -8,8 +8,8 @@ namespace CursedAppleCuriosities.Survivors.Apollo
 {
     /// <summary>
     /// Server, on a Pride of Ixia sword wave: Deadlock fires it as a slow, wide projectile (citadel_weapon_fencer_set: 5000 hu/s,
-    /// 10 hu radius, 1000 hu range, no gravity) that passes through enemies. It was a hitscan tracer, far too fast (user 2.5):
-    /// now it flies, sweeping its path each step, hitting every enemy once, until terrain or its range stops it.
+    /// 10 hu radius, 1000 hu range, no gravity). Here a small spinning blade (user 2.5) that stops at the first enemy it reaches,
+    /// sweeping its path each step so nothing slips between steps, or at terrain or the end of its range.
     /// </summary>
     [RequireComponent(typeof(ProjectileController))]
     public class ApolloWaveShot : MonoBehaviour
@@ -33,13 +33,17 @@ namespace CursedAppleCuriosities.Survivors.Apollo
             Vector3 dir = d / len;
             bool blocked = Physics.Raycast(_last, dir, out RaycastHit wall, len, LayerIndex.world.mask, QueryTriggerInteraction.Ignore);
             float reach = blocked ? wall.distance : len;
-            foreach (RaycastHit h in Physics.SphereCastAll(_last, ApolloData.WaveRadius, dir, reach, LayerIndex.entityPrecise.mask, QueryTriggerInteraction.Collide))
+            RaycastHit[] hits = Physics.SphereCastAll(_last, ApolloData.WaveRadius, dir, reach, LayerIndex.entityPrecise.mask, QueryTriggerInteraction.Collide);
+            System.Array.Sort(hits, (x, y) => x.distance.CompareTo(y.distance)); // the nearest is the one it reaches first
+            foreach (RaycastHit h in hits)
             {
                 var box = h.collider != null ? h.collider.GetComponent<HurtBox>() : null;
                 HealthComponent? hc = box != null ? box.healthComponent : null;
                 if (hc == null || !hc.alive || box!.teamIndex == by.teamComponent.teamIndex || !_hit.Add(hc)) continue;
                 ApolloNet.Hit(by, hc, pd != null ? pd.damage : by.damage * ApolloData.WaveDamage, pd != null && pd.crit, dir * 200f, DamageSource.Primary);
                 ApolloNet.Effect(ApolloSurvivor.SlashEffect, ApolloNet.Core(hc), 1.2f, dir);
+                Destroy(gameObject); // no pierce (user 2.5)
+                return;
             }
             _last = now;
             if (blocked) Destroy(gameObject);

@@ -292,8 +292,7 @@ namespace CursedAppleCuriosities.Survivors.Viscous
             LanguageAPI.Add(Token + "LORE", "Goo.");
 
             LanguageAPI.Add(Token + "PASSIVE_NAME", "Goo");
-            LanguageAPI.Add(Token + "PASSIVE_DESC",
-                $"<style=cIsUtility>{ViscousData.Movement.StaminaPips} stamina</style>. Dash, air jump and slide; sprints automatically out of combat.");
+            LanguageAPI.Add(Token + "PASSIVE_DESC", Kit.MovementLine(ViscousData.Movement, alone: true));
 
             LanguageAPI.Add(Token + "GUN_NAME", "Goo Gun");
             LanguageAPI.Add(Token + "GUN_DESC", $"Fire for <style=cIsDamage>{D(ViscousData.GunDamage)} damage</style>.");

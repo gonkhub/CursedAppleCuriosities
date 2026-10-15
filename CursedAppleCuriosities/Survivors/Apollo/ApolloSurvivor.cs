@@ -52,7 +52,7 @@ namespace CursedAppleCuriosities.Survivors.Apollo
 
         public static GameObject? BodyPrefab, DisplayPrefab;
         public static SurvivorDef? Survivor;
-        public static BuffDef? SigilSlow, RiposteSlow, ParryBuff, RiposteLifestealBuff, UltMaskBuff, SigilHasteBuff;
+        public static BuffDef? SigilSlow, RiposteSlow, ParryBuff, RiposteLifestealBuff, UltMaskBuff, SigilHasteBuff, UltMarkedBuff;
         public static GameObject? WaveTracer, SlashEffect, SigilEffect, UltEffect, WaveProjectile, UltStreak;
 
         private static SkillDef? _wave, _sigil, _advance, _riposte, _ult;
@@ -70,15 +70,23 @@ namespace CursedAppleCuriosities.Survivors.Apollo
             DeadlockInstall.WantModel(new DeadlockInstall.ModelRequest { Hero = ApolloData.MaskKey, DlModel = ApolloData.DlMaskModel }); // Itani Lo Sahn's mask
 
             WaveTracer = Kit.Recoloured(TryLoad<GameObject>("RoR2/Base/Bandit2/TracerBandit2Rifle.prefab"), "CursedAppleApolloWave", Hue, effect: true);
-            // The sword wave flies, a slow blade (user 2.5): Commando's grenade for the flight and networking (as Ivy's bombs), straight,
-            // with Alloy Vulture's wind blade, gold, for its look. (Lil Reaper's slash is a DLC4 asset this game can't load.)
-            WaveProjectile = Kit.CloneProjectile(TryLoad<GameObject>("RoR2/Base/Commando/CommandoGrenadeProjectile.prefab", "RoR2/Base/Characters/Commando/Skills/CommandoGrenadeProjectile.prefab"),
+            // The sword wave: the little spinning blade of Celeste's primary (Bandit's shiv), red (user 2.5), on its own flight.
+            WaveProjectile = Kit.CloneProjectile(TryLoad<GameObject>("RoR2/Base/Bandit2/Bandit2ShivProjectile.prefab", "RoR2/Base/Characters/Bandit2/Skills/Bandit2ShivProjectile.prefab"),
                 "CursedAppleApolloWaveShot", typeof(ApolloWaveShot), ApolloData.WaveSpeed, ApolloData.WaveRange / ApolloData.WaveSpeed, gravity: false, triggers: true, steer: false);
-            if (WaveProjectile != null && WaveProjectile.GetComponent<RoR2.Projectile.ProjectileController>() is RoR2.Projectile.ProjectileController wpc)
+            if (WaveProjectile != null && WaveProjectile.GetComponent<RoR2.Projectile.ProjectileController>() is RoR2.Projectile.ProjectileController wpc && wpc.ghostPrefab != null)
             {
-                GameObject? blade = Kit.Recoloured(TryLoad<GameObject>("RoR2/Base/Vulture/WindbladeProjectileGhost.prefab", "RoR2/Base/Characters/Vulture/Skills/WindbladeProjectileGhost.prefab"),
-                    "CursedAppleApolloWaveGhost", Hue, effect: false);
-                if (blade != null) { blade.transform.localScale *= 2.2f; wpc.ghostPrefab = blade; }
+                GameObject? blade = Kit.Recoloured(wpc.ghostPrefab, "CursedAppleApolloWaveGhost", 0f, effect: false);
+                if (blade != null) { blade.transform.localScale *= 0.45f; wpc.ghostPrefab = blade; }
+                // Its swing rings ride the projectile, not the ghost: shrunk with it and held at that size (as Celeste's).
+                foreach (ParticleSystem ps in WaveProjectile.GetComponentsInChildren<ParticleSystem>(true))
+                {
+                    ParticleSystem.MainModule main = ps.main;
+                    if (main.startSize3D) { main.startSizeXMultiplier *= 0.45f; main.startSizeYMultiplier *= 0.45f; main.startSizeZMultiplier *= 0.45f; }
+                    else main.startSizeMultiplier *= 0.45f;
+                    main.startSpeedMultiplier = 0f;
+                    ParticleSystem.SizeOverLifetimeModule growth = ps.sizeOverLifetime;
+                    growth.enabled = false;
+                }
             }
             SlashEffect = Kit.Recoloured(TryLoad<GameObject>("RoR2/Base/Merc/OmniImpactVFXSlashMerc.prefab"), "CursedAppleApolloSlash", Hue, effect: true);
             SigilEffect = Kit.Recoloured(TryLoad<GameObject>("RoR2/Base/Common/VFX/OmniExplosionVFXQuick.prefab"), "CursedAppleApolloSigil", Hue, effect: true);
@@ -86,6 +94,7 @@ namespace CursedAppleCuriosities.Survivors.Apollo
             SigilSlow = Buff("CursedAppleApolloSigilSlow", new Color(0.9f, 0.8f, 0.5f), debuff: true);
             RiposteSlow = Buff("CursedAppleApolloRiposteSlow", new Color(0.8f, 0.7f, 0.4f), debuff: true);
             ParryBuff = Buff("CursedAppleApolloParry", Color, debuff: false);
+            UltMarkedBuff = Buff("CursedAppleApolloUltMarked", new Color(1f, 0.1f, 0.1f), debuff: true);
             SigilHasteBuff = Buff("CursedAppleApolloSigilHaste", new Color(0.95f, 0.8f, 0.4f), debuff: false);
             UltMaskBuff = Buff("CursedAppleApolloUltMask", new Color(0.9f, 0.1f, 0.1f), debuff: false);
             // Itani Lo Sahn's streak from where he stood to where he lands: the Huntress's snipe tracer, made red.
@@ -156,7 +165,7 @@ namespace CursedAppleCuriosities.Survivors.Apollo
             locator.secondary = Kit.Slot(body, BodyName, "Secondary", _sigil!);
             locator.utility = Kit.Slot(body, BodyName, "Utility", _advance!, _riposte!);
             locator.special = Kit.Slot(body, BodyName, "Special", _ult!);
-            locator.passiveSkill = new SkillLocator.PassiveSkill { enabled = false };
+            locator.passiveSkill = new SkillLocator.PassiveSkill { enabled = true, skillNameToken = Token + "PASSIVE_NAME", skillDescriptionToken = Token + "PASSIVE_DESC", icon = ItemBase.CreatePlaceholderSprite(Color) }; // his/her Deadlock movement (user 2.5: every survivor shows it)
             DeadlockMovement.Apply(body, ApolloData.Movement);
             body.AddComponent<ApolloAdvanceRecast>();
             body.AddComponent<ApolloUltLook>();
@@ -228,10 +237,12 @@ namespace CursedAppleCuriosities.Survivors.Apollo
         {
             string D(float coeff) => $"{coeff * 100f:0}%";
             LanguageAPI.Add(Token + "NAME", "Apollo");
+            LanguageAPI.Add(Token + "PASSIVE_NAME", "Deadlock Movement");
+            LanguageAPI.Add(Token + "PASSIVE_DESC", Kit.MovementLine(ApolloData.Movement, alone: true));
             LanguageAPI.Add(Token + "SUBTITLE", "The Duelist");
             LanguageAPI.Add(Token + "SKIN_DEFAULT", "Default");
             LanguageAPI.Add(Token + "DESCRIPTION",
-                "Apollo has never lost a duel. He has never fought a planet before.<color=#CCD3E0>\n\n" +
+                "Apollo is a duelist of ancient Ixia who has never lost a fight, and doesn't intend to start.<color=#CCD3E0>\n\n" +
                 "< ! > Your sword waves cut through every enemy in a line: line them up.\n\n" +
                 "< ! > Flawless Advance hits hardest when released on the glint. You get three stabs in a row.\n\n" +
                 "< ! > Riposte turns the next hit you take into a counterattack.\n\n" +

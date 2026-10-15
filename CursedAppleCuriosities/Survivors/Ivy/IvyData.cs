@@ -109,6 +109,10 @@ namespace CursedAppleCuriosities.Survivors.Ivy
         public const string IconPortrait = "panorama/images/heroes/tengu_sm_psd.vtex_c";
         public const string IconThorns = "panorama/images/hud/abilities/tengu/tengu_storm_flask_psd.vtex_c";
         public const string IconTether = "panorama/images/hud/abilities/tengu/tengu_tether_psd.vtex_c";
+        // Her Stone Form statue: its own model with its own clip (the gargoyle pose), as Deadlock's tengu_stone_form_model particle shows it.
+        public const string StatueKey = "ivy_statue";
+        public const string DlStatueModel = "models/particle/tengu_stone_form_model_fx.vmdl_c";
+        public const string StatueClip = "ability_stone_form";
         public const string IconStone = "panorama/images/hud/abilities/tengu/tengu_stone_form_psd.vtex_c";
         public const string IconAirDrop = "panorama/images/hud/abilities/tengu/tengu_lightning_crash_psd.vtex_c";
 

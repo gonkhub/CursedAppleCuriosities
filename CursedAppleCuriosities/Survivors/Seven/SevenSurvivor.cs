@@ -323,7 +323,7 @@ namespace CursedAppleCuriosities.Survivors.Seven
 
             LanguageAPI.Add(Token + "PASSIVE_NAME", "Electric Current");
             LanguageAPI.Add(Token + "PASSIVE_DESC",
-                "Sprints automatically out of combat; dash, air jump and slide. During <style=cIsUtility>Power Surge</style> he keeps sprinting until hit.");
+                "During <style=cIsUtility>Power Surge</style> he keeps sprinting until hit." + Kit.MovementLine(SevenData.Movement));
 
             LanguageAPI.Add(Token + "GUN_NAME", "Cold Calculus");
             LanguageAPI.Add(Token + "GUN_DESC",

@@ -300,8 +300,7 @@ namespace CursedAppleCuriosities.Survivors.Abrams
             LanguageAPI.Add(Token + "PASSIVE_NAME", "Infernal Resilience");
             LanguageAPI.Add(Token + "PASSIVE_DESC",
                 $"<style=cIsHealing>Regenerate {D(AbramsData.ResilienceFraction)}</style> of all damage taken over <style=cIsUtility>{AbramsData.ResilienceSeconds:0}s</style>. " +
-                $"Gain <style=cIsHealing>+{AbramsData.ResilienceArmor:0} armor</style>. " +
-                "Abrams <style=cIsUtility>sprints automatically</style> out of combat, and can <style=cIsUtility>slide</style>, <style=cIsUtility>dash</style> and <style=cIsUtility>air jump</style>.");
+                $"Gain <style=cIsHealing>+{AbramsData.ResilienceArmor:0} armor</style>." + Kit.MovementLine(AbramsData.Movement));
 
             LanguageAPI.Add(Token + "SHOTGUN_NAME", "Abrams' Shotgun");
             LanguageAPI.Add(Token + "SHOTGUN_DESC",

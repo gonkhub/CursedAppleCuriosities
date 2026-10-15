@@ -553,6 +553,15 @@ namespace CursedAppleCuriosities.Survivors.Paradox
     /// <summary>The swap itself: both travel at once on mirrored arcs, passing each other (user: a smooth swap).</summary>
     public static class ParadoxSwap
     {
+        private static List<HealthComponent> EnemiesNear(Vector3 at, float radius, TeamIndex team)
+        {
+            var list = new List<HealthComponent>();
+            foreach (HurtBox h in new SphereSearch { origin = at, radius = radius, mask = LayerIndex.entityPrecise.mask }
+                         .RefreshCandidates().FilterCandidatesByHurtBoxTeam(TeamMask.GetEnemyTeams(team)).FilterCandidatesByDistinctHurtBoxEntities().GetHurtBoxes())
+                if (h.healthComponent != null && !list.Contains(h.healthComponent)) list.Add(h.healthComponent);
+            return list;
+        }
+
         /// <summary>Where a traveller is at time t of a swap from <paramref name="from"/> to <paramref name="to"/> (side: +1 / -1).</summary>
         public static Vector3 PathAt(Vector3 from, Vector3 to, float t, float duration, float side)
         {
@@ -588,6 +597,15 @@ namespace CursedAppleCuriosities.Survivors.Paradox
                 var carry = enemy.GetComponent<ParadoxSwapCarry>() ?? enemy.gameObject.AddComponent<ParadoxSwapCarry>();
                 carry.Go(paradox, b, a, duration);
             }
+            // Everything close around it goes too, keeping its place in the group (user 2.5).
+            if (paradox.teamComponent != null)
+                foreach (HealthComponent other in EnemiesNear(b, ParadoxData.SwapGroupRadius * MysticExpansion.RadiusMultiplier(paradox), paradox.teamComponent.teamIndex))
+                {
+                    if (other == enemy || !other.alive || other.body == null) continue;
+                    Vector3 from = other.body.footPosition;
+                    var c = other.GetComponent<ParadoxSwapCarry>() ?? other.gameObject.AddComponent<ParadoxSwapCarry>();
+                    c.Go(paradox, from, a + (from - b), duration);
+                }
             // Her own trip runs on her owner's machine (movement is owner-authoritative).
             new ParadoxSwapMessage { Paradox = paradox.gameObject, Enemy = enemy.gameObject, From = a, To = b, Duration = duration }.Send(NetworkDestination.Clients); // a host's own client too
         }

@@ -87,6 +87,7 @@ namespace CursedAppleCuriosities.Survivors.Paradox
         public const float SwapPass = 1.5f;             // metres each side of the line: they pass by each other (user)
         public const float SwapSlow = 0.9f, SwapSlowSeconds = 2.5f; // user: a fading slow when the swap ends
         public const float SwapCastDelay = 0.15f;       // Deadlock AbilityCastDelay
+        public const float SwapGroupRadius = 4f;        // enemies this close to the one hit are swapped along with it (user 2.5; Mystic Expansion: wider)
         public static float SwapCooldown = 30f;         // Deadlock 110
 
         public static void Bind(ConfigFile c)

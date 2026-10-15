@@ -142,7 +142,7 @@ namespace CursedAppleCuriosities.Survivors.Bebop
             bomb.By = body;
             bomb.Target = hc;
             bomb.Crit = Crit;
-            bomb.Fuse = BebopData.StickyFuse;
+            bomb.Fuse = BebopData.StickyFuse * DurationExtender.Multiplier(body); // Duration Extender lengthens the fuse (user 2.5)
             bomb.Radius = BebopData.StickyRadius * MysticExpansion.RadiusMultiplier(body);
             EquipmentFx.Sound("bebop_sticky_attach", go.transform.position, Target);
             var fx = new BebopStickyFxMessage { Target = Target, Radius = bomb.Radius, Fuse = bomb.Fuse };
@@ -208,6 +208,14 @@ namespace CursedAppleCuriosities.Survivors.Bebop
                 var stacks = By.master != null ? By.master.GetComponent<BebopStickyStacks>() ?? By.master.gameObject.AddComponent<BebopStickyStacks>() : null;
                 float bonus = 1f + (stacks != null ? stacks.Percent / 100f : 0f);
                 float earned = 0f;
+                // Stuck on himself: he takes a tenth of it (user 2.5), never the killing blow.
+                if (Target != null && Target == By.healthComponent && Target.alive)
+                    Target.TakeDamage(new DamageInfo
+                    {
+                        attacker = By.gameObject, inflictor = gameObject, damage = BebopData.StickyDamage * bonus * By.damage * BebopData.StickySelfDamage,
+                        position = at, procCoefficient = 0f, damageColorIndex = DamageColorIndex.Default,
+                        damageType = DamageType.NonLethal | DamageType.BypassBlock, crit = false,
+                    });
                 foreach (HealthComponent hc in BebopNet.EnemiesIn(at, Radius, By.teamComponent.teamIndex))
                 {
                     DamageInfo? di = BebopNet.Hit(By, hc, BebopData.StickyDamage * bonus * By.damage, Crit, (hc.transform.position - at).normalized * 1000f, DamageSource.Secondary);
@@ -309,8 +317,20 @@ namespace CursedAppleCuriosities.Survivors.Bebop
         {
             if (!NetworkServer.active) return;
             if (_by == null || _body == null || _body.healthComponent == null || !_body.healthComponent.alive || Time.time > _until) { Drop(); return; }
-            Vector3 to = _by.corePosition + _by.transform.forward * BebopData.HookPullStop * 0.5f - _body.corePosition;
-            if (to.magnitude <= BebopData.HookPullStop) { Drop(); return; }
+            // Reeled to the spot right in front of him, where he faces (user 2.5): set down there, lined up for an uppercut.
+            Vector3 facing = _by.inputBank != null ? _by.inputBank.aimDirection : _by.transform.forward;
+            facing.y = 0f;
+            facing = facing.sqrMagnitude > 1e-4f ? facing.normalized : _by.transform.forward;
+            Vector3 spot = _by.corePosition + facing * (BebopData.HookPullStop + _body.radius);
+            Vector3 to = spot - _body.corePosition;
+            float step = _speed * Time.fixedDeltaTime;
+            if (to.magnitude <= Mathf.Max(0.5f, step))
+            {
+                if (_motor != null) _motor.Motor.SetPosition(_motor.Motor.TransientPosition + to, true);
+                else transform.position += to;
+                Drop();
+                return;
+            }
             Vector3 v = to.normalized * _speed;
             if (_motor != null) { _motor.Motor.ForceUnground(); _motor.velocity = v; _motor.disableAirControlUntilCollision = true; }
             else if (_rb != null && !_rb.isKinematic) _rb.velocity = v;

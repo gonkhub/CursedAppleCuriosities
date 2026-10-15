@@ -37,7 +37,6 @@ namespace CursedAppleCuriosities.Survivors.Bebop
 
             Play("hyper_fire", 0.1f);
             DeadlockSounds.Play("bebop_hyper_launch", Home);
-            DeadlockSounds.Play("bebop_hyper_launch_jazz", Home);
             DeadlockVoice? loop = DeadlockSounds.Loop("bebop_hyper_loop", gameObject, Sweep);
             Build();
             for (float t = 0f; t < Sweep; t += Time.deltaTime)

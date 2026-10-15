@@ -137,7 +137,8 @@ namespace CursedAppleCuriosities.Survivors.Paradox
             _pulse.mustKeyPress = true;
             _pulse.cancelSprintingOnActivation = true;
 
-            _wall = Skill<SkillDef>("Wall", typeof(PlaceTimeWall), "Weapon", ParadoxData.WallCooldown, InterruptPriority.Skill);
+            // Time Wall and the swap run on the Body machine, so Kinetic Carbine (Weapon) keeps charging through them (user 2.5).
+            _wall = Skill<SkillDef>("Wall", typeof(PlaceTimeWall), "Body", ParadoxData.WallCooldown, InterruptPriority.Skill);
             _wall.mustKeyPress = true;
             _wall.cancelSprintingOnActivation = false;
 
@@ -146,7 +147,7 @@ namespace CursedAppleCuriosities.Survivors.Paradox
             _carbine.cancelSprintingOnActivation = true;
             _carbine.beginSkillCooldownOnSkillEnd = true;
 
-            _swap = Skill<SkillDef>("Swap", typeof(SwapCast), "Weapon", ParadoxData.SwapCooldown, InterruptPriority.Skill);
+            _swap = Skill<SkillDef>("Swap", typeof(SwapCast), "Body", ParadoxData.SwapCooldown, InterruptPriority.Skill);
             _swap.mustKeyPress = true;
             _swap.cancelSprintingOnActivation = true;
         }
@@ -174,7 +175,7 @@ namespace CursedAppleCuriosities.Survivors.Paradox
             locator.secondary = Kit.Slot(body, BodyName, "Secondary", _pulse!, _wall!);
             locator.utility = Kit.Slot(body, BodyName, "Utility", _carbine!);
             locator.special = Kit.Slot(body, BodyName, "Special", _swap!);
-            locator.passiveSkill = new SkillLocator.PassiveSkill { enabled = false };
+            locator.passiveSkill = new SkillLocator.PassiveSkill { enabled = true, skillNameToken = Token + "PASSIVE_NAME", skillDescriptionToken = Token + "PASSIVE_DESC", icon = ItemBase.CreatePlaceholderSprite(Color) }; // his/her Deadlock movement (user 2.5: every survivor shows it)
             DeadlockMovement.Apply(body, ParadoxData.Movement);
 
             Transform model = body.GetComponent<ModelLocator>().modelTransform;
@@ -246,11 +247,13 @@ namespace CursedAppleCuriosities.Survivors.Paradox
         {
             string D(float coeff) => $"{coeff * 100f:0}%";
             LanguageAPI.Add(Token + "NAME", "Paradox");
+            LanguageAPI.Add(Token + "PASSIVE_NAME", "Deadlock Movement");
+            LanguageAPI.Add(Token + "PASSIVE_DESC", Kit.MovementLine(ParadoxData.Movement, alone: true));
             LanguageAPI.Add(Token + "SUBTITLE", "The Wrinkle in Time");
             LanguageAPI.Add(Token + "SKIN_DEFAULT", "Default");
             LanguageAPI.Add(Token + "SKIN_TEAL", "Teal");
             LanguageAPI.Add(Token + "DESCRIPTION",
-                "Paradox has been everywhere and everywhen. This planet is just the next appointment.<color=#CCD3E0>\n\n" +
+                "Paradox is a scientist who learned to bend time, and has been late for nothing since.<color=#CCD3E0>\n\n" +
                 "< ! > Every Pulse Bomb hit makes your damage to that enemy stronger. Throw it first, then shoot.\n\n" +
                 "< ! > The Time Wall deletes enemy projectiles: stand behind it, and shoot through it for extra damage.\n\n" +
                 "< ! > A fully charged Kinetic Carbine hits weak points. Charging also makes you faster.\n\n" +
@@ -264,7 +267,7 @@ namespace CursedAppleCuriosities.Survivors.Paradox
 
             LanguageAPI.Add(Token + "PULSE_NAME", "Pulse Bomb");
             LanguageAPI.Add(Token + "PULSE_DESC",
-                $"Throw a bomb that pulses for <style=cIsDamage>{D(ParadoxData.PulseDamage)} damage</style> every {ParadoxData.PulseInterval:0.#}s (faster with attack speed) for {ParadoxData.PulseDuration:0.#}s, each pulse wider. " +
+                $"Hold to aim, release to throw a bomb that pulses for <style=cIsDamage>{D(ParadoxData.PulseDamage)} damage</style> every {ParadoxData.PulseInterval:0.#}s (faster with attack speed) for {ParadoxData.PulseDuration:0.#}s, each pulse wider. " +
                 $"Each hit makes the enemy take <style=cIsDamage>+{ParadoxData.PulseAmpPerStack * 100f:0}%</style> damage from you.");
 
             LanguageAPI.Add(Token + "WALL_NAME", "Time Wall");

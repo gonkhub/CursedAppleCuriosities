@@ -257,7 +257,7 @@ namespace CursedAppleCuriosities.Survivors.Mina
             LanguageAPI.Add(Token + "SKIN_DEFAULT", "Default");
             LanguageAPI.Add(Token + "SKIN_NIGHTSHADE", "Nightshade");
             LanguageAPI.Add(Token + "DESCRIPTION",
-                "Mina has outlived every party she was ever invited to. This one has a lot of guests.<color=#CCD3E0>\n\n" +
+                "Mina is a centuries-old vampire socialite who never misses a party, or a meal.<color=#CCD3E0>\n\n" +
                 "< ! > Your pistol is weak on its own: keep it on a target to fill Love Bites for a big burst.\n\n" +
                 "< ! > Every Love Bites burst adds a bat to Nox Nostra until the stage ends. Save it for the boss.\n\n" +
                 "< ! > Rake hits hardest on wounded enemies, and kills heal you. Finish things with it.\n\n" +
@@ -269,7 +269,7 @@ namespace CursedAppleCuriosities.Survivors.Mina
             LanguageAPI.Add(Token + "PASSIVE_NAME", "Love Bites");
             LanguageAPI.Add(Token + "PASSIVE_DESC",
                 $"<style=cIsUtility>Hold jump in the air</style> to float on your umbrella for up to {MinaData.HoverSeconds:0}s. Your damage builds Love Bites on enemies. When full, it bursts for <style=cIsDamage>{D(MinaData.LoveBitesDamage)} damage</style> and you gain a stack (resets each stage). " +
-                $"The same enemy can't be Love Bitten again for <style=cIsUtility>{MinaData.LoveBitesTargetCooldown:0}s</style>.");
+                $"The same enemy can't be Love Bitten again for <style=cIsUtility>{MinaData.LoveBitesTargetCooldown:0}s</style>." + Kit.MovementLine(MinaData.Movement));
 
             LanguageAPI.Add(Token + "GUN_NAME", "Pistol");
             LanguageAPI.Add(Token + "GUN_DESC", $"Shoot for <style=cIsDamage>{D(MinaData.GunDamage)} damage</style>. Falls off with distance.");

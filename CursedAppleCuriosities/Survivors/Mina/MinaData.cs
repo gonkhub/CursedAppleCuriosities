@@ -74,9 +74,13 @@ namespace CursedAppleCuriosities.Survivors.Mina
         public const float BatProc = 0.2f;              // Deadlock BatEffectiveness
         public const float BatSpeed = 35f;              // Deadlock m_flSpeed 1800 hu/s ~ 46, slower to read as a swarm
         public const float BatLifetime = 3f;            // Deadlock m_flBatLifetime
-        public const float BatTurnDegPerSec = 420f;
-        public const float BatSeekRange = 40f;          // Deadlock AbilityCastRange
-        public const float BatSeekConeDeg = 40f;        // Deadlock LockonConeAngle
+        // User 2.5: tracking was far too eager. They fly off the umbrella in random arcs toward her crosshair, and only an enemy that
+        // comes within reach of a bat turns it, at a moderate rate.
+        public const float BatCursorTurn = 110f;        // deg/s toward the crosshair point: the arcs open out, then bend in
+        public const float BatTurnDegPerSec = 200f;     // deg/s once it has an enemy
+        public const float BatSeekRange = 9f;           // metres: how close an enemy must come to catch a bat's attention (Mystic Expansion: farther)
+        public const float BatSeekConeDeg = 70f;
+        public const float BatArcYaw = 55f, BatArcPitch = 30f; // how far off the crosshair line each bat sets out
         public const float NoxJumpSpeed = 24f;          // Deadlock JumpSpeed 17: higher (user 2.5)
         public const float NoxJumpPitch = 72f;          // Deadlock JumpPitch -60 (up), steeper; leaps partly BACKWARD (user 2.5)
         public const float NoxFallMax = 1f;             // Deadlock FallSpeedMax: hovering on the umbrella

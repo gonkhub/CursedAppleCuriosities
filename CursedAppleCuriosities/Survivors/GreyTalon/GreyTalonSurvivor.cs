@@ -321,8 +321,7 @@ namespace CursedAppleCuriosities.Survivors.GreyTalon
             LanguageAPI.Add(Token + "LORE", "Every monster he ever hunted had a weakness. He meant to find this one's.");
 
             LanguageAPI.Add(Token + "PASSIVE_NAME", "Seasoned Hunter");
-            LanguageAPI.Add(Token + "PASSIVE_DESC",
-                $"<style=cIsUtility>{GreyTalonData.Movement.StaminaPips} stamina</style>. Dash, air jump and slide; sprints automatically out of combat.");
+            LanguageAPI.Add(Token + "PASSIVE_DESC", Kit.MovementLine(GreyTalonData.Movement, alone: true));
 
             LanguageAPI.Add(Token + "BOW_NAME", "Bow");
             LanguageAPI.Add(Token + "BOW_DESC",

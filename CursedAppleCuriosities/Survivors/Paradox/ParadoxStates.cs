@@ -87,31 +87,55 @@ namespace EntityStates.CursedApple.Paradox
     /// <summary>Pulse Bomb (Deadlock citadel_ability_chrono_pulse_grenade): an arcing throw, a little above the crosshair (Deadlock m_flVerticalAimBias).</summary>
     public class ThrowPulseBomb : BaseSkillState
     {
+        // Hold to aim with the arc and the first pulse's ring shown, release to throw (user 2.5, as Ivy's Kudzu Bomb).
+        private CursedAppleCuriosities.Survivors.Ivy.IvyThrowPreview? _preview;
+        private static readonly Color Amber = new Color(1f, 0.72f, 0.3f, 0.9f);
+
         public override void OnEnter()
         {
             base.OnEnter();
+            if (isAuthority && characterBody.isPlayerControlled)
+                _preview = new CursedAppleCuriosities.Survivors.Ivy.IvyThrowPreview(ParadoxData.PulseRadius * MysticExpansion.RadiusMultiplier(characterBody), showArc: true, Amber);
+        }
+
+        private Ray Throw()
+        {
+            Ray aim = GetAimRay();
+            Vector3 right = Vector3.Cross(Vector3.up, aim.direction);
+            Vector3 dir = right.sqrMagnitude > 1e-4f ? Quaternion.AngleAxis(-ParadoxData.PulseThrowUp, right.normalized) * aim.direction : aim.direction;
+            return new Ray(aim.origin + aim.direction * 0.5f, dir);
+        }
+
+        public override void FixedUpdate()
+        {
+            base.FixedUpdate();
+            StartAimMode(0.5f);
+            if (!isAuthority) return;
+            Ray t = Throw();
+            _preview?.Update(t.origin, t.direction * ParadoxData.PulseThrowSpeed, ParadoxData.PulseRadius * MysticExpansion.RadiusMultiplier(characterBody));
+            if (inputBank != null && inputBank.skill2.down && fixedAge < 10f) return;
             ParadoxModel.Play(gameObject, "pulse");
             DeadlockSounds.Play("paradox_pulse_cast", transform.position, gameObject);
             DeadlockHeroVoice.Power("paradox_vo_power1", gameObject);
-            StartAimMode(1f);
-            if (isAuthority && ParadoxSurvivor.PulseProjectile != null)
-            {
-                Ray aim = GetAimRay();
-                Vector3 right = Vector3.Cross(Vector3.up, aim.direction);
-                Vector3 dir = right.sqrMagnitude > 1e-4f ? Quaternion.AngleAxis(-ParadoxData.PulseThrowUp, right.normalized) * aim.direction : aim.direction;
+            if (ParadoxSurvivor.PulseProjectile != null)
                 ProjectileManager.instance.FireProjectile(new FireProjectileInfo
                 {
                     projectilePrefab = ParadoxSurvivor.PulseProjectile,
-                    position = aim.origin + aim.direction * 0.5f,
-                    rotation = Quaternion.LookRotation(dir),
+                    position = t.origin,
+                    rotation = Quaternion.LookRotation(t.direction),
                     owner = gameObject,
                     damage = damageStat,
                     crit = RollCrit(),
                     force = 0f,
                     speedOverride = ParadoxData.PulseThrowSpeed,
                 });
-            }
-            if (isAuthority) outer.SetNextStateToMain();
+            outer.SetNextStateToMain();
+        }
+
+        public override void OnExit()
+        {
+            _preview?.Destroy();
+            base.OnExit();
         }
 
         public override InterruptPriority GetMinimumInterruptPriority() => InterruptPriority.Skill;

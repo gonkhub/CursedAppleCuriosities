@@ -232,11 +232,18 @@ namespace EntityStates.CursedApple.Bebop
                     }
                     _point += step;
                     _travelled += step.magnitude;
-                    if (_travelled >= range) { DeadlockSounds.Play("bebop_hook_miss", _point); _phase = Phase.Return; }
+                    if (_travelled >= range)
+                    {
+                        // A miss at full reach ends there: no long reel back (user 2.5; a 200 m hook took ages to come home).
+                        DeadlockSounds.Play("bebop_hook_miss", _point);
+                        if (isAuthority) outer.SetNextStateToMain();
+                    }
                     break;
                 case Phase.Latched:
                     if (_target != null && _target.alive) _point = BebopNet.Core(_target);
-                    bool close = _target == null || !_target.alive || Vector3.Distance(_point, characterBody.corePosition) <= BebopData.HookPullStop + 1.5f;
+                    bool close = _target == null || !_target.alive || (UnityEngine.Networking.NetworkServer.active
+                        ? _target.GetComponent<BebopHookPull>() == null && fixedAge - _latchedAt > 0.2f            // the pull has set it down
+                        : Vector3.Distance(_point, characterBody.corePosition) <= BebopData.HookPullStop + 2f);   // a client can't see the pull
                     if (isAuthority && (close || fixedAge - _latchedAt > BebopData.HookPullTime + 1f)) outer.SetNextStateToMain();
                     break;
                 case Phase.Return:
@@ -349,6 +356,7 @@ namespace EntityStates.CursedApple.Bebop
     public class HyperBeam : BaseSkillState
     {
         private BebopHyperBeamFx? _fx;
+        private bool _airborne;
         private Vector3 _dir;
         private float _duration, _nextTick;
         private bool _firing;
@@ -358,6 +366,8 @@ namespace EntityStates.CursedApple.Bebop
         {
             base.OnEnter();
             _fx = GetComponent<BebopHyperBeamFx>();
+            _airborne = characterMotor != null && !characterMotor.isGrounded;
+            if (_airborne && isAuthority) characterMotor!.velocity = new Vector3(characterMotor.velocity.x * 0.3f, 0f, characterMotor.velocity.z * 0.3f);
             _dir = GetAimRay().direction;
             _duration = BebopData.HyperDuration * DurationExtender.Multiplier(characterBody);
             BebopModel.Play(gameObject, "hyper_charge");
@@ -388,7 +398,7 @@ namespace EntityStates.CursedApple.Bebop
             if (_fx != null) _fx.Active = true;
             BebopModel.Play(gameObject, "hyper_fire");
             DeadlockSounds.Play("bebop_hyper_launch", transform.position, gameObject);
-            DeadlockSounds.Play("bebop_hyper_launch_jazz", transform.position, gameObject);
+            // (not bebop_hyperbeam_launch_jazz: a ten-second rising synth under the whole beam, user 2.5)
             _loop = DeadlockSounds.Loop("bebop_hyper_loop", gameObject, _duration + 1f);
         }
 
@@ -398,10 +408,11 @@ namespace EntityStates.CursedApple.Bebop
             if (characterMotor == null || characterBody == null || inputBank == null) return;
             characterMotor.moveDirection = inputBank.moveVector * Mathf.Clamp01(BebopData.HyperMove / Mathf.Max(0.1f, characterBody.moveSpeed));
             characterDirection.forward = new Vector3(_dir.x, 0f, _dir.z);
-            if (!characterMotor.isGrounded)
+            // Cast in the air, he hangs at that height for the whole beam, still crawling sideways (user 2.5).
+            if (_airborne && !characterMotor.isGrounded)
             {
                 Vector3 v = characterMotor.velocity;
-                if (v.y < -BebopData.HyperFall) characterMotor.velocity = new Vector3(v.x, -BebopData.HyperFall, v.z);
+                characterMotor.velocity = new Vector3(v.x, 0f, v.z);
             }
         }
 

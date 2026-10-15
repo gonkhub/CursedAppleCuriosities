@@ -54,6 +54,7 @@ namespace CursedAppleCuriosities.Survivors.Apollo
         private static Material? _overlay;
         private CharacterBody _body = null!;
         private bool _on;
+        private float _nextScan;
         private GameObject? _mask;
         private Light? _light;
         private TemporaryOverlayInstance? _instance;
@@ -65,6 +66,15 @@ namespace CursedAppleCuriosities.Survivors.Apollo
             bool want = ApolloSurvivor.UltMaskBuff != null && _body.HasBuff(ApolloSurvivor.UltMaskBuff) && _body.healthComponent != null && _body.healthComponent.alive;
             if (want != _on) { if (want) Begin(); else End(); }
             if (_light != null) _light.intensity = 2.5f + 0.8f * Mathf.Sin(Time.time * 7f);
+            // Red for the whole special on him, and on everything his strike marked (user 2.5).
+            if (Time.time >= _nextScan)
+            {
+                _nextScan = Time.time + 0.1f;
+                ApolloRedGlow.Ensure(_body, ApolloSurvivor.UltMaskBuff);
+                if (ApolloSurvivor.UltMarkedBuff != null)
+                    foreach (CharacterBody b in CharacterBody.readOnlyInstancesList)
+                        if (b != null && b.HasBuff(ApolloSurvivor.UltMarkedBuff)) ApolloRedGlow.Ensure(b, ApolloSurvivor.UltMarkedBuff);
+            }
         }
 
         private void Begin()
@@ -103,23 +113,7 @@ namespace CursedAppleCuriosities.Survivors.Apollo
                     foreach (Material m in r.materials)
                         if (m.HasProperty("_EmColor")) { m.SetColor("_EmColor", new Color(1f, 0.15f, 0.1f)); m.SetFloat("_EmPower", 2f); }
             }
-            var go = new GameObject("ApolloUltLight");
-            go.transform.SetParent(_body.coreTransform != null ? _body.coreTransform : transform, false);
-            _light = go.AddComponent<Light>();
-            _light.type = LightType.Point;
-            _light.color = new Color(1f, 0.1f, 0.08f);
-            _light.range = 6f;
-            CharacterModel? model = mt != null ? mt.GetComponent<CharacterModel>() : null;
-            _overlay ??= UnityEngine.AddressableAssets.Addressables.LoadAssetAsync<Material>("RoR2/Base/Items/AttackSpeedOnCrit/matWolfhatOverlay.mat").WaitForCompletion();
-            if (model != null && _overlay != null)
-            {
-                _instance = TemporaryOverlayManager.AddOverlay(gameObject);
-                _instance.duration = float.PositiveInfinity;
-                _instance.animateShaderAlpha = false;
-                _instance.destroyComponentOnEnd = false;
-                _instance.originalMaterial = _overlay;
-                _instance.AddToCharacterModel(model);
-            }
+            // (The red overlay and light are ApolloRedGlow's, for the whole special.)
         }
 
         private static Transform? FindBone(Transform root, string name)
