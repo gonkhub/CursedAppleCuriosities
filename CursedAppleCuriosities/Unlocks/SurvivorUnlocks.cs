@@ -45,6 +45,7 @@ namespace CursedAppleCuriosities.Unlocks
             Challenge(Challenges.VictorPainBattery.Identifier, "Pain Battery", "In a single run, take 1,000 damage from yourself (not counting Shrines of Blood or falls).");
             Challenge(Challenges.ViscousCube.Identifier, "The Cube", "Survive a single hit that would have dealt more than your maximum health.");
             Challenge(Challenges.CelesteShowstopper.Identifier, "Showstopper", "Kill 30 enemies within 5 seconds.");
+            Challenge(Challenges.ShivKillingBlow.Identifier, "Killing Blow", "Kill a boss while below 10% health.");
             ShotTracker.Init();
             RoR2Application.onLoad += UsePortraits;
         }
