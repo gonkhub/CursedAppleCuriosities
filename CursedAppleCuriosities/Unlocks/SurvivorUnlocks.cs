@@ -73,6 +73,8 @@ namespace CursedAppleCuriosities.Unlocks
             Challenge("CursedAppleLashMastery", "Lash: Mastery", "As Lash, beat the game or obliterate on Monsoon.");
             SkinUnlocks.Register(Challenges.Masteries.GreyTalonSkin, "CURSEDAPPLE_GREYTALON_SKIN_NIGHTOWL", "skinCursedAppleGreyTalonNIGHTOWL", "skinCursedAppleGreyTalonDISPLAYNIGHTOWL");
             Challenge("CursedAppleGreyTalonMastery", "Grey Talon: Mastery", "As Grey Talon, beat the game or obliterate on Monsoon.");
+            SkinUnlocks.Register(Challenges.Masteries.VictorSkin, "CURSEDAPPLE_VICTOR_SKIN_GREENMONSTER", "skinCursedAppleVictorGREENMONSTER", "skinCursedAppleVictorDISPLAYGREENMONSTER");
+            Challenge("CursedAppleVictorMastery", "Victor: Mastery", "As Victor, beat the game or obliterate on Monsoon.");
             SkinUnlocks.Register(Challenges.Masteries.SevenSkin, "CURSEDAPPLE_SEVEN_SKIN_OVERCHARGED", "skinCursedAppleSevenOVERCHARGED", "skinCursedAppleSevenDISPLAYOVERCHARGED");
             Challenge("CursedAppleSevenMastery", "Seven: Mastery", "As Seven, beat the game or obliterate on Monsoon.");
             SkinUnlocks.Register(Challenges.Masteries.VyperSkin, "CURSEDAPPLE_VYPER_SKIN_CORAL", "skinCursedAppleVyperCORAL", "skinCursedAppleVyperDISPLAYCORAL");

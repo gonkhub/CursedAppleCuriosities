@@ -104,6 +104,49 @@ namespace CursedAppleCuriosities.Deadlock
         public Func<string, byte[], int, int, bool>? RecolorFile;
 
         public bool Apply(string file, byte[] px, int w, int h) => RecolorFile != null ? RecolorFile(file, px, w, h) : Recolor(px);
+
+        /// <summary>
+        /// Hues between fromLo and fromHi (feathered 10 degrees) set to toHue, saturation raised to max(sat x satMul, minSat),
+        /// value x valMul: pale, barely-tinted colours (skin) become a definite new colour (Victor's Green Monster skin).
+        /// </summary>
+        public static Func<byte[], bool> SetHue(float fromLo, float fromHi, float toHue, float satMul, float minSat, float valMul) => px =>
+        {
+            const float Feather = 10f;
+            bool changed = false;
+            for (int i = 0; i < px.Length; i += 4)
+            {
+                Color.RGBToHSV(new Color32(px[i], px[i + 1], px[i + 2], 255), out float h, out float s, out float v);
+                if (v <= 0f || s < 0.08f) continue;
+                h *= 360f;
+                float w = Mathf.Clamp01((h - (fromLo - Feather)) / Feather) * Mathf.Clamp01(((fromHi + Feather) - h) / Feather);
+                if (w <= 0f) continue;
+                Color n = Color.HSVToRGB(toHue / 360f, Mathf.Min(1f, Mathf.Max(s * satMul, minSat)), Mathf.Min(1f, v * valMul));
+                Mix(px, i, n, w);
+                changed = true;
+            }
+            return changed;
+        };
+
+        /// <summary>Greys (saturation under maxSat, fully below it at 0) tinted toHue at saturation sat, value x valMul (Victor's purple trousers).</summary>
+        public static Func<byte[], bool> TintGreys(float maxSat, float toHue, float sat, float valMul) => px =>
+        {
+            bool changed = false;
+            for (int i = 0; i < px.Length; i += 4)
+            {
+                Color.RGBToHSV(new Color32(px[i], px[i + 1], px[i + 2], 255), out _, out float s, out float v);
+                if (v <= 0f || s >= maxSat) continue;
+                Mix(px, i, Color.HSVToRGB(toHue / 360f, sat, Mathf.Min(1f, v * valMul)), 1f - s / maxSat);
+                changed = true;
+            }
+            return changed;
+        };
+
+        private static void Mix(byte[] px, int i, Color n, float w)
+        {
+            px[i] = (byte)Mathf.RoundToInt(Mathf.Lerp(px[i], n.r * 255f, w));
+            px[i + 1] = (byte)Mathf.RoundToInt(Mathf.Lerp(px[i + 1], n.g * 255f, w));
+            px[i + 2] = (byte)Mathf.RoundToInt(Mathf.Lerp(px[i + 2], n.b * 255f, w));
+        }
         /// <summary>Only textures whose file name contains one of these are recoloured (empty = every texture): a jacket can change without the skin tones.</summary>
         public string[] Only = Array.Empty<string>();
 

@@ -27,6 +27,8 @@ namespace CursedAppleCuriosities.Survivors.Victor
         /// <summary>Skin icon in the hero's own palette (bone-white skin, iron, dried red, blue trousers), not the stand-in's.</summary>
         private static Sprite DefaultSkinIcon => _defaultSkinIcon ??= Kit.SkinIcon(new Color(0.78f, 0.76f, 0.7f), new Color(0.22f, 0.22f, 0.23f), new Color(0.58f, 0.16f, 0.16f), new Color(0.24f, 0.31f, 0.55f));
         private static Sprite? _defaultSkinIcon;
+        private static Sprite GreenMonsterSkinIcon => _greenMonsterSkinIcon ??= Kit.SkinIcon(new Color(0.45f, 0.72f, 0.35f), new Color(0.22f, 0.22f, 0.23f), new Color(0.42f, 0.22f, 0.55f), new Color(0.3f, 0.55f, 0.25f));
+        private static Sprite? _greenMonsterSkinIcon;
         public const float Hue = 0.33f;      // his VFX are green, the aura range grey (user)
 
         public static GameObject? BodyPrefab, DisplayPrefab;
@@ -187,7 +189,7 @@ namespace CursedAppleCuriosities.Survivors.Victor
             Kit.MuteStandIn(body, model.gameObject, VictorData.Hero);
             var children = model.GetComponent<ChildLocator>();
             if (children != null && children.FindChild(MuzzleName) == null) children.AddChild(MuzzleName, model);
-            Kit.OwnSkin(model.gameObject, "skinCursedAppleVictorDEFAULT", Token + "SKIN_DEFAULT", DefaultSkinIcon);
+            Kit.OwnSkin(model.gameObject, "skinCursedAppleVictorDEFAULT", Token + "SKIN_DEFAULT", DefaultSkinIcon, ("skinCursedAppleVictorGREENMONSTER", Token + "SKIN_GREENMONSTER", GreenMonsterSkinIcon));
 
             Kit.BiggerCamera(body, "ccpCursedAppleVictor", 0.8f, 1.3f); // pivot up (m), distance (x Commando's) for the bigger model
             ContentAddition.AddBody(body);
@@ -204,7 +206,7 @@ namespace CursedAppleCuriosities.Survivors.Victor
                 var swap = cm.gameObject.AddComponent<DeadlockModelSwap>();
                 swap.HeroKey = VictorData.Hero;
                 swap.IsDisplay = true;
-                Kit.OwnSkin(cm.gameObject, "skinCursedAppleVictorDISPLAY", Token + "SKIN_DEFAULT", DefaultSkinIcon);
+                Kit.OwnSkin(cm.gameObject, "skinCursedAppleVictorDISPLAY", Token + "SKIN_DEFAULT", DefaultSkinIcon, ("skinCursedAppleVictorDISPLAYGREENMONSTER", Token + "SKIN_GREENMONSTER", GreenMonsterSkinIcon));
             }
             display.AddComponent<VictorDisplayIntro>();
             return display;
@@ -263,6 +265,7 @@ namespace CursedAppleCuriosities.Survivors.Victor
             LanguageAPI.Add(Token + "NAME", "Victor");
             LanguageAPI.Add(Token + "SUBTITLE", "The Reanimated");
             LanguageAPI.Add(Token + "SKIN_DEFAULT", "Default");
+            LanguageAPI.Add(Token + "SKIN_GREENMONSTER", "Green Monster");
             LanguageAPI.Add(Token + "DESCRIPTION",
                 "Victor woke up on a mortuary table, stitched together from strangers. Pain is the one thing he understands.<color=#CCD3E0>\n\n" +
                 "< ! > Pain Battery only fills when you get hurt, by anything, yourself included.\n\n" +
