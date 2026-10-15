@@ -54,6 +54,8 @@ namespace CursedAppleCuriosities.Unlocks
             Challenge(Challenges.SevenLiveWire.Identifier, "Seven: Live Wire", $"As Seven, have one Lightning Ball shock {Challenges.SevenLiveWire.Enemies} different enemies.");
             SkillUnlocks.Register(Challenges.CelesteSpotlight.Skill);
             Challenge(Challenges.CelesteSpotlight.Identifier, "Celeste: Spotlight", $"As Celeste, have {Challenges.CelesteSpotlight.Marked} enemies marked by Light Eater at the same time.");
+            SkillUnlocks.Register(Challenges.ViscousSplashZone.Skill);
+            Challenge(Challenges.ViscousSplashZone.Identifier, "Viscous: Splash Zone", $"As Viscous, kill {Challenges.ViscousSplashZone.Kills} enemies with a single Splatter.");
             ShotTracker.Init();
             RoR2Application.onLoad += UsePortraits;
         }

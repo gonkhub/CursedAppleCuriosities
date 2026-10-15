@@ -316,6 +316,8 @@ namespace CursedAppleCuriosities.Survivors.Viscous
     public class ViscousGlob : MonoBehaviour, IProjectileImpactBehavior
     {
         public bool Splatter;
+        /// <summary>Server: kills this glob has made (Viscous' Splash Zone challenge).</summary>
+        internal int ChallengeKills;
 
         private ProjectileController _pc = null!;
         private ProjectileDamage? _pd;
