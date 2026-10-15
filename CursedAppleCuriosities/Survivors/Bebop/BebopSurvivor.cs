@@ -245,7 +245,7 @@ namespace CursedAppleCuriosities.Survivors.Bebop
             LanguageAPI.Add(Token + "SUBTITLE", "The Wrecking Ball");
             LanguageAPI.Add(Token + "SKIN_DEFAULT", "Default");
             LanguageAPI.Add(Token + "DESCRIPTION",
-                "Bebop is a demolition robot with a jazz habit, built to knock things down and still very good at it.<color=#CCD3E0>\n\n" +
+                "Bebop was built by a widowed junkyard attendant who raised him on jazz. Now she's sick, and he's out paying for her medicine.<color=#CCD3E0>\n\n" +
                 "< ! > Humble Pie is a beam: keep it on target. It reaches 32 m and hits the first thing it touches.\n\n" +
                 "< ! > Every enemy a Sticky Bomb hurts makes all your future Sticky Bombs stronger, kills most of all. Dying loses all of it.\n\n" +
                 "< ! > Hook an enemy and it takes extra beam damage. Press again to let go.\n\n" +

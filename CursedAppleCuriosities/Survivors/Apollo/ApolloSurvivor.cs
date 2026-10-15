@@ -242,7 +242,7 @@ namespace CursedAppleCuriosities.Survivors.Apollo
             LanguageAPI.Add(Token + "SUBTITLE", "The Duelist");
             LanguageAPI.Add(Token + "SKIN_DEFAULT", "Default");
             LanguageAPI.Add(Token + "DESCRIPTION",
-                "Apollo is a duelist of ancient Ixia who has never lost a fight, and doesn't intend to start.<color=#CCD3E0>\n\n" +
+                "Apollo is the prince of North Ixia, sent away for his own safety and waiting to prove he's worthy of his family's ancestral blade.<color=#CCD3E0>\n\n" +
                 "< ! > Your sword waves cut through every enemy in a line: line them up.\n\n" +
                 "< ! > Flawless Advance hits hardest when released on the glint. You get three stabs in a row.\n\n" +
                 "< ! > Riposte turns the next hit you take into a counterattack.\n\n" +

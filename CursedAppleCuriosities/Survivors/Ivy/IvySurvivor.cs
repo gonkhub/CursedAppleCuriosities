@@ -244,7 +244,7 @@ namespace CursedAppleCuriosities.Survivors.Ivy
             LanguageAPI.Add(Token + "SUBTITLE", "The Gargoyle");
             LanguageAPI.Add(Token + "SKIN_DEFAULT", "Default");
             LanguageAPI.Add(Token + "DESCRIPTION",
-                "Ivy is a gargoyle who woke from centuries of stone to watch over her friends.<color=#CCD3E0>\n\n" +
+                "Ivy is a gargoyle who spent eighteen years freeing Spanish Harlem from the Mendoza Syndicate. Now she wants to see what else is out there.<color=#CCD3E0>\n\n" +
                 "< ! > Kudzu Bomb slows and grinds down crowds: hold to see where it lands, throw it where enemies are heading.\n\n" +
                 "< ! > Kudzu Connection binds you to whichever ally is nearest: drones, turrets and minions count too.\n\n" +
                 "< ! > Stone Form makes you invulnerable while you fall: use it to escape and to slam.\n\n" +

@@ -239,7 +239,7 @@ namespace CursedAppleCuriosities.Survivors.Shiv
             LanguageAPI.Add(Token + "SUBTITLE", "The Bloody Cleaner");
             LanguageAPI.Add(Token + "SKIN_DEFAULT", "Default");
             LanguageAPI.Add(Token + "DESCRIPTION",
-                "Shiv is a cleaner for the city's crime families, kept on his feet by the cursed reliquary on his belt.<color=#CCD3E0>\n\n" +
+                "Shiv hunts monsters for the Baxter Society. His criminal past makes the old guard wary, but nobody argues with his results.<color=#CCD3E0>\n\n" +
                 "< ! > Half of every hit you take bleeds out over time instead: the yellow on your health bar is what's still coming.\n\n" +
                 "< ! > Keep dealing damage to build Rage. Full Rage doubles your bleeds and Slice'n'Dice, and Killing Blow executes much higher.\n\n" +
                 "< ! > Land a Killing Blow execute to wash away your bleeding, fill your Rage and get the ability straight back.\n\n" +
