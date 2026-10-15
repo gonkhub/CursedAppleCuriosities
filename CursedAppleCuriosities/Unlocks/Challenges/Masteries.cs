@@ -14,6 +14,7 @@ namespace CursedAppleCuriosities.Unlocks.Challenges
         public const string LashSkin = "Lash.Mastery";
         public const string GreyTalonSkin = "GreyTalon.Mastery";
         public const string VictorSkin = "Victor.Mastery";
+        public const string ShivSkin = "Shiv.Mastery";
         public const string SevenSkin = "Seven.Mastery";
         public const string VyperSkin = "Vyper.Mastery";
         public const string ViscousSkin = "Viscous.Mastery";
@@ -80,5 +81,11 @@ namespace CursedAppleCuriosities.Unlocks.Challenges
     public class VictorMastery : BasePerSurvivorClearGameMonsoonAchievement
     {
         protected override BodyIndex LookUpRequiredBodyIndex() => BodyCatalog.FindBodyIndex("CursedAppleVictorBody");
+    }
+
+    [RegisterAchievement("CursedAppleShivMastery", "CursedApple.Skins." + Masteries.ShivSkin, null, 0, null)]
+    public class ShivMastery : BasePerSurvivorClearGameMonsoonAchievement
+    {
+        protected override BodyIndex LookUpRequiredBodyIndex() => BodyCatalog.FindBodyIndex("CursedAppleShivBody");
     }
 }

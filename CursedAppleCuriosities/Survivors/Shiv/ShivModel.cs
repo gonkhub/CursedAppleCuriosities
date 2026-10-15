@@ -18,6 +18,7 @@ namespace CursedAppleCuriosities.Survivors.Shiv
             Anims = ShivData.Anims,
             RootLocked = ShivData.Locked,
             ItemAnchors = ShivItemDisplays.Anchors,
+            Skins = new[] { ShivSkins.Aloha }, // skin 1: Aloha, his mastery (user 3.0)
         };
 
         public static void Play(GameObject bodyObject, string state) => DeadlockModelSwap.Play(bodyObject, state);

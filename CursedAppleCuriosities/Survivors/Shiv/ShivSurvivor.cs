@@ -165,7 +165,7 @@ namespace CursedAppleCuriosities.Survivors.Shiv
             Kit.MuteStandIn(body, model.gameObject, ShivData.Hero);
             var children = model.GetComponent<ChildLocator>();
             if (children != null && children.FindChild(MuzzleName) == null) children.AddChild(MuzzleName, model);
-            Kit.OwnSkin(model.gameObject, "skinCursedAppleShivDEFAULT", Token + "SKIN_DEFAULT", ShivSkins.DefaultIcon);
+            Kit.OwnSkin(model.gameObject, "skinCursedAppleShivDEFAULT", Token + "SKIN_DEFAULT", ShivSkins.DefaultIcon, ("skinCursedAppleShivALOHA", Token + "SKIN_ALOHA", ShivSkins.AlohaIcon));
 
             ContentAddition.AddBody(body);
             return body;
@@ -181,7 +181,7 @@ namespace CursedAppleCuriosities.Survivors.Shiv
                 var swap = cm.gameObject.AddComponent<DeadlockModelSwap>();
                 swap.HeroKey = ShivData.Hero;
                 swap.IsDisplay = true;
-                Kit.OwnSkin(cm.gameObject, "skinCursedAppleShivDISPLAY", Token + "SKIN_DEFAULT", ShivSkins.DefaultIcon);
+                Kit.OwnSkin(cm.gameObject, "skinCursedAppleShivDISPLAY", Token + "SKIN_DEFAULT", ShivSkins.DefaultIcon, ("skinCursedAppleShivDISPLAYALOHA", Token + "SKIN_ALOHA", ShivSkins.AlohaIcon));
             }
             display.AddComponent<ShivDisplayIntro>();
             return display;
@@ -238,6 +238,7 @@ namespace CursedAppleCuriosities.Survivors.Shiv
             LanguageAPI.Add(Token + "NAME", "Shiv");
             LanguageAPI.Add(Token + "SUBTITLE", "The Bloody Cleaner");
             LanguageAPI.Add(Token + "SKIN_DEFAULT", "Default");
+            LanguageAPI.Add(Token + "SKIN_ALOHA", "Aloha");
             LanguageAPI.Add(Token + "DESCRIPTION",
                 "Shiv hunts monsters for the Baxter Society. His criminal past makes the old guard wary, but nobody argues with his results.<color=#CCD3E0>\n\n" +
                 "< ! > Half of every hit you take bleeds out over time instead: the yellow on your health bar is what's still coming.\n\n" +
