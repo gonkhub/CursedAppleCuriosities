@@ -123,6 +123,15 @@ namespace CursedAppleCuriosities.Items
             HealthComponent self,
             DamageInfo damageInfo)
         {
+            // No damage of any kind while shifted (user 3.0). Vanilla's HiddenInvincibility lets anything flagged BypassArmor
+            // through (armour-piercing attacks, Blood Tribute's drain, Victor's payments, Bloodletting's ticks), so the shift
+            // rejects every hit itself; rejected also tells Bloodletting to drop any share it took from the hit.
+            if (NetworkServer.active && damageInfo != null && ShiftBuffDef != null && ShiftBuffDef.buffIndex != BuffIndex.None
+                && self != null && self.body != null && self.body.HasBuff(ShiftBuffDef.buffIndex))
+            {
+                damageInfo.rejected = true;
+                return;
+            }
             if (ItemBase.FinalDamage(damageInfo)) { orig(self, damageInfo); return; } // already worked out (Bloodletting's ticks)
             if (NetworkServer.active
                 && damageInfo?.attacker != null
