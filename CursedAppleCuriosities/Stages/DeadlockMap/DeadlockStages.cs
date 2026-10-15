@@ -39,6 +39,8 @@ namespace CursedAppleCuriosities.Stages.DeadlockMap
                 "Brightness of Deadlock's own baked lighting on the map (1 = as baked).");
             DynamicLight = config.Bind("Deadlock Map", "Dynamic Light Share", 0.15f,
                 "How much the game's own lights (the sun, explosions, glows) light the map on top of Deadlock's baked lighting (0 = none).");
+            WalkerTeleporter = config.Bind("Deadlock Map", "Walker Teleporter Chance", 0.5f,
+                "Chance (0-1) that a district's Walker spot holds the teleporter; otherwise a major interactable stands there (Large Chest, Large Multishop or Shrine of the Mountain).");
             _scenes = LoadBundle("cac_stagescenes");
             _assets = LoadBundle("cac_stageassets");
             BarrierMaterial = _assets?.LoadAsset<Material>("matBarrier");
@@ -50,12 +52,56 @@ namespace CursedAppleCuriosities.Stages.DeadlockMap
             RoR2Application.onLoad += () => { foreach (District d in districts) d.Stage.FinishDef(); };
             On.RoR2.Run.PickNextStageScene += PickNextStageScene;
             On.RoR2.Run.AdvanceStage += AdvanceStage;
+            On.RoR2.SceneDirector.PlaceTeleporter += PlaceTeleporter;
             SceneManager.sceneLoaded += (scene, mode) =>
             {
                 District? d = DeadlockMaps.ByScene(scene.name);
                 if (d != null) d.Stage.Populate(scene);
             };
         }
+
+        public static ConfigEntry<float>? WalkerTeleporter;
+        /// <summary>This stage's teleporter spot when it goes to the Walker's (server, set before the director populates).</summary>
+        internal static (Vector3 Pos, float Yaw)? _walkerTeleporter;
+
+        /// <summary>The teleporter at the Walker's spot when this stage rolled it; otherwise vanilla's random spot.</summary>
+        private static void PlaceTeleporter(On.RoR2.SceneDirector.orig_PlaceTeleporter orig, SceneDirector self)
+        {
+            (Vector3 Pos, float Yaw)? at = _walkerTeleporter;
+            _walkerTeleporter = null;
+            if (at == null || self.teleporterInstance != null || self.teleporterSpawnCard == null || DirectorCore.instance == null) { orig(self); return; }
+            self.teleporterInstance = SpawnUpright(self.teleporterSpawnCard, at.Value.Pos, at.Value.Yaw, new Xoroshiro128Plus(Run.instance.stageRng.nextUlong));
+            if (self.teleporterInstance == null) { Warn("the teleporter didn't fit at the Walker's spot: placed as usual"); orig(self); return; }
+            Run.instance.OnServerTeleporterPlaced(self, self.teleporterInstance);
+            // Vanilla's event for whoever listens (our log, other mods): only invokable through its backing field.
+            var placed = typeof(SceneDirector).GetField("onTeleporterPlaced", BindingFlags.Static | BindingFlags.NonPublic)?.GetValue(null) as Action<SceneDirector, GameObject>;
+            placed?.Invoke(self, self.teleporterInstance);
+        }
+
+        /// <summary>A spawn card exactly at a spot, standing upright (no tilt to the floor under it).</summary>
+        internal static GameObject? SpawnUpright(SpawnCard card, Vector3 pos, float yaw, Xoroshiro128Plus rng)
+        {
+            var anchor = new GameObject("UprightAnchor");
+            anchor.transform.SetPositionAndRotation(pos, Quaternion.Euler(0f, yaw, 0f));
+            if (card is InteractableSpawnCard isc && (isc.orientToFloor || isc.slightlyRandomizeOrientation))
+            {
+                isc = UnityEngine.Object.Instantiate(isc);
+                isc.orientToFloor = false;
+                isc.slightlyRandomizeOrientation = false;
+                card = isc;
+            }
+            var rule = new DirectorPlacementRule { placementMode = DirectorPlacementRule.PlacementMode.Direct, spawnOnTarget = anchor.transform };
+            GameObject? spawned = DirectorCore.instance.TrySpawnObject(new DirectorSpawnRequest(card, rule, rng));
+            UnityEngine.Object.Destroy(anchor);
+            return spawned;
+        }
+
+        internal static readonly string[] WalkerInteractables =
+        {
+            "RoR2/Base/Chest2/iscChest2.asset",                   // Large Chest
+            "RoR2/Base/TripleShopLarge/iscTripleShopLarge.asset", // Large Multishop
+            "RoR2/Base/ShrineBoss/iscShrineBoss.asset",           // Shrine of the Mountain
+        };
 
         private static AssetBundle? LoadBundle(string name)
         {
@@ -335,6 +381,7 @@ namespace CursedAppleCuriosities.Stages.DeadlockMap
                 SceneDirector.onPrePopulateSceneServer += SeedCamps;
                 SpawnNewtAltars(District.Def);
                 SpawnFixed(District);
+                WalkerSlot(District.Def);
                 SpawnShops(District);
                 Log($"director started (stage ready), {Spawns.Count} player spawns placed");
                 Destroy(gameObject);
@@ -354,6 +401,30 @@ namespace CursedAppleCuriosities.Stages.DeadlockMap
                 DeadlockStages.SitOnFloor(altar, at.y);
                 NetworkServer.Spawn(altar);
                 Log($"newt altar placed at spot {i / 4 + 1} of {spots}");
+            }
+
+            /// <summary>
+            /// The Walker's spot: the teleporter (placed there by <see cref="PlaceTeleporter"/> when the director populates) or,
+            /// the rest of the time, one major interactable.
+            /// </summary>
+            private static void WalkerSlot(MapSectionDef def)
+            {
+                float[] w = def.WalkerSlot;
+                GameObject? world = GameObject.Find("DeadlockMap");
+                if (w.Length < 4 || world == null || Run.instance == null || DirectorCore.instance == null) return;
+                Vector3 at = world.transform.TransformPoint(new Vector3(w[0], w[1], w[2]));
+                float yaw = w[3] + world.transform.eulerAngles.y;
+                if (Run.instance.stageRng.nextNormalizedFloat < (DeadlockStages.WalkerTeleporter?.Value ?? 0.5f))
+                {
+                    DeadlockStages._walkerTeleporter = (at, yaw);
+                    Log("the Walker's spot holds the teleporter this stage");
+                    return;
+                }
+                string key = DeadlockStages.WalkerInteractables[Run.instance.stageRng.RangeInt(0, DeadlockStages.WalkerInteractables.Length)];
+                SpawnCard? card = Addressables.LoadAssetAsync<SpawnCard>(key).WaitForCompletion();
+                if (card == null) { Warn($"walker spot: no spawn card {key}"); return; }
+                GameObject? spawned = DeadlockStages.SpawnUpright(card, at, yaw, new Xoroshiro128Plus(Run.instance.stageRng.nextUlong));
+                Log(spawned != null ? $"the Walker's spot holds {card.name} this stage" : $"{card.name} didn't fit at the Walker's spot");
             }
 
             /// <summary>The district's fixed interactables (a legendary chest on a bell tower...), each exactly at its spot.</summary>

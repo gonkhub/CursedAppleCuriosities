@@ -53,6 +53,11 @@ namespace CursedAppleCuriosities.Stages.DeadlockMap
         public FixedSpawn[] FixedInteractables = System.Array.Empty<FixedSpawn>();
         /// <summary>Player spawns placed by hand (cac_map_mark spawn): x, y, z, yaw each, in the section's Unity space. Empty = picked automatically.</summary>
         public float[] PlayerSpawns = System.Array.Empty<float>();
+        /// <summary>
+        /// Where the district's Walker stands in Deadlock (x, y, z, yaw in the section's Unity space; cac_map_mark): something
+        /// important goes there every stage, the teleporter (Walker Teleporter Chance) or else one major interactable.
+        /// </summary>
+        public float[] WalkerSlot = System.Array.Empty<float>();
         /// <summary>Newt altar spots: x, y, z, yaw each, in the section's Unity space (from cac_map_mark). One altar per stage, at one of them.</summary>
         public float[] NewtAltars = System.Array.Empty<float>();
         /// <summary>Lowest point of the playable area (units): anything below falls out of the map.</summary>
@@ -102,6 +107,8 @@ namespace CursedAppleCuriosities.Stages.DeadlockMap
             SubwayTeleports = HauntedLotData.SubwayTeleports,
             InteractableSpots = HauntedLotData.InteractableSpots,
             Ropes = HauntedLotData.Ropes,
+            NewtAltars = HauntedLotData.NewtAltars,
+            PlayerSpawns = HauntedLotData.PlayerSpawns,
         };
 
         /// <summary>Umbria University: the Archmother side east of the blue lane, around the purple lane's northern Walker (stage 2). Newt altars and player spawns: to be marked in game.</summary>
@@ -124,6 +131,9 @@ namespace CursedAppleCuriosities.Stages.DeadlockMap
             SubwayTeleports = UmbriaData.SubwayTeleports,
             InteractableSpots = UmbriaData.InteractableSpots,
             Ropes = UmbriaData.Ropes,
+            NewtAltars = UmbriaData.NewtAltars,
+            PlayerSpawns = UmbriaData.PlayerSpawns,
+            WalkerSlot = new[] { -21.83f, 9.56f, 27.21f, 35.5f }, // the Walker's spot (user's mark, 2026-10-14)
         };
 
         /// <summary>
@@ -152,6 +162,9 @@ namespace CursedAppleCuriosities.Stages.DeadlockMap
             // The legendary chest on the bell tower's top floor: inside the tower's footprint, under its roof (rays from just
             // above the top of its climb rope, ChinatownData.Ropes[2]), beside where the rope's geyser lands you.
             FixedInteractables = new[] { FixedSpawn.OnTop(FixedSpawn.LegendaryChest, 2636f, -2532f, 3532f, -1256f, below: 2630f + 120f, besideX: 3088f, besideY: -1888f) },
+            NewtAltars = ChinatownData.NewtAltars,
+            PlayerSpawns = ChinatownData.PlayerSpawns,
+            WalkerSlot = new[] { 9.43f, 10.17f, 47.00f, -89.7f }, // the Walker's spot (user's mark, 2026-10-14)
         };
 
         /// <summary>Every district, in the order they are converted (the first finishes first).</summary>
@@ -272,6 +285,14 @@ namespace CursedAppleCuriosities.Stages.DeadlockMap
     /// <summary>Haunted Lot: the Hidden King side west of the blue lane, around the yellow lane's southern Walker. Traced from the user's drawing (2026-10-14); data by tools/mapstage/section_consts.py.</summary>
     internal static class HauntedLotData
     {
+        public static readonly float[] NewtAltars = { // x, y, z, yaw in the section's Unity space (cac_map_mark, 2026-10-14)
+            -33.16f, 13.42f, -39.67f, -90.90f,
+            -78.27f, 22.97f, 22.08f, 91.80f,
+        };
+        public static readonly float[] PlayerSpawns = { // x, y, z, yaw in the section's Unity space (cac_map_mark, 2026-10-14)
+            6.40f, 47.97f, -19.10f, 0.00f,
+            -38.75f, 6.31f, -88.05f, 1.90f,
+        };
         public static readonly int[] Ropes = { // min x, y, z, max x, y, z
             -832, -1184, -384, -672, -1024, 732,
             -4024, -640, 272, -3864, -480, 1088,
@@ -355,6 +376,15 @@ namespace CursedAppleCuriosities.Stages.DeadlockMap
     /// <summary>Umbria University: the Archmother side east of the blue lane, around the purple lane's northern Walker. Traced from the user's drawing (2026-10-14); data by tools/mapstage/section_consts.py.</summary>
     internal static class UmbriaData
     {
+        public static readonly float[] NewtAltars = { // x, y, z, yaw in the section's Unity space (cac_map_mark, 2026-10-14)
+            87.79f, 23.23f, -36.62f, -88.80f,
+            72.02f, 23.46f, -8.21f, -89.30f,
+            57.74f, 17.89f, -112.69f, -43.90f,
+        };
+        public static readonly float[] PlayerSpawns = { // x, y, z, yaw in the section's Unity space (cac_map_mark, 2026-10-14)
+            23.32f, 31.51f, 6.50f, 95.40f,
+            34.66f, 9.18f, -23.95f, 105.30f,
+        };
         public static readonly int[] Ropes = { // min x, y, z, max x, y, z
             672, 1024, -384, 832, 1184, 728,
             6704, 2432, 248, 6896, 2624, 1152,
@@ -420,6 +450,14 @@ namespace CursedAppleCuriosities.Stages.DeadlockMap
     /// <summary>Chinatown: the Hidden King side east of the blue lane, around the purple lane's southern Walker. Traced from the user's drawing (2026-10-14); data by tools/mapstage/section_consts.py.</summary>
     internal static class ChinatownData
     {
+        public static readonly float[] NewtAltars = { // x, y, z, yaw in the section's Unity space (cac_map_mark, 2026-10-14)
+            -38.51f, 37.40f, 41.84f, -90.10f,
+            -102.11f, 21.14f, 3.49f, 88.70f,
+            -95.27f, 3.26f, 105.09f, -45.50f,
+        };
+        public static readonly float[] PlayerSpawns = { // x, y, z, yaw in the section's Unity space (cac_map_mark, 2026-10-14)
+            -53.49f, 6.31f, 11.54f, 89.50f,
+        };
         public static readonly int[] Ropes = { // min x, y, z, max x, y, z
             6336, -2400, 256, 6528, -2208, 1056,
             3864, -904, 272, 4024, -744, 1130,
