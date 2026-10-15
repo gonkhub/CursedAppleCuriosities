@@ -66,6 +66,9 @@ namespace CursedAppleCuriosities.Unlocks
             Challenge(Challenges.BebopBombSquad.Identifier, "Bebop: Bomb Squad", "As Bebop, build up +200% Sticky Bomb damage without dying.");
             SkillUnlocks.Register(Challenges.ApolloEnGarde.Skill);
             Challenge(Challenges.ApolloEnGarde.Identifier, "Apollo: En Garde", "As Apollo, heal 1,000 health from Flawless Advance's perfect stabs in a single stage.");
+            // Mastery skins (beat the game or obliterate on Monsoon as the hero).
+            SkinUnlocks.Register(Challenges.Masteries.AbramsSkin, "CURSEDAPPLE_ABRAMS_SKIN_GREEN", "skinCursedAppleAbramsGREEN", "skinCursedAppleAbramsDISPLAYGREEN");
+            Challenge("CursedAppleAbramsMastery", "Abrams: Mastery", "As Abrams, beat the game or obliterate on Monsoon.");
             ShotTracker.Init();
             RoR2Application.onLoad += UsePortraits;
         }

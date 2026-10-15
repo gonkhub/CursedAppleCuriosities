@@ -82,6 +82,7 @@ namespace CursedAppleCuriosities.Deadlock
             skin.name = skinName;
             skin.nameToken = nameToken; // rootObject stays the stand-in's: the skin's transform paths are built from it
             if (icon != null) skin.icon = icon;
+            skin.unlockableDef = Unlocks.SkinUnlocks.For(skinName, icon); // a mastery recolour (3.0) starts locked
             return skin;
         }
 
