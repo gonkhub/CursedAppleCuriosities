@@ -147,14 +147,15 @@ namespace EntityStates.CursedApple.Paradox
     // ================= Utility: Kinetic Carbine =================
 
     /// <summary>
-    /// Kinetic Carbine (Deadlock citadel_ability_chrono_kinetic_carbine): hold to charge for up to 2.5 s, growing faster and the
-    /// shot stronger (user); release (or hold past full) to fire one big shot. Fully charged it can hit weak points and shows them
-    /// (Railgunner's scope view); whatever it hits is slowed hard, the slow fading fast (user).
+    /// Kinetic Carbine (Deadlock citadel_ability_chrono_kinetic_carbine): a tap of the utility starts the charge (up to 2.5 s,
+    /// growing faster and the shot stronger); her next primary click fires one big shot (user 2.5). Full charge holds for 5 s
+    /// (Duration Extender lengthens it); if she never fires, the shot is wasted, never forced. Fully charged it can hit weak points
+    /// and shows them (Railgunner's scope view); whatever it hits is slowed hard, the slow fading fast (user).
     /// </summary>
     public class KineticCarbine : BaseSkillState
     {
-        private float _charge, _fullFor, _nextSync;
-        private bool _fired;
+        private float _charge, _fullFor, _nextSync, _hold;
+        private bool _fired, _primaryReleased;
         private DeadlockVoice? _hum;
         private OverlayController? _scope;
 
@@ -165,7 +166,8 @@ namespace EntityStates.CursedApple.Paradox
             base.OnEnter();
             ParadoxModel.Play(gameObject, "carbine_charge");
             DeadlockHeroVoice.Power("paradox_vo_power3", gameObject);
-            _hum = DeadlockSounds.Loop("paradox_carbine_loop", gameObject, ParadoxData.CarbineChargeSeconds + ParadoxData.CarbineAutoFire + 0.5f);
+            _hold = ParadoxData.CarbineHoldSeconds * DurationExtender.Multiplier(characterBody);
+            _hum = DeadlockSounds.Loop("paradox_carbine_loop", gameObject, ParadoxData.CarbineChargeSeconds + _hold + 0.5f);
         }
 
         public override void FixedUpdate()
@@ -185,7 +187,10 @@ namespace EntityStates.CursedApple.Paradox
                 _nextSync = Time.time + 0.2f;
                 ParadoxNet.ToServer(new ParadoxCarbineMessage { Body = gameObject, Charge = Fraction });
             }
-            if (!inputBank.skill3.down || _fullFor >= ParadoxData.CarbineAutoFire) Fire();
+            // A fresh click fires (a trigger already held when she tapped the utility has to be let go first).
+            if (!inputBank.skill1.down) _primaryReleased = true;
+            else if (_primaryReleased) { Fire(); return; }
+            if (_fullFor >= _hold) outer.SetNextStateToMain(); // never fired: the charge is wasted (user)
         }
 
         private void Full()
@@ -317,7 +322,11 @@ namespace EntityStates.CursedApple.Paradox
     {
         public Vector3 From, To;
         public float Duration = 1f;
+        /// <summary>The enemy she swaps with: her camera stays on it the whole way (user 2.5).</summary>
+        public GameObject? Enemy;
         private Vector3 _start;
+        private CameraRigController? _rig;
+        private static System.Reflection.MethodInfo? _setLook;
 
         public override void OnEnter()
         {
@@ -325,6 +334,22 @@ namespace EntityStates.CursedApple.Paradox
             ParadoxModel.Play(gameObject, "swap");
             _start = characterBody != null ? characterBody.footPosition : transform.position;
             if (isAuthority && characterMotor != null) characterMotor.Motor.ForceUnground();
+            foreach (CameraRigController rig in CameraRigController.readOnlyInstancesList)
+                if (rig.target == gameObject && rig.localUserViewer != null) _rig = rig;
+        }
+
+        public override void Update()
+        {
+            base.Update();
+            // Facing the enemy as they pass each other (every frame, so the turn is smooth).
+            if (_rig == null || Enemy == null || !Enemy.TryGetComponent(out CharacterBody e)) return;
+            Vector3 look = e.corePosition - _rig.transform.position;
+            if (look.sqrMagnitude < 0.01f || _rig.cameraMode is not RoR2.CameraModes.CameraModeBase mode) return;
+            // The player camera's own pitch/yaw setter (CameraModePlayerBasic.InstanceData, internal: reached by reflection).
+            object? cam = mode.DebugGetInstanceData(_rig);
+            if (cam == null) return;
+            _setLook ??= cam.GetType().GetMethod("SetPitchYawFromLookVector", System.Reflection.BindingFlags.Public | System.Reflection.BindingFlags.NonPublic | System.Reflection.BindingFlags.Instance);
+            _setLook?.Invoke(cam, new object[] { look });
         }
 
         public override void FixedUpdate()
@@ -348,8 +373,8 @@ namespace EntityStates.CursedApple.Paradox
             base.OnExit();
         }
 
-        public override void OnSerialize(NetworkWriter writer) { base.OnSerialize(writer); writer.Write(From); writer.Write(To); writer.Write(Duration); }
-        public override void OnDeserialize(NetworkReader reader) { base.OnDeserialize(reader); From = reader.ReadVector3(); To = reader.ReadVector3(); Duration = reader.ReadSingle(); }
+        public override void OnSerialize(NetworkWriter writer) { base.OnSerialize(writer); writer.Write(From); writer.Write(To); writer.Write(Duration); writer.Write(Enemy); }
+        public override void OnDeserialize(NetworkReader reader) { base.OnDeserialize(reader); From = reader.ReadVector3(); To = reader.ReadVector3(); Duration = reader.ReadSingle(); Enemy = reader.ReadGameObject(); }
 
         public override InterruptPriority GetMinimumInterruptPriority() => InterruptPriority.Frozen;
     }

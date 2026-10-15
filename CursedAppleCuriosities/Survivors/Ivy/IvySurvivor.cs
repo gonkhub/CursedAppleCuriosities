@@ -34,8 +34,8 @@ namespace CursedAppleCuriosities.Survivors.Ivy
     }
 
     /// <summary>
-    /// Ivy from Deadlock (hero_tengu) as a RoR2 survivor. The user asked me to design her (2026-10-14): Protector's Hand, Entangling Thorns
-    /// (alt: Kudzu Connection, which binds any ally: players, drones, minions), Stone Form, Air Drop.
+    /// Ivy from Deadlock (hero_tengu) as a RoR2 survivor. The user asked me to design her (2026-10-14): Protector's Hand, Entangling Thorns,
+    /// Stone Form, Air Drop; passive Kudzu Connection, always bound to the nearest ally (players, drones, minions: user 2.5).
     /// </summary>
     public static class IvySurvivor
     {
@@ -51,7 +51,7 @@ namespace CursedAppleCuriosities.Survivors.Ivy
         public static GameObject? TracerEffect, HitEffect, MuzzleEffect, SlamEffect, BombEffect;
         public static Material? VineMaterial;
 
-        private static SkillDef? _gun, _thorns, _tether, _stone, _airdrop;
+        private static SkillDef? _gun, _thorns, _stone, _airdrop;
 
         private static T? TryLoad<T>(params string[] keys) where T : UnityEngine.Object => Kit.TryLoad<T>("Ivy", keys);
 
@@ -78,7 +78,7 @@ namespace CursedAppleCuriosities.Survivors.Ivy
                 "CursedAppleIvyBomb", typeof(IvyBomb), IvyData.BombSpeed, 10f, gravity: true, triggers: false, steer: false);
             RecolourGhost(BombProjectile, "CursedAppleIvyBombGhost", 2f);
 
-            foreach (Type t in new[] { typeof(FireIvyGun), typeof(ThrowThorns), typeof(KudzuConnection), typeof(StoneForm), typeof(AirDrop) })
+            foreach (Type t in new[] { typeof(FireIvyGun), typeof(ThrowThorns), typeof(StoneForm), typeof(AirDrop) })
                 ContentAddition.AddEntityState(t, out _);
             CreateSkills();
             BodyPrefab = CreateBody();
@@ -132,9 +132,6 @@ namespace CursedAppleCuriosities.Survivors.Ivy
             _gun.mustKeyPress = false;
             _thorns = Skill<SkillDef>("Thorns", typeof(ThrowThorns), "Weapon", IvyData.ThornsCooldown, InterruptPriority.Skill);
             _thorns.mustKeyPress = true;
-            _tether = Skill<SkillDef>("Kudzu", typeof(KudzuConnection), "Weapon", IvyData.TetherCooldown, InterruptPriority.Skill);
-            _tether.mustKeyPress = true;
-            _tether.cancelSprintingOnActivation = false;
             _stone = Skill<SkillDef>("Stone", typeof(StoneForm), "Body", IvyData.StoneCooldown, InterruptPriority.PrioritySkill);
             _stone.mustKeyPress = true;
             _stone.cancelSprintingOnActivation = false;
@@ -161,13 +158,14 @@ namespace CursedAppleCuriosities.Survivors.Ivy
             foreach (GenericSkill old in body.GetComponents<GenericSkill>()) UnityEngine.Object.DestroyImmediate(old);
             var locator = body.GetComponent<SkillLocator>();
             locator.primary = Kit.Slot(body, BodyName, "Primary", _gun!);
-            locator.secondary = Kit.Slot(body, BodyName, "Secondary", _thorns!, _tether!);
+            locator.secondary = Kit.Slot(body, BodyName, "Secondary", _thorns!);
             locator.utility = Kit.Slot(body, BodyName, "Utility", _stone!);
             locator.special = Kit.Slot(body, BodyName, "Special", _airdrop!);
-            locator.passiveSkill = new SkillLocator.PassiveSkill { enabled = false };
+            locator.passiveSkill = new SkillLocator.PassiveSkill { enabled = true, skillNameToken = Token + "KUDZU_NAME", skillDescriptionToken = Token + "KUDZU_DESC" }; // Kudzu Connection (user 2.5)
             DeadlockMovement.Apply(body, IvyData.Movement);
             body.AddComponent<IvyGunAudio>();
             body.AddComponent<IvyStoneHeal>();
+            body.AddComponent<IvyKudzuPassive>();
             Transform model = body.GetComponent<ModelLocator>().modelTransform;
             model.gameObject.AddComponent<DeadlockModelSwap>().HeroKey = IvyData.Hero;
             Kit.MuteStandIn(body, model.gameObject, IvyData.Hero);
@@ -190,6 +188,7 @@ namespace CursedAppleCuriosities.Survivors.Ivy
                 swap.IsDisplay = true;
                 Kit.OwnSkin(cm.gameObject, "skinCursedAppleIvyDISPLAY", Token + "SKIN_DEFAULT");
             }
+            display.AddComponent<IvyDisplayIntro>(); // lobby entrance (user 2.5)
             return display;
         }
 
@@ -222,8 +221,9 @@ namespace CursedAppleCuriosities.Survivors.Ivy
             }
             Sprite? thorns = Set(_thorns, IvyData.IconThorns);
             if (thorns != null && ThornsSlow != null) ThornsSlow.iconSprite = thorns;
-            Sprite? tether = Set(_tether, IvyData.IconTether);
+            Sprite? tether = Set(null, IvyData.IconTether);
             if (tether != null && TetherBuff != null) TetherBuff.iconSprite = tether;
+            if (tether != null && BodyPrefab != null && BodyPrefab.TryGetComponent(out SkillLocator sl)) sl.passiveSkill.icon = tether;
             Sprite? stone = Set(_stone, IvyData.IconStone);
             if (stone != null && StoneBuff != null) StoneBuff.iconSprite = stone;
             Sprite? drop = Set(_airdrop, IvyData.IconAirDrop);
@@ -241,7 +241,7 @@ namespace CursedAppleCuriosities.Survivors.Ivy
             LanguageAPI.Add(Token + "DESCRIPTION",
                 "Ivy guards those she cares about. Out here, that's whoever is standing next to her.<color=#CCD3E0>\n\n" +
                 "< ! > Thorn patches slow and grind down crowds: throw them where enemies are heading.\n\n" +
-                "< ! > Kudzu Connection works on drones, turrets and minions too, not just other players.\n\n" +
+                "< ! > Kudzu Connection binds you to whichever ally is nearest: drones, turrets and minions count too.\n\n" +
                 "< ! > Stone Form makes you invulnerable while you fall: use it to escape and to slam.\n\n" +
                 "< ! > Air Drop flies you over the fight; drop the bomb on the biggest crowd.</color>\n");
             LanguageAPI.Add(Token + "OUTRO", "..and so she left, her watch over.");
@@ -253,7 +253,7 @@ namespace CursedAppleCuriosities.Survivors.Ivy
                 $"Throw a seed that grows a {IvyData.ThornsRadius:0} m patch of thorns for {IvyData.ThornsDuration:0}s, dealing <style=cIsDamage>{D(IvyData.ThornsDps)} damage per second</style> and <style=cIsUtility>slowing</style> enemies in it.");
             LanguageAPI.Add(Token + "KUDZU_NAME", "Kudzu Connection");
             LanguageAPI.Add(Token + "KUDZU_DESC",
-                $"Bind a nearby ally for {IvyData.TetherSeconds:0}s: both gain <style=cIsDamage>+{D(IvyData.TetherAttackSpeed)} attack speed</style> and <style=cIsHealing>{D(IvyData.TetherLifesteal)} lifesteal</style>, and share <style=cIsHealing>{D(IvyData.TetherSharedHeal)}</style> of healing. Alone, half the bonuses.");
+                $"Always bound to the nearest ally within {IvyData.TetherRange:0} m: both gain <style=cIsDamage>+{D(IvyData.TetherAttackSpeed)} attack speed</style> and <style=cIsHealing>{D(IvyData.TetherLifesteal)} lifesteal</style>, and share <style=cIsHealing>{D(IvyData.TetherSharedHeal)}</style> of healing. Alone, half the bonuses.");
             LanguageAPI.Add(Token + "STONE_NAME", "Stone Form");
             LanguageAPI.Add(Token + "STONE_DESC",
                 $"Turn to stone: <style=cIsUtility>invulnerable</style> and <style=cIsHealing>healing {D(IvyData.StoneHeal)} max health per second</style>. Slam down for <style=cIsDamage>{D(IvyData.StoneDamage)} damage</style>, <style=cIsUtility>stunning</style>.");

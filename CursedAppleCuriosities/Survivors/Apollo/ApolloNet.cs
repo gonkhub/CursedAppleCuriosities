@@ -34,11 +34,19 @@ namespace CursedAppleCuriosities.Survivors.Apollo
                     info.rejected = true;
                     self.body.ClearTimedBuffs(ApolloSurvivor.ParryBuff);
                     self.body.AddTimedBuff(RoR2Content.Buffs.HiddenInvincibility, ApolloData.RiposteInvulnerable);
+                    if (ApolloSurvivor.RiposteLifestealBuff != null) // lifesteal after a parry (user 2.5)
+                        self.body.AddTimedBuff(ApolloSurvivor.RiposteLifestealBuff, ApolloData.RiposteLifestealSeconds * DurationExtender.Multiplier(self.body));
                     EquipmentFx.Sound("apollo_riposte_success", self.body.corePosition);
                     var attacker = info.attacker.GetComponent<CharacterBody>();
                     new ApolloRiposteMessage { Apollo = self.gameObject, Target = attacker != null ? attacker.gameObject : null }.Send(NetworkDestination.Clients);
                 }
                 orig(self, info);
+            };
+            GlobalEventManager.onServerDamageDealt += report =>
+            {
+                CharacterBody? by = report.attackerBody;
+                if (by == null || ApolloSurvivor.RiposteLifestealBuff == null || report.damageDealt <= 0f || report.victimBody == by || !by.HasBuff(ApolloSurvivor.RiposteLifestealBuff)) return;
+                if (by.healthComponent != null) by.healthComponent.Heal(report.damageDealt * ApolloData.RiposteLifesteal * Mathf.Clamp01(report.damageInfo.procCoefficient), default(ProcChainMask));
             };
             DeadlockFallGuard.Hook();
         }
@@ -111,7 +119,13 @@ namespace CursedAppleCuriosities.Survivors.Apollo
                 ApolloHitKind.Ult => DamageSource.Special,
                 _ => DamageSource.Utility,
             };
-            if (Kind == ApolloHitKind.PerfectStab) EquipmentFx.Sound("apollo_lunge_perfect", body.corePosition, Attacker);
+            if (Kind == ApolloHitKind.PerfectStab)
+            {
+                EquipmentFx.Sound("apollo_lunge_perfect", body.corePosition, Attacker);
+                // A perfect stab that lands heals him, once a stab (user 2.5).
+                if (body.healthComponent != null && System.Array.Exists(Targets, t => t != null && t.TryGetComponent(out HealthComponent h) && h.alive))
+                    body.healthComponent.HealFraction(ApolloData.PerfectHeal, default(ProcChainMask));
+            }
             // Itani Lo Sahn: Apollo is invulnerable while his targets are in slow motion (Deadlock).
             if (Kind == ApolloHitKind.Ult) body.AddTimedBuff(RoR2Content.Buffs.HiddenInvincibility, ApolloData.UltLock * DurationExtender.Multiplier(body));
             foreach (GameObject t in Targets)

@@ -19,7 +19,6 @@ namespace CursedAppleCuriosities.Survivors.Ivy
 
         public static void Register()
         {
-            NetworkingAPI.RegisterMessageType<IvyTetherMessage>();
             NetworkingAPI.RegisterMessageType<IvyTetherFxMessage>();
             NetworkingAPI.RegisterMessageType<IvyStoneMessage>();
             NetworkingAPI.RegisterMessageType<IvyBombMessage>();
@@ -182,24 +181,49 @@ namespace CursedAppleCuriosities.Survivors.Ivy
         }
     }
 
-    // ================= Secondary alt: Kudzu Connection =================
+    // ================= Passive: Kudzu Connection =================
 
-    /// <summary>Owner to server: tether to this ally (or to nobody: half the bonuses, Deadlock).</summary>
-    public class IvyTetherMessage : INetMessage
+    /// <summary>
+    /// Server, on Ivy: Kudzu Connection as a passive (user 2.5). Four times a second she re-binds to the nearest living ally within
+    /// 16 m (Mystic Expansion widens it): a player, a drone, a turret, a minion. With nobody near she keeps half the bonuses (Deadlock).
+    /// </summary>
+    public class IvyKudzuPassive : MonoBehaviour
     {
-        public GameObject? Ivy, Partner;
+        private CharacterBody _body = null!;
+        private float _next;
 
-        public void Serialize(NetworkWriter w) { w.Write(Ivy); w.Write(Partner); }
-        public void Deserialize(NetworkReader r) { Ivy = r.ReadGameObject(); Partner = r.ReadGameObject(); }
+        private void Awake() => _body = GetComponent<CharacterBody>();
 
-        public void OnReceived()
+        private void FixedUpdate()
         {
-            if (!NetworkServer.active || Ivy == null || !Ivy.TryGetComponent(out CharacterBody ivy)) return;
-            CharacterBody? partner = Partner != null ? Partner.GetComponent<CharacterBody>() : null;
-            var t = Ivy.GetComponent<IvyTether>() ?? Ivy.AddComponent<IvyTether>();
-            t.Begin(ivy, partner, IvyData.TetherSeconds * DurationExtender.Multiplier(ivy));
-            EquipmentFx.Sound(partner != null ? "ivy_tether_attach" : "ivy_tether_cast", ivy.corePosition, Ivy);
-            if (partner != null) new IvyTetherFxMessage { Ivy = Ivy, Partner = Partner, Seconds = t.Seconds }.Send(NetworkDestination.Clients);
+            if (!NetworkServer.active || Time.time < _next) return;
+            _next = Time.time + 0.25f;
+            var t = GetComponent<IvyTether>();
+            if (_body.healthComponent == null || !_body.healthComponent.alive) { if (t != null) Destroy(t); return; }
+            CharacterBody? best = Nearest();
+            if (t != null && t.Ivy == _body && t.Partner == best) return;
+            t ??= gameObject.AddComponent<IvyTether>();
+            t.Begin(_body, best, float.PositiveInfinity);
+            if (best != null)
+            {
+                EquipmentFx.Sound("ivy_tether_attach", _body.corePosition, gameObject);
+                new IvyTetherFxMessage { Ivy = gameObject, Partner = best.gameObject, Seconds = 1e6f }.Send(NetworkDestination.Clients);
+            }
+        }
+
+        private CharacterBody? Nearest()
+        {
+            float range = IvyData.TetherRange * MysticExpansion.RadiusMultiplier(_body);
+            CharacterBody? best = null;
+            float bestSq = range * range;
+            foreach (CharacterBody b in CharacterBody.readOnlyInstancesList)
+            {
+                if (b == null || b == _body || b.teamComponent == null || _body.teamComponent == null || b.teamComponent.teamIndex != _body.teamComponent.teamIndex) continue;
+                if (b.healthComponent == null || !b.healthComponent.alive) continue;
+                float sq = (b.corePosition - _body.corePosition).sqrMagnitude;
+                if (sq < bestSq) { bestSq = sq; best = b; }
+            }
+            return best;
         }
     }
 
@@ -264,9 +288,12 @@ namespace CursedAppleCuriosities.Survivors.Ivy
         public void OnReceived()
         {
             if (Ivy == null || Partner == null) return;
+            var a = Ivy.GetComponent<CharacterBody>();
+            if (a != null && IvyVine.ByIvy.TryGetValue(a, out IvyVine old) && old != null) old.End(); // re-bound to someone else
             var go = new GameObject("CursedAppleIvyVine");
             var vine = go.AddComponent<IvyVine>();
-            vine.A = Ivy.GetComponent<CharacterBody>();
+            vine.A = a;
+            if (a != null) IvyVine.ByIvy[a] = vine;
             vine.B = Partner.GetComponent<CharacterBody>();
             vine.Until = Time.time + Seconds;
             vine.Loop = DeadlockSounds.Loop("ivy_tether_loop", Ivy, Seconds);
@@ -279,6 +306,14 @@ namespace CursedAppleCuriosities.Survivors.Ivy
         public float Until;
         public DeadlockVoice? Loop;
         private LineRenderer? _line;
+        public static readonly Dictionary<CharacterBody, IvyVine> ByIvy = new Dictionary<CharacterBody, IvyVine>();
+
+        public void End()
+        {
+            DeadlockSounds.Stop(Loop);
+            if (A != null && ByIvy.TryGetValue(A, out IvyVine v) && v == this) ByIvy.Remove(A);
+            Destroy(gameObject);
+        }
 
         private void Start()
         {
@@ -293,7 +328,7 @@ namespace CursedAppleCuriosities.Survivors.Ivy
         {
             bool alive(CharacterBody? b) => b != null && b.healthComponent != null && b.healthComponent.alive;
             bool still = IvySurvivor.TetherBuff != null && A != null && A.GetBuffCount(IvySurvivor.TetherBuff) >= 2;
-            if (Time.time > Until || !alive(A) || !alive(B) || !still) { DeadlockSounds.Stop(Loop); Destroy(gameObject); return; }
+            if (Time.time > Until || !alive(A) || !alive(B) || !still) { End(); return; }
             _line!.SetPosition(0, A!.corePosition);
             _line.SetPosition(1, B!.corePosition);
         }

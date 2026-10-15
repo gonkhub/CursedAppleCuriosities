@@ -48,6 +48,7 @@ namespace CursedAppleCuriosities.Survivors.Apollo
         // ---- utility: Flawless Advance (ability_fencer_lunge: hold 0.25-1.1 s, perfect 0.525-0.775 s; 25 -> 40 / perfect 65; a 13 m stab; 3 stabs
         // within 5 s; 26 s) ----
         public static float StabMin = 2.5f, StabMax = 4f, StabPerfect = 6.5f;
+        public static float PerfectHeal = 0.08f;        // user 2.5: a perfect stab that lands heals this share of max health (my number)
         public const float HoldMin = 0.25f, PerfectStart = 0.525f, PerfectLength = 0.25f, HoldMax = 1.1f; // Deadlock's timings
         public const float StabLength = 13f;            // Deadlock SlashLength
         public const float StabRadius = 1.6f;           // Deadlock SlashRadius
@@ -59,14 +60,16 @@ namespace CursedAppleCuriosities.Survivors.Apollo
         // ---- utility alt: Riposte (ability_fencer_riposte: 0.8 s stance, parry the next attack; dash 35 m to the attacker; 6 m slash, 0.8 s
         // stun, 40% slow 4 s, 22 s) ----
         public const float RiposteWindow = 0.8f;        // Deadlock AbilityChannelTime
-        public static float RiposteDamage = 6f;
+        public static float RiposteDamage = 2.5f;       // user 2.5 (was 600%)
         public const float RiposteDashSpeed = 76f;      // Deadlock DashSpeed 3000 hu/s
         public const float RiposteRange = 35f;          // Deadlock DashRange
         public const float RiposteSlashRadius = 6f;     // Deadlock SlashRadius
-        public const float RiposteStun = 0.8f;
+        public const float RiposteStun = 2.5f;          // user 2.5 (Deadlock 0.8 s)
         public const float RiposteSlow = 0.4f, RiposteSlowSeconds = 4f;
         public const float RiposteInvulnerable = 1f;
         public static float RiposteCooldown = 8f;
+        public static float RiposteLifesteal = 0.4f;    // user 2.5: lifesteal after a parry (my number)
+        public const float RiposteLifestealSeconds = 5f; // x Duration Extender
 
         // ---- special: Itani Lo Sahn (ability_fencer_ultimate: 1.5 s charge, a 27 m dash-slash 7 m wide; 70 impact, then 200 after 1.8 s of slow
         // motion, +60% under half health; Apollo invulnerable meanwhile; 145 s) ----
@@ -93,6 +96,8 @@ namespace CursedAppleCuriosities.Survivors.Apollo
             AdvanceCooldown = c.Bind(Section, "Flawless Advance - Cooldown", AdvanceCooldown, "Seconds (after the last stab).").Value;
             RiposteDamage = c.Bind(Section, "Riposte - Damage", RiposteDamage, "Damage coefficient of the counter slash.").Value;
             RiposteCooldown = c.Bind(Section, "Riposte - Cooldown", RiposteCooldown, "Seconds.").Value;
+            RiposteLifesteal = c.Bind(Section, "Riposte - Lifesteal", RiposteLifesteal, "Share of damage dealt healed for 5 s after a successful parry.").Value;
+            PerfectHeal = c.Bind(Section, "Flawless Advance - Perfect Heal", PerfectHeal, "Share of max health healed when a perfect stab hits.").Value;
             UltImpact = c.Bind(Section, "Itani Lo Sahn - Impact Damage", UltImpact, "Damage coefficient of the slash itself.").Value;
             UltDelayed = c.Bind(Section, "Itani Lo Sahn - Delayed Damage", UltDelayed, "Damage coefficient dealt when the slow motion ends.").Value;
             UltCooldown = c.Bind(Section, "Itani Lo Sahn - Cooldown", UltCooldown, "Seconds.").Value;

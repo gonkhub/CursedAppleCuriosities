@@ -137,7 +137,7 @@ namespace CursedAppleCuriosities.Survivors.Bebop
         // ---- Deadlock assets (read from the player's own install, never shipped) ----
 
         public const string DlModel = "models/heroes_staging/bebop/bebop.vmdl_c";
-        public const float ModelHeightScale = 1.2f * 1.15f * 0.95f; // a big robot, Viscous-sized
+        public const float ModelHeightScale = 1.2f * 1.4f * 0.95f; // almost as tall as Abrams (user 2.5; Abrams 1.2 x 1.5 x 0.95). Visual only: hitbox unchanged
         public const string MuzzleBone = "muzzle_fx";
 
         public const string IconPortrait = "panorama/images/heroes/bebop_sm_psd.vtex_c";

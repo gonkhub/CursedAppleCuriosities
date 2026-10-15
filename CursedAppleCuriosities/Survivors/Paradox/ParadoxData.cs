@@ -56,7 +56,7 @@ namespace CursedAppleCuriosities.Survivors.Paradox
         public const float PulseThrowUp = 10f;          // Deadlock m_flVerticalAimBias
 
         // ---- secondary alt: Time Wall (citadel_ability_chrono_time_wall: 8 x 4 x 0.5 m, 5.5 s, 5 m ahead, +30% friendly bullets) ----
-        public static float WallDamage = 5f;            // user: 500% to enemies that pass through
+        public static float WallDamage = 15f;           // user: 500% to enemies that pass through, +200% (user 2.5)
         public static float WallDuration = 5.5f;        // Deadlock AbilityDuration
         public const float WallWidth = 8f, WallHeight = 4f, WallDepth = 0.5f; // Deadlock TimeWallWidth/Height/Depth
         public const float WallDistance = 5f;           // Deadlock AbilityCastRange 200 hu
@@ -65,11 +65,11 @@ namespace CursedAppleCuriosities.Survivors.Paradox
         public const float WallFormation = 0.5f;        // Deadlock TimeWallFormationTime
         public static float WallCooldown = 12f;         // Deadlock 25
 
-        // ---- utility: Kinetic Carbine (citadel_ability_chrono_kinetic_carbine: charge 2.5 s, +25% speed for 3.5 s, time-slow on hit) ----
+        // ---- utility: Kinetic Carbine (citadel_ability_chrono_kinetic_carbine: tap to charge, left click fires (user 2.5); charge 2.5 s, +25% speed for 3.5 s, time-slow on hit) ----
         public static float CarbineMinDamage = 4f;
         public static float CarbineMaxDamage = 20f;     // fully charged (Deadlock MaxBonusBulletDamage scales hardest of her kit)
         public const float CarbineChargeSeconds = 2.5f; // Deadlock MaxChargeDuration
-        public const float CarbineAutoFire = 1f;        // seconds held at full charge before it goes off by itself
+        public const float CarbineHoldSeconds = 5f;     // seconds full charge waits for her click, x Duration Extender; then wasted (user 2.5)
         public static float CarbineSpeed = 0.25f;       // Deadlock SpeedChange: builds while charging, held for 3.5 s after the shot
         public const float CarbineSpeedSeconds = 3.5f;  // Deadlock SpeedBoostDuration
         public const float CarbineSlow = 0.9f;          // Deadlock TimeScaleDebuff 90: a massive slow...
@@ -78,11 +78,11 @@ namespace CursedAppleCuriosities.Survivors.Paradox
         public const float CarbineRadius = 0.4f;        // Deadlock BulletRadiusOverride 16 hu
 
         // ---- special: Paradoxical Swap (citadel_ability_chrono_swap: 25 m, 3500 hu/s, 150 damage, swap 0.6-1 s over 30 m, 110 s) ----
-        public static float SwapDamage = 6f;
+        public static float SwapDamage = 3f;            // halved (user 2.5; was 6)
         public static float SwapRange = 35f;            // user: limited range (Deadlock AbilityCastRange 25)
         public const float SwapSpeed = 89f;             // Deadlock m_flBulletSpeed 3500 hu/s
         public const float SwapRadius = 1.5f;           // a big shot, like Grey Talon's Charged Shot (user); Deadlock 32 hu
-        public const float SwapMinTime = 0.6f, SwapMaxTime = 1f, SwapTimeDistance = 30f; // Deadlock MinSwapTime / SwapTime / DistanceToMaxTime
+        public const float SwapMinTime = 1f, SwapMaxTime = 1.6f, SwapTimeDistance = 30f; // slower (user 2.5); Deadlock MinSwapTime 0.6 / SwapTime 1 / DistanceToMaxTime
         public const float SwapArc = 3f;                // metres up at the middle of the swap
         public const float SwapPass = 1.5f;             // metres each side of the line: they pass by each other (user)
         public const float SwapSlow = 0.9f, SwapSlowSeconds = 2.5f; // user: a fading slow when the swap ends

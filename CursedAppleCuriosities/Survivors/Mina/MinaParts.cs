@@ -95,7 +95,7 @@ namespace CursedAppleCuriosities.Survivors.Mina
             {
                 var pivot = new GameObject("BatPivot").transform;
                 pivot.SetParent(go.transform, false);
-                Build(pivot, Random.Range(0.35f, 0.6f));
+                Build(pivot, Random.Range(0.18f, 0.3f)); // much smaller (user 2.5; was 0.35-0.6)
                 cloud.Add(pivot);
             }
             return go;
@@ -156,13 +156,13 @@ namespace CursedAppleCuriosities.Survivors.Mina
             var holder = new GameObject("MinaBatHolder").transform;
             holder.SetParent(transform, false);
             holder.localScale = Vector3.one / Mathf.Max(0.01f, transform.lossyScale.x);
-            MinaBatVisual.Build(holder, 0.6f);
+            MinaBatVisual.Build(holder, 0.3f); // much smaller (user 2.5; was 0.6)
         }
     }
 
     /// <summary>
     /// Every client, on Mina: her pistol's layered sound, as Deadlock plays it (the first shot of a string, then main shots with
-    /// the mechanism; the tail when she stops).
+    /// the mechanism). No tail when she stops (user 2.5).
     /// </summary>
     public class MinaGunAudio : MonoBehaviour
     {
@@ -181,8 +181,7 @@ namespace CursedAppleCuriosities.Survivors.Mina
         private void Update()
         {
             if (!_firing || Time.time - _last < MinaData.GunCycle * 2.5f) return;
-            _firing = false;
-            DeadlockSounds.Play("mina_gun_tail", transform.position, gameObject);
+            _firing = false; // no tail on letting go: its reverb sounded like a last shot (user 2.5, as Seven's and Victor's)
         }
     }
 

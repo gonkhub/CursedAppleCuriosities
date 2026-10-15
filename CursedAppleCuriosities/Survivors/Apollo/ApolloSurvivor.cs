@@ -48,7 +48,7 @@ namespace CursedAppleCuriosities.Survivors.Apollo
 
         public static GameObject? BodyPrefab, DisplayPrefab;
         public static SurvivorDef? Survivor;
-        public static BuffDef? SigilSlow, RiposteSlow, ParryBuff;
+        public static BuffDef? SigilSlow, RiposteSlow, ParryBuff, RiposteLifestealBuff;
         public static GameObject? WaveTracer, SlashEffect, SigilEffect, UltEffect;
 
         private static SkillDef? _wave, _sigil, _advance, _riposte, _ult;
@@ -71,6 +71,7 @@ namespace CursedAppleCuriosities.Survivors.Apollo
             SigilSlow = Buff("CursedAppleApolloSigilSlow", new Color(0.9f, 0.8f, 0.5f), debuff: true);
             RiposteSlow = Buff("CursedAppleApolloRiposteSlow", new Color(0.8f, 0.7f, 0.4f), debuff: true);
             ParryBuff = Buff("CursedAppleApolloParry", Color, debuff: false);
+            RiposteLifestealBuff = Buff("CursedAppleApolloRiposteLifesteal", new Color(0.9f, 0.25f, 0.3f), debuff: false);
 
             foreach (Type t in new[] { typeof(FireWave), typeof(DrawSigil), typeof(AdvanceReady), typeof(AdvanceStab), typeof(Riposte), typeof(RiposteDash), typeof(ItaniLoSahn) })
                 ContentAddition.AddEntityState(t, out _);
@@ -162,6 +163,7 @@ namespace CursedAppleCuriosities.Survivors.Apollo
                 swap.IsDisplay = true;
                 Kit.OwnSkin(cm.gameObject, "skinCursedAppleApolloDISPLAY", Token + "SKIN_DEFAULT");
             }
+            display.AddComponent<ApolloDisplayIntro>(); // lobby entrance (user 2.5)
             return display;
         }
 
@@ -195,7 +197,7 @@ namespace CursedAppleCuriosities.Survivors.Apollo
             Sprite? sigil = Set(_sigil, ApolloData.IconSigil);
             if (sigil != null && SigilSlow != null) SigilSlow.iconSprite = sigil;
             Sprite? riposte = Set(_riposte, ApolloData.IconRiposte);
-            if (riposte != null) { if (ParryBuff != null) ParryBuff.iconSprite = riposte; if (RiposteSlow != null) RiposteSlow.iconSprite = riposte; }
+            if (riposte != null) { if (ParryBuff != null) ParryBuff.iconSprite = riposte; if (RiposteLifestealBuff != null) RiposteLifestealBuff.iconSprite = riposte; if (RiposteSlow != null) RiposteSlow.iconSprite = riposte; }
             Set(_advance, ApolloData.IconAdvance);
             Set(_ult, ApolloData.IconUlt);
             if (portrait != null) _wave!.icon = Kit.Sprite(portrait);
@@ -222,10 +224,10 @@ namespace CursedAppleCuriosities.Survivors.Apollo
             LanguageAPI.Add(Token + "SIGIL_DESC", $"Draw a sigil ahead that bursts for <style=cIsDamage>{D(ApolloData.SigilDamage)} damage</style> and <style=cIsUtility>slows</style>, as you <style=cIsUtility>leap back</style>.");
             LanguageAPI.Add(Token + "ADVANCE_NAME", "Flawless Advance");
             LanguageAPI.Add(Token + "ADVANCE_DESC",
-                $"Hold to ready a stab, release to lunge through enemies for <style=cIsDamage>{D(ApolloData.StabMin)}-{D(ApolloData.StabMax)} damage</style>; on the glint, <style=cIsDamage>{D(ApolloData.StabPerfect)}</style>. Up to <style=cIsUtility>{ApolloData.Stabs} stabs</style> in a row.");
+                $"Hold to ready a stab, release to lunge through enemies for <style=cIsDamage>{D(ApolloData.StabMin)}-{D(ApolloData.StabMax)} damage</style>; on the glint, <style=cIsDamage>{D(ApolloData.StabPerfect)}</style> and <style=cIsHealing>heal {D(ApolloData.PerfectHeal)} max health</style>. Up to <style=cIsUtility>{ApolloData.Stabs} stabs</style> in a row.");
             LanguageAPI.Add(Token + "RIPOSTE_NAME", "Riposte");
             LanguageAPI.Add(Token + "RIPOSTE_DESC",
-                $"Ready a parry. The next hit is <style=cIsUtility>deflected</style>; you dash at the attacker and slash for <style=cIsDamage>{D(ApolloData.RiposteDamage)} damage</style>, <style=cIsUtility>stunning</style> and slowing.");
+                $"Ready a parry. The next hit is <style=cIsUtility>deflected</style>; you dash at the attacker and slash for <style=cIsDamage>{D(ApolloData.RiposteDamage)} damage</style>, <style=cIsUtility>stunning</style> and slowing, then <style=cIsHealing>steal {D(ApolloData.RiposteLifesteal)} of damage dealt</style> for {ApolloData.RiposteLifestealSeconds:0}s.");
             LanguageAPI.Add(Token + "ULT_NAME", "Itani Lo Sahn");
             LanguageAPI.Add(Token + "ULT_DESC",
                 $"Charge, then slash a long line for <style=cIsDamage>{D(ApolloData.UltImpact)} damage</style>. Struck enemies freeze in slow motion, then take <style=cIsDamage>{D(ApolloData.UltDelayed)} damage</style> " +

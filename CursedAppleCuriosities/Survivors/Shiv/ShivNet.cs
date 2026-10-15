@@ -25,6 +25,7 @@ namespace CursedAppleCuriosities.Survivors.Shiv
             NetworkingAPI.RegisterMessageType<ShivPendingMessage>();
             ShivBloodletting.Hook();
             ShivRage.Hook();
+            ShivRageHud.Hook();
             ShivBloodlettingBar.Hook();
             RecalculateStatsAPI.GetStatCoefficients += (body, args) =>
             {

@@ -145,6 +145,18 @@ namespace CursedAppleCuriosities.Deadlock
                 if (MiniJson.Arr(n, "children") is List<object> kids)
                     foreach (object c in kids) underRoot.Add(MiniJson.Str(nodes[Convert.ToInt32(c)], "name") ?? "");
             }
+            // Rest translations (the converter's axes), for the bones PinStrayBones puts back.
+            var restPos = new Dictionary<string, Vector3>();
+            var restRot = new Dictionary<string, Quaternion>();
+            foreach (object n in nodes)
+            {
+                if (MiniJson.Str(n, "name") is not string nn) continue;
+                if (MiniJson.Arr(n, "translation") is List<object> t && t.Count == 3)
+                    restPos[nn] = new Vector3(-Convert.ToSingle(t[0]), Convert.ToSingle(t[1]), Convert.ToSingle(t[2]));
+                restRot[nn] = MiniJson.Arr(n, "rotation") is List<object> q && q.Count == 4
+                    ? new Quaternion(Convert.ToSingle(q[0]), -Convert.ToSingle(q[1]), -Convert.ToSingle(q[2]), Convert.ToSingle(q[3]))
+                    : Quaternion.identity;
+            }
             foreach (object a in anims)
             {
                 string name = (MiniJson.Str(a, "name") ?? "").Replace('\\', '/');
@@ -183,6 +195,7 @@ namespace CursedAppleCuriosities.Deadlock
                     if (times.Length > 0 && track != root) clip.Length = Mathf.Max(clip.Length, times[times.Length - 1]);
                 }
                 RemoveRootTravel(clip, root, rootRest, underRoot, besideRoot);
+                PinStrayBones(clip, restPos, restRot, underRoot, besideRoot);
                 clips[name] = clip;
             }
             return clips;
@@ -259,6 +272,26 @@ namespace CursedAppleCuriosities.Deadlock
                         root.SampleRot(t.RotTimes![k], out Quaternion rr);
                         t.Rot[k] = turn0 * Quaternion.Inverse(rr) * t.Rot[k];
                     }
+            }
+        }
+
+        /// <summary>
+        /// A physics bone deep in the skeleton that a clip bakes in world space: Shiv's rage reliquary (reliquary_0, on his
+        /// belt) carries all 12.7 m of dash_ground's travel, so it flew off him and snapped back, as Abrams' coat once did.
+        /// Real bones stray at most ~3.7 m from where they start (Grey Talon's owl, weapon hands): past 5 m a track is put back at its rest spot.
+        /// </summary>
+        private static void PinStrayBones(AnimClip clip, Dictionary<string, Vector3> restPos, Dictionary<string, Quaternion> restRot, HashSet<string> underRoot, HashSet<string> besideRoot)
+        {
+            foreach (AnimTrack t in clip.Tracks)
+            {
+                if (t.Pos == null || t.Pos.Length < 2 || underRoot.Contains(t.Bone) || besideRoot.Contains(t.Bone)) continue;
+                if (t.Bone.StartsWith("$cloth", StringComparison.Ordinal) || !restPos.TryGetValue(t.Bone, out Vector3 rest)) continue;
+                float stray = 0f;
+                foreach (Vector3 p in t.Pos) stray = Mathf.Max(stray, (p - t.Pos[0]).magnitude);
+                if (stray < 5f) continue;
+                for (int k = 0; k < t.Pos.Length; k++) t.Pos[k] = rest;
+                if (t.Rot != null && restRot.TryGetValue(t.Bone, out Quaternion rr))
+                    for (int k = 0; k < t.Rot.Length; k++) t.Rot[k] = rr; // its tilt was baked in too
             }
         }
 

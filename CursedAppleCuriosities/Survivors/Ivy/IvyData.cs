@@ -46,15 +46,13 @@ namespace CursedAppleCuriosities.Survivors.Ivy
         public const float ThornsThrowUp = 10f;         // Deadlock m_flVerticalAimBias
         public static float ThornsCooldown = 8f;
 
-        // ---- secondary alt: Kudzu Connection (citadel_ability_tangotether: 16 m, 12 s, +10% fire rate, 15% lifesteal, 35% shared healing; half
-        // the bonuses with nobody connected). In RoR2 the partner can be any ally: players, drones, turrets, minions. ----
+        // ---- passive: Kudzu Connection (citadel_ability_tangotether: 16 m, +10% fire rate, 15% lifesteal, 35% shared healing; half the
+        // bonuses with nobody connected). A passive, always bound to the nearest ally (user 2.5): players, drones, turrets, minions. ----
         public static float TetherRange = 16f;
-        public static float TetherSeconds = 12f;
         public static float TetherAttackSpeed = 0.1f;
         public static float TetherLifesteal = 0.15f;
         public static float TetherSharedHeal = 0.35f;
         public const float TetherBreakRange = 30f;
-        public static float TetherCooldown = 12f;
 
         // ---- utility: Stone Form (citadel_ability_tengu_stone_form: lift 180 hu in 1 s, slam: 75 damage in 5.75 m, 0.75 s stun, heals, 40 s) ----
         public static float StoneDamage = 4f;
@@ -89,11 +87,9 @@ namespace CursedAppleCuriosities.Survivors.Ivy
             ThornsDuration = c.Bind(Section, "Entangling Thorns - Duration", ThornsDuration, "Seconds.").Value;
             ThornsRadius = c.Bind(Section, "Entangling Thorns - Radius", ThornsRadius, "Metres.").Value;
             ThornsCooldown = c.Bind(Section, "Entangling Thorns - Cooldown", ThornsCooldown, "Seconds.").Value;
-            TetherSeconds = c.Bind(Section, "Kudzu Connection - Duration", TetherSeconds, "Seconds.").Value;
             TetherAttackSpeed = c.Bind(Section, "Kudzu Connection - Attack Speed", TetherAttackSpeed, "Attack speed bonus for both (half alone).").Value;
             TetherLifesteal = c.Bind(Section, "Kudzu Connection - Lifesteal", TetherLifesteal, "Share of damage dealt healed, for both (half alone).").Value;
             TetherSharedHeal = c.Bind(Section, "Kudzu Connection - Shared Healing", TetherSharedHeal, "Share of healing one receives that the other gets too.").Value;
-            TetherCooldown = c.Bind(Section, "Kudzu Connection - Cooldown", TetherCooldown, "Seconds.").Value;
             StoneDamage = c.Bind(Section, "Stone Form - Damage", StoneDamage, "Damage coefficient of the slam.").Value;
             StoneHeal = c.Bind(Section, "Stone Form - Heal", StoneHeal, "Share of max health healed per second while stone.").Value;
             StoneCooldown = c.Bind(Section, "Stone Form - Cooldown", StoneCooldown, "Seconds.").Value;

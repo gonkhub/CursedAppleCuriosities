@@ -157,13 +157,14 @@ namespace CursedAppleCuriosities.Survivors.Shiv
             DeadlockMovement.Apply(body, ShivData.Movement);
             body.AddComponent<ShivBloodletting>();
             body.AddComponent<ShivRage>();
+            body.AddComponent<ShivRageGlow>();
 
             Transform model = body.GetComponent<ModelLocator>().modelTransform;
             model.gameObject.AddComponent<DeadlockModelSwap>().HeroKey = ShivData.Hero;
             Kit.MuteStandIn(body, model.gameObject, ShivData.Hero);
             var children = model.GetComponent<ChildLocator>();
             if (children != null && children.FindChild(MuzzleName) == null) children.AddChild(MuzzleName, model);
-            Kit.OwnSkin(model.gameObject, "skinCursedAppleShivDEFAULT", Token + "SKIN_DEFAULT", ShivSkins.DefaultIcon, ("skinCursedAppleShivOXBLOOD", Token + "SKIN_OXBLOOD", ShivSkins.OxbloodIcon));
+            Kit.OwnSkin(model.gameObject, "skinCursedAppleShivDEFAULT", Token + "SKIN_DEFAULT", ShivSkins.DefaultIcon);
 
             ContentAddition.AddBody(body);
             return body;
@@ -179,7 +180,7 @@ namespace CursedAppleCuriosities.Survivors.Shiv
                 var swap = cm.gameObject.AddComponent<DeadlockModelSwap>();
                 swap.HeroKey = ShivData.Hero;
                 swap.IsDisplay = true;
-                Kit.OwnSkin(cm.gameObject, "skinCursedAppleShivDISPLAY", Token + "SKIN_DEFAULT", ShivSkins.DefaultIcon, ("skinCursedAppleShivDISPLAYOXBLOOD", Token + "SKIN_OXBLOOD", ShivSkins.OxbloodIcon));
+                Kit.OwnSkin(cm.gameObject, "skinCursedAppleShivDISPLAY", Token + "SKIN_DEFAULT", ShivSkins.DefaultIcon);
             }
             display.AddComponent<ShivDisplayIntro>();
             return display;
@@ -236,7 +237,6 @@ namespace CursedAppleCuriosities.Survivors.Shiv
             LanguageAPI.Add(Token + "NAME", "Shiv");
             LanguageAPI.Add(Token + "SUBTITLE", "The Bloody Cleaner");
             LanguageAPI.Add(Token + "SKIN_DEFAULT", "Default");
-            LanguageAPI.Add(Token + "SKIN_OXBLOOD", "Oxblood");
             LanguageAPI.Add(Token + "DESCRIPTION",
                 "Shiv cleans up messes for the Cursed Apple's worst. This planet is a mess.<color=#CCD3E0>\n\n" +
                 "< ! > Half of every hit you take bleeds out over time instead: the yellow on your health bar is what's still coming.\n\n" +

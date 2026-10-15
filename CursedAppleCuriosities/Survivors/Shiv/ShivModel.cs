@@ -18,7 +18,6 @@ namespace CursedAppleCuriosities.Survivors.Shiv
             Anims = ShivData.Anims,
             RootLocked = ShivData.Locked,
             ItemAnchors = ShivItemDisplays.Anchors,
-            Skins = ShivSkins.All,
         };
 
         public static void Play(GameObject bodyObject, string state) => DeadlockModelSwap.Play(bodyObject, state);

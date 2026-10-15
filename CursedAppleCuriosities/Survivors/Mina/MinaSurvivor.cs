@@ -81,7 +81,7 @@ namespace CursedAppleCuriosities.Survivors.Mina
             if (pc == null) return;
             GameObject? ghost = Kit.Recoloured(pc.ghostPrefab ?? TryLoad<GameObject>("RoR2/Base/Mage/MageFireboltGhost.prefab"), "CursedAppleMinaBatGhost", Hue, effect: false);
             if (ghost == null) return;
-            ghost.transform.localScale *= 0.4f;
+            ghost.transform.localScale *= 0.2f; // the glow around a bat, halved with the bat (user 2.5)
             ghost.AddComponent<MinaBatGhost>();
             pc.ghostPrefab = ghost;
         }
@@ -170,6 +170,7 @@ namespace CursedAppleCuriosities.Survivors.Mina
             body.AddComponent<MinaGunAudio>();
             body.AddComponent<MinaRetreatRecast>();
             body.AddComponent<MinaHover>();
+            Kit.BiggerCamera(body, "ccpCursedAppleMina", 0.5f, 1.45f); // pulled back past her umbrella (user 2.5): pivot up (m), distance (x Commando's)
 
             Transform model = body.GetComponent<ModelLocator>().modelTransform;
             model.gameObject.AddComponent<DeadlockModelSwap>().HeroKey = MinaData.Hero;

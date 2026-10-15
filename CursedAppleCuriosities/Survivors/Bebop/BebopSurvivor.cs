@@ -168,6 +168,7 @@ namespace CursedAppleCuriosities.Survivors.Bebop
             hyper.Width = 8f; // Deadlock BeamWidth 2.9 m: a wall of light
             hyper.HitEnemies = false; // it goes through everyone
             body.AddComponent<BebopStickyReticle>();
+            Kit.BiggerCamera(body, "ccpCursedAppleBebop", 0.9f, 1.4f); // he's almost Abrams' height (user 2.5): pivot up (m), distance (x Commando's)
 
             Transform model = body.GetComponent<ModelLocator>().modelTransform;
             model.gameObject.AddComponent<DeadlockModelSwap>().HeroKey = BebopData.Hero;
@@ -191,6 +192,7 @@ namespace CursedAppleCuriosities.Survivors.Bebop
                 swap.IsDisplay = true;
                 Kit.OwnSkin(cm.gameObject, "skinCursedAppleBebopDISPLAY", Token + "SKIN_DEFAULT");
             }
+            display.AddComponent<BebopDisplayIntro>(); // lobby entrance (user 2.5)
             return display;
         }
 

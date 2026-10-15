@@ -274,7 +274,7 @@ namespace CursedAppleCuriosities.Survivors.Paradox
 
             LanguageAPI.Add(Token + "CARBINE_NAME", "Kinetic Carbine");
             LanguageAPI.Add(Token + "CARBINE_DESC",
-                $"Hold to charge, <style=cIsUtility>moving faster</style>. Fire a shot for <style=cIsDamage>{D(ParadoxData.CarbineMinDamage)}-{D(ParadoxData.CarbineMaxDamage)} damage</style> that <style=cIsUtility>slows heavily</style>. Fully charged, it hits <style=cIsDamage>weak points</style>.");
+                $"Tap to charge, <style=cIsUtility>moving faster</style>. Your next <style=cIsDamage>primary</style> click fires a shot for <style=cIsDamage>{D(ParadoxData.CarbineMinDamage)}-{D(ParadoxData.CarbineMaxDamage)} damage</style> that <style=cIsUtility>slows heavily</style>. Fully charged, it hits <style=cIsDamage>weak points</style> and waits <style=cIsUtility>5s</style> for the shot before it fizzles.");
 
             LanguageAPI.Add(Token + "SWAP_NAME", "Paradoxical Swap");
             LanguageAPI.Add(Token + "SWAP_DESC",

@@ -81,45 +81,6 @@ namespace EntityStates.CursedApple.Ivy
         public override InterruptPriority GetMinimumInterruptPriority() => InterruptPriority.Skill;
     }
 
-    // ================= Secondary alt: Kudzu Connection =================
-
-    /// <summary>
-    /// Kudzu Connection (Deadlock citadel_ability_tangotether): bind the ally nearest the crosshair within 16 m (a player, a drone, a
-    /// turret, a minion): for 12 s both attack faster, steal life and share healing. With no ally in reach she keeps half (Deadlock).
-    /// </summary>
-    public class KudzuConnection : BaseSkillState
-    {
-        public override void OnEnter()
-        {
-            base.OnEnter();
-            IvyModel.Play(gameObject, "cast");
-            DeadlockSounds.Play("ivy_tether_cast", transform.position, gameObject);
-            DeadlockHeroVoice.Power("ivy_vo_power2", gameObject);
-            if (!isAuthority) return;
-            CharacterBody? partner = FindAlly();
-            IvyNet.ToServer(new IvyTetherMessage { Ivy = gameObject, Partner = partner != null ? partner.gameObject : null });
-            outer.SetNextStateToMain();
-        }
-
-        private CharacterBody? FindAlly()
-        {
-            Ray aim = GetAimRay();
-            float range = IvyData.TetherRange * MysticExpansion.RadiusMultiplier(characterBody);
-            CharacterBody? best = null;
-            float bestAngle = 40f;
-            foreach (CharacterBody b in CharacterBody.readOnlyInstancesList)
-            {
-                if (b == null || b == characterBody || b.teamComponent == null || b.teamComponent.teamIndex != GetTeam()) continue;
-                if (b.healthComponent == null || !b.healthComponent.alive || (b.corePosition - characterBody.corePosition).magnitude > range) continue;
-                float angle = Vector3.Angle(aim.direction, b.corePosition - aim.origin);
-                if (angle < bestAngle) { bestAngle = angle; best = b; }
-            }
-            return best;
-        }
-
-        public override InterruptPriority GetMinimumInterruptPriority() => InterruptPriority.Skill;
-    }
-
     // ================= Utility: Stone Form =================
 
     /// <summary>

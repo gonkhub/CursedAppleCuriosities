@@ -322,7 +322,8 @@ namespace CursedAppleCuriosities.Survivors.Paradox
 
     /// <summary>
     /// A Time Wall (Deadlock citadel_ability_chrono_time_wall: 8 m x 4 m x 0.5 m for 5.5 s), the user's version. Every machine
-    /// draws it. Server: it deletes enemy projectiles that touch it, cuts enemies that pass through for 500% (once each) with a slow
+    /// draws it (an amber border marks its edges; Mystic Expansion makes it wider and taller, Duration Extender longer). Server: it
+    /// deletes enemy projectiles that touch it, cuts enemies that pass through for 1500% (once each) with a slow
     /// and a moment's stop, and allies' attacks that cross it hit harder (ParadoxNet.Amplify asks Crosses).
     /// </summary>
     public class ParadoxWall : MonoBehaviour
@@ -336,6 +337,9 @@ namespace CursedAppleCuriosities.Survivors.Paradox
         private readonly HashSet<HealthComponent> _cut = new HashSet<HealthComponent>();
         private Renderer? _fill;
         private Color _tint;
+        private LineRenderer? _border;
+        private static Material? _borderMaterial;
+        private static readonly Color BorderColor = new Color(1f, 0.8f, 0.35f, 1f);
 
         public bool Formed => _age >= ParadoxData.WallFormation;
 
@@ -368,6 +372,25 @@ namespace CursedAppleCuriosities.Survivors.Paradox
             _fill.material = new Material(_fill.sharedMaterial); // this wall fades on its own
             _tint = _fill.material.HasProperty("_TintColor") ? _fill.material.GetColor("_TintColor") : ParadoxSurvivor.Light;
             _fill.shadowCastingMode = UnityEngine.Rendering.ShadowCastingMode.Off;
+
+            // A bright amber border round its edges, so its bounds read clearly (user 2.5).
+            _borderMaterial ??= new Material(Shader.Find("Sprites/Default")) { name = "matCursedAppleParadoxWallBorder" };
+            var edge = new GameObject("Border");
+            edge.transform.SetParent(transform, false);
+            _border = edge.AddComponent<LineRenderer>();
+            _border.useWorldSpace = false;
+            _border.loop = true;
+            _border.positionCount = 4;
+            _border.SetPositions(new[]
+            {
+                new Vector3(-_half.x, 0.05f, 0f), new Vector3(-_half.x, _half.y * 2f, 0f),
+                new Vector3(_half.x, _half.y * 2f, 0f), new Vector3(_half.x, 0.05f, 0f),
+            });
+            _border.widthMultiplier = 0.14f;
+            _border.numCornerVertices = 2;
+            _border.sharedMaterial = _borderMaterial;
+            _border.startColor = _border.endColor = BorderColor;
+            _border.shadowCastingMode = UnityEngine.Rendering.ShadowCastingMode.Off;
         }
 
         /// <summary>Does a line cross the wall (Liang-Barsky against the box, in the wall's frame)?</summary>
@@ -395,6 +418,7 @@ namespace CursedAppleCuriosities.Survivors.Paradox
             if (_fill == null) return;
             float a = Mathf.Clamp01(_age / ParadoxData.WallFormation) * Mathf.Clamp01((_duration - _age) / 0.5f);
             if (_fill.material.HasProperty("_TintColor")) _fill.material.SetColor("_TintColor", new Color(_tint.r, _tint.g, _tint.b, _tint.a * a));
+            if (_border != null) _border.startColor = _border.endColor = new Color(BorderColor.r, BorderColor.g, BorderColor.b, a);
         }
 
         private void FixedUpdate()
@@ -535,25 +559,25 @@ namespace CursedAppleCuriosities.Survivors.Paradox
                 carry.Go(paradox, b, a, duration);
             }
             // Her own trip runs on her owner's machine (movement is owner-authoritative).
-            new ParadoxSwapMessage { Paradox = paradox.gameObject, From = a, To = b, Duration = duration }.Send(NetworkDestination.Clients); // a host's own client too
+            new ParadoxSwapMessage { Paradox = paradox.gameObject, Enemy = enemy.gameObject, From = a, To = b, Duration = duration }.Send(NetworkDestination.Clients); // a host's own client too
         }
     }
 
     /// <summary>Server to every client: Paradox's half of a swap. Her owner moves her (ParadoxSwapping); others just watch.</summary>
     public class ParadoxSwapMessage : INetMessage
     {
-        public GameObject? Paradox;
+        public GameObject? Paradox, Enemy;
         public Vector3 From, To;
         public float Duration;
 
-        public void Serialize(NetworkWriter w) { w.Write(Paradox); w.Write(From); w.Write(To); w.Write(Duration); }
-        public void Deserialize(NetworkReader r) { Paradox = r.ReadGameObject(); From = r.ReadVector3(); To = r.ReadVector3(); Duration = r.ReadSingle(); }
+        public void Serialize(NetworkWriter w) { w.Write(Paradox); w.Write(Enemy); w.Write(From); w.Write(To); w.Write(Duration); }
+        public void Deserialize(NetworkReader r) { Paradox = r.ReadGameObject(); Enemy = r.ReadGameObject(); From = r.ReadVector3(); To = r.ReadVector3(); Duration = r.ReadSingle(); }
 
         public void OnReceived()
         {
             if (Paradox == null || !Paradox.TryGetComponent(out CharacterBody b) || !b.hasEffectiveAuthority) return;
             EntityStateMachine? body = EntityStateMachine.FindByCustomName(Paradox, "Body");
-            body?.SetInterruptState(new EntityStates.CursedApple.Paradox.ParadoxSwapping { From = From, To = To, Duration = Duration }, EntityStates.InterruptPriority.Frozen);
+            body?.SetInterruptState(new EntityStates.CursedApple.Paradox.ParadoxSwapping { From = From, To = To, Duration = Duration, Enemy = Enemy }, EntityStates.InterruptPriority.Frozen);
         }
     }
 

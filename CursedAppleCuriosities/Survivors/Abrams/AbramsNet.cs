@@ -437,7 +437,7 @@ namespace CursedAppleCuriosities.Survivors.Abrams
     /// </summary>
     public class AbramsResilienceBar : MonoBehaviour
     {
-        private static readonly Color Tint = new Color(1f, 0.55f, 0.3f, 0.55f); // Abrams' ember, see-through: health to come
+        private static readonly Color Tint = new Color(1f, 0.4f, 0.75f, 0.6f); // pink, see-through: health to come (user 2.5: the old ember read as yellow, like Shiv's Bloodletting and barrier)
 
         private RoR2.UI.HealthBar _bar = null!;
         private RectTransform? _fill;

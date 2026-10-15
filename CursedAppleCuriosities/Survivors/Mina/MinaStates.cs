@@ -194,7 +194,7 @@ namespace EntityStates.CursedApple.Mina
     // ================= Special: Nox Nostra =================
 
     /// <summary>
-    /// Nox Nostra (Deadlock ability_vampirebat_batswarm): she leaps up (17 m/s at 60 deg), opens her umbrella and hovers, and after
+    /// Nox Nostra (Deadlock ability_vampirebat_batswarm): she leaps up and back (user 2.5: 24 m/s at 72 deg, away from her aim; Deadlock 17 m/s at 60 deg forward), opens her umbrella and hovers, and after
     /// the cast delay unleashes bats ahead at 30 a second: 75, plus one per Love Bites stack this stage (user; at most 50 more,
     /// Deadlock's BonusBatsMax). The bats home in on enemies (MinaBat).
     /// </summary>
@@ -220,7 +220,7 @@ namespace EntityStates.CursedApple.Mina
                 Vector3 flat = new Vector3(d.x, 0f, d.z);
                 flat = flat.sqrMagnitude > 1e-4f ? flat.normalized : characterDirection.forward;
                 characterMotor.Motor.ForceUnground();
-                characterMotor.velocity = flat * MinaData.NoxJumpSpeed * Mathf.Cos(MinaData.NoxJumpPitch * Mathf.Deg2Rad) + Vector3.up * MinaData.NoxJumpSpeed * Mathf.Sin(MinaData.NoxJumpPitch * Mathf.Deg2Rad);
+                characterMotor.velocity = -flat * MinaData.NoxJumpSpeed * Mathf.Cos(MinaData.NoxJumpPitch * Mathf.Deg2Rad) + Vector3.up * MinaData.NoxJumpSpeed * Mathf.Sin(MinaData.NoxJumpPitch * Mathf.Deg2Rad);
                 characterMotor.disableAirControlUntilCollision = false;
             }
             if (UnityEngine.Networking.NetworkServer.active) DeadlockFallGuard.ProtectNextLanding(gameObject, 8f); // floats down on the umbrella

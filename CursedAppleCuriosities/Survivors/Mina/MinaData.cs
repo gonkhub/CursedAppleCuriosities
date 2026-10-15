@@ -76,8 +76,8 @@ namespace CursedAppleCuriosities.Survivors.Mina
         public const float BatTurnDegPerSec = 420f;
         public const float BatSeekRange = 40f;          // Deadlock AbilityCastRange
         public const float BatSeekConeDeg = 40f;        // Deadlock LockonConeAngle
-        public const float NoxJumpSpeed = 17f;          // Deadlock JumpSpeed
-        public const float NoxJumpPitch = 60f;          // Deadlock JumpPitch -60 (up)
+        public const float NoxJumpSpeed = 24f;          // Deadlock JumpSpeed 17: higher (user 2.5)
+        public const float NoxJumpPitch = 72f;          // Deadlock JumpPitch -60 (up), steeper; leaps partly BACKWARD (user 2.5)
         public const float NoxFallMax = 1f;             // Deadlock FallSpeedMax: hovering on the umbrella
         public const float NoxCastDelay = 0.5f;         // Deadlock AbilityCastDelay
         public static float NoxCooldown = 40f;          // Deadlock 150
@@ -148,7 +148,7 @@ namespace CursedAppleCuriosities.Survivors.Mina
             ("wall_jump", "vampirebat_jump_ground", false, "in_air", "full"),
             ("in_air", "vampirebat_in_air_loop_apex", true, "", "full"),
             ("falling", "vampirebat_in_air_loop_down", true, "", "full"),
-            ("land", "vampirebat_jump_landing", false, "locomotion", "additive"),
+            ("land", "vampirebat_jump_landing", false, "locomotion", "delta"), // her wip clip stores the pelvis 2 m off (0,-1.44,1.39): additive threw the model off on landing (user 2.5)
             ("dash_ground", "dash_ground", false, "locomotion", "full"),
             ("dash_air_forward", "vampirebat_dash_air_forward", false, "in_air", "full"),
             ("dash_air_back", "vampirebat_dash_air_backward", false, "in_air", "full"),
@@ -178,7 +178,6 @@ namespace CursedAppleCuriosities.Survivors.Mina
             new DeadlockSound { Id = "mina_gun_first", VpkPrefix = "sounds/weapons/vampirebat/vampirebat_weapon_fire_first", Volume = 0.6f, Range = 60f, MinGap = 0.05f, PitchJitter = 0.04f, Fallback = "Play_commando_M1" },
             new DeadlockSound { Id = "mina_gun", VpkPrefix = "sounds/weapons/vampirebat/vampirebat_weapon_fire_main", Volume = 0.55f, Range = 60f, MinGap = 0.05f, PitchJitter = 0.05f, VolumeJitter = 0.1f, Fallback = "Play_commando_M1" },
             new DeadlockSound { Id = "mina_gun_mech", VpkPrefix = "sounds/weapons/vampirebat/vampirebat_weapon_fire_mech", Volume = 0.4f, Range = 25f, MinGap = 0.05f },
-            new DeadlockSound { Id = "mina_gun_tail", VpkPrefix = "sounds/weapons/vampirebat/vampirebat_weapon_fire_tail", Volume = 0.5f, Range = 50f, MinGap = 0.1f },
             new DeadlockSound { Id = "mina_rake_cast", VpkPrefix = "sounds/abilities/vampirebat/a1_rake/vampirebat_rake_cast", Volume = 0.9f },
             new DeadlockSound { Id = "mina_rake_hit", VpkPrefix = "sounds/abilities/vampirebat/a1_rake/vampirebat_rake_hit_confirm", Volume = 0.9f, MinGap = 0.05f },
             new DeadlockSound { Id = "mina_rake_heal", VpkPrefix = "sounds/abilities/vampirebat/a1_rake/vampirebat_rake_kill_confirm_heal", Volume = 0.9f, MinGap = 0.1f },
