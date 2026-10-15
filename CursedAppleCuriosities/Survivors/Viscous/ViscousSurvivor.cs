@@ -38,7 +38,7 @@ namespace CursedAppleCuriosities.Survivors.Viscous
 
         public static GameObject? BodyPrefab, DisplayPrefab;
         public static SurvivorDef? Survivor;
-        public static BuffDef? BallBuff, CubeBuff, PostCubeBuff;
+        public static BuffDef? BallBuff, CubeBuff, PostCubeBuff, BlueCubeBuff;
         public static GameObject? TracerEffect, HitEffect, MuzzleEffect, SplashEffect, WallEffect, HitBigEffect, JumpEffect;
         public static GameObject? AltProjectile, SplatterProjectile, AltBurstEffect, SplatterEffect, PunchPortalEffect, PunchEffect;
 
@@ -54,6 +54,8 @@ namespace CursedAppleCuriosities.Survivors.Viscous
                 DeadlockInstall.WantIcon(icon);
             DeadlockHeroes.Register(ViscousModel.Def);
             DeadlockInstall.WantModel(ViscousModel.Def.ModelRequest());
+            // The Cube model gets Bluescous' recolour too (user 3.0): its skin 1 is his blue skin's material swap.
+            DeadlockHeroes.Register(new DeadlockHeroDef { Hero = ViscousData.CubeKey, DisplayName = "ViscousCube", Skins = ViscousModel.Def.Skins });
             DeadlockInstall.WantModel(new DeadlockInstall.ModelRequest { Hero = ViscousData.CubeKey, DlModel = ViscousData.DlCubeModel });
 
             LoadAssets();
@@ -123,6 +125,8 @@ namespace CursedAppleCuriosities.Survivors.Viscous
             BallBuff = Buff("CursedAppleViscousGooBall", Color);
             CubeBuff = Buff("CursedAppleViscousCube", new Color(0.55f, 0.9f, 0.55f));
             PostCubeBuff = Buff("CursedAppleViscousPostCube", new Color(0.7f, 1f, 0.6f));
+            BlueCubeBuff = Buff("CursedAppleViscousBlueCube", new Color(0.4f, 0.6f, 1f));
+            BlueCubeBuff.isHidden = true; // marks a cube cast by Bluescous (drawn blue on every client)
         }
 
         private static void RegisterStates()
@@ -367,7 +371,8 @@ namespace CursedAppleCuriosities.Survivors.Viscous
         {
             yield return null; // the Deadlock model attaches on its first frame
             yield return null;
-            _cube = ViscousCubes.MakeVisual(ViscousCubes.FitSize(gameObject, GetComponentInChildren<CharacterModel>()) ?? 2.4f * Scale);
+            ModelSkinController? skins = GetComponentInChildren<ModelSkinController>();
+            _cube = ViscousCubes.MakeVisual(ViscousCubes.FitSize(gameObject, GetComponentInChildren<CharacterModel>()) ?? 2.4f * Scale, blue: skins != null && skins.currentSkinIndex == ViscousCubes.BlueSkin);
             _cube.transform.SetPositionAndRotation(Home, HomeRotation);
             DeadlockSounds.Play("viscous_cube_cast", Home);
             _loop = DeadlockSounds.Loop("viscous_cube_loop", _cube, ViscousData.CubeDuration + 0.5f);

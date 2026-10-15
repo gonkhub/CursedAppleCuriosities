@@ -97,6 +97,9 @@ namespace CursedAppleCuriosities.Survivors.Viscous
                 .FirstOrDefault(b => b != null && b != body && b.healthComponent.alive);
         }
 
+        /// <summary>Bluescous' skin index (skin 1).</summary>
+        public const int BlueSkin = 1;
+
         /// <summary>Server: put a body in the cube.</summary>
         public static void Encase(CharacterBody target, CharacterBody? caster)
         {
@@ -109,6 +112,15 @@ namespace CursedAppleCuriosities.Survivors.Viscous
             Util.CleanseBody(target, removeDebuffs: true, removeBuffs: false, removeCooldownBuffs: false, removeDots: true, removeStun: true, removeNearbyProjectiles: false);
             using (DurationExtender.Exact()) target.AddTimedBuff(cube, seconds + 1f); // ended by Finish, not by the timer
             Cubes[target] = new Entry { Start = Time.time, End = Time.time + seconds, NextHeal = Time.time, PostSeconds = ViscousData.PostCubeSeconds * mult };
+            // Cast by Bluescous: every client draws this cube blue (user 3.0).
+            BuffDef? blue = ViscousSurvivor.BlueCubeBuff;
+            if (blue != null)
+            {
+                target.ClearTimedBuffs(blue);
+                while (target.HasBuff(blue)) target.RemoveBuff(blue);
+                if (caster != null && ViscousSurvivor.Is(caster) && (int)caster.skinIndex == BlueSkin)
+                    using (DurationExtender.Exact()) target.AddTimedBuff(blue, seconds + 1f);
+            }
             EquipmentFx.Sound("viscous_cube_cast", target.corePosition, target.gameObject);
         }
 
@@ -144,6 +156,11 @@ namespace CursedAppleCuriosities.Survivors.Viscous
             {
                 body.ClearTimedBuffs(cube);
                 while (body.HasBuff(cube)) body.RemoveBuff(cube);
+            }
+            if (ViscousSurvivor.BlueCubeBuff != null)
+            {
+                body.ClearTimedBuffs(ViscousSurvivor.BlueCubeBuff);
+                while (body.HasBuff(ViscousSurvivor.BlueCubeBuff)) body.RemoveBuff(ViscousSurvivor.BlueCubeBuff);
             }
             // The cube ended mid-air: an ally's landing is safe too. Viscous takes fall damage whenever he isn't in the cube or ball (user).
             if (body.characterMotor != null && !body.characterMotor.isGrounded && !ViscousSurvivor.Is(body))
@@ -186,9 +203,9 @@ namespace CursedAppleCuriosities.Survivors.Viscous
 
         /// <summary>
         /// A cube to draw: Deadlock's model once it's converted (else a plain green box), its base at the parent's origin,
-        /// this tall. Every client, and the lobby intro.
+        /// this tall; blue when Bluescous cast it (the model's skin 1, his recolour). Every client, and the lobby intro.
         /// </summary>
-        public static GameObject MakeVisual(float height)
+        public static GameObject MakeVisual(float height, bool blue = false)
         {
             var root = new GameObject("ViscousCube");
             GlbModel? model = DeadlockInstall.Model(ViscousData.CubeKey);
@@ -197,6 +214,14 @@ namespace CursedAppleCuriosities.Survivors.Viscous
                 GameObject m = Object.Instantiate(model.Root, root.transform, false);
                 m.SetActive(true);
                 m.transform.localScale = Vector3.one * (height / ViscousData.CubeModelHeight);
+                if (blue && model.SkinMaterials.Count > 0)
+                    foreach (Renderer r in m.GetComponentsInChildren<Renderer>(true))
+                    {
+                        Material[] mats = r.sharedMaterials;
+                        for (int i = 0; i < mats.Length; i++)
+                            if (mats[i] != null && model.SkinMaterials[0].TryGetValue(mats[i], out Material bm)) mats[i] = bm;
+                        r.sharedMaterials = mats;
+                    }
             }
             else
             {
@@ -207,7 +232,7 @@ namespace CursedAppleCuriosities.Survivors.Viscous
                 box.transform.localPosition = Vector3.up * height * 0.5f;
                 var r = box.GetComponent<MeshRenderer>();
                 r.sharedMaterial = DeadlockHeroes.MakeMaterial("Viscous", "cube", null);
-                r.sharedMaterial.color = ViscousSurvivor.Color;
+                r.sharedMaterial.color = blue ? new Color(0.25f, 0.45f, 1f) : ViscousSurvivor.Color;
             }
             return root;
         }
@@ -239,7 +264,8 @@ namespace CursedAppleCuriosities.Survivors.Viscous
                     CharacterModel? cm = body.modelLocator != null && body.modelLocator.modelTransform != null ? body.modelLocator.modelTransform.GetComponent<CharacterModel>() : null;
                     float height = ViscousCubes.FitSize(cm != null ? cm.gameObject : null, cm)
                                    ?? Mathf.Max(2.2f, (body.corePosition.y - body.footPosition.y) * 2.6f);
-                    _drawn[body] = (ViscousCubes.MakeVisual(height), DeadlockSounds.Loop("viscous_cube_loop", body.gameObject, 30f));
+                    bool blue = ViscousSurvivor.BlueCubeBuff != null && body.HasBuff(ViscousSurvivor.BlueCubeBuff);
+                    _drawn[body] = (ViscousCubes.MakeVisual(height, blue), DeadlockSounds.Loop("viscous_cube_loop", body.gameObject, 30f));
                 }
             foreach (CharacterBody body in _drawn.Keys.ToArray())
             {
