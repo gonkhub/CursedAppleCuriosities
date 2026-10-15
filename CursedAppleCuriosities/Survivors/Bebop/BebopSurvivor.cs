@@ -84,7 +84,7 @@ namespace CursedAppleCuriosities.Survivors.Bebop
             HookAmpBuff = Buff("CursedAppleBebopHooked", new Color(0.9f, 0.5f, 0.2f), debuff: true, stack: false);
             UppercutBuff = Buff("CursedAppleBebopUppercut", new Color(1f, 0.75f, 0.3f), debuff: false, stack: false);
             HyperSlow = Buff("CursedAppleBebopHyperSlow", Color.gray, debuff: true, stack: false, hidden: true);
-            StickySpeedBuff = Buff("CursedAppleBebopStickySpeed", new Color(1f, 0.3f, 0.2f), debuff: false, stack: false);
+            StickySpeedBuff = Buff("CursedAppleBebopStickySpeed", new Color(1f, 0.3f, 0.2f), debuff: false, stack: true); // stacks: the share of the boost left
         }
 
         private static BuffDef Buff(string name, Color color, bool debuff, bool stack, bool hidden = false)
