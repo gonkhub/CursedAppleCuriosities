@@ -52,6 +52,8 @@ namespace CursedAppleCuriosities.Unlocks
             Challenge(Challenges.AbramsFreightTrain.Identifier, "Abrams: Freight Train", $"As Abrams, slam {Challenges.AbramsFreightTrain.Enemies} or more enemies into a wall with one Shoulder Charge.");
             SkillUnlocks.Register(Challenges.SevenLiveWire.Skill);
             Challenge(Challenges.SevenLiveWire.Identifier, "Seven: Live Wire", $"As Seven, have one Lightning Ball shock {Challenges.SevenLiveWire.Enemies} different enemies.");
+            SkillUnlocks.Register(Challenges.CelesteSpotlight.Skill);
+            Challenge(Challenges.CelesteSpotlight.Identifier, "Celeste: Spotlight", $"As Celeste, have {Challenges.CelesteSpotlight.Marked} enemies marked by Light Eater at the same time.");
             ShotTracker.Init();
             RoR2Application.onLoad += UsePortraits;
         }

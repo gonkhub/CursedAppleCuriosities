@@ -165,6 +165,7 @@ namespace CursedAppleCuriosities.Survivors.Celeste
                     hits++;
                 }
             if (hits > 0) EquipmentFx.Sound("celeste_flare_hit", Origin + dir * 3f);
+            if (hits > 0) Unlocks.Challenges.CelesteSpotlight.AfterFlare(body, CelesteSurvivor.MarkBuff);
             CursedAppleCuriositiesPlugin.Logger?.LogInfo($"[Celeste] Light Eater: {hits} marked");
         }
     }
