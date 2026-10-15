@@ -253,7 +253,7 @@ namespace CursedAppleCuriosities.Survivors.Paradox
             LanguageAPI.Add(Token + "SKIN_DEFAULT", "Default");
             LanguageAPI.Add(Token + "SKIN_TEAL", "Teal");
             LanguageAPI.Add(Token + "DESCRIPTION",
-                "Paradox is an aristocrat so bored with having everything that she joined a masked guild of thieves who steal it through time.<color=#CCD3E0>\n\n" +
+                "Paradox wears the mask of the thieves' guild that shares her name. Nothing is out of their reach, and they put what they take on display.<color=#CCD3E0>\n\n" +
                 "< ! > Every Pulse Bomb hit makes your damage to that enemy stronger. Throw it first, then shoot.\n\n" +
                 "< ! > The Time Wall deletes enemy projectiles: stand behind it, and shoot through it for extra damage.\n\n" +
                 "< ! > A fully charged Kinetic Carbine hits weak points. Charging also makes you faster.\n\n" +
