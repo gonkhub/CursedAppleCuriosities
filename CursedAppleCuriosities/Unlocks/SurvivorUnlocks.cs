@@ -41,7 +41,7 @@ namespace CursedAppleCuriosities.Unlocks
         public static void Init()
         {
             Challenge(Challenges.VyperRattler.Identifier, "Rattler", $"Fire {Challenges.VyperRattler.Shots} shots within 1 second.");
-            Challenge(Challenges.GreyTalonOneShot.Identifier, "Big Game", "Kill a boss with a single hit from full health."); // name: user to pick
+            Challenge(Challenges.GreyTalonOneShot.Identifier, "Big Game", "Kill a boss with a single hit from full health.");
             ShotTracker.Init();
             RoR2Application.onLoad += UsePortraits;
         }
