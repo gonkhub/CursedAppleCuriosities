@@ -87,7 +87,7 @@ namespace CursedAppleCuriosities.Survivors.Shiv
         public static float KillingBlowCooldown = 30f;  // Deadlock 145; refunded by an execute (user)
 
         // ---- passive: Bloodletting (citadel_ability_shiv_defer_damage: 25% deferred over 6 s) + Rage ----
-        public static float DeferredShare = 0.5f;       // user (Deadlock DamagePctDeferred 25)
+        public static float DeferredShare = 0.75f;      // user 3.0 (was 50%; Deadlock DamagePctDeferred 25)
         public const float DeferredSeconds = 6f;        // Deadlock DeferredDamageDuration (user)
         public const float DeferredTick = 0.25f;
         public const float RageMax = 100f;
