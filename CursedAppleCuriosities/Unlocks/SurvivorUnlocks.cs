@@ -46,6 +46,7 @@ namespace CursedAppleCuriosities.Unlocks
             Challenge(Challenges.ViscousCube.Identifier, "The Cube", "Survive a single hit that would have dealt more than your maximum health.");
             Challenge(Challenges.CelesteShowstopper.Identifier, "Showstopper", "Kill 30 enemies within 5 seconds.");
             Challenge(Challenges.ShivKillingBlow.Identifier, "Killing Blow", "Kill a boss while below 10% health.");
+            Challenge(Challenges.ApolloFlawless.Identifier, "Flawless Advance", "Complete a teleporter event without taking any damage.");
             ShotTracker.Init();
             RoR2Application.onLoad += UsePortraits;
         }
