@@ -128,6 +128,7 @@ namespace CursedAppleCuriosities.Survivors.Viscous
                 damageType = DamageSource.Special,
             };
             target.TakeDamage(di);
+            if (!target.alive) Unlocks.Challenges.ViscousStrike.BallKill(attacker);
             GlobalEventManager.instance.OnHitEnemy(di, target.gameObject);
             GlobalEventManager.instance.OnHitAll(di, target.gameObject);
             if (!boss && target.alive && ViscousData.BallStun > 0f) // bosses: double damage instead of a stun (user)

@@ -56,6 +56,8 @@ namespace CursedAppleCuriosities.Unlocks
             Challenge(Challenges.CelesteSpotlight.Identifier, "Celeste: Spotlight", $"As Celeste, have {Challenges.CelesteSpotlight.Marked} enemies marked by Light Eater at the same time.");
             SkillUnlocks.Register(Challenges.ViscousSplashZone.Skill);
             Challenge(Challenges.ViscousSplashZone.Identifier, "Viscous: Splash Zone", $"As Viscous, kill {Challenges.ViscousSplashZone.Kills} enemies with a single Splatter.");
+            SkillUnlocks.Register(Challenges.ViscousStrike.Skill);
+            Challenge(Challenges.ViscousStrike.Identifier, "Viscous: Strike!", $"As Viscous, kill {Challenges.ViscousStrike.Kills} enemies in one Goo Ball roll.");
             ShotTracker.Init();
             RoR2Application.onLoad += UsePortraits;
         }
