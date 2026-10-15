@@ -6,13 +6,17 @@ Items, equipment and survivors adapted from Deadlock's item shop for Risk of Rai
 - **14 equipment**
 - **Artifact of the Curio**: only this mod's items drop
 - **Artifact of the Goose**: every player starts the run with a random Goose Egg
-- **Cursed Broker**: a rare shrine (10% on any stage, 50% on stage 3 of each loop, and in the Bazaar Between
+- **Cursed Broker**: a rare shrine (2% on any stage, 50% on stage 3 of each loop, and in the Bazaar Between
   Time). Curse one item to make every copy of it about twice as strong, in exchange for a harsh penalty for the
   rest of the run
 - **Soul Urn**: appears on some stages far from the teleporter. Carry it to the teleporter before time runs out,
   without taking damage, for a pile of items (more the later the stage)
-- **Eight playable survivors** from Deadlock: **Lash**, **Abrams**, **Seven**, **Vyper**, **Grey Talon**, **Victor**,
-  **Viscous** and **Celeste**, with Deadlock-style movement (stamina, air dashes, dash-jumps, slides, wall jumps)
+- **Fourteen playable survivors** from Deadlock: **Abrams**, **Seven**, **Lash**, **Vyper**, **Grey Talon**, **Victor**,
+  **Viscous**, **Celeste**, **Shiv**, **Mina**, **Paradox**, **Bebop**, **Ivy** and **Apollo**, with Deadlock-style movement
+  (stamina, air dashes, dash-jumps, slides, wall jumps). Abrams and Seven are free; the rest unlock through challenges or
+  secrets hidden in the Deadlock district stages, along with alt skills and mastery skins
+- **Deadlock district stages** (needs Deadlock installed): Haunted Lot, Umbria University, Sunken Plaza and Chinatown can
+  replace stages 1-4
 
 ## Expansion
 

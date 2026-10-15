@@ -187,7 +187,7 @@ namespace CursedAppleCuriosities
         /// Survivors ship one at a time: Release builds (the Thunderstore package) register only these.
         /// Debug builds (development) register every hero.
         /// </summary>
-        private static readonly string[] ReleasedSurvivors = { "Lash", "Abrams", "Seven", "Vyper", "Grey Talon", "Victor", "Viscous", "Celeste" };
+        private static readonly string[] ReleasedSurvivors = { "Lash", "Abrams", "Seven", "Vyper", "Grey Talon", "Victor", "Viscous", "Celeste", "Shiv", "Mina", "Paradox", "Bebop", "Ivy", "Apollo" };
 
         private static bool IsReleased(string hero)
         {
@@ -269,6 +269,6 @@ namespace CursedAppleCuriosities
     {
         public const string PLUGIN_GUID = "com.cursedapple.curiosities";
         public const string PLUGIN_NAME = "Cursed Apple Curiosities";
-        public const string PLUGIN_VERSION = "1.9.0";
+        public const string PLUGIN_VERSION = "3.0.0";
     }
 }

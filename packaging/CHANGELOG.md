@@ -1,5 +1,23 @@
 # Changelog
 
+## 3.0.0
+- Updating from an older version: your config file keeps the values it already has, so changed defaults (like the Cursed
+  Broker's chance) only apply to settings you reset, or if you delete `BepInEx/config/com.cursedapple.curiosities.cfg`.
+- Six new survivors from Deadlock: **Shiv**, **Mina**, **Paradox**, **Bebop**, **Ivy** and **Apollo** (fourteen in all).
+- **Unlockables**: a new profile starts with **Abrams** and **Seven**. Mina, Ivy, Bebop, Paradox and Lash are hidden as
+  silhouettes in the Deadlock districts; every other hero unlocks through their own challenge (see the Challenges menu).
+- **Alt skills** for Abrams, Seven, Celeste, Viscous, Shiv, Paradox, Bebop and Apollo start locked behind challenges.
+- **Mastery skins** for all fourteen heroes (beat the game or obliterate on Monsoon), plus Chrome Bebop and Obsidian Ivy.
+- **Deadlock district stages**: if you own Deadlock, four districts of its map can replace a stage: **Haunted Lot**
+  (stage 1), **Umbria University** (2), **Sunken Plaza** (3) and **Chinatown** (4), each at a 10% chance and only when
+  every player in the lobby has the same map converted. Their shops charge a Shop Tax (20%) over chest prices, the climb
+  ropes launch you like geysers, and Sunken Plaza's pit holds a hostile Bebop.
+- **Cursed Broker**: 2% chance on any stage (was 10%); stage 3 and Bazaar chances unchanged. Chinatown's souls dealer
+  garage always has one.
+- **Abrams**: Seismic Impact is his default special, Heavy Melee the alternate.
+- **Apollo**'s Riposte only parries; press it again within 3 s to dash-counter the enemy you aim at.
+- **Ivy**'s Air Drop can lift an ally and drop them as the bomb. **Bebop**'s Sticky Bomb can go on allies.
+
 ## 2.0.0
 - Updating from an older version: your config file keeps the values it already has, so balance changes from past
   updates only apply to settings you reset to their defaults, or if you delete
