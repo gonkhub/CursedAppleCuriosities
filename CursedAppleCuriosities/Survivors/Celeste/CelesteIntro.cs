@@ -6,7 +6,8 @@ namespace CursedAppleCuriosities.Survivors.Celeste
 {
     /// <summary>
     /// Celeste's character-select entrance (user): she ground-dashes in from the back right of the view, as Vyper slides in,
-    /// stopping on the pedestal, then turns to face the camera and says her select line.
+    /// stopping on the pedestal, then turns to face the camera, reloads as she does in Deadlock (user, 2.0) and says her
+    /// select line.
     /// </summary>
     public class CelesteDisplayIntro : DeadlockDisplayIntro
     {
@@ -48,6 +49,9 @@ namespace CursedAppleCuriosities.Survivors.Celeste
                 Face(Mathf.SmoothStep(yaw, 0f, t / TurnBack));
                 yield return null;
             }
+
+            Play("reload");
+            DeadlockSounds.Play("celeste_reload", Home);
         }
     }
 }
