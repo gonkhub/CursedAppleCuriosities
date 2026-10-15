@@ -20,6 +20,8 @@ namespace CursedAppleCuriosities.Deadlock
         public float MinGain;
         /// <summary>Vanilla Wwise event played instead when this player has no Deadlock copy (or null).</summary>
         public string? Fallback;
+        /// <summary>Mix bus, set from the path on Register (see <see cref="DeadlockSounds.BusOf"/>).</summary>
+        public DeadlockSounds.Bus Bus;
     }
 
     /// <summary>
@@ -52,8 +54,47 @@ namespace CursedAppleCuriosities.Deadlock
         private static volatile bool _decoded;
         private bool _decoding;
 
+        /// <summary>
+        /// Mix buses. Deadlock's raw files are mastered hot next to RoR2's mix, and footsteps and guns (which you hear
+        /// constantly) worst of all; each row's own Volume stays the balance within its bus.
+        /// </summary>
+        public enum Bus { Voice, Ability, Movement, Footstep, Weapon }
+
+        private static readonly (string Key, float Default, string Info)[] BusConfig =
+        {
+            ("Voice Volume", 1f, "Hero voice lines, pings and the Soul Urn."),
+            ("Ability Volume", 0.8f, "Ability and item sounds."),
+            ("Movement Volume", 0.6f, "Jumps, landings, dashes, slides and wall jumps."),
+            ("Footstep Volume", 0.45f, "Hero footsteps."),
+            ("Weapon Volume", 0.5f, "Hero gunfire, reloads and weapon impacts."),
+        };
+        private static BepInEx.Configuration.ConfigEntry<float>[]? _busVolume;
+
+        public static void Bind(BepInEx.Configuration.ConfigFile config)
+        {
+            _busVolume = new BepInEx.Configuration.ConfigEntry<float>[BusConfig.Length];
+            for (int i = 0; i < BusConfig.Length; i++)
+                _busVolume[i] = config.Bind("Audio", BusConfig[i].Key, BusConfig[i].Default,
+                    BusConfig[i].Info + " Multiplies the mod's Deadlock sounds on top of RoR2's master and SFX sliders (0-2, 1 = as recorded).");
+        }
+
+        private static float BusVolume(Bus bus) => _busVolume != null ? Mathf.Clamp(_busVolume[(int)bus].Value, 0f, 2f) : BusConfig[(int)bus].Default;
+
+        /// <summary>Which bus a Deadlock path mixes on: its folder in pak01 says what kind of sound it is.</summary>
+        public static Bus BusOf(DeadlockSound s)
+        {
+            string p = s.VpkPrefix;
+            if (s.Voice || p.StartsWith("sounds/vo/")) return Bus.Voice;
+            if (p.StartsWith("sounds/weapons/")) return Bus.Weapon;
+            if (p.StartsWith("sounds/player/footsteps/")) return p.Contains("jumpland") ? Bus.Movement : Bus.Footstep;
+            if (p.Contains("umbrella")) return Bus.Ability; // Mina's hover lives under player/movement but is her kit
+            if (p.StartsWith("sounds/player/movement/") || p.StartsWith("sounds/player/wall_jump") || p.StartsWith("sounds/gameplay/slide/")) return Bus.Movement;
+            return Bus.Ability; // abilities, items (mods), melee
+        }
+
         public static void Register(DeadlockSound s)
         {
+            s.Bus = BusOf(s);
             Rows[s.Id] = s;
             DeadlockInstall.WantSound(s.VpkPrefix);
         }
@@ -161,7 +202,7 @@ namespace CursedAppleCuriosities.Deadlock
                 bool orphan = p.Voice.Loop && p.Followed && (p.Follow == null || !p.Follow.gameObject.activeInHierarchy);
                 if (p.Voice.Finished || p.Voice.Stopped || orphan || Time.time > p.Until) { p.Voice.Stopped = true; Active.RemoveAt(i); continue; }
                 if (p.Follow != null) p.Pos = p.Follow.position + Vector3.up;
-                float gain = p.Row.Volume * p.Gain * _volume * (unfocused ? 0f : 1f), pan = 0f;
+                float gain = p.Row.Volume * BusVolume(p.Row.Bus) * p.Gain * _volume * (unfocused ? 0f : 1f), pan = 0f;
                 if (hasListener)
                 {
                     Vector3 to = p.Pos - ear;

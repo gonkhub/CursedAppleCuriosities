@@ -44,7 +44,9 @@ namespace CursedAppleCuriosities.Stages.DeadlockMap
             SecretChance = config.Bind("Deadlock Map", "Unfound Secret Chance", 0.5f,
                 "Chance that a district replaces its stage while it still hides a hero someone in the run hasn't unlocked (used instead of the district's own chance when higher; a district set to 0 stays off).");
             ImpPitRadius = config.Bind("Deadlock Map", "Imp Pit Radius", 20f,
-                "Sunken Plaza's purple pit: using an interactable within this many metres of it wakes an elite Imp Overlord nearby (once per visit).");
+                "Sunken Plaza's purple pit: using an interactable within this many metres of it wakes a hostile Bebop nearby (once per visit).");
+            InvaderHealth = config.Bind("Deadlock Map", "Pit Invader Health Boost", 10,
+                "Extra health on the pit's hostile Bebop, in Infusion-like steps of +10% (10 = double health).");
             MapShop.Init();
             HeroSilhouette.Init(districts.Select(d => d.Def));
             _scenes = LoadBundle("cac_stagescenes");
@@ -120,12 +122,14 @@ namespace CursedAppleCuriosities.Stages.DeadlockMap
         };
 
         public static ConfigEntry<float>? ImpPitRadius;
+        public static ConfigEntry<int>? InvaderHealth;
         /// <summary>This stage's armed Imp Overlord pit (server): cleared once it has woken.</summary>
         internal static (Stage Stage, Vector3 Pit)? _impPit;
 
         /// <summary>
-        /// The first time anyone uses an interactable in the pit (a chest, a shrine...), an elite Imp Overlord appears nearby:
-        /// once per visit. A random tier-1 elite (fire, ice, lightning...), stats and rewards as the combat director gives one.
+        /// The first time anyone uses an interactable in the pit (a chest, a shrine...), a hostile Bebop invades nearby: once per
+        /// visit (user 3.0; the elite Imp Overlord that was here was too strong). His own AI (Survivors/Bebop/BebopInvader), extra
+        /// health (Pit Invader Health Boost), a miniboss's rewards.
         /// </summary>
         private static void ImpPitInteraction(Interactor interactor, IInteractable interactable, GameObject used)
         {
@@ -134,38 +138,34 @@ namespace CursedAppleCuriosities.Stages.DeadlockMap
             if (stage != Stage.instance) { _impPit = null; return; }
             if ((used.transform.position - pit).sqrMagnitude > Mathf.Pow(ImpPitRadius?.Value ?? 20f, 2f)) return;
             _impPit = null;
-            SpawnImpLord(used.transform.position, pit);
+            SpawnInvader(used.transform.position, pit);
         }
 
-        private static void SpawnImpLord(Vector3 near, Vector3 pit)
+        private static void SpawnInvader(Vector3 near, Vector3 pit)
         {
             if (Run.instance == null || DirectorCore.instance == null) return;
-            SpawnCard? card = Addressables.LoadAssetAsync<SpawnCard>("RoR2/Base/ImpBoss/cscImpBoss.asset").WaitForCompletion();
-            if (card == null) { Warn("no Imp Overlord spawn card"); return; }
+            CharacterSpawnCard? card = Survivors.Bebop.BebopInvader.Card;
+            if (card == null) { Warn("no Bebop invader (Bebop isn't registered in this build)"); return; }
             var rng = new Xoroshiro128Plus(Run.instance.stageRng.nextUlong);
-            // Vanilla's first elite tier (private): its cost multiplier and a random elite of it available this run.
-            var tiers = typeof(CombatDirector).GetField("eliteTiers", BindingFlags.Static | BindingFlags.NonPublic)?.GetValue(null) as CombatDirector.EliteTierDef[];
-            CombatDirector.EliteTierDef? tier = tiers != null && tiers.Length > 1 ? tiers[1] : null;
-            EliteDef? elite = tier?.GetRandomAvailableEliteDef(rng);
-            float value = tier?.costMultiplier ?? 1f;
-            var anchor = new GameObject("ImpLordAnchor");
+            var anchor = new GameObject("InvaderAnchor");
             anchor.transform.position = near;
             void Configure(SpawnCard.SpawnResult result)
             {
                 CharacterMaster? master = result.success && result.spawnedInstance != null ? result.spawnedInstance.GetComponent<CharacterMaster>() : null;
                 if (master == null || master.inventory == null) return;
-                if (elite?.eliteEquipmentDef != null) master.inventory.SetEquipmentIndex(elite.eliteEquipmentDef.equipmentIndex);
-                master.inventory.GiveItemPermanent(RoR2Content.Items.BoostHp, Mathf.RoundToInt(((elite?.healthBoostCoefficient ?? 1f) - 1f) * 10f));
-                master.inventory.GiveItemPermanent(RoR2Content.Items.BoostDamage, Mathf.RoundToInt(((elite?.damageBoostCoefficient ?? 1f) - 1f) * 10f));
-                DeathRewards? rewards = master.GetBodyObject()?.GetComponent<DeathRewards>();
-                if (rewards != null)
+                master.inventory.GiveItemPermanent(RoR2Content.Items.BoostHp, Mathf.Max(0, InvaderHealth?.Value ?? 10));
+                GameObject? body = master.GetBodyObject();
+                if (body != null)
                 {
-                    float worth = card.directorCreditCost * value * 0.2f; // the scene director's exp reward coefficient
+                    // A survivor body has no rewards of its own: a miniboss's worth.
+                    DeathRewards rewards = body.GetComponent<DeathRewards>() ?? body.AddComponent<DeathRewards>();
+                    float worth = card.directorCreditCost * 0.2f; // the scene director's exp reward coefficient
                     rewards.spawnValue = (int)Mathf.Max(1f, worth);
                     rewards.expReward = (uint)Mathf.Max(1f, worth * Run.instance.compensatedDifficultyCoefficient);
                     rewards.goldReward = (uint)Mathf.Max(1f, worth * 2f * Run.instance.compensatedDifficultyCoefficient);
                 }
-                Log($"an elite Imp Overlord ({(elite != null ? elite.name : "no elite available")}) woke in its pit at {master.GetBodyObject()?.transform.position}");
+                Chat.SendBroadcastChat(new Chat.SimpleChatMessage { baseToken = "<color=#ff5544>Bebop has invaded!</color>" });
+                Log($"a hostile Bebop invaded from the pit at {body?.transform.position}");
             }
             DirectorSpawnRequest Request(DirectorPlacementRule rule) => new DirectorSpawnRequest(card, rule, rng)
             {
@@ -173,7 +173,7 @@ namespace CursedAppleCuriosities.Stages.DeadlockMap
                 ignoreTeamMemberLimit = true,
                 onSpawnedServer = Configure,
             };
-            // Nearby, not on top of whoever woke it; failing that, right in the pit.
+            // Nearby, not on top of whoever woke him; failing that, right in the pit.
             GameObject? spawned = DirectorCore.instance.TrySpawnObject(Request(new DirectorPlacementRule
             {
                 placementMode = DirectorPlacementRule.PlacementMode.Approximate, spawnOnTarget = anchor.transform, minDistance = 8f, maxDistance = 25f,
@@ -183,7 +183,7 @@ namespace CursedAppleCuriosities.Stages.DeadlockMap
                 anchor.transform.position = pit;
                 spawned = DirectorCore.instance.TrySpawnObject(Request(new DirectorPlacementRule { placementMode = DirectorPlacementRule.PlacementMode.Direct, spawnOnTarget = anchor.transform }));
             }
-            if (spawned == null) Warn($"the Imp Overlord couldn't be placed near {near}");
+            if (spawned == null) Warn($"the Bebop invader couldn't be placed near {near}");
             UnityEngine.Object.Destroy(anchor);
         }
 

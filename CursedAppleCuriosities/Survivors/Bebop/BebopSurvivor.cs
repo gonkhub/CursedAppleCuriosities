@@ -56,6 +56,7 @@ namespace CursedAppleCuriosities.Survivors.Bebop
             BodyPrefab = CreateBody();
             DisplayPrefab = CreateDisplay();
             CreateSurvivor();
+            BebopInvader.Build(BodyPrefab); // the hostile Bebop the Sunken Plaza pit wakes (user 3.0)
             AddLanguage();
             BebopNet.Register();
             DeadlockHeroVoice.Track(BodyName, BebopData.Hero, "bebop");
