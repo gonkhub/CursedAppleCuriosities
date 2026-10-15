@@ -125,13 +125,38 @@ namespace EntityStates.CursedApple.Bebop
 
     /// <summary>
     /// Sticky Bomb, the user's version: Seven's Static Charge flow with a very short reach (Deadlock's 6 m) and no stun. A tap sticks it
-    /// on the enemy nearest the crosshair (reticle shows it; no one in reach = no cast, no cooldown); holding the key sticks it on
+    /// on the enemy or ally (3.0) nearest the crosshair (reticle shows it; no one in reach = no cast, no cooldown); holding the key sticks it on
     /// himself (user 2.5, Deadlock's self-cast). Casting gives him +12 m/s for a moment. BebopStickyBomb does the rest.
     /// </summary>
     public class ThrowStickyBomb : BaseSkillState
     {
-        public static CharacterBody? Target(CharacterBody body) =>
-            EquipmentTargeting.FindEnemy(body, BebopData.StickyRange * MysticExpansion.RadiusMultiplier(body), BebopData.StickyConeDeg, _ => true);
+        /// <summary>
+        /// The body nearest the crosshair in reach, enemy or ally (user 3.0: allies can carry it too; the blast only hurts enemies,
+        /// and only Bebop himself takes the self-cast share). No one in the cone: whatever enemy the crosshair is on.
+        /// </summary>
+        public static CharacterBody? Target(CharacterBody body)
+        {
+            float range = BebopData.StickyRange * MysticExpansion.RadiusMultiplier(body);
+            if (body.inputBank != null && body.teamComponent != null)
+            {
+                Ray aim = body.inputBank.GetAimRay();
+                TeamMask teams = TeamMask.GetEnemyTeams(body.teamComponent.teamIndex);
+                teams.AddTeam(body.teamComponent.teamIndex);
+                var search = new BullseyeSearch
+                {
+                    teamMaskFilter = teams, filterByLoS = true, searchOrigin = aim.origin, searchDirection = aim.direction,
+                    maxDistanceFilter = range, maxAngleFilter = BebopData.StickyConeDeg, sortMode = BullseyeSearch.SortMode.Angle,
+                };
+                search.RefreshCandidates();
+                search.FilterOutGameObject(body.gameObject);
+                foreach (HurtBox hb in search.GetResults())
+                {
+                    CharacterBody? b = hb != null && hb.healthComponent != null ? hb.healthComponent.body : null;
+                    if (b != null && b.healthComponent.alive) return b;
+                }
+            }
+            return EquipmentTargeting.FindEnemy(body, range, BebopData.StickyConeDeg, _ => true);
+        }
 
         public override void FixedUpdate()
         {

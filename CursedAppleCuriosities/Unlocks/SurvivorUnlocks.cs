@@ -62,6 +62,8 @@ namespace CursedAppleCuriosities.Unlocks
             Challenge(Challenges.ShivChainReaction.Identifier, "Shiv: Chain Reaction", $"As Shiv, chain {Challenges.ShivChainReaction.Chain} Killing Blow executes in a row.");
             SkillUnlocks.Register(Challenges.ParadoxDisplacement.Skill);
             Challenge(Challenges.ParadoxDisplacement.Identifier, "Paradox: Temporal Displacement", "As Paradox, swap places with a boss using Paradoxical Swap, then kill it within 5 seconds.");
+            SkillUnlocks.Register(Challenges.BebopBombSquad.Skill);
+            Challenge(Challenges.BebopBombSquad.Identifier, "Bebop: Bomb Squad", "As Bebop, build up +200% Sticky Bomb damage without dying.");
             ShotTracker.Init();
             RoR2Application.onLoad += UsePortraits;
         }

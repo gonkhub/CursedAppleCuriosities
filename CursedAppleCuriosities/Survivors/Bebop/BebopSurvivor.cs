@@ -257,7 +257,7 @@ namespace CursedAppleCuriosities.Survivors.Bebop
                 $"Fire a continuous beam that deals <style=cIsDamage>{D(BebopData.BeamDamage / BebopData.BeamTick)} damage per second</style> to the first enemy it touches, up to {BebopData.BeamRange:0} m. Barely procs, but <style=cIsDamage>always procs</style> on a hooked enemy.");
             LanguageAPI.Add(Token + "STICKY_NAME", "Sticky Bomb");
             LanguageAPI.Add(Token + "STICKY_DESC",
-                $"Stick a bomb on a nearby enemy (hold: on yourself) and gain <style=cIsUtility>+{BebopData.StickySpeed:0} m/s</style> briefly. After {BebopData.StickyFuse:0.#}s it explodes for <style=cIsDamage>{D(BebopData.StickyDamage)} damage</style>. Each enemy it hits gives Sticky Bomb " +
+                $"Stick a bomb on a nearby enemy or ally (hold: on yourself) and gain <style=cIsUtility>+{BebopData.StickySpeed:0} m/s</style> briefly. After {BebopData.StickyFuse:0.#}s it explodes for <style=cIsDamage>{D(BebopData.StickyDamage)} damage</style>. Each enemy it hits gives Sticky Bomb " +
                 $"<style=cIsDamage>+{BebopData.StickyPerHit:0}%</style> damage, each kill <style=cIsDamage>+{BebopData.StickyPerKill:0}%</style> (elites x{BebopData.StickyEliteScale:0.#}), <style=cIsHealth>lost on death</style>.");
             LanguageAPI.Add(Token + "HOOK_NAME", "Grapple Arm");
             LanguageAPI.Add(Token + "HOOK_DESC",

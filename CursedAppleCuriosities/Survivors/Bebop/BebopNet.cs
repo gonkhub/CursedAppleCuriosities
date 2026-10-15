@@ -239,7 +239,12 @@ namespace CursedAppleCuriosities.Survivors.Bebop
 
         private void Awake() => _master = GetComponent<CharacterMaster>();
 
-        public void Add(float pct) { Percent += pct; Show(); }
+        public void Add(float pct)
+        {
+            Percent += pct;
+            Show();
+            CursedAppleCuriosities.Unlocks.Challenges.BebopBombSquad.StacksNow(_master, Percent);
+        }
         public void Clear() { Percent = 0f; Show(); }
 
         private void FixedUpdate()
