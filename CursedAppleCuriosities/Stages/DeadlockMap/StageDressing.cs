@@ -97,7 +97,8 @@ namespace CursedAppleCuriosities.Stages.DeadlockMap
                 if (!Physics.Raycast(foot + Vector3.up * 3f, Vector3.down, out RaycastHit hit, 40f, LayerIndex.world.mask, QueryTriggerInteraction.Ignore)) continue;
                 float rise = Mathf.Max(4f, top.y - hit.point.y + 3f);
                 float v = Mathf.Sqrt(2f * g * rise);
-                GameObject geyser = UnityEngine.Object.Instantiate(prefab, hit.point, Quaternion.identity, parent);
+                // The prefab's up is its local +z (its trigger box is 6 m along z): stand it up.
+                GameObject geyser = UnityEngine.Object.Instantiate(prefab, hit.point, Quaternion.Euler(-90f, 0f, 0f), parent);
                 geyser.name = "RopeGeyser";
                 foreach (JumpVolume jv in geyser.GetComponentsInChildren<JumpVolume>(true))
                 {
