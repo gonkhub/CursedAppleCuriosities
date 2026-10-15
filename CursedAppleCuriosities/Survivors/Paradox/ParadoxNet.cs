@@ -590,6 +590,7 @@ namespace CursedAppleCuriosities.Survivors.Paradox
                 EffectManager.SpawnEffect(ParadoxSurvivor.SwapHitEffect, new EffectData { origin = ParadoxNet.Core(enemy), scale = 3f }, true);
                 EffectManager.SpawnEffect(ParadoxSurvivor.SwapHitEffect, new EffectData { origin = paradox.corePosition, scale = 3f }, true);
             }
+            CursedAppleCuriosities.Unlocks.Challenges.ParadoxDisplacement.Swapped(paradox, enemy.body);
             ParadoxNet.Hit(paradox, enemy, damage, crit, Vector3.zero, DamageSource.Special);
             CursedAppleCuriositiesPlugin.Logger?.LogInfo($"[Paradox] swap with {enemy.name}: {Vector3.Distance(a, b):0.#} m in {duration:0.##} s");
             if (enemy.alive)

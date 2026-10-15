@@ -60,6 +60,8 @@ namespace CursedAppleCuriosities.Unlocks
             Challenge(Challenges.ViscousStrike.Identifier, "Viscous: Strike!", $"As Viscous, kill {Challenges.ViscousStrike.Kills} enemies in one Goo Ball roll.");
             SkillUnlocks.Register(Challenges.ShivChainReaction.Skill);
             Challenge(Challenges.ShivChainReaction.Identifier, "Shiv: Chain Reaction", $"As Shiv, chain {Challenges.ShivChainReaction.Chain} Killing Blow executes in a row.");
+            SkillUnlocks.Register(Challenges.ParadoxDisplacement.Skill);
+            Challenge(Challenges.ParadoxDisplacement.Identifier, "Paradox: Temporal Displacement", "As Paradox, swap places with a boss using Paradoxical Swap, then kill it within 5 seconds.");
             ShotTracker.Init();
             RoR2Application.onLoad += UsePortraits;
         }
