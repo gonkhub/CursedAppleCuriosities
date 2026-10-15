@@ -289,7 +289,8 @@ namespace CursedAppleCuriosities.Survivors.Ivy
                 $"Turn to stone: <style=cIsUtility>invulnerable</style> and <style=cIsHealing>healing {D(IvyData.StoneHeal)} max health per second</style>. Slam down for <style=cIsDamage>{D(IvyData.StoneDamage)} damage</style>, <style=cIsUtility>stunning</style>.");
             LanguageAPI.Add(Token + "AIRDROP_NAME", "Air Drop");
             LanguageAPI.Add(Token + "AIRDROP_DESC",
-                $"Fly for up to {IvyData.AirDropSeconds:0}s carrying a bomb. Press again to toss it: <style=cIsDamage>{D(IvyData.AirDropDamage)} damage</style> in {IvyData.AirDropRadius:0} m. Afterwards deal <style=cIsDamage>+{D(IvyData.AirDropBuff)} damage</style> for {IvyData.AirDropBuffSeconds:0}s.");
+                $"Fly for up to {IvyData.AirDropSeconds:0}s carrying a bomb, or an ally you aim at (lift them within {IvyData.AirDropAllyRange:0} m). Press again to toss it: <style=cIsDamage>{D(IvyData.AirDropDamage)} damage</style> in {IvyData.AirDropRadius:0} m. A tossed ally is the bomb, exploding when they land." +
+                $" Afterwards deal <style=cIsDamage>+{D(IvyData.AirDropBuff)} damage</style> for {IvyData.AirDropBuffSeconds:0}s.");
         }
     }
 

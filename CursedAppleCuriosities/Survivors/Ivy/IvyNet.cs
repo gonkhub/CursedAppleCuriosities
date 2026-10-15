@@ -23,6 +23,7 @@ namespace CursedAppleCuriosities.Survivors.Ivy
             NetworkingAPI.RegisterMessageType<IvyStoneMessage>();
             NetworkingAPI.RegisterMessageType<IvyBombMessage>();
             NetworkingAPI.RegisterMessageType<IvyRingMessage>();
+            IvyCarry.Register();
             RecalculateStatsAPI.GetStatCoefficients += (body, args) =>
             {
                 if (IvySurvivor.TetherBuff != null)

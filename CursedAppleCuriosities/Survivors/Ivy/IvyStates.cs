@@ -200,12 +200,14 @@ namespace EntityStates.CursedApple.Ivy
     // ================= Special: Air Drop =================
 
     /// <summary>
-    /// Air Drop (Deadlock citadel_ability_tengu_airlift), alone: she takes off carrying a bomb and flies where she looks (10 m/s, 22 m/s
+    /// Air Drop (Deadlock citadel_ability_tengu_airlift): she takes off carrying a bomb and flies where she looks (10 m/s, 22 m/s
     /// holding forward), for up to 8 s. Special or primary drops it (the timer does too): it explodes where it lands (16 m) and she
-    /// deals 20% more damage for 8 s. Then she floats down on her wings.
+    /// deals 20% more damage for 8 s. Then she floats down on her wings. With an ally near the crosshair (user 3.0) she lifts them
+    /// instead, and dropping them makes them the bomb (IvyCarry).
     /// </summary>
     public class AirDrop : BaseSkillState
     {
+        private CharacterBody? _ally;
         private Vector3 _vel;
         private float _limit;
         private bool _dropped;
@@ -227,6 +229,11 @@ namespace EntityStates.CursedApple.Ivy
                 characterMotor.disableAirControlUntilCollision = false;
             }
             if (UnityEngine.Networking.NetworkServer.active) DeadlockFallGuard.ProtectNextLanding(gameObject, _limit + 6f);
+            if (isAuthority)
+            {
+                _ally = IvyCarry.FindAlly(characterBody);
+                if (_ally != null) IvyNet.ToServer(new IvyCarryRequest { Ivy = gameObject, Ally = _ally.gameObject });
+            }
             // Where the bomb would land, and how wide it blows (user 2.5).
             if (isAuthority && characterBody.isPlayerControlled) _preview = new IvyThrowPreview(Radius, showArc: true);
         }
@@ -267,7 +274,10 @@ namespace EntityStates.CursedApple.Ivy
             IvyModel.Play(gameObject, "fly_drop");
             _preview?.Destroy();
             _preview = null;
-            IvyNet.ToServer(new IvyBombMessage { Ivy = gameObject, At = ReleasePoint, Velocity = TossVelocity(), Crit = RollCrit() });
+            if (_ally != null && _ally.healthComponent != null && _ally.healthComponent.alive)
+                IvyNet.ToServer(new IvyCarryRequest { Ivy = gameObject, Ally = _ally.gameObject, Release = true, Velocity = TossVelocity(), Crit = RollCrit() });
+            else
+                IvyNet.ToServer(new IvyBombMessage { Ivy = gameObject, At = ReleasePoint, Velocity = TossVelocity(), Crit = RollCrit() });
         }
 
         public override void OnExit()

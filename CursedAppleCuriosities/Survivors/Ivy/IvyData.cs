@@ -77,6 +77,10 @@ namespace CursedAppleCuriosities.Survivors.Ivy
         public const float FlyAccel = 9f;                // Deadlock m_flAcceleration
         public const float FlyClimb = 8f;                // m/s up at take-off
         public const float BombSpeed = 30f;              // Deadlock m_flBombReleaseSpeed 1200 hu/s
+        public const float AirDropAllyRange = 20f;       // user 3.0: Air Drop lifts the ally nearest the crosshair within this reach
+        public const float AirDropAllyCone = 25f;
+        public const float AirDropAllyFuse = 6f;         // a dropped ally explodes on landing, or after this long at most
+        public const float AirDropCarryGap = 1.2f;       // the ally hangs this far under her feet
         public const float BombToss = 38f;               // user 2.5: tossed much farther, along her aim, on top of her own speed
         public static float AirDropBuff = 0.2f;          // Deadlock AirDropOutgoingDamagePercent
         public const float AirDropBuffSeconds = 8f;      // Deadlock BuffDuration
