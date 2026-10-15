@@ -28,6 +28,8 @@ namespace CursedAppleCuriosities.Survivors.GreyTalon
         /// <summary>Skin icon in the hero's own palette (green coat, orange scarf, teal, leather), not the stand-in's.</summary>
         private static Sprite DefaultSkinIcon => _defaultSkinIcon ??= Kit.SkinIcon(new Color(0.2f, 0.42f, 0.25f), new Color(0.85f, 0.36f, 0.15f), new Color(0.3f, 0.7f, 0.55f), new Color(0.58f, 0.38f, 0.22f));
         private static Sprite? _defaultSkinIcon;
+        private static Sprite NightOwlSkinIcon => _nightOwlSkinIcon ??= Kit.SkinIcon(new Color(0.32f, 0.2f, 0.45f), new Color(0.2f, 0.45f, 0.9f), new Color(0.45f, 0.35f, 0.7f), new Color(0.22f, 0.32f, 0.6f));
+        private static Sprite? _nightOwlSkinIcon;
         /// <summary>The owl's blast and glow are green (user).</summary>
         public const float OwlHue = 0.33f;
 
@@ -236,7 +238,7 @@ namespace CursedAppleCuriosities.Survivors.GreyTalon
             Kit.MuteStandIn(body, model.gameObject, GreyTalonData.Hero);
             var children = model.GetComponent<ChildLocator>();
             if (children != null && children.FindChild(MuzzleName) == null) children.AddChild(MuzzleName, model);
-            Kit.OwnSkin(model.gameObject, "skinCursedAppleGreyTalonDEFAULT", Token + "SKIN_DEFAULT", DefaultSkinIcon);
+            Kit.OwnSkin(model.gameObject, "skinCursedAppleGreyTalonDEFAULT", Token + "SKIN_DEFAULT", DefaultSkinIcon, ("skinCursedAppleGreyTalonNIGHTOWL", Token + "SKIN_NIGHTOWL", NightOwlSkinIcon));
 
             ContentAddition.AddBody(body);
             return body;
@@ -252,7 +254,7 @@ namespace CursedAppleCuriosities.Survivors.GreyTalon
                 var swap = cm.gameObject.AddComponent<DeadlockModelSwap>();
                 swap.HeroKey = GreyTalonData.Hero;
                 swap.IsDisplay = true;
-                Kit.OwnSkin(cm.gameObject, "skinCursedAppleGreyTalonDISPLAY", Token + "SKIN_DEFAULT", DefaultSkinIcon);
+                Kit.OwnSkin(cm.gameObject, "skinCursedAppleGreyTalonDISPLAY", Token + "SKIN_DEFAULT", DefaultSkinIcon, ("skinCursedAppleGreyTalonDISPLAYNIGHTOWL", Token + "SKIN_NIGHTOWL", NightOwlSkinIcon));
             }
             display.AddComponent<GreyTalonDisplayIntro>();
             return display;
@@ -310,6 +312,7 @@ namespace CursedAppleCuriosities.Survivors.GreyTalon
             LanguageAPI.Add(Token + "NAME", "Grey Talon");
             LanguageAPI.Add(Token + "SUBTITLE", "The Last Hunt");
             LanguageAPI.Add(Token + "SKIN_DEFAULT", "Default");
+            LanguageAPI.Add(Token + "SKIN_NIGHTOWL", "Night Owl");
             LanguageAPI.Add(Token + "DESCRIPTION",
                 "Grey Talon spent forty years hunting monsters. This planet has more than he can count.<color=#CCD3E0>\n\n" +
                 "< ! > His bow keeps full damage across long distances: keep your distance.\n\n" +
