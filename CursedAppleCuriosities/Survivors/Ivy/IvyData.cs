@@ -60,7 +60,7 @@ namespace CursedAppleCuriosities.Survivors.Ivy
         public static float StoneRadius = 5.75f;
         public const float StoneStun = 0.75f;
         public const float StoneCastDelay = 0.25f;       // Deadlock AbilityCastDelay: she hangs a moment as she turns to stone
-        public const float StoneLift = 4.6f, StoneLiftTime = 1f; // Deadlock LiftHeight 180 hu over LiftTime 1 s (eased: fast, then slowing)
+        public const float StoneLift = 4.6f, StoneLiftTime = 0.5f; // Deadlock LiftHeight 180 hu: a leap as she turns to stone (user 2.5: leap first, then slam; Deadlock lifts over 1 s)
         public const float StoneFallAccel = 75f;         // m/s^2 down: a falling statue (Deadlock's drag modifier pulls her down hard)
         public const float StoneFallMax = 70f;
         public const float StoneSteer = 8f;              // Deadlock MoveSpeedMax 8 m

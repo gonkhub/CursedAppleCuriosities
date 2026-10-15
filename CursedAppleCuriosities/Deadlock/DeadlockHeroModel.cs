@@ -53,8 +53,8 @@ namespace CursedAppleCuriosities.Deadlock
         /// </summary>
         public bool HandSnap;
         /// <summary>
-        /// Stand the idle over the spot the runs use: Ivy's idle holds her hips ~0.2 m to the side of where her run clips do, so she
-        /// stepped sideways off her body whenever she stopped (user 2.5). The idle's pelvis is moved horizontally onto run_n's.
+        /// Stand every full clip over the spot the runs use: Ivy's idle, jumps and in-air clips hold her hips ~0.2 m to the side of
+        /// where her run clips do, so she stepped sideways off her body whenever she stopped or jumped (user 2.5).
         /// </summary>
         public bool CenterIdle;
         /// <summary>A locomotion set, e.g. "siphon": locomotion state X becomes "siphon.X" when the table has it.</summary>
@@ -966,7 +966,7 @@ namespace CursedAppleCuriosities.Deadlock
                 p = t.Pos[0] + up * Vector3.Dot(d, up);
             }
             else if (l.ClothShift != Vector3.zero && t.Bone.StartsWith("$cloth", StringComparison.Ordinal)) p -= l.ClothShift;
-            if (t.Bone == "pelvis" && _def.CenterIdle && l.Row.State == "idle") p -= IdleShift(t);
+            if (t.Bone == "pelvis" && _def.CenterIdle && l.Row.Layer == "full" && !IsRunClip(l.Row.State)) p -= ClipShift(l.Clip, t);
             return true;
         }
 
@@ -984,21 +984,28 @@ namespace CursedAppleCuriosities.Deadlock
             return _upper.Contains(bone);
         }
 
-        private Vector3? _idleShift;
+        private readonly Dictionary<AnimClip, Vector3> _clipShift = new Dictionary<AnimClip, Vector3>();
 
-        /// <summary>How far the idle's pelvis sits off run_n's, horizontally (see DeadlockHeroDef.CenterIdle).</summary>
-        private Vector3 IdleShift(AnimTrack idlePelvis)
+        private static bool IsRunClip(string state) => state.StartsWith("run_", StringComparison.Ordinal) || state.StartsWith("sprint_", StringComparison.Ordinal);
+
+        /// <summary>
+        /// How far a clip's pelvis starts off run_n's, horizontally (see DeadlockHeroDef.CenterIdle). Ivy's idle, jumps and in-air
+        /// clips all stand ~0.2 m to the side of her runs (user 2.5: she shifted off her body standing still, then jumping): each is
+        /// centred on the run's spot by its own first frame.
+        /// </summary>
+        private Vector3 ClipShift(AnimClip clip, AnimTrack pelvis)
         {
-            if (_idleShift.HasValue) return _idleShift.Value;
-            Vector3 shift = Vector3.zero;
+            if (_clipShift.TryGetValue(clip, out Vector3 shift)) return shift;
+            shift = Vector3.zero;
             if (_clips != null && _states.TryGetValue("run_n", out Row run) && _clips.TryGetValue(run.Clip, out AnimClip rc)
-                && Find(rc, "pelvis") is AnimTrack rp && rp.Pos != null && rp.Pos.Length > 0 && idlePelvis.Pos != null && idlePelvis.Pos.Length > 0)
+                && Find(rc, "pelvis") is AnimTrack rp && rp.Pos != null && rp.Pos.Length > 0 && pelvis.Pos != null && pelvis.Pos.Length > 0)
             {
                 Vector3 up = PelvisUp();
-                Vector3 d = idlePelvis.Pos[0] - rp.Pos[0];
+                Vector3 d = pelvis.Pos[0] - rp.Pos[0];
                 shift = d - up * Vector3.Dot(d, up);
+                if (shift.magnitude > 0.6f) shift = Vector3.zero; // a clip that starts well away on purpose (a dash, a lunge): left alone
             }
-            _idleShift = shift;
+            _clipShift[clip] = shift;
             return shift;
         }
 

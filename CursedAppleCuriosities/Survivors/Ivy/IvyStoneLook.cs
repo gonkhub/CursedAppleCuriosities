@@ -23,6 +23,7 @@ namespace CursedAppleCuriosities.Survivors.Ivy
         private AnimClip? _pose;
         private readonly Dictionary<string, Transform> _bones = new Dictionary<string, Transform>();
         private float _t, _nextAsk;
+        private static bool _logged;
 
         private void Awake() => _body = GetComponent<CharacterBody>();
 
@@ -30,14 +31,12 @@ namespace CursedAppleCuriosities.Survivors.Ivy
         {
             if (_tried) return _stone;
             _tried = true;
-            Material? rock = Kit.TryLoad<Material>("Ivy", "RoR2/Base/Golem/matGolemDead.mat", "RoR2/Base/Characters/Golem/matGolemDead.mat",
-                "RoR2/Base/Golem/matGolem.mat", "RoR2/Base/Characters/Golem/matGolem.mat");
-            if (rock != null) _stone = new Material(rock) { name = "matCursedAppleIvyStone" };
-            else
-            {
-                _stone = DeadlockHeroes.MakeMaterial("Ivy", "stone", null);
-                _stone.color = new Color(0.55f, 0.55f, 0.52f);
-            }
+            // The material her own mesh renders with (Commando's opaque character material), with the Stone Golem's rock texture.
+            // Not a golem material itself: matGolemDead dithers out (it's the dying golem's), so the statue and the overlay drew
+            // nothing (user 2.5: "not visible at all").
+            Material? rock = Kit.TryLoad<Material>("Ivy", "RoR2/Base/Golem/matGolem.mat", "RoR2/Base/Characters/Golem/matGolem.mat");
+            _stone = DeadlockHeroes.MakeMaterial("Ivy", "stone", rock != null ? rock.mainTexture as Texture2D : null);
+            _stone.color = rock != null ? new Color(0.85f, 0.85f, 0.82f) : new Color(0.55f, 0.55f, 0.52f);
             return _stone;
         }
 
@@ -87,8 +86,10 @@ namespace CursedAppleCuriosities.Survivors.Ivy
                 _t = 0f;
                 Pose(0f);
                 SetHidden(_hero, true);
+                if (!_logged) { _logged = true; CursedAppleCuriositiesPlugin.Logger?.LogInfo($"[Ivy] Stone Form: statue shown ({_statue.GetComponentsInChildren<Renderer>(true).Length} renderers, {_bones.Count} bones)"); }
                 return;
             }
+            if (!_logged) { _logged = true; CursedAppleCuriositiesPlugin.Logger?.LogInfo($"[Ivy] Stone Form: stone overlay (statue model {(statue != null ? "ready" : "not loaded")}, pose {(_pose != null ? "ready" : "not loaded")}, hero {(_hero != null ? "ready" : "missing")})"); }
             // No statue yet: her own model, turned to stone.
             CharacterModel? model = _body.modelLocator != null && _body.modelLocator.modelTransform != null ? _body.modelLocator.modelTransform.GetComponent<CharacterModel>() : null;
             if (model == null || stone == null) return;
