@@ -354,6 +354,7 @@ namespace EntityStates.CursedApple.Shiv
         private void Finish(bool executed)
         {
             _ended = true;
+            if (isAuthority) CursedAppleCuriosities.Unlocks.Challenges.ShivChainReaction.KillingBlowEnded(gameObject, executed);
             ShivModel.Play(gameObject, "slash");
             if (characterMotor != null) characterMotor.velocity = executed ? Vector3.up * 4f : _dir * characterBody.moveSpeed + Vector3.down * 2f;
             outer.SetNextStateToMain();

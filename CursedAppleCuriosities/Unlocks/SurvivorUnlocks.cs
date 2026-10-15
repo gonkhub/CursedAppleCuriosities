@@ -58,6 +58,8 @@ namespace CursedAppleCuriosities.Unlocks
             Challenge(Challenges.ViscousSplashZone.Identifier, "Viscous: Splash Zone", $"As Viscous, kill {Challenges.ViscousSplashZone.Kills} enemies with a single Splatter.");
             SkillUnlocks.Register(Challenges.ViscousStrike.Skill);
             Challenge(Challenges.ViscousStrike.Identifier, "Viscous: Strike!", $"As Viscous, kill {Challenges.ViscousStrike.Kills} enemies in one Goo Ball roll.");
+            SkillUnlocks.Register(Challenges.ShivChainReaction.Skill);
+            Challenge(Challenges.ShivChainReaction.Identifier, "Shiv: Chain Reaction", $"As Shiv, chain {Challenges.ShivChainReaction.Chain} Killing Blow executes in a row.");
             ShotTracker.Init();
             RoR2Application.onLoad += UsePortraits;
         }
