@@ -23,7 +23,8 @@ namespace CursedAppleCuriosities.Deadlock
         public string MuzzleName = "";
 
         /// <summary>State, Deadlock clip, loop, next state ("locomotion", "hold", a state, or "" for loops), layer ("full" / "additive" /
-        /// "delta": a full clip played as an overlay, as its motion from its first frame).</summary>
+        /// "delta": a full clip played as an overlay, as its motion from its first frame; "upper": a full clip played over the
+        /// locomotion from the spine up, the legs left running, as Deadlock's ability masks do).</summary>
         public (string State, string Clip, bool Loop, string Next, string Layer)[] Anims = Array.Empty<(string, string, bool, string, string)>();
         /// <summary>
         /// Clips whose own travel is removed (root lock): Deadlock moves heroes with these animations, RoR2
@@ -616,7 +617,7 @@ namespace CursedAppleCuriosities.Deadlock
             // An ability cast mid-slide plays over the slide pose (Deadlock masks casts to the upper body): as a full
             // pose it stood the hero up while the body kept sliding.
             bool overSlide = Sliding && !row.Loop && !IsMovement(id) && _states.ContainsKey("slide");
-            if (row.Layer == "additive" || row.Layer == "delta" || overSlide)
+            if (row.Layer == "additive" || row.Layer == "delta" || row.Layer == "upper" || overSlide)
             {
                 SetLayer(_over, overSlide && row.Layer == "full" ? new Row { State = row.State, Clip = row.Clip, Next = row.Next, Layer = "delta" } : row);
                 _overWeight = Mathf.Max(_overWeight, 0.01f);
@@ -891,7 +892,17 @@ namespace CursedAppleCuriosities.Deadlock
                     if (hasR && pt.SampleRot(_prev.T, out Quaternion pr)) r = Quaternion.Slerp(pr, r, w);
                     if (hasP && SamplePos(_prev, pt, out Vector3 pp)) p = Vector3.Lerp(pp, p, w);
                 }
-                if (_overWeight > 0f && _over.Valid && Find(_over.Clip, tr.Bone) is AnimTrack ut)
+                if (_overWeight > 0f && _over.Valid && _over.Row.Layer == "upper" && Find(_over.Clip, tr.Bone) is AnimTrack mt)
+                {
+                    // An ability masked to the upper body (Victor's Pain Battery while running, user 2.5): its own pose from the
+                    // spine up, blended in by the overlay weight; the hips and legs keep the run.
+                    if (IsUpper(tr.Bone))
+                    {
+                        if (hasR && mt.SampleRot(_over.T, out Quaternion mr)) r = Quaternion.Slerp(r, mr, _overWeight);
+                        if (hasP && mt.SamplePos(_over.T, out Vector3 mp)) p = Vector3.Lerp(p, mp, _overWeight);
+                    }
+                }
+                else if (_overWeight > 0f && _over.Valid && Find(_over.Clip, tr.Bone) is AnimTrack ut)
                 {
                     // Deadlock's additive clips store offsets on top of the current pose.
                     // Root-level bones carry the converter's axis turn instead of an offset, and Source 2 cloth points
@@ -937,6 +948,20 @@ namespace CursedAppleCuriosities.Deadlock
             }
             else if (l.ClothShift != Vector3.zero && t.Bone.StartsWith("$cloth", StringComparison.Ordinal)) p -= l.ClothShift;
             return true;
+        }
+
+        private HashSet<string>? _upper;
+
+        /// <summary>The bones from spine_1 up (the arms, the head, anything they carry): an "upper" overlay's half of the body.</summary>
+        private bool IsUpper(string bone)
+        {
+            if (_upper == null)
+            {
+                _upper = new HashSet<string>();
+                if (_bones.TryGetValue("spine_1", out Transform spine))
+                    foreach (Transform t in spine.GetComponentsInChildren<Transform>(true)) _upper.Add(t.name);
+            }
+            return _upper.Contains(bone);
         }
 
         private Vector3? _pelvisUp;

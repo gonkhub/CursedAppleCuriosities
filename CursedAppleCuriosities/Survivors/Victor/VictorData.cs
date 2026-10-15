@@ -170,6 +170,7 @@ namespace CursedAppleCuriosities.Survivors.Victor
             ("slide_getup", "slide_getup", false, "locomotion", "full"),
             ("shoot", "shoot_idle", false, "locomotion", "delta"),   // a full pose clip (no additive version): played as its motion only
             ("battery", "ability_pain_battery", false, "locomotion", "full"),
+            ("battery_run", "ability_pain_battery", false, "locomotion", "upper"), // cast while running: upper body only (Deadlock's frank_abilitymask)
             ("jumpstart", "ability_jumpstart", false, "locomotion", "full"),
             ("aura", "cast_channeling_start", false, "locomotion", "delta"), // he keeps moving and shooting while it runs
             ("aura_end", "cast_end", false, "locomotion", "delta"),
