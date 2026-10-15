@@ -257,7 +257,7 @@ namespace CursedAppleCuriosities.Survivors.Vyper
 
             LanguageAPI.Add(Token + "PASSIVE_NAME", "Slither");
             LanguageAPI.Add(Token + "PASSIVE_DESC",
-                $"Slides further and turns faster, and The Rattler fires <style=cIsDamage>{VyperData.GunSlideFireRate * 100f:0}% faster</style> while sliding. <style=cIsUtility>{VyperData.Movement.StaminaPips} stamina</style>.");
+                $"Slides further and turns faster, and The Rattler fires <style=cIsDamage>{VyperData.GunSlideFireRate * 100f:0}% faster</style> while sliding." + Kit.MovementLine(VyperData.Movement));
 
             LanguageAPI.Add(Token + "GUN_NAME", "The Rattler");
             LanguageAPI.Add(Token + "GUN_DESC",

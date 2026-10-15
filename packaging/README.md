@@ -2,21 +2,21 @@
 
 Items, equipment and survivors adapted from Deadlock's item shop for Risk of Rain 2.
 
-- **33 items** across white, green, red, void and lunar tiers, including **Lightning Scroll** (new in 1.8)
+- **32 items** across white, green, red, void and lunar tiers
 - **14 equipment**
 - **Artifact of the Curio**: only this mod's items drop
 - **Artifact of the Goose**: every player starts the run with a random Goose Egg
-- **Curiosity Catalog** (lunar): clearing the teleporter drops a shop selling this mod's
-  items, in exchange for opening chests
 - **Cursed Broker**: a rare shrine (10% on any stage, 50% on stage 3 of each loop, and in the Bazaar Between
   Time). Curse one item to make every copy of it about twice as strong, in exchange for a harsh penalty for the
   rest of the run
-- **Lash**, **Abrams** and **Seven** as playable survivors (more Deadlock heroes to come, one at a time), with Deadlock-style movement (stamina,
-  air dashes, dash-jumps, slides, wall jumps)
+- **Soul Urn**: appears on some stages far from the teleporter. Carry it to the teleporter before time runs out,
+  without taking damage, for a pile of items (more the later the stage)
+- **Eight playable survivors** from Deadlock: **Lash**, **Abrams**, **Seven**, **Vyper**, **Grey Talon**, **Victor**,
+  **Viscous** and **Celeste**, with Deadlock-style movement (stamina, air dashes, dash-jumps, slides, wall jumps)
 
 ## Expansion
 
-All of the items, equipment, artifacts and the Cursed Broker form the **Cursed Apple Curiosities** expansion, which
+All of the items, equipment, artifacts, the Cursed Broker and the Soul Urn form the **Cursed Apple Curiosities** expansion, which
 you can switch on or off in the lobby next to the base game's expansions (on by default). Off, none of it drops or
 appears; the survivors can still be played either way.
 

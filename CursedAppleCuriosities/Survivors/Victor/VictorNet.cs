@@ -158,19 +158,43 @@ namespace CursedAppleCuriosities.Survivors.Victor
     // ================= Pain Battery =================
 
     /// <summary>
-    /// The Pain Battery skill: ready only when the battery is full (the charge is a synced buff, so the owner's client sees
-    /// it too). Its 2 s cooldown is Deadlock's, after it empties; the charge itself never refills over time.
+    /// The Pain Battery skill: its stock is the charges the battery holds (a synced buff, so the owner's client sees them),
+    /// one per stock, so Backup Magazine lets it store more (user, 2.0). Charges come from damage taken alone, never time;
+    /// after each shot Deadlock's 2 s cooldown passes before the next.
     /// </summary>
     public class VictorBatterySkillDef : SkillDef
     {
-        private static bool Full(GenericSkill slot) =>
-            VictorSurvivor.BatteryBuff != null && slot.characterBody != null && slot.characterBody.GetBuffCount(VictorSurvivor.BatteryBuff) >= VictorData.BatteryFull;
+        private class Data : BaseSkillInstanceData { public float ReadyAt; }
 
-        public override bool CanExecute(GenericSkill skillSlot) => Full(skillSlot) && base.CanExecute(skillSlot);
-        public override bool IsReady(GenericSkill skillSlot) => base.IsReady(skillSlot) && Full(skillSlot);
+        public static int Charges(CharacterBody? body) =>
+            VictorSurvivor.BatteryChargesBuff != null && body != null ? body.GetBuffCount(VictorSurvivor.BatteryChargesBuff) : 0;
+
+        private static bool Ready(GenericSkill slot) =>
+            Charges(slot.characterBody) > 0 && !(slot.skillInstanceData is Data d && Time.fixedTime < d.ReadyAt);
+
+        public override BaseSkillInstanceData OnAssigned(GenericSkill skillSlot) => new Data();
+
+        public override void OnFixedUpdate(GenericSkill skillSlot, float deltaTime)
+        {
+            base.OnFixedUpdate(skillSlot, deltaTime);
+            skillSlot.stock = Mathf.Min(Charges(skillSlot.characterBody), skillSlot.maxStock); // the HUD's count is the battery's
+        }
+
+        public override void OnExecute(GenericSkill skillSlot)
+        {
+            base.OnExecute(skillSlot);
+            if (skillSlot.skillInstanceData is Data d) d.ReadyAt = Time.fixedTime + VictorData.BatteryCooldown;
+        }
+
+        public override bool CanExecute(GenericSkill skillSlot) => Ready(skillSlot) && base.CanExecute(skillSlot);
+        public override bool IsReady(GenericSkill skillSlot) => base.IsReady(skillSlot) && Ready(skillSlot);
     }
 
-    /// <summary>Server, on Victor: damage taken (health, shield or barrier) charges the battery (shown as 0..100 stacks of its buff).</summary>
+    /// <summary>
+    /// Server, on Victor: damage taken (health, shield or barrier) charges the battery, up to one charge per Pain Battery
+    /// stock (Backup Magazine: more). Shown as the charges ready (a hidden buff, the skill's stock) and the next charge
+    /// filling, 0..100 stacks of the battery buff (100 when every charge is full).
+    /// </summary>
     public class VictorBattery : MonoBehaviour
     {
         private CharacterBody _body = null!;
@@ -178,21 +202,44 @@ namespace CursedAppleCuriosities.Survivors.Victor
 
         private void Awake() => _body = GetComponent<CharacterBody>();
 
-        public bool IsFull => VictorSurvivor.BatteryBuff != null && _body.GetBuffCount(VictorSurvivor.BatteryBuff) >= VictorData.BatteryFull;
+        public bool HasCharge => VictorBatterySkillDef.Charges(_body) > 0;
+
+        private float PerCharge => Mathf.Max(1f, (_body.healthComponent != null ? _body.healthComponent.fullHealth : 100f) * VictorData.BatteryFillFraction);
+
+        private int MaxCharges
+        {
+            get
+            {
+                GenericSkill? slot = _body.skillLocator != null ? _body.skillLocator.secondary : null;
+                return slot != null && slot.skillDef is VictorBatterySkillDef ? Mathf.Max(1, slot.maxStock) : 1;
+            }
+        }
 
         public void Add(float damage)
         {
-            if (!NetworkServer.active || VictorSurvivor.BatteryBuff == null || _body.healthComponent == null) return;
-            float full = Mathf.Max(1f, _body.healthComponent.fullHealth * VictorData.BatteryFillFraction);
-            _stored = Mathf.Min(full, _stored + damage);
-            int stacks = Mathf.Clamp(Mathf.FloorToInt(_stored / full * VictorData.BatteryFull), 0, VictorData.BatteryFull);
-            if (stacks != _body.GetBuffCount(VictorSurvivor.BatteryBuff)) _body.SetBuffCount(VictorSurvivor.BatteryBuff.buffIndex, stacks);
+            if (!NetworkServer.active || _body.healthComponent == null) return;
+            _stored = Mathf.Min(PerCharge * MaxCharges, _stored + damage);
+            Show();
         }
 
-        public void Empty()
+        /// <summary>One charge fired.</summary>
+        public void Spend()
         {
-            _stored = 0f;
-            if (VictorSurvivor.BatteryBuff != null) _body.SetBuffCount(VictorSurvivor.BatteryBuff.buffIndex, 0);
+            _stored = Mathf.Max(0f, _stored - PerCharge);
+            Show();
+        }
+
+        private void Show()
+        {
+            if (VictorSurvivor.BatteryBuff == null || VictorSurvivor.BatteryChargesBuff == null) return;
+            float per = PerCharge;
+            int max = MaxCharges;
+            _stored = Mathf.Min(_stored, per * max); // losing a Backup Magazine holds fewer
+            int charges = Mathf.Min(max, Mathf.FloorToInt(_stored / per + 1e-4f));
+            int filling = charges >= max ? VictorData.BatteryFull
+                : Mathf.Clamp(Mathf.FloorToInt((_stored - charges * per) / per * VictorData.BatteryFull), 0, VictorData.BatteryFull - 1);
+            if (charges != _body.GetBuffCount(VictorSurvivor.BatteryChargesBuff)) _body.SetBuffCount(VictorSurvivor.BatteryChargesBuff.buffIndex, charges);
+            if (filling != _body.GetBuffCount(VictorSurvivor.BatteryBuff)) _body.SetBuffCount(VictorSurvivor.BatteryBuff.buffIndex, filling);
         }
     }
 
@@ -211,8 +258,8 @@ namespace CursedAppleCuriosities.Survivors.Victor
             if (!NetworkServer.active || Body == null) return;
             var body = Body.GetComponent<CharacterBody>();
             var battery = Body.GetComponent<VictorBattery>();
-            if (body == null || battery == null || body.teamComponent == null || !battery.IsFull) return;
-            battery.Empty();
+            if (body == null || battery == null || body.teamComponent == null || !battery.HasCharge) return;
+            battery.Spend();
 
             TeamIndex team = body.teamComponent.teamIndex;
             Vector3 dir = Direction.normalized;
@@ -362,15 +409,18 @@ namespace CursedAppleCuriosities.Survivors.Victor
             _age += Time.fixedDeltaTime;
             _tick -= Time.fixedDeltaTime;
             if (_tick > 0f) return;
-            _tick += VictorData.AuraTick;
+            // Attack speed ticks it faster (user, 2.0): each tick hits as hard, so its damage and procs rise with it.
+            float interval = VictorData.AuraTick / Mathf.Max(0.1f, _body.attackSpeed / Mathf.Max(0.01f, _body.baseAttackSpeed));
+            _tick += interval;
 
             float ramp = Mathf.Clamp01(_age / Mathf.Max(0.1f, VictorData.AuraRampSeconds)); // up to max over 8 s, then holds
             float coeff = Mathf.Lerp(VictorData.AuraMinDamage, VictorData.AuraMaxDamage, ramp) * VictorData.AuraTick;
             float radius = VictorData.AuraRadius * MysticExpansion.RadiusMultiplier(_body);
             foreach (HealthComponent hc in VictorNet.EnemiesIn(_body.corePosition, radius, _body.teamComponent.teamIndex))
                 VictorNet.Hit(_body, hc, coeff * _body.damage, _body.RollCrit(), VictorData.AuraProc, DamageSource.Special);
-            // It hurts him too, and can kill him (user): Reanimation catches that when it's ready.
-            float self = Mathf.Lerp(VictorData.AuraSelfMin, VictorData.AuraSelfMax, ramp) * VictorData.AuraTick * _body.healthComponent.fullHealth;
+            // It hurts him too, and can kill him (user): Reanimation catches that when it's ready. Per second, so faster
+            // ticks don't hurt him faster.
+            float self = Mathf.Lerp(VictorData.AuraSelfMin, VictorData.AuraSelfMax, ramp) * interval * _body.healthComponent.fullHealth;
             VictorNet.HurtSelf(_body, self, payment: false);
         }
     }

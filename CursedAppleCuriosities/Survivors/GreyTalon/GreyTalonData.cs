@@ -36,7 +36,7 @@ namespace CursedAppleCuriosities.Survivors.GreyTalon
         };
 
         // ---- primary: the bow (slow, very long range hitscan: user) ----
-        public static float BowDamage = 3f;
+        public static float BowDamage = 2.4f;           // 3 until 2.0: weak points (x1.5) made it too strong (user)
         public static float BowCycle = 0.6f;            // Deadlock m_flCycleTime
         public const float BowRange = 600f;             // Deadlock 7000 hu (178 m): far longer here (user: very long range); Mystic Expansion: farther (every bullet)
         // Falloff (user: the primary only, full damage across about half of most maps first). Deadlock: 18 m -> 54 m, to 10%.

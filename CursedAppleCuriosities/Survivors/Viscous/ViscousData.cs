@@ -86,8 +86,9 @@ namespace CursedAppleCuriosities.Survivors.Viscous
         public const float AltRange = 25.4f;            // Deadlock m_flRange 1000 hu: it splats here if it hits nothing (no gravity: user)
         public static float AltRadius = 3.56f;          // Deadlock m_flExplosionRadius 140 hu (Mystic Expansion grows it)
 
-        // ---- secondary: Splatter (Deadlock viscous_goo_grenade; user: 3 bounces, 500% each, Mystic Expansion) ----
-        public static float SplatterDamage = 5f;        // per bounce (user)
+        // ---- secondary: Splatter (Deadlock viscous_goo_grenade; user: 3 bounces, 800% each, Mystic Expansion) ----
+        public static float SplatterDamage = 8f;        // per bounce (user 2.5; was 500%)
+        public static float SplatterPassDamage = 8f;    // to each enemy it flies through, once (user 2.5)
         public static int SplatterBounces = 3;          // bursts before it's spent (user; Deadlock 2, 3 with its upgrade)
         public static float SplatterRadius = 5f;        // Deadlock Radius 5 m (Mystic Expansion grows it)
         public const float SplatterSpeed = 32f;
@@ -146,6 +147,7 @@ namespace CursedAppleCuriosities.Survivors.Viscous
             AltDamage = c.Bind(Section, "Alt Fire - Damage", AltDamage, "Damage coefficient of each glob's burst.").Value;
             AltRadius = c.Bind(Section, "Alt Fire - Radius", AltRadius, "Metres (Mystic Expansion widens it).").Value;
             SplatterDamage = c.Bind(Section, "Splatter - Damage", SplatterDamage, "Damage coefficient of each burst (one per bounce).").Value;
+            SplatterPassDamage = c.Bind(Section, "Splatter - Pass-Through Damage", SplatterPassDamage, "Damage coefficient to each enemy the glob flies through (once each).").Value;
             SplatterBounces = c.Bind(Section, "Splatter - Bounces", SplatterBounces, "Bursts before the glob is spent.").Value;
             SplatterRadius = c.Bind(Section, "Splatter - Radius", SplatterRadius, "Metres (Mystic Expansion widens it).").Value;
             SplatterCooldown = c.Bind(Section, "Splatter - Cooldown", SplatterCooldown, "Seconds.").Value;

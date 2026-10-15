@@ -317,9 +317,7 @@ namespace CursedAppleCuriosities.Survivors.Lash
             LanguageAPI.Add(Token + "LORE", "A showman from the Cursed Apple, lost to the stars and looking for a bigger stage.");
 
             LanguageAPI.Add(Token + "PASSIVE_NAME", "Perfect Cardio, Perfect Form, Perfect Hair");
-            LanguageAPI.Add(Token + "PASSIVE_DESC",
-                "Lash <style=cIsUtility>sprints automatically</style> when out of combat. " +
-                $"He can <style=cIsUtility>slide</style>, and <style=cIsUtility>air jump/dash</style> up to {LashData.Movement.AirJumps} times.");
+            LanguageAPI.Add(Token + "PASSIVE_DESC", Kit.MovementLine(LashData.Movement, alone: true));
 
             LanguageAPI.Add(Token + "GUN_NAME", "Lash's Glove");
             LanguageAPI.Add(Token + "GUN_DESC", $"Fire a three-round burst for <style=cIsDamage>3x{D(LashData.GunDamage)} damage</style>.");

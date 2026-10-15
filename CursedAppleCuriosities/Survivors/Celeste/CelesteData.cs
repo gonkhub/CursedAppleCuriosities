@@ -42,7 +42,7 @@ namespace CursedAppleCuriosities.Survivors.Celeste
         };
 
         // ---- primary: Carny Life (Deadlock: a bouncing, homing thrown blade every 0.58 s, 18 damage, gravity 0.2) ----
-        public static float DaggerDamage = 1.2f;        // a light poke (user): her damage is Shining Wonder and blades on marked enemies
+        public static float DaggerDamage = 2f;          // 1.2 until 2.0, too light (user); blades on marked enemies still hit far harder
         public const float DaggerCycle = 0.58f;          // Deadlock m_flCycleTime
         public const float DaggerSpeed = 60f;            // a little faster than Deadlock's 50 m/s (user: 75 was too fast)
         public const float DaggerLoftDeg = 4f;           // thrown this far above the crosshair (user, 1.7)
@@ -192,6 +192,7 @@ namespace CursedAppleCuriosities.Survivors.Celeste
             ("orb_end", "ability_unicorn_dazzlingorb_end", false, "locomotion", "full"),
             ("orb_end_air", "ability_unicorn_dazzlingorb_inair_end", false, "in_air", "full"),
             ("select", "ui_hero_select", false, "locomotion", "full"),
+            ("reload", "reload_idle", false, "locomotion", "full"),   // her lobby intro, after the dash (user, 2.0)
             ("parry", "parry", false, "locomotion", "full"),          // Counterspell (DeadlockMover plays it)
             ("parry_air", "parry_inair", false, "in_air", "full"),
             ("death", "knockdown_large_start", false, "hold", "full"),
@@ -201,7 +202,7 @@ namespace CursedAppleCuriosities.Survivors.Celeste
         public const float JumpPose = 0.8f, AirDashPose = 0.8f; // her air-dash clip is 0.83 s: it plays (nearly) through (user: it snapped back too soon)
 
         public static readonly HashSet<string> Locked = new HashSet<string>
-        { "dash_ground", "dash_air_forward", "dash_air_back", "dash_air_left", "dash_air_right", "death", "select" };
+        { "dash_ground", "dash_air_forward", "dash_air_back", "dash_air_left", "dash_air_right", "death", "select", "reload" };
 
         /// <summary>
         /// Deadlock sounds from her own folders (picked by name while the user was away: review pending). VO by ability:
@@ -252,6 +253,7 @@ namespace CursedAppleCuriosities.Survivors.Celeste
             new DeadlockSound { Id = "celeste_vo_effort", VpkPrefix = "sounds/vo/unicorn/emote/unicorn_effort_dash", Volume = 0.8f, Chance = 0.5f, MinGap = 0.5f, Voice = true },
             new DeadlockSound { Id = "celeste_vo_efforts", VpkPrefix = "sounds/vo/unicorn/emote/unicorn_effort_general", Volume = 0.7f, Chance = 0.4f, MinGap = 1f, Voice = true },
             // Her own movement foley and footsteps.
+            new DeadlockSound { Id = "celeste_reload", VpkPrefix = "sounds/weapons/unicorn/reload/unicorn_reload_start", Volume = 0.7f, Range = 25f },
             new DeadlockSound { Id = "celeste_dash", VpkPrefix = "sounds/player/movement/unicorn/unicorn_foley_short", Volume = 0.8f, Range = 25f, MinGap = 0.1f },
             new DeadlockSound { Id = "celeste_land", VpkPrefix = "sounds/player/footsteps/unicorn/unicorn_footstep_jumpland", Volume = 0.7f, Range = 25f, MinGap = 0.2f },
             new DeadlockSound { Id = "celeste_footstep", VpkPrefix = "sounds/player/footsteps/unicorn/unicorn_footstep", Volume = 0.3f, Range = 20f, MinGap = 0.12f },

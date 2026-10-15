@@ -84,7 +84,8 @@ namespace CursedAppleCuriosities.Survivors.Seven
         // ---- special: Storm Cloud (Seven floats and channels; the cloud grows to the whole map, user) ----
         // Damage per second follows the cloud's growth (user): Start + (End - Start) * t^3 over the channel, t = 0..1. A target in
         // the storm the whole 7 s takes 7 * (Start + (End - Start) / 4) = ~1925% (~1575% before 2.0, ~2520% before 1.7: the strikes are weaker
-        // but proc fully, user), dealt as a lightning bolt every StormStrikeGap s (12.5-100% each). The ramp
+        // but proc fully, user), dealt as a lightning bolt every StormStrikeGap s (25-200% each). Attack speed shortens the gap
+        // (more bolts, so more damage and procs; user, 2.0). The ramp
         // always takes the base 7 s: Duration Extender only lengthens the time at full output.
         public static float StormDpsStart = 1.0f;       // (Deadlock 95 DPS flat)
         public static float StormDpsEnd = 8.0f;          // 600% until 2.0 (user)
@@ -100,10 +101,10 @@ namespace CursedAppleCuriosities.Survivors.Seven
         public const float StormChannel = 7f;           // Deadlock AbilityChannelTime
         public const float StormInitialRadius = 30f;    // Deadlock InitialRadius 10 m; 30 m from the start (user, 1.7)
         public static float StormFinalRadius = 1000f;   // Deadlock 30 m; the whole map by the end (user)
-        public const float StormStrikeGap = 0.125f;     // s between bolts on each enemy, jittered 0.8-1.2x (Deadlock DamageInterval 0.3; user: much more often, doubled again in 1.9)
-        public const float StormStrayHit = 0.25f;       // s of storm DPS in each stray bolt's blast (the old strike gap; kept when the gap halved)
+        public const float StormStrikeGap = 0.25f;      // s between bolts on each enemy at base attack speed (divided by attack speed), jittered 0.8-1.2x (Deadlock DamageInterval 0.3; 0.125 in 1.9, slowed in 2.0 for attack speed scaling, user)
+        public const float StormStrayHit = 0.25f;       // s of storm DPS in each stray bolt's blast
         public const float StormProc = 1f;              // every storm bolt procs fully (user)
-        public const float StormStrayRate = 6f;         // stray bolts per second at random spots under the cloud (user)
+        public const float StormStrayRate = 6f;         // stray bolts per second at random spots under the cloud (user), times attack speed
         public const float StormStrayRadius = 4f;       // m: each stray bolt's blast
         public const float StormStrayReach = 45f;       // m from Seven: strays fall where he can see them, even once the cloud is map-wide
         public const float StormRise = 3f;              // Deadlock CloudHeight 120 hu: he lifts this far

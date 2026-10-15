@@ -128,7 +128,7 @@ namespace CursedAppleCuriosities.Interactables
                         NextCall[urn] = Time.time + Random.Range(CallGapMin, CallGapMax);
                         Say(Pick(Waiting), urn, null);
                     }
-                    else if (urn.Carrier != null && !Stalled.Contains(urn) && urn.Remaining > 0f && urn.Remaining < SoulUrn.TimeLimit * StallShare)
+                    else if (urn.Carrier != null && !Stalled.Contains(urn) && urn.Remaining > 0f && urn.Remaining < urn.TimeLimit * StallShare)
                     {
                         Stalled.Add(urn);
                         Say("idol_holder_stalls", urn, urn.Carrier);

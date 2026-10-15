@@ -323,7 +323,7 @@ namespace CursedAppleCuriosities.Survivors.Seven
 
             LanguageAPI.Add(Token + "PASSIVE_NAME", "Electric Current");
             LanguageAPI.Add(Token + "PASSIVE_DESC",
-                "Sprints automatically out of combat; dash, air jump and slide. During <style=cIsUtility>Power Surge</style> he keeps sprinting until hit.");
+                "During <style=cIsUtility>Power Surge</style> he keeps sprinting until hit." + Kit.MovementLine(SevenData.Movement));
 
             LanguageAPI.Add(Token + "GUN_NAME", "Cold Calculus");
             LanguageAPI.Add(Token + "GUN_DESC",
@@ -343,7 +343,7 @@ namespace CursedAppleCuriosities.Survivors.Seven
 
             LanguageAPI.Add(Token + "STORM_NAME", "Storm Cloud");
             LanguageAPI.Add(Token + "STORM_DESC",
-                $"<style=cIsUtility>Float</style> and channel a storm for <style=cIsUtility>{SevenData.StormChannel:0}s</style> that grows from {SevenData.StormInitialRadius:0} m to cover <style=cIsDamage>the whole map</style>, striking every enemy you can see with lightning for <style=cIsDamage>{D(SevenData.StormDpsStart)}-{D(SevenData.StormDpsEnd)} damage per second</style>. " +
+                $"<style=cIsUtility>Float</style> and channel a storm for <style=cIsUtility>{SevenData.StormChannel:0}s</style> that grows from {SevenData.StormInitialRadius:0} m to cover <style=cIsDamage>the whole map</style>, striking every enemy you can see with lightning for <style=cIsDamage>{D(SevenData.StormDpsStart)}-{D(SevenData.StormDpsEnd)} damage per second</style>, <style=cIsDamage>more with attack speed</style>. " +
                 $"Primary calls a <style=cIsDamage>Lightning Strike</style> for {D(SevenData.StrikeDamage)}.");
         }
     }

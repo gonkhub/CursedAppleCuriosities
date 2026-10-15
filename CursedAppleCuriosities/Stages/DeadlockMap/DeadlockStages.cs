@@ -43,6 +43,7 @@ namespace CursedAppleCuriosities.Stages.DeadlockMap
                 "Chance (0-1) that a district's Walker spot holds the teleporter; otherwise a major interactable stands there (Large Chest, Large Multishop or Shrine of the Mountain).");
             ImpPitRadius = config.Bind("Deadlock Map", "Imp Pit Radius", 20f,
                 "Sunken Plaza's purple pit: using an interactable within this many metres of it wakes an elite Imp Overlord nearby (once per visit).");
+            MapShop.Init();
             _scenes = LoadBundle("cac_stagescenes");
             _assets = LoadBundle("cac_stageassets");
             BarrierMaterial = _assets?.LoadAsset<Material>("matBarrier");
@@ -613,8 +614,8 @@ namespace CursedAppleCuriosities.Stages.DeadlockMap
                     var centre = new Vector3((b[i] + b[i + 3]) / 2f, (b[i + 1] + b[i + 4]) / 2f, b[i + 5]);
                     Vector3 top = world.transform.TransformPoint(MapCache.ToUnity(centre, t.OriginUnits));
                     if (!Physics.Raycast(top, Vector3.down, out RaycastHit hit, 12f, LayerIndex.world.mask, QueryTriggerInteraction.Ignore)) continue;
-                    if (Items.CuriosityCatalog.SpawnShop(hit.point, requiresCatalog: false,
-                            DeadlockStages.ShopWhite?.Value ?? 25, DeadlockStages.ShopGreen?.Value ?? 50, DeadlockStages.ShopRed?.Value ?? 400, deadlockOnly: true) != null)
+                    if (MapShop.Spawn(hit.point,
+                            DeadlockStages.ShopWhite?.Value ?? 25, DeadlockStages.ShopGreen?.Value ?? 50, DeadlockStages.ShopRed?.Value ?? 400) != null)
                         placed++;
                 }
                 Log($"{placed} curiosity shops placed at Deadlock's shop counters");

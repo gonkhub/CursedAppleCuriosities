@@ -4,10 +4,16 @@ using CursedAppleCuriosities.Artifacts;
 using CursedAppleCuriosities.Deadlock;
 using CursedAppleCuriosities.Items;
 using CursedAppleCuriosities.Survivors.Abrams;
+using CursedAppleCuriosities.Survivors.Apollo;
+using CursedAppleCuriosities.Survivors.Bebop;
 using CursedAppleCuriosities.Survivors.Celeste;
 using CursedAppleCuriosities.Survivors.GreyTalon;
+using CursedAppleCuriosities.Survivors.Ivy;
 using CursedAppleCuriosities.Survivors.Lash;
+using CursedAppleCuriosities.Survivors.Mina;
+using CursedAppleCuriosities.Survivors.Paradox;
 using CursedAppleCuriosities.Survivors.Seven;
+using CursedAppleCuriosities.Survivors.Shiv;
 using CursedAppleCuriosities.Survivors.Victor;
 using CursedAppleCuriosities.Survivors.Viscous;
 using CursedAppleCuriosities.Survivors.Vyper;
@@ -37,7 +43,7 @@ namespace CursedAppleCuriosities
         internal static new ManualLogSource? Logger { get; private set; }
 
         // All ItemDefs and EquipmentDefs registered by this mod — populated after init.
-        // Used by CuriosityShop to filter drop tables to mod-only items.
+        // Used by the Artifact of the Curio to keep drops to mod-only items.
         public static HashSet<ItemDef>      ModItemDefs      { get; } = new HashSet<ItemDef>();
         public static HashSet<EquipmentDef> ModEquipmentDefs { get; } = new HashSet<EquipmentDef>();
 
@@ -109,7 +115,7 @@ namespace CursedAppleCuriosities
             try { if (Interactables.SoulUrn.Enabled) Interactables.SoulUrnVoice.Init(gameObject); }
             catch (Exception e) { Logger.LogError($"  ! [Interactable] Soul Urn voice failed to init: {e}"); }
 
-            // Populate the sets used by CuriosityShop to filter drop tables.
+            // Populate the sets the Artifact of the Curio keeps drops to.
             foreach (var item in _items)
                 if (item.ItemDef != null) ModItemDefs.Add(item.ItemDef);
             foreach (var eq in _equipments)
@@ -141,6 +147,12 @@ namespace CursedAppleCuriosities
                 ("Victor", VictorSurvivor.Init),
                 ("Viscous", ViscousSurvivor.Init),
                 ("Celeste", CelesteSurvivor.Init),
+                ("Shiv", ShivSurvivor.Init),
+                ("Mina", MinaSurvivor.Init),
+                ("Paradox", ParadoxSurvivor.Init),
+                ("Bebop", BebopSurvivor.Init),
+                ("Ivy", IvySurvivor.Init),
+                ("Apollo", ApolloSurvivor.Init),
             };
             foreach (var hero in heroes)
             {
@@ -172,7 +184,7 @@ namespace CursedAppleCuriosities
         /// Survivors ship one at a time: Release builds (the Thunderstore package) register only these.
         /// Debug builds (development) register every hero.
         /// </summary>
-        private static readonly string[] ReleasedSurvivors = { "Lash", "Abrams", "Seven" };
+        private static readonly string[] ReleasedSurvivors = { "Lash", "Abrams", "Seven", "Vyper", "Grey Talon", "Victor", "Viscous", "Celeste" };
 
         private static bool IsReleased(string hero)
         {

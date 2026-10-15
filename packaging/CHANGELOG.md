@@ -1,6 +1,20 @@
 # Changelog
 
-## Unreleased (2.0)
+## 2.0.0
+- Updating from an older version: your config file keeps the values it already has, so balance changes from past
+  updates only apply to settings you reset to their defaults, or if you delete
+  `BepInEx/config/com.cursedapple.curiosities.cfg` before starting the game.
+- Five new survivors from Deadlock: **Vyper**, **Grey Talon**, **Victor**, **Viscous** and **Celeste**.
+- New: the **Soul Urn**. On 30% of stages an urn waits at least 180 m from the teleporter. Pick it up and carry it to the
+  teleporter before its timer runs out (30 s or more, longer the further away it spawned) without taking damage. Getting
+  hit, running out of time or dying sends it back. A delivery drops 3 items, +1 for every stage already cleared.
+- **Seven**: **Storm Cloud** ramps up to 800% damage per second (was 600%), drifts and climbs twice as fast and follows your
+  move speed. Its bolts come every 0.25 s, faster with attack speed. **Lightning Ball** is 50% bigger. **Static Charge**'s
+  blast radius is doubled (5 -> 10 m).
+- **Mystic Expansion** also extends cast ranges: vanilla survivors' bullets, aim arcs, target searches and Loader's grapple,
+  plus the new heroes' ranged skills.
+- The **Curiosity Catalog** item is gone (its after-teleporter shop and chest lockout with it).
+- **Artifact of the Curio** also filters what Command's picks and printers offer.
 - **Goose Eggs**: each stack now hatches more than the last. Grey yields 4 whites at 1 stack, 10 at 2, 18 at 3; Green 2/5/9;
   Red 1/2/4; Golden 1/3/6; Void 2/5/9. New config keys (**First Stack Items**, **Extra Items Per Stack**) replace
   **Items Per Stack**.

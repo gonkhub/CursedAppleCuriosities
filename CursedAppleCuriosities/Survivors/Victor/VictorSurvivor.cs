@@ -31,7 +31,7 @@ namespace CursedAppleCuriosities.Survivors.Victor
 
         public static GameObject? BodyPrefab, DisplayPrefab;
         public static SurvivorDef? Survivor;
-        public static BuffDef? BatteryBuff, JumpstartBuff, AuraBuff, ReanimatingBuff, ReviveCooldownBuff, ReviveSlow;
+        public static BuffDef? BatteryBuff, BatteryChargesBuff, JumpstartBuff, AuraBuff, ReanimatingBuff, ReviveCooldownBuff, ReviveSlow;
 
         public static GameObject? TracerEffect, HitEffect, MuzzleEffect, BoltTracer, ZapEffect, WaveEffect, BlastEffect;
         public static Material? IndicatorMaterial; // the aura ring (Abrams' Siphon Life ring material)
@@ -86,7 +86,8 @@ namespace CursedAppleCuriosities.Survivors.Victor
 
         private static void CreateBuffs()
         {
-            BatteryBuff = Buff("CursedAppleVictorBattery", Color, debuff: false, stack: true);
+            BatteryBuff = Buff("CursedAppleVictorBattery", Color, debuff: false, stack: true); // the charge filling, 0..100 %
+            BatteryChargesBuff = Buff("CursedAppleVictorBatteryCharges", Color, debuff: false, stack: true, hidden: true); // charges ready
             JumpstartBuff = Buff("CursedAppleVictorJumpstart", new Color(0.5f, 0.85f, 0.5f), debuff: false, stack: true);
             AuraBuff = Buff("CursedAppleVictorAura", new Color(0.7f, 0.7f, 0.7f), debuff: false, stack: false);
             ReanimatingBuff = Buff("CursedAppleVictorReanimating", Color, debuff: false, stack: false);
@@ -127,6 +128,9 @@ namespace CursedAppleCuriosities.Survivors.Victor
             _battery = Skill<VictorBatterySkillDef>("Battery", typeof(FirePainBattery), "Weapon", VictorData.BatteryCooldown, InterruptPriority.Skill);
             _battery.mustKeyPress = true;
             _battery.cancelSprintingOnActivation = true;
+            // Its stock is the charges the battery holds (one per stock: Backup Magazine adds more), never time.
+            _battery.baseRechargeInterval = 0f;
+            _battery.rechargeStock = 0;
 
             _jumpstart = Skill<SkillDef>("Jumpstart", typeof(Jumpstart), "Weapon", VictorData.JumpstartCooldown, InterruptPriority.Skill);
             _jumpstart.mustKeyPress = true;
@@ -271,7 +275,7 @@ namespace CursedAppleCuriosities.Survivors.Victor
             LanguageAPI.Add(Token + "PASSIVE_NAME", "Shocking Reanimation");
             LanguageAPI.Add(Token + "PASSIVE_DESC",
                 $"When you would die, go down instead, <style=cIsUtility>invulnerable</style> for {VictorData.ReviveChannel:0}s, then revive with <style=cIsHealing>{P(VictorData.ReviveHealth)} health</style>, " +
-                $"dealing <style=cIsDamage>{D(VictorData.ReviveDamage)} damage</style> and <style=cIsUtility>stunning</style> nearby enemies. Recharges in <style=cIsUtility>{VictorData.ReviveCooldown:0}s</style> or each stage.");
+                $"dealing <style=cIsDamage>{D(VictorData.ReviveDamage)} damage</style> and <style=cIsUtility>stunning</style> nearby enemies. Recharges in <style=cIsUtility>{VictorData.ReviveCooldown:0}s</style> or each stage." + Kit.MovementLine(VictorData.Movement));
 
             LanguageAPI.Add(Token + "GUN_NAME", "Memento Mori");
             LanguageAPI.Add(Token + "GUN_DESC",
@@ -279,7 +283,7 @@ namespace CursedAppleCuriosities.Survivors.Victor
 
             LanguageAPI.Add(Token + "BATTERY_NAME", "Pain Battery");
             LanguageAPI.Add(Token + "BATTERY_DESC",
-                $"<style=cIsHealth>Charges from damage you take</style>. When full, fire {VictorData.BatteryBolts} bolts for <style=cIsDamage>{D(VictorData.BatteryDamage)} damage</style>. Each enemy hit <style=cIsHealing>heals {P(VictorData.BatteryHealMissing)} of missing health</style>.");
+                $"<style=cIsHealth>Charges from damage you take</style>. Each full charge fires {VictorData.BatteryBolts} bolts for <style=cIsDamage>{D(VictorData.BatteryDamage)} damage</style>. Each enemy hit <style=cIsHealing>heals {P(VictorData.BatteryHealMissing)} of missing health</style>.");
 
             LanguageAPI.Add(Token + "JUMPSTART_NAME", "Jumpstart");
             LanguageAPI.Add(Token + "JUMPSTART_DESC",
@@ -287,7 +291,7 @@ namespace CursedAppleCuriosities.Survivors.Victor
 
             LanguageAPI.Add(Token + "AURA_NAME", "Aura of Suffering");
             LanguageAPI.Add(Token + "AURA_DESC",
-                $"Toggle an aura dealing <style=cIsDamage>{D(VictorData.AuraMinDamage)}-{D(VictorData.AuraMaxDamage)} damage per second</style> to nearby enemies, ramping up over {VictorData.AuraRampSeconds:0}s. <style=cIsHealth>It hurts you too</style>.");
+                $"Toggle an aura dealing <style=cIsDamage>{D(VictorData.AuraMinDamage)}-{D(VictorData.AuraMaxDamage)} damage per second</style> to nearby enemies, ramping up over {VictorData.AuraRampSeconds:0}s and faster with attack speed. <style=cIsHealth>It hurts you too</style>.");
         }
     }
 

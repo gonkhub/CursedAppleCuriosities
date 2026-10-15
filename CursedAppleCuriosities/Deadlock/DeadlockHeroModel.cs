@@ -23,7 +23,8 @@ namespace CursedAppleCuriosities.Deadlock
         public string MuzzleName = "";
 
         /// <summary>State, Deadlock clip, loop, next state ("locomotion", "hold", a state, or "" for loops), layer ("full" / "additive" /
-        /// "delta": a full clip played as an overlay, as its motion from its first frame).</summary>
+        /// "delta": a full clip played as an overlay, as its motion from its first frame; "upper": a full clip played over the
+        /// locomotion from the spine up, the legs left running, as Deadlock's ability masks do).</summary>
         public (string State, string Clip, bool Loop, string Next, string Layer)[] Anims = Array.Empty<(string, string, bool, string, string)>();
         /// <summary>
         /// Clips whose own travel is removed (root lock): Deadlock moves heroes with these animations, RoR2
@@ -40,6 +41,22 @@ namespace CursedAppleCuriosities.Deadlock
         /// offset the clip gave it after the aim bend moves the hand. Null for a hero whose gun is part of the arm (Lash's glove).
         /// </summary>
         public (string Weapon, string Hand)? HandIK;
+        /// <summary>
+        /// While an overlay (the shot) plays, keep the grip the base pose had instead of the overlay's. Apollo's swing is a delta
+        /// clip on both his arm and his sword's own chain: added onto another pose they disagree and the sword flicked a metre
+        /// past his hand (user 2.5). His arm swings; the sword stays in his hand.
+        /// </summary>
+        public bool HandGripFromBase;
+        /// <summary>
+        /// The weapon sits exactly on the HandIK bone (no grip offset): Apollo's clips put his sword's root exactly on
+        /// weapon_target_hand_R (0.1 deg apart in every clip), so it's snapped there each frame, whatever layers play.
+        /// </summary>
+        public bool HandSnap;
+        /// <summary>
+        /// Stand the idle over the spot the runs use: Ivy's idle holds her hips ~0.2 m to the side of where her run clips do, so she
+        /// stepped sideways off her body whenever she stopped (user 2.5). The idle's pelvis is moved horizontally onto run_n's.
+        /// </summary>
+        public bool CenterIdle;
         /// <summary>A locomotion set, e.g. "siphon": locomotion state X becomes "siphon.X" when the table has it.</summary>
         public Func<CharacterBody, string?>? LocoSet;
         /// <summary>
@@ -80,10 +97,19 @@ namespace CursedAppleCuriosities.Deadlock
     {
         public string Id = "";
         public Func<byte[], bool> Recolor = _ => false;
+        /// <summary>Only textures whose file name contains one of these are recoloured (empty = every texture): a jacket can change without the skin tones.</summary>
+        public string[] Only = Array.Empty<string>();
+
+        public bool Applies(string file)
+        {
+            if (Only.Length == 0) return true;
+            foreach (string part in Only) if (file.IndexOf(part, StringComparison.OrdinalIgnoreCase) >= 0) return true;
+            return false;
+        }
 
         /// <summary>
         /// Turns hues between fromLo and fromHi degrees by shift degrees (feathered over 15 degrees at each end),
-        /// leaving greys (saturation under minSat) alone. Rotated about the grey axis, so brightness is kept.
+        /// leaving greys (saturation under minSat) alone. fromLo may be negative for a range that wraps through red. Rotated about the grey axis, so brightness is kept.
         /// </summary>
         public static Func<byte[], bool> HueShift(float fromLo, float fromHi, float shift, float minSat = 0.12f) => px =>
         {
@@ -100,6 +126,7 @@ namespace CursedAppleCuriosities.Deadlock
                 else if (max == g) h = 60f * ((b - r) / d + 2f);
                 else h = 60f * ((r - g) / d + 4f);
                 if (h < 0f) h += 360f;
+                if (fromLo < 0f && h > fromLo + 360f - Feather) h -= 360f; // a range across red (e.g. -25..20) wraps around 0
                 float w = Mathf.Clamp01((h - (fromLo - Feather)) / Feather) * Mathf.Clamp01(((fromHi + Feather) - h) / Feather);
                 if (w <= 0f) continue;
                 int deg = Mathf.RoundToInt(shift * w);
@@ -180,6 +207,8 @@ namespace CursedAppleCuriosities.Deadlock
     {
         public string HeroKey = "";
         public bool IsDisplay;
+        /// <summary>A display copy that must not say its select line (Paradox's intro keeps the last pick on the pedestal).</summary>
+        public bool Silent;
 
         private DeadlockHeroDef? _def;
         private GlbModel? _template;
@@ -214,7 +243,7 @@ namespace CursedAppleCuriosities.Deadlock
             if (_def == null) { CursedAppleCuriositiesPlugin.Logger?.LogWarning($"[Deadlock] no hero registered as '{HeroKey}'"); enabled = false; return; }
             TryAttach();
             // A lobby intro says the line itself once the hero is on the pedestal (from the start position it was too far to hear).
-            if (IsDisplay && GetComponentInParent<DeadlockDisplayIntro>() == null) PlaySelectVoice(transform.position);
+            if (IsDisplay && !Silent && GetComponentInParent<DeadlockDisplayIntro>() == null) PlaySelectVoice(transform.position);
         }
 
         /// <summary>The hero's character-select line.</summary>
@@ -598,13 +627,18 @@ namespace CursedAppleCuriosities.Deadlock
             // An ability cast mid-slide plays over the slide pose (Deadlock masks casts to the upper body): as a full
             // pose it stood the hero up while the body kept sliding.
             bool overSlide = Sliding && !row.Loop && !IsMovement(id) && _states.ContainsKey("slide");
-            if (row.Layer == "additive" || row.Layer == "delta" || overSlide)
+            if (row.Layer == "additive" || row.Layer == "delta" || row.Layer == "upper" || overSlide)
             {
                 SetLayer(_over, overSlide && row.Layer == "full" ? new Row { State = row.State, Clip = row.Clip, Next = row.Next, Layer = "delta" } : row);
                 _overWeight = Mathf.Max(_overWeight, 0.01f);
                 if (overSlide && _cur.Row.State != "slide_start") Switch("slide", 0.1f);
             }
-            else Switch(id, blend);
+            else
+            {
+                // A looping overlay (Apollo's additive lunge aim) has no end of its own: a full-body state ends it.
+                if (_over.Valid && _over.Row.Loop) _overEnding = true;
+                Switch(id, blend);
+            }
         }
 
         private EntityStateMachine? _bodyMachine;
@@ -631,8 +665,11 @@ namespace CursedAppleCuriosities.Deadlock
             Play(id);
         }
 
+        private bool _overEnding;
+
         private bool SetLayer(Layer l, Row row)
         {
+            if (l == _over) _overEnding = false;
             l.Row = row;
             l.T = 0f;
             l.Valid = _clips!.TryGetValue(row.Clip, out l.Clip);
@@ -790,7 +827,7 @@ namespace CursedAppleCuriosities.Deadlock
             if (_over.Valid)
             {
                 Advance(_over, dt);
-                bool done = _over.T >= _over.Clip.Length;
+                bool done = _over.T >= _over.Clip.Length && !_over.Row.Loop || _overEnding;
                 _overWeight = Mathf.MoveTowards(_overWeight, done ? 0f : 1f, dt / 0.08f);
                 if (done && _overWeight <= 0f) _over.Valid = false;
             }
@@ -834,6 +871,8 @@ namespace CursedAppleCuriosities.Deadlock
         private void GripCapture()
         {
             if (_ikWeapon == null || _ikHand == null) return;
+            if (_def.HandSnap) { _ikPos = Vector3.zero; _ikRot = Quaternion.identity; return; }
+            if (_def.HandGripFromBase && _overWeight > 0f) return; // the last base-pose grip stands
             Quaternion inv = Quaternion.Inverse(_ikHand.rotation);
             _ikRot = inv * _ikWeapon.rotation;
             _ikPos = inv * (_ikWeapon.position - _ikHand.position);
@@ -872,7 +911,17 @@ namespace CursedAppleCuriosities.Deadlock
                     if (hasR && pt.SampleRot(_prev.T, out Quaternion pr)) r = Quaternion.Slerp(pr, r, w);
                     if (hasP && SamplePos(_prev, pt, out Vector3 pp)) p = Vector3.Lerp(pp, p, w);
                 }
-                if (_overWeight > 0f && _over.Valid && Find(_over.Clip, tr.Bone) is AnimTrack ut)
+                if (_overWeight > 0f && _over.Valid && _over.Row.Layer == "upper" && Find(_over.Clip, tr.Bone) is AnimTrack mt)
+                {
+                    // An ability masked to the upper body (Victor's Pain Battery while running, user 2.5): its own pose from the
+                    // spine up, blended in by the overlay weight; the hips and legs keep the run.
+                    if (IsUpper(tr.Bone))
+                    {
+                        if (hasR && mt.SampleRot(_over.T, out Quaternion mr)) r = Quaternion.Slerp(r, mr, _overWeight);
+                        if (hasP && mt.SamplePos(_over.T, out Vector3 mp)) p = Vector3.Lerp(p, mp, _overWeight);
+                    }
+                }
+                else if (_overWeight > 0f && _over.Valid && Find(_over.Clip, tr.Bone) is AnimTrack ut)
                 {
                     // Deadlock's additive clips store offsets on top of the current pose.
                     // Root-level bones carry the converter's axis turn instead of an offset, and Source 2 cloth points
@@ -888,7 +937,10 @@ namespace CursedAppleCuriosities.Deadlock
                     }
                     if (hasP && ut.SamplePos(_over.T, out Vector3 up))
                     {
-                        if (cloth) up -= ut.Pos![0];
+                        // A true additive offset starts near zero. Some landing clips store a whole pose offset instead (Mina's
+                        // and Ivy's pelvis sits 1.6-2 m off from frame one): read those relative to their first frame too, or
+                        // the model jumps off the body on landing.
+                        if (cloth || ut.Pos![0].sqrMagnitude > 0.25f) up -= ut.Pos![0];
                         p += up * _overWeight;
                     }
                 }
@@ -905,9 +957,62 @@ namespace CursedAppleCuriosities.Deadlock
         private bool SamplePos(Layer l, AnimTrack t, out Vector3 p)
         {
             if (!t.SamplePos(l.T, out p)) return false;
-            if (t.Bone == "pelvis" && t.Pos != null && t.Pos.Length > 0 && _def.IsRootLocked(l.Row.State)) { p.x = t.Pos[0].x; p.z = t.Pos[0].z; }
+            if (t.Bone == "pelvis" && t.Pos != null && t.Pos.Length > 0 && _def.IsRootLocked(l.Row.State))
+            {
+                // Pin the horizontal, keep the height. "Up" in the pelvis's parent frame: Apollo's pelvis hangs off a turned
+                // root_motion, where height runs along local z (pinning x and z froze his height and let him slide: user 2.5).
+                Vector3 up = PelvisUp();
+                Vector3 d = p - t.Pos[0];
+                p = t.Pos[0] + up * Vector3.Dot(d, up);
+            }
             else if (l.ClothShift != Vector3.zero && t.Bone.StartsWith("$cloth", StringComparison.Ordinal)) p -= l.ClothShift;
+            if (t.Bone == "pelvis" && _def.CenterIdle && l.Row.State == "idle") p -= IdleShift(t);
             return true;
+        }
+
+        private HashSet<string>? _upper;
+
+        /// <summary>The bones from spine_1 up (the arms, the head, anything they carry): an "upper" overlay's half of the body.</summary>
+        private bool IsUpper(string bone)
+        {
+            if (_upper == null)
+            {
+                _upper = new HashSet<string>();
+                if (_bones.TryGetValue("spine_1", out Transform spine))
+                    foreach (Transform t in spine.GetComponentsInChildren<Transform>(true)) _upper.Add(t.name);
+            }
+            return _upper.Contains(bone);
+        }
+
+        private Vector3? _idleShift;
+
+        /// <summary>How far the idle's pelvis sits off run_n's, horizontally (see DeadlockHeroDef.CenterIdle).</summary>
+        private Vector3 IdleShift(AnimTrack idlePelvis)
+        {
+            if (_idleShift.HasValue) return _idleShift.Value;
+            Vector3 shift = Vector3.zero;
+            if (_clips != null && _states.TryGetValue("run_n", out Row run) && _clips.TryGetValue(run.Clip, out AnimClip rc)
+                && Find(rc, "pelvis") is AnimTrack rp && rp.Pos != null && rp.Pos.Length > 0 && idlePelvis.Pos != null && idlePelvis.Pos.Length > 0)
+            {
+                Vector3 up = PelvisUp();
+                Vector3 d = idlePelvis.Pos[0] - rp.Pos[0];
+                shift = d - up * Vector3.Dot(d, up);
+            }
+            _idleShift = shift;
+            return shift;
+        }
+
+        private Vector3? _pelvisUp;
+
+        /// <summary>World up in the pelvis's parent frame (the model's own frame, or a turned root_motion's).</summary>
+        private Vector3 PelvisUp()
+        {
+            if (_pelvisUp.HasValue) return _pelvisUp.Value;
+            Vector3 up = Vector3.up;
+            if (_bones.TryGetValue("pelvis", out Transform pelvis) && pelvis.parent != null && pelvis.parent.name == "root_motion")
+                up = (Quaternion.Inverse(pelvis.parent.localRotation) * Vector3.up).normalized;
+            _pelvisUp = up;
+            return up;
         }
 
         /// <summary>
