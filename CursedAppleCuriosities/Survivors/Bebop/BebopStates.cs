@@ -299,6 +299,8 @@ namespace EntityStates.CursedApple.Bebop
                 _point = BebopNet.Core(_target);
                 _phase = Phase.Latched;
                 _latchedAt = fixedAge;
+                CursedAppleCuriosities.Unlocks.Challenges.BebopLongArm.Latched(gameObject, _travelled + h.distance,
+                    BebopData.HookRange * MysticExpansion.RadiusMultiplier(characterBody));
                 BebopNet.ToServer(new BebopHookMessage { Attacker = gameObject, Target = _target.gameObject, Crit = RollCrit() });
                 return true;
             }

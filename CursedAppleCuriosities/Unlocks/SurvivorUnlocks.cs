@@ -77,6 +77,10 @@ namespace CursedAppleCuriosities.Unlocks
             Challenge("CursedAppleVictorMastery", "Victor: Mastery", "As Victor, beat the game or obliterate on Monsoon.");
             SkinUnlocks.Register(Challenges.Masteries.ShivSkin, "CURSEDAPPLE_SHIV_SKIN_ALOHA", "skinCursedAppleShivALOHA", "skinCursedAppleShivDISPLAYALOHA");
             Challenge("CursedAppleShivMastery", "Shiv: Mastery", "As Shiv, beat the game or obliterate on Monsoon.");
+            SkinUnlocks.Register(Challenges.Masteries.BebopSkin, "CURSEDAPPLE_BEBOP_SKIN_GOLDPLATED", "skinCursedAppleBebopGOLDPLATED", "skinCursedAppleBebopDISPLAYGOLDPLATED");
+            Challenge("CursedAppleBebopMastery", "Bebop: Mastery", "As Bebop, beat the game or obliterate on Monsoon.");
+            // Chrome: its own challenge (user 3.0), hook an enemy at the end of Grapple Arm's reach.
+            SkinUnlocks.Register(Challenges.Masteries.BebopChromeSkin, "CURSEDAPPLE_BEBOP_SKIN_CHROME", "skinCursedAppleBebopCHROME", "skinCursedAppleBebopDISPLAYCHROME");
             SkinUnlocks.Register(Challenges.Masteries.SevenSkin, "CURSEDAPPLE_SEVEN_SKIN_OVERCHARGED", "skinCursedAppleSevenOVERCHARGED", "skinCursedAppleSevenDISPLAYOVERCHARGED");
             Challenge("CursedAppleSevenMastery", "Seven: Mastery", "As Seven, beat the game or obliterate on Monsoon.");
             SkinUnlocks.Register(Challenges.Masteries.VyperSkin, "CURSEDAPPLE_VYPER_SKIN_CORAL", "skinCursedAppleVyperCORAL", "skinCursedAppleVyperDISPLAYCORAL");
@@ -89,6 +93,7 @@ namespace CursedAppleCuriosities.Unlocks
             Challenge("CursedAppleMinaMastery", "Mina: Mastery", "As Mina, beat the game or obliterate on Monsoon.");
             SkinUnlocks.Register(Challenges.Masteries.ParadoxSkin, "CURSEDAPPLE_PARADOX_SKIN_TEAL", "skinCursedAppleParadoxTEAL", "skinCursedAppleParadoxDISPLAYTEAL");
             Challenge("CursedAppleParadoxMastery", "Paradox: Mastery", "As Paradox, beat the game or obliterate on Monsoon.");
+            Challenge(Challenges.BebopLongArm.Identifier, "Bebop: Long Arm of the Law", "As Bebop, hook an enemy with Grapple Arm within 10 m of its maximum reach.");
             ShotTracker.Init();
             RoR2Application.onLoad += UsePortraits;
         }

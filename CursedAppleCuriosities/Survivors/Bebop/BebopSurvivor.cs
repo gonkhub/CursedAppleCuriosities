@@ -27,6 +27,10 @@ namespace CursedAppleCuriosities.Survivors.Bebop
 
         public static GameObject? BodyPrefab, DisplayPrefab, GunBeamPrefab, HyperBeamPrefab, HookHead;
         public static SurvivorDef? Survivor;
+        private static Sprite GoldPlatedSkinIcon => _goldPlatedSkinIcon ??= Kit.SkinIcon(new Color(0.93f, 0.72f, 0.2f), new Color(0.2f, 0.2f, 0.21f), new Color(0.75f, 0.55f, 0.15f), new Color(0.55f, 0.12f, 0.12f));
+        private static Sprite? _goldPlatedSkinIcon;
+        private static Sprite ChromeSkinIcon => _chromeSkinIcon ??= Kit.SkinIcon(new Color(0.78f, 0.8f, 0.84f), new Color(0.2f, 0.2f, 0.21f), new Color(0.6f, 0.62f, 0.66f), new Color(0.3f, 0.85f, 0.4f));
+        private static Sprite? _chromeSkinIcon;
         public static BuffDef? StickyStacksBuff, HookAmpBuff, UppercutBuff, HyperSlow, StickySpeedBuff;
         public static GameObject? BeamHitEffect, StickyEffect, PunchEffect, LandEffect;
         public static Material? ChainMaterial;
@@ -177,7 +181,8 @@ namespace CursedAppleCuriosities.Survivors.Bebop
             Kit.MuteStandIn(body, model.gameObject, BebopData.Hero);
             var children = model.GetComponent<ChildLocator>();
             if (children != null && children.FindChild(MuzzleName) == null) children.AddChild(MuzzleName, model);
-            Kit.OwnSkin(model.gameObject, "skinCursedAppleBebopDEFAULT", Token + "SKIN_DEFAULT");
+            Kit.OwnSkin(model.gameObject, "skinCursedAppleBebopDEFAULT", Token + "SKIN_DEFAULT", null,
+                ("skinCursedAppleBebopGOLDPLATED", Token + "SKIN_GOLDPLATED", GoldPlatedSkinIcon), ("skinCursedAppleBebopCHROME", Token + "SKIN_CHROME", ChromeSkinIcon));
             ContentAddition.AddBody(body);
             return body;
         }
@@ -192,7 +197,8 @@ namespace CursedAppleCuriosities.Survivors.Bebop
                 var swap = cm.gameObject.AddComponent<DeadlockModelSwap>();
                 swap.HeroKey = BebopData.Hero;
                 swap.IsDisplay = true;
-                Kit.OwnSkin(cm.gameObject, "skinCursedAppleBebopDISPLAY", Token + "SKIN_DEFAULT");
+                Kit.OwnSkin(cm.gameObject, "skinCursedAppleBebopDISPLAY", Token + "SKIN_DEFAULT", null,
+                    ("skinCursedAppleBebopDISPLAYGOLDPLATED", Token + "SKIN_GOLDPLATED", GoldPlatedSkinIcon), ("skinCursedAppleBebopDISPLAYCHROME", Token + "SKIN_CHROME", ChromeSkinIcon));
             }
             display.AddComponent<BebopDisplayIntro>(); // lobby entrance (user 2.5)
             return display;
@@ -244,6 +250,8 @@ namespace CursedAppleCuriosities.Survivors.Bebop
             LanguageAPI.Add(Token + "PASSIVE_DESC", Kit.MovementLine(BebopData.Movement, alone: true));
             LanguageAPI.Add(Token + "SUBTITLE", "The Wrecking Ball");
             LanguageAPI.Add(Token + "SKIN_DEFAULT", "Default");
+            LanguageAPI.Add(Token + "SKIN_GOLDPLATED", "Gold Plated");
+            LanguageAPI.Add(Token + "SKIN_CHROME", "Chrome");
             LanguageAPI.Add(Token + "DESCRIPTION",
                 "Bebop was built by a widowed junkyard attendant who raised him on jazz. Now she's sick, and he's out paying for her medicine.<color=#CCD3E0>\n\n" +
                 "< ! > Humble Pie is a beam: keep it on target. It reaches 32 m and hits the first thing it touches.\n\n" +
