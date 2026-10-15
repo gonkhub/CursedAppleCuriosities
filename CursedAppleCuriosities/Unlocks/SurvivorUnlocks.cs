@@ -82,7 +82,7 @@ namespace CursedAppleCuriosities.Unlocks
             // Chrome: its own challenge (user 3.0), hook an enemy at the end of Grapple Arm's reach.
             SkinUnlocks.Register(Challenges.Masteries.IvySkin, "CURSEDAPPLE_IVY_SKIN_JADE", "skinCursedAppleIvyJADE", "skinCursedAppleIvyDISPLAYJADE");
             Challenge("CursedAppleIvyMastery", "Ivy: Mastery", "As Ivy, beat the game or obliterate on Monsoon.");
-            // Obsidian: locked now; its challenge is pitched separately (user 3.0).
+            // Obsidian: its own challenge (user 3.0), Rock Bottom.
             SkinUnlocks.Register(Challenges.Masteries.IvyObsidianSkin, "CURSEDAPPLE_IVY_SKIN_OBSIDIAN", "skinCursedAppleIvyOBSIDIAN", "skinCursedAppleIvyDISPLAYOBSIDIAN");
             SkinUnlocks.Register(Challenges.Masteries.BebopChromeSkin, "CURSEDAPPLE_BEBOP_SKIN_CHROME", "skinCursedAppleBebopCHROME", "skinCursedAppleBebopDISPLAYCHROME");
             SkinUnlocks.Register(Challenges.Masteries.SevenSkin, "CURSEDAPPLE_SEVEN_SKIN_OVERCHARGED", "skinCursedAppleSevenOVERCHARGED", "skinCursedAppleSevenDISPLAYOVERCHARGED");
@@ -98,6 +98,7 @@ namespace CursedAppleCuriosities.Unlocks
             SkinUnlocks.Register(Challenges.Masteries.ParadoxSkin, "CURSEDAPPLE_PARADOX_SKIN_TEAL", "skinCursedAppleParadoxTEAL", "skinCursedAppleParadoxDISPLAYTEAL");
             Challenge("CursedAppleParadoxMastery", "Paradox: Mastery", "As Paradox, beat the game or obliterate on Monsoon.");
             Challenge(Challenges.BebopLongArm.Identifier, "Bebop: Long Arm of the Law", "As Bebop, hook an enemy with Grapple Arm within 10 m of its maximum reach.");
+            Challenge(Challenges.IvyRockBottom.Identifier, "Ivy: Rock Bottom", $"As Ivy, kill {Challenges.IvyRockBottom.Kills} enemies with a single Stone Form slam.");
             ShotTracker.Init();
             RoR2Application.onLoad += UsePortraits;
         }

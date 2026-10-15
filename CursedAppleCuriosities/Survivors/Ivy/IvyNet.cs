@@ -385,11 +385,14 @@ namespace CursedAppleCuriosities.Survivors.Ivy
                     EquipmentFx.Sound("ivy_stone_explosion", At);
                     IvyNet.Ring(At, radius, 0.6f);
                     if (b.teamComponent == null) break;
+                    int kills = 0;
                     foreach (HealthComponent hc in IvyNet.EnemiesIn(At, radius, b.teamComponent.teamIndex))
                     {
                         IvyNet.Hit(b, hc, IvyData.StoneDamage * b.damage, Crit, Vector3.up * 800f, DamageSource.Utility);
                         if (hc.alive) using (DurationExtender.From(b)) SetStateOnHurt.SetStunOnObject(hc.gameObject, IvyData.StoneStun);
+                        else kills++;
                     }
+                    CursedAppleCuriosities.Unlocks.Challenges.IvyRockBottom.Slammed(b, kills);
                     break;
                 case IvyStoneKind.End:
                     b.ClearTimedBuffs(IvySurvivor.StoneBuff);

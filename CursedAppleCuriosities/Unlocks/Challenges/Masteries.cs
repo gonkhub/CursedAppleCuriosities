@@ -19,7 +19,7 @@ namespace CursedAppleCuriosities.Unlocks.Challenges
         /// <summary>Bebop's Chrome skin: its own challenge (BebopLongArm), not a mastery.</summary>
         public const string BebopChromeSkin = "Bebop.Chrome";
         public const string IvySkin = "Ivy.Mastery";
-        /// <summary>Ivy's Obsidian skin: its own challenge (to be pitched), not a mastery.</summary>
+        /// <summary>Ivy's Obsidian skin: its own challenge (IvyRockBottom), not a mastery.</summary>
         public const string IvyObsidianSkin = "Ivy.Obsidian";
         public const string SevenSkin = "Seven.Mastery";
         public const string VyperSkin = "Vyper.Mastery";
