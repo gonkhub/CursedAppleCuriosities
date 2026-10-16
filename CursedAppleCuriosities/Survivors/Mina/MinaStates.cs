@@ -128,6 +128,8 @@ namespace EntityStates.CursedApple.Mina
     /// </summary>
     public class SanguineRetreat : BaseSkillState
     {
+        /// <summary>Cast during Nox Nostra (user 3.0): the ult to pick up again where it left off once she reforms (authority).</summary>
+        public NoxNostra? ResumeNox;
         private Vector3 _dir;
         private bool _recast;
         private CharacterModel? _model;
@@ -175,7 +177,11 @@ namespace EntityStates.CursedApple.Mina
             characterMotor.moveDirection = Vector3.zero;
             characterMotor.rootMotion += _dir * speed * Time.fixedDeltaTime;
             characterDirection.forward = new Vector3(_dir.x, 0f, _dir.z);
-            if (fixedAge >= MinaData.RetreatSeconds) outer.SetNextStateToMain();
+            if (fixedAge >= MinaData.RetreatSeconds)
+            {
+                if (ResumeNox != null) outer.SetNextState(ResumeNox); // back to her Nox Nostra, where she reformed
+                else outer.SetNextStateToMain();
+            }
         }
 
         public override void OnExit()
@@ -186,7 +192,7 @@ namespace EntityStates.CursedApple.Mina
             DeadlockSounds.Play(_recast ? "mina_retreat_end_final" : "mina_retreat_end", transform.position, gameObject);
             if (MinaSurvivor.BlinkEffect != null) EffectManager.SimpleImpactEffect(MinaSurvivor.BlinkEffect, characterBody.corePosition, -_dir, false);
             MinaModel.Play(gameObject, "retreat_end");
-            if (isAuthority && characterMotor != null) characterMotor.velocity = _dir * MinaData.RetreatExitSpeed + Vector3.up * 2f; // Deadlock ExitVelocity
+            if (isAuthority && characterMotor != null) characterMotor.velocity = ResumeNox != null ? Vector3.zero : _dir * MinaData.RetreatExitSpeed + Vector3.up * 2f; // Deadlock ExitVelocity; none back into the hover
             base.OnExit();
         }
 
@@ -206,9 +212,27 @@ namespace EntityStates.CursedApple.Mina
         private float _owed;
         private DeadlockVoice? _loop;
 
+        // Sanguine Retreat cast mid-ult (user 3.0): the retreat carries this cast's progress and hands back a resumed one.
+        public bool Resumed;
+        public int ResumeLaunched, ResumeToLaunch;
+        public float ResumeAge;
+        private float Age => fixedAge + ResumeAge;
+        private static readonly System.Reflection.FieldInfo? NextState =
+            typeof(EntityStateMachine).GetField("nextState", System.Reflection.BindingFlags.NonPublic | System.Reflection.BindingFlags.Instance);
+
         public override void OnEnter()
         {
             base.OnEnter();
+            if (Resumed)
+            {
+                // Picking up after a Sanguine Retreat: no leap, no cast, the bats she still had left.
+                _toLaunch = ResumeToLaunch;
+                _launched = ResumeLaunched;
+                MinaModel.Play(gameObject, "nox_loop");
+                DeadlockSounds.Play("mina_umbrella_open", transform.position, gameObject);
+                if (UnityEngine.Networking.NetworkServer.active) DeadlockFallGuard.ProtectNextLanding(gameObject, 8f);
+                return;
+            }
             MinaModel.Play(gameObject, "nox");
             DeadlockSounds.Play("mina_nox_cast", transform.position, gameObject);
             DeadlockSounds.Play("mina_umbrella_open", transform.position, gameObject);
@@ -216,6 +240,7 @@ namespace EntityStates.CursedApple.Mina
             // Love Bites stacks, read from the synced buff (the stack count itself lives on the server's master).
             int stacks = characterBody != null && MinaSurvivor.LoveStacksBuff != null ? characterBody.GetBuffCount(MinaSurvivor.LoveStacksBuff) : 0;
             _toLaunch = MinaData.Bats + Mathf.Min(MinaData.BonusBatsMax, stacks);
+            if (isAuthority) CursedAppleCuriosities.Unlocks.Challenges.MinaHonorRoll.Cast(gameObject, stacks); // Blackmore Colors' challenge
             if (isAuthority && characterMotor != null)
             {
                 Vector3 d = GetAimRay().direction;
@@ -234,21 +259,21 @@ namespace EntityStates.CursedApple.Mina
         {
             base.FixedUpdate();
             StartAimMode(0.5f);
-            if (fixedAge >= MinaData.NoxCastDelay && _loop == null) _loop = DeadlockSounds.Loop("mina_nox_loop", gameObject, Duration);
+            if (Age >= MinaData.NoxCastDelay && _loop == null) _loop = DeadlockSounds.Loop("mina_nox_loop", gameObject, Mathf.Max(0.1f, Duration - Age));
             if (!isAuthority || characterMotor == null) return;
             float dt = Time.fixedDeltaTime;
             // Hovering on the umbrella: the leap's rise carries her up, then she falls no faster than Deadlock's FallSpeedMax,
             // and her drift dies away quickly (Deadlock AirDrag 12).
             Vector3 v = characterMotor.velocity;
-            float fall = fixedAge > 0.4f ? Mathf.Max(v.y, -MinaData.NoxFallMax) : v.y;
-            Vector3 flat = new Vector3(v.x, 0f, v.z) * Mathf.Max(0f, 1f - (fixedAge > 0.4f ? 3f : 0.5f) * dt);
+            float fall = Age > 0.4f ? Mathf.Max(v.y, -MinaData.NoxFallMax) : v.y;
+            Vector3 flat = new Vector3(v.x, 0f, v.z) * Mathf.Max(0f, 1f - (Age > 0.4f ? 3f : 0.5f) * dt);
             characterMotor.velocity = new Vector3(flat.x, fall, flat.z);
-            if (fixedAge >= MinaData.NoxCastDelay && _launched < _toLaunch)
+            if (Age >= MinaData.NoxCastDelay && _launched < _toLaunch)
             {
                 _owed += MinaData.BatsPerSecond * dt;
                 while (_owed >= 1f && _launched < _toLaunch) { _owed -= 1f; Launch(); }
             }
-            if (fixedAge >= Duration) outer.SetNextStateToMain();
+            if (Age >= Duration) outer.SetNextStateToMain();
         }
 
         private Transform? _umbrella;
@@ -291,9 +316,32 @@ namespace EntityStates.CursedApple.Mina
         public override void OnExit()
         {
             DeadlockSounds.Stop(_loop);
+            // Sanguine Retreat cast mid-ult (user 3.0): hand it this cast's progress, to resume once she reforms.
+            if (isAuthority && NextState?.GetValue(outer) is SanguineRetreat retreat && Age < Duration)
+            {
+                retreat.ResumeNox = new NoxNostra { Resumed = true, ResumeLaunched = _launched, ResumeToLaunch = _toLaunch, ResumeAge = Age };
+                DeadlockSounds.Play("mina_umbrella_close", transform.position, gameObject);
+                base.OnExit();
+                return;
+            }
             DeadlockSounds.Play("mina_nox_end", transform.position, gameObject);
             DeadlockSounds.Play("mina_umbrella_close", transform.position, gameObject);
+            // nox_loop loops with no end of its own: without this she held the ult pose until another animation replaced it (user 3.0).
+            // in_air hands straight back to her locomotion once grounded; a skill entered next plays over it.
+            MinaModel.Play(gameObject, "in_air");
             base.OnExit();
+        }
+
+        public override void OnSerialize(UnityEngine.Networking.NetworkWriter writer)
+        {
+            base.OnSerialize(writer);
+            writer.Write(Resumed); writer.Write(ResumeLaunched); writer.Write(ResumeToLaunch); writer.Write(ResumeAge);
+        }
+
+        public override void OnDeserialize(UnityEngine.Networking.NetworkReader reader)
+        {
+            base.OnDeserialize(reader);
+            Resumed = reader.ReadBoolean(); ResumeLaunched = reader.ReadInt32(); ResumeToLaunch = reader.ReadInt32(); ResumeAge = reader.ReadSingle();
         }
 
         public override InterruptPriority GetMinimumInterruptPriority() => InterruptPriority.PrioritySkill;

@@ -27,6 +27,9 @@ namespace CursedAppleCuriosities.Survivors.Bebop
 
         public static GameObject? BodyPrefab, DisplayPrefab, GunBeamPrefab, HyperBeamPrefab, HookHead;
         public static SurvivorDef? Survivor;
+        // His default paint (user 3.0: not the stand-in's Commando icon): orange-red paint, dark metal, deep red, green lights.
+        private static Sprite DefaultSkinIcon => _defaultSkinIcon ??= Kit.SkinIcon(new Color(0.85f, 0.42f, 0.15f), new Color(0.2f, 0.2f, 0.21f), new Color(0.62f, 0.2f, 0.12f), new Color(0.3f, 0.85f, 0.4f));
+        private static Sprite? _defaultSkinIcon;
         private static Sprite GoldPlatedSkinIcon => _goldPlatedSkinIcon ??= Kit.SkinIcon(new Color(0.93f, 0.72f, 0.2f), new Color(0.2f, 0.2f, 0.21f), new Color(0.75f, 0.55f, 0.15f), new Color(0.55f, 0.12f, 0.12f));
         private static Sprite? _goldPlatedSkinIcon;
         private static Sprite ChromeSkinIcon => _chromeSkinIcon ??= Kit.SkinIcon(new Color(0.78f, 0.8f, 0.84f), new Color(0.2f, 0.2f, 0.21f), new Color(0.6f, 0.62f, 0.66f), new Color(0.3f, 0.85f, 0.4f));
@@ -44,7 +47,7 @@ namespace CursedAppleCuriosities.Survivors.Bebop
         {
             BebopData.Bind(config);
             foreach (DeadlockSound s in BebopData.Sounds) DeadlockSounds.Register(s);
-            foreach (string icon in new[] { BebopData.IconPortrait, BebopData.IconUppercut, BebopData.IconSticky, BebopData.IconHook, BebopData.IconHyper })
+            foreach (string icon in new[] { BebopData.IconPortrait, BebopData.IconGun, BebopData.IconUppercut, BebopData.IconSticky, BebopData.IconHook, BebopData.IconHyper })
                 DeadlockInstall.WantIcon(icon);
             DeadlockHeroes.Register(BebopModel.Def);
             DeadlockInstall.WantModel(BebopModel.Def.ModelRequest());
@@ -161,7 +164,7 @@ namespace CursedAppleCuriosities.Survivors.Bebop
             locator.secondary = Kit.Slot(body, BodyName, "Secondary", _sticky!, _hook!);
             locator.utility = Kit.Slot(body, BodyName, "Utility", _uppercut!);
             locator.special = Kit.Slot(body, BodyName, "Special", _hyper!);
-            locator.passiveSkill = new SkillLocator.PassiveSkill { enabled = true, skillNameToken = Token + "PASSIVE_NAME", skillDescriptionToken = Token + "PASSIVE_DESC", icon = ItemBase.CreatePlaceholderSprite(Color) }; // his/her Deadlock movement (user 2.5: every survivor shows it)
+            locator.passiveSkill = new SkillLocator.PassiveSkill { enabled = false, skillNameToken = Token + "PASSIVE_NAME", skillDescriptionToken = Token + "PASSIVE_DESC", icon = ItemBase.CreatePlaceholderSprite(Color) }; // hidden: it only described his Deadlock movement, and the user cut those blurbs (3.0)
             DeadlockMovement.Apply(body, BebopData.Movement);
 
             var gun = body.AddComponent<BebopGunBeam>();
@@ -183,7 +186,7 @@ namespace CursedAppleCuriosities.Survivors.Bebop
             Kit.MuteStandIn(body, model.gameObject, BebopData.Hero);
             var children = model.GetComponent<ChildLocator>();
             if (children != null && children.FindChild(MuzzleName) == null) children.AddChild(MuzzleName, model);
-            Kit.OwnSkin(model.gameObject, "skinCursedAppleBebopDEFAULT", Token + "SKIN_DEFAULT", null,
+            Kit.OwnSkin(model.gameObject, "skinCursedAppleBebopDEFAULT", Token + "SKIN_DEFAULT", DefaultSkinIcon,
                 ("skinCursedAppleBebopGOLDPLATED", Token + "SKIN_GOLDPLATED", GoldPlatedSkinIcon), ("skinCursedAppleBebopCHROME", Token + "SKIN_CHROME", ChromeSkinIcon));
             ContentAddition.AddBody(body);
             return body;
@@ -199,7 +202,7 @@ namespace CursedAppleCuriosities.Survivors.Bebop
                 var swap = cm.gameObject.AddComponent<DeadlockModelSwap>();
                 swap.HeroKey = BebopData.Hero;
                 swap.IsDisplay = true;
-                Kit.OwnSkin(cm.gameObject, "skinCursedAppleBebopDISPLAY", Token + "SKIN_DEFAULT", null,
+                Kit.OwnSkin(cm.gameObject, "skinCursedAppleBebopDISPLAY", Token + "SKIN_DEFAULT", DefaultSkinIcon,
                     ("skinCursedAppleBebopDISPLAYGOLDPLATED", Token + "SKIN_GOLDPLATED", GoldPlatedSkinIcon), ("skinCursedAppleBebopDISPLAYCHROME", Token + "SKIN_CHROME", ChromeSkinIcon));
             }
             display.AddComponent<BebopDisplayIntro>(); // lobby entrance (user 2.5)
@@ -217,7 +220,7 @@ namespace CursedAppleCuriosities.Survivors.Bebop
             Survivor.outroFlavorToken = Token + "OUTRO";
             Survivor.mainEndingEscapeFailureFlavorToken = Token + "FAILURE";
             Survivor.primaryColor = Color;
-            Survivor.desiredSortPosition = 111f;
+            Survivor.desiredSortPosition = 102f; // RosterOrder re-sorts the whole roster A-Z at load (user 3.0)
             ContentAddition.AddSurvivorDef(Survivor);
         }
 
@@ -241,6 +244,7 @@ namespace CursedAppleCuriosities.Survivors.Bebop
             if (upper != null && UppercutBuff != null) UppercutBuff.iconSprite = upper;
             Set(_hyper, BebopData.IconHyper);
             if (portrait != null) _beam!.icon = Kit.Sprite(portrait);
+            Set(_beam, BebopData.IconGun); // the weapon itself (user 3.0); the portrait stays if it isn't cached
             CursedAppleCuriositiesPlugin.Logger?.LogInfo($"[Bebop] icons: {(portrait != null ? "from Deadlock" : "placeholders (no Deadlock icons cached)")}");
         }
 
@@ -249,7 +253,7 @@ namespace CursedAppleCuriosities.Survivors.Bebop
             string D(float coeff) => $"{coeff * 100f:0}%";
             LanguageAPI.Add(Token + "NAME", "Bebop");
             LanguageAPI.Add(Token + "PASSIVE_NAME", "Deadlock Movement");
-            LanguageAPI.Add(Token + "PASSIVE_DESC", Kit.MovementLine(BebopData.Movement, alone: true));
+            LanguageAPI.Add(Token + "PASSIVE_DESC", "");
             LanguageAPI.Add(Token + "SUBTITLE", "The Wrecking Ball");
             LanguageAPI.Add(Token + "SKIN_DEFAULT", "Default");
             LanguageAPI.Add(Token + "SKIN_GOLDPLATED", "Gold Plated");

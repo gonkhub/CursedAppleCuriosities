@@ -78,7 +78,7 @@ namespace CursedAppleCuriosities.Survivors.Shiv
                 ? _body.modelLocator.modelTransform.GetComponent<CharacterModel>() : null;
             if (full && _instance == null && model != null)
             {
-                _overlay ??= UnityEngine.AddressableAssets.Addressables.LoadAssetAsync<Material>("RoR2/Base/Items/AttackSpeedOnCrit/matWolfhatOverlay.mat").WaitForCompletion();
+                _overlay ??= UnityEngine.AddressableAssets.Addressables.LoadAssetAsync<Material>("RoR2/Base/AttackSpeedOnCrit/matWolfhatOverlay.mat").WaitForCompletion();
                 if (_overlay != null)
                 {
                     _instance = TemporaryOverlayManager.AddOverlay(gameObject);

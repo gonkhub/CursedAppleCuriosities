@@ -55,7 +55,7 @@ namespace EntityStates.CursedApple.Paradox
                     minSpread = 0f,
                     maxSpread = ParadoxData.GunSpread + characterBody.spreadBloomAngle * 0.3f,
                     damage = ParadoxData.GunDamage * damageStat,
-                    procCoefficient = 1f,
+                    procCoefficient = ParadoxData.GunProc,
                     force = 80f,
                     tracerEffectPrefab = ParadoxSurvivor.TracerEffect,
                     hitEffectPrefab = ParadoxSurvivor.HitEffect,
@@ -184,6 +184,7 @@ namespace EntityStates.CursedApple.Paradox
         private bool _fired, _primaryReleased;
         private DeadlockVoice? _hum;
         private OverlayController? _scope;
+        private ParadoxCarbineGlow? _glow;
 
         private float Fraction => Mathf.Clamp01(_charge / ParadoxData.CarbineChargeSeconds);
 
@@ -194,12 +195,14 @@ namespace EntityStates.CursedApple.Paradox
             DeadlockHeroVoice.Power("paradox_vo_power3", gameObject);
             _hold = ParadoxData.CarbineHoldSeconds * DurationExtender.Multiplier(characterBody);
             _hum = DeadlockSounds.Loop("paradox_carbine_loop", gameObject, ParadoxData.CarbineChargeSeconds + _hold + 0.5f);
+            _glow = gameObject.AddComponent<ParadoxCarbineGlow>(); // she glows blue while the Carbine is active (user 3.0)
         }
 
         public override void FixedUpdate()
         {
             base.FixedUpdate();
             StartAimMode(0.5f);
+            if (_glow != null) _glow.Charge = Mathf.Clamp01(fixedAge / ParadoxData.CarbineChargeSeconds); // every machine: the state's own clock
             if (!isAuthority || _fired) return;
             bool wasFull = Fraction >= 1f;
             _charge += Time.fixedDeltaTime;
@@ -254,7 +257,7 @@ namespace EntityStates.CursedApple.Paradox
                 minSpread = 0f,
                 maxSpread = 0f,
                 damage = Mathf.Lerp(ParadoxData.CarbineMinDamage, ParadoxData.CarbineMaxDamage, f) * damageStat,
-                procCoefficient = 1f,
+                procCoefficient = 1f, // procs (user 3.0: her rifle and this shot are her only procs; a big charged hit should set off Bands, Tankbuster...)
                 force = 1500f * f,
                 tracerEffectPrefab = ParadoxSurvivor.CarbineTracer,
                 hitEffectPrefab = ParadoxSurvivor.CarbineHit,
@@ -283,6 +286,7 @@ namespace EntityStates.CursedApple.Paradox
         public override void OnExit()
         {
             DeadlockSounds.Stop(_hum);
+            if (_glow != null) Object.Destroy(_glow);
             if (_scope != null) HudOverlayManager.RemoveOverlay(_scope);
             if (isAuthority && !_fired) ParadoxNet.ToServer(new ParadoxCarbineMessage { Body = gameObject, Cancelled = true });
             base.OnExit();

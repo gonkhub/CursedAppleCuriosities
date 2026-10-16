@@ -49,9 +49,9 @@ namespace EntityStates.CursedApple.Apollo
         }
     }
 
-    // ================= Primary: Pride of Ixia =================
+    // ================= Primary: Family Heirloom (Deadlock's Pride of Ixia) =================
 
-    /// <summary>Pride of Ixia (Deadlock citadel_weapon_fencer_set): a sword wave every 0.38 s that cuts through everything in a 25 m line.</summary>
+    /// <summary>Family Heirloom (Deadlock citadel_weapon_fencer_set, "Pride of Ixia"): a sword wave every 0.38 s that cuts through everything in a 25 m line.</summary>
     public class FireWave : BaseSkillState
     {
         private float _duration;
@@ -431,22 +431,51 @@ namespace EntityStates.CursedApple.Apollo
         {
             _struck = true;
             _struckAt = fixedAge;
-            Vector3 dir = GetAimRay().direction;
-            dir = Vector3.Normalize(new Vector3(dir.x, Mathf.Clamp(dir.y, -0.5f, 0.5f), dir.z));
+            Vector3 dir = GetAimRay().direction.normalized; // straight at the crosshair as the key is released, up and down too (user 3.0)
             Vector3 from = characterBody.corePosition;
             float range = ApolloData.UltDash * MysticExpansion.RadiusMultiplier(characterBody);
-            // Short of walls (Deadlock GapDistanceToWall), with his body's room.
-            float reach = range;
-            if (Physics.SphereCast(from, 0.6f, dir, out RaycastHit wall, range, LayerIndex.world.mask, QueryTriggerInteraction.Ignore)) reach = Mathf.Max(0f, wall.distance - 0.5f);
+            Vector3 pos = characterMotor.Motor.TransientPosition;
+            float reach = Reach(pos, ref dir, range);
             var targets = ApolloShared.Along(from, dir, reach + 1f, ApolloData.UltRadius * MysticExpansion.RadiusMultiplier(characterBody), GetTeam());
             Vector3 to = from + dir * reach;
             ApolloModel.Play(gameObject, "ult_dash");
             characterMotor.Motor.ForceUnground();
-            characterMotor.Motor.SetPosition(characterBody.footPosition + (to - from), true);
+            characterMotor.Motor.SetPosition(pos + dir * reach, true); // the whole capsule moves as far as it was swept
             characterDirection.forward = ApolloShared.Flat(dir, characterDirection.forward);
             ApolloNet.ToServer(new ApolloUltMessage { Apollo = gameObject, Kind = ApolloUltKind.Strike, From = from, To = to });
             ApolloNet.ToServer(new ApolloHitMessage { Kind = ApolloHitKind.Ult, Attacker = gameObject, Targets = targets.ToArray(), Coefficient = ApolloData.UltImpact, Dir = dir, Crit = RollCrit() });
             _lock = DeadlockSounds.Loop("apollo_ult_lock", gameObject, ApolloData.UltLock); // (the server makes him untouchable on that message)
+        }
+
+        /// <summary>
+        /// How far his whole capsule can go along dir, short of walls (Deadlock GapDistanceToWall). It used to measure from his chest
+        /// with a small sphere and then move his feet the same way, so a strike aimed a little down put his feet into the floor and he
+        /// fell under the map (user 3.0). A strike into the floor slides along it instead; the landing spot is checked clear, and
+        /// pulled back toward him until it is.
+        /// </summary>
+        private float Reach(Vector3 pos, ref Vector3 dir, float range)
+        {
+            var motor = characterMotor.Motor;
+            // His capsule in the world, from the motor's own collider (wherever its centre sits relative to his position).
+            float r = motor.Capsule.radius * 0.95f, half = Mathf.Max(0f, motor.Capsule.height * 0.5f - motor.Capsule.radius);
+            Vector3 up = motor.CharacterUp;
+            Vector3 centre = pos + motor.TransientRotation * motor.Capsule.center + up * 0.1f; // a hair up, off the floor it stands on
+            Vector3 lo = centre - up * half, hi = centre + up * half;
+            int mask = LayerIndex.world.mask;
+            float Sweep(Vector3 d) =>
+                Physics.CapsuleCast(lo, hi, r, d, out RaycastHit hit, range, mask, QueryTriggerInteraction.Ignore) ? Mathf.Max(0f, hit.distance - 0.3f) : range;
+            float reach = Sweep(dir);
+            // Aimed just under level and clipping the ground: along the ground instead. A steeper aim down is meant (a strike down
+            // off a ledge, user 3.0) and keeps its line.
+            if (reach < range && dir.y < 0f && dir.y > -0.3f && Physics.CapsuleCast(lo, hi, r, dir, out RaycastHit floor, range, mask, QueryTriggerInteraction.Ignore) && floor.normal.y > 0.6f)
+            {
+                Vector3 along = Vector3.ProjectOnPlane(dir, floor.normal);
+                if (along.sqrMagnitude > 1e-4f) { dir = along.normalized; reach = Sweep(dir); }
+            }
+            // The landing spot must be clear (never inside the floor or a wall): step back toward him until it is.
+            for (float d = reach; d > 0f; d -= 0.5f)
+                if (!Physics.CheckCapsule(lo + dir * d, hi + dir * d, r, mask, QueryTriggerInteraction.Ignore)) return d;
+            return 0f;
         }
 
         public override void OnExit()

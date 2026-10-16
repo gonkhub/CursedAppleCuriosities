@@ -40,7 +40,7 @@ namespace CursedAppleCuriosities.Survivors.Paradox
         {
             ParadoxData.Bind(config);
             foreach (DeadlockSound s in ParadoxData.Sounds) DeadlockSounds.Register(s);
-            foreach (string icon in new[] { ParadoxData.IconPortrait, ParadoxData.IconPulse, ParadoxData.IconWall, ParadoxData.IconCarbine, ParadoxData.IconSwap })
+            foreach (string icon in new[] { ParadoxData.IconPortrait, ParadoxData.IconGun, ParadoxData.IconPulse, ParadoxData.IconWall, ParadoxData.IconCarbine, ParadoxData.IconSwap })
                 DeadlockInstall.WantIcon(icon);
             DeadlockHeroes.Register(ParadoxModel.Def);
             DeadlockInstall.WantModel(ParadoxModel.Def.ModelRequest());
@@ -133,7 +133,9 @@ namespace CursedAppleCuriosities.Survivors.Paradox
             _gun.cancelSprintingOnActivation = true;
             _gun.mustKeyPress = false;
 
-            _pulse = Skill<SkillDef>("Pulse", typeof(ThrowPulseBomb), "Weapon", ParadoxData.PulseCooldown, InterruptPriority.Skill);
+            // Pulse Bomb has a machine of its own (user 3.0): on Weapon it cancelled a Kinetic Carbine charge, and on Body its
+            // hold-to-aim would stop her moving.
+            _pulse = Skill<SkillDef>("Pulse", typeof(ThrowPulseBomb), "Pulse", ParadoxData.PulseCooldown, InterruptPriority.Skill);
             _pulse.mustKeyPress = true;
             _pulse.cancelSprintingOnActivation = true;
 
@@ -172,10 +174,11 @@ namespace CursedAppleCuriosities.Survivors.Paradox
             foreach (GenericSkill old in body.GetComponents<GenericSkill>()) UnityEngine.Object.DestroyImmediate(old);
             var locator = body.GetComponent<SkillLocator>();
             locator.primary = Kit.Slot(body, BodyName, "Primary", _gun!);
+            Kit.AddMachine(body, "Pulse"); // Pulse Bomb runs alongside Kinetic Carbine's charge
             locator.secondary = Kit.Slot(body, BodyName, "Secondary", _pulse!, _wall!);
             locator.utility = Kit.Slot(body, BodyName, "Utility", _carbine!);
             locator.special = Kit.Slot(body, BodyName, "Special", _swap!);
-            locator.passiveSkill = new SkillLocator.PassiveSkill { enabled = true, skillNameToken = Token + "PASSIVE_NAME", skillDescriptionToken = Token + "PASSIVE_DESC", icon = ItemBase.CreatePlaceholderSprite(Color) }; // his/her Deadlock movement (user 2.5: every survivor shows it)
+            locator.passiveSkill = new SkillLocator.PassiveSkill { enabled = false, skillNameToken = Token + "PASSIVE_NAME", skillDescriptionToken = Token + "PASSIVE_DESC", icon = ItemBase.CreatePlaceholderSprite(Color) }; // hidden: it only described her Deadlock movement, and the user cut those blurbs (3.0)
             DeadlockMovement.Apply(body, ParadoxData.Movement);
 
             Transform model = body.GetComponent<ModelLocator>().modelTransform;
@@ -216,7 +219,7 @@ namespace CursedAppleCuriosities.Survivors.Paradox
             Survivor.outroFlavorToken = Token + "OUTRO";
             Survivor.mainEndingEscapeFailureFlavorToken = Token + "FAILURE";
             Survivor.primaryColor = Color;
-            Survivor.desiredSortPosition = 110f;
+            Survivor.desiredSortPosition = 108f; // RosterOrder re-sorts the whole roster A-Z at load (user 3.0)
             ContentAddition.AddSurvivorDef(Survivor);
         }
 
@@ -238,6 +241,7 @@ namespace CursedAppleCuriosities.Survivors.Paradox
             Set(_carbine, ParadoxData.IconCarbine);
             Set(_swap, ParadoxData.IconSwap);
             if (portrait != null) _gun!.icon = Kit.Sprite(portrait);
+            Set(_gun, ParadoxData.IconGun); // the weapon itself (user 3.0); the portrait stays if it isn't cached
             CursedAppleCuriositiesPlugin.Logger?.LogInfo($"[Paradox] icons: {(portrait != null ? "from Deadlock" : "placeholders (no Deadlock icons cached)")}");
         }
 
@@ -248,7 +252,7 @@ namespace CursedAppleCuriosities.Survivors.Paradox
             string D(float coeff) => $"{coeff * 100f:0}%";
             LanguageAPI.Add(Token + "NAME", "Paradox");
             LanguageAPI.Add(Token + "PASSIVE_NAME", "Deadlock Movement");
-            LanguageAPI.Add(Token + "PASSIVE_DESC", Kit.MovementLine(ParadoxData.Movement, alone: true));
+            LanguageAPI.Add(Token + "PASSIVE_DESC", "");
             LanguageAPI.Add(Token + "SUBTITLE", "The Wrinkle in Time");
             LanguageAPI.Add(Token + "SKIN_DEFAULT", "Default");
             LanguageAPI.Add(Token + "SKIN_TEAL", "Teal");

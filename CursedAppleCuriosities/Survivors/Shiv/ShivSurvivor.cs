@@ -38,7 +38,7 @@ namespace CursedAppleCuriosities.Survivors.Shiv
         {
             ShivData.Bind(config);
             foreach (DeadlockSound s in ShivData.Sounds) DeadlockSounds.Register(s);
-            foreach (string icon in new[] { ShivData.IconPortrait, ShivData.IconKnife, ShivData.IconDash, ShivData.IconBloodletting, ShivData.IconKillingBlow })
+            foreach (string icon in new[] { ShivData.IconPortrait, ShivData.IconGun, ShivData.IconKnife, ShivData.IconDash, ShivData.IconBloodletting, ShivData.IconKillingBlow })
                 DeadlockInstall.WantIcon(icon);
             DeadlockHeroes.Register(ShivModel.Def);
             DeadlockInstall.WantModel(ShivModel.Def.ModelRequest());
@@ -198,7 +198,7 @@ namespace CursedAppleCuriosities.Survivors.Shiv
             Survivor.outroFlavorToken = Token + "OUTRO";
             Survivor.mainEndingEscapeFailureFlavorToken = Token + "FAILURE";
             Survivor.primaryColor = Color;
-            Survivor.desiredSortPosition = 108f;
+            Survivor.desiredSortPosition = 110f; // RosterOrder re-sorts the whole roster A-Z at load (user 3.0)
             ContentAddition.AddSurvivorDef(Survivor);
         }
 
@@ -227,6 +227,8 @@ namespace CursedAppleCuriosities.Survivors.Shiv
                 locator.passiveSkill = passive;
             }
             if (portrait != null) { _gun!.icon = Kit.Sprite(portrait); _alt!.icon = Kit.Sprite(portrait); }
+            Set(_gun, ShivData.IconGun); // the weapon itself (user 3.0); the portrait stays if it isn't cached
+            Set(_alt, ShivData.IconGun); // the weapon itself (user 3.0); the portrait stays if it isn't cached
             CursedAppleCuriositiesPlugin.Logger?.LogInfo($"[Shiv] icons: {(portrait != null ? "from Deadlock" : "placeholders (no Deadlock icons cached)")}");
         }
 
@@ -252,7 +254,7 @@ namespace CursedAppleCuriosities.Survivors.Shiv
             LanguageAPI.Add(Token + "PASSIVE_NAME", "Bloodletting & Rage");
             LanguageAPI.Add(Token + "PASSIVE_DESC",
                 $"<style=cIsHealing>{ShivData.DeferredShare * 100f:0}%</style> of damage taken is dealt over <style=cIsUtility>{ShivData.DeferredSeconds:0}s</style> instead. " +
-                $"Dealing damage builds <style=cIsDamage>Rage</style>; at full Rage, bleeds and Slice'n'Dice deal <style=cIsDamage>double</style> and Killing Blow executes below <style=cIsHealth>{ShivData.ExecuteThresholdRage * 100f:0}%</style>." + Kit.MovementLine(ShivData.Movement));
+                $"Dealing damage builds <style=cIsDamage>Rage</style>; at full Rage, bleeds and Slice'n'Dice deal <style=cIsDamage>double</style> and Killing Blow executes below <style=cIsHealth>{ShivData.ExecuteThresholdRage * 100f:0}%</style>.");
 
             LanguageAPI.Add(Token + "GUN_NAME", "Shotgun");
             LanguageAPI.Add(Token + "GUN_DESC",

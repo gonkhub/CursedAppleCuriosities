@@ -45,10 +45,8 @@ namespace CursedAppleCuriosities.Items
             GlassChargeBuffDef.iconSprite = BuffIcon(IconFileName, color);
             ContentAddition.AddBuffDef(GlassChargeBuffDef);
 
-            FlatDamageBonus = config.Bind("Lunar", "Glass Cannon - Damage Bonus Per Stack", 0.25f,
-                "Always-on bonus damage per stack.").Value;
-            DamageTakenPenalty = config.Bind("Lunar", "Glass Cannon - Damage Taken Penalty Per Stack", 0.25f,
-                "Increased damage taken per stack (the downside).").Value;
+            FlatDamageBonus = 0.25f;
+            DamageTakenPenalty = 0.25f;
             CreateLang();
             CreateItem();
             Hooks();
@@ -113,6 +111,7 @@ namespace CursedAppleCuriosities.Items
             HealthComponent self,
             DamageInfo damageInfo)
         {
+            if (FinalDamage(damageInfo)) { orig(self, damageInfo); return; } // already worked out (Bloodletting's ticks)
             if (NetworkServer.active
                 && damageInfo != null
                 && self.body?.inventory != null)

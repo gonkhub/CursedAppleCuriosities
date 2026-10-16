@@ -14,16 +14,19 @@ namespace CursedAppleCuriosities.Unlocks
     /// </summary>
     public static class SurvivorUnlocks
     {
-        /// <summary>Unlocked from the start.</summary>
-        private static readonly string[] Free = { "Abrams", "Seven" };
+        /// <summary>
+        /// Unlocked from the start: none since 2026-10-16 (Abrams: Infernal Resilience; Seven: Electric Chair). Every Deadlock hero is
+        /// a challenge or a map secret.
+        /// </summary>
+        private static readonly string[] Free = System.Array.Empty<string>();
 
-        /// <summary>The district each secret hero hides in (the how-to-unlock hint).</summary>
+        /// <summary>Each secret hero's how-to-unlock hint, naming the district they hide in (user's wording, 3.0).</summary>
         private static readonly Dictionary<string, string> SecretWhere = new Dictionary<string, string>
         {
-            ["Mina"] = "Chinatown",
-            ["Bebop"] = "the Haunted Lot",
-            ["Paradox"] = "the Sunken Plaza",
-            ["Lash"] = "the Sunken Plaza", // on its highest rooftop (user, 2026-10-15)
+            ["Mina"] = "Watching over Chinatown, since the lighting compliments her outfit",
+            ["Bebop"] = "Looking through junk in the Haunted Lot",
+            ["Paradox"] = "Getting away with a crime in the Sunken Plaza",
+            ["Lash"] = "Perched somewhere high in the Sunken Plaza", // on its highest rooftop (user, 2026-10-15)
         };
 
         private static readonly Dictionary<string, UnlockableDef> _byHero = new Dictionary<string, UnlockableDef>(StringComparer.OrdinalIgnoreCase);
@@ -39,12 +42,15 @@ namespace CursedAppleCuriosities.Unlocks
         /// </summary>
         public static void Init()
         {
+            Challenge(Challenges.SevenElectricChair.Identifier, "Electric Chair", "Die to a lightning strike.");
+            Challenges.SevenElectricChair.Hook();
+            Challenge(Challenges.AbramsInfernalResilience.Identifier, "Infernal Resilience", $"Take {Challenges.AbramsInfernalResilience.Damage:N0} damage in a single stage.");
             Challenge(Challenges.VyperRattler.Identifier, "Rattler", $"Fire {Challenges.VyperRattler.Shots} shots within 1 second.");
             Challenge(Challenges.GreyTalonOneShot.Identifier, "Big Game", "Kill a boss with a single hit from full health.");
             Challenge(Challenges.VictorPainBattery.Identifier, "Pain Battery", "In a single run, take 1,000 damage from yourself (not counting Shrines of Blood or falls).");
             Challenge(Challenges.ViscousCube.Identifier, "The Cube", "Survive a single hit that would have dealt more than your maximum health.");
             Challenge(Challenges.CelesteShowstopper.Identifier, "Showstopper", "Kill 30 enemies within 5 seconds.");
-            Challenge(Challenges.ShivKillingBlow.Identifier, "Killing Blow", "Kill a boss while below 10% health.");
+            Challenge(Challenges.ShivBloodletting.Identifier, "Bloodletting", $"Have {Challenges.ShivBloodletting.Stacks} of your own Bleed stacks on a single enemy at once.");
             Challenge(Challenges.ApolloFlawless.Identifier, "Flawless Advance", "Complete a teleporter event without taking any damage.");
             // Alternate skills (each unlocked by its hero's own challenge).
             SkillUnlocks.Register(Challenges.AbramsFreightTrain.Skill);
@@ -63,8 +69,8 @@ namespace CursedAppleCuriosities.Unlocks
             Challenge(Challenges.ParadoxDisplacement.Identifier, "Paradox: Temporal Displacement", "As Paradox, swap places with a boss using Paradoxical Swap, then kill it within 5 seconds.");
             SkillUnlocks.Register(Challenges.BebopBombSquad.Skill);
             Challenge(Challenges.BebopBombSquad.Identifier, "Bebop: Bomb Squad", "As Bebop, build up +200% Sticky Bomb damage without dying.");
-            SkillUnlocks.Register(Challenges.ApolloEnGarde.Skill);
-            Challenge(Challenges.ApolloEnGarde.Identifier, "Apollo: En Garde", "As Apollo, heal 1,000 health from Flawless Advance's perfect stabs in a single stage.");
+            SkillUnlocks.Register(Challenges.ApolloPrideOfIxia.Skill);
+            Challenge(Challenges.ApolloPrideOfIxia.Identifier, "Apollo: Pride of Ixia", $"As Apollo, kill {Challenges.ApolloPrideOfIxia.Kills} enemies with a single Itani Lo Sahn.");
             // Mastery skins (beat the game or obliterate on Monsoon as the hero).
             SkinUnlocks.Register(Challenges.Masteries.AbramsSkin, "CURSEDAPPLE_ABRAMS_SKIN_GREEN", "skinCursedAppleAbramsGREEN", "skinCursedAppleAbramsDISPLAYGREEN");
             Challenge("CursedAppleAbramsMastery", "Abrams: Mastery", "As Abrams, beat the game or obliterate on Monsoon.");
@@ -81,20 +87,38 @@ namespace CursedAppleCuriosities.Unlocks
             // Chrome: its own challenge (user 3.0), hook an enemy at the end of Grapple Arm's reach.
             SkinUnlocks.Register(Challenges.Masteries.ApolloSkin, "CURSEDAPPLE_APOLLO_SKIN_BLACKMORE", "skinCursedAppleApolloBLACKMORE", "skinCursedAppleApolloDISPLAYBLACKMORE");
             Challenge("CursedAppleApolloMastery", "Apollo: Mastery", "As Apollo, beat the game or obliterate on Monsoon.");
+            // Sapphire: its own challenge (user 3.0), Flawless Form (was En Garde, which unlocked Riposte before).
+            SkinUnlocks.Register(Challenges.Masteries.ApolloSapphireSkin, "CURSEDAPPLE_APOLLO_SKIN_SAPPHIRE", "skinCursedAppleApolloSAPPHIRE", "skinCursedAppleApolloDISPLAYSAPPHIRE");
+            Challenge(Challenges.ApolloEnGarde.Identifier, "Apollo: Flawless Form", "As Apollo, heal 1,000 health from Flawless Advance's perfect stabs in a single stage.");
+            // Crimson: its own challenge (user 3.0), Siphon Life healing.
+            SkinUnlocks.Register(Challenges.Masteries.AbramsCrimsonSkin, "CURSEDAPPLE_ABRAMS_SKIN_CRIMSON", "skinCursedAppleAbramsCRIMSON", "skinCursedAppleAbramsDISPLAYCRIMSON");
+            Challenge(Challenges.AbramsSeeingRed.Identifier, "Abrams: Seeing Red", $"As Abrams, heal {Challenges.AbramsSeeingRed.Healing:N0} health with Siphon Life in a single stage.");
             SkinUnlocks.Register(Challenges.Masteries.BebopChromeSkin, "CURSEDAPPLE_BEBOP_SKIN_CHROME", "skinCursedAppleBebopCHROME", "skinCursedAppleBebopDISPLAYCHROME");
             SkinUnlocks.Register(Challenges.Masteries.SevenSkin, "CURSEDAPPLE_SEVEN_SKIN_OVERCHARGED", "skinCursedAppleSevenOVERCHARGED", "skinCursedAppleSevenDISPLAYOVERCHARGED");
             Challenge("CursedAppleSevenMastery", "Seven: Mastery", "As Seven, beat the game or obliterate on Monsoon.");
+            // Bunny Seven (funnymonkeyman's model): its own challenge (user 3.0), a big Power Surge.
+            SkinUnlocks.Register(Challenges.Masteries.SevenBunnySkin, "CURSEDAPPLE_SEVEN_SKIN_BUNNY", "skinCursedAppleSevenBUNNY", "skinCursedAppleSevenDISPLAYBUNNY");
+            Challenge(Challenges.SevenHareTrigger.Identifier, "Seven: Hare Trigger", $"As Seven, kill {Challenges.SevenHareTrigger.Kills} enemies during a single Power Surge.");
             SkinUnlocks.Register(Challenges.Masteries.VyperSkin, "CURSEDAPPLE_VYPER_SKIN_CORAL", "skinCursedAppleVyperCORAL", "skinCursedAppleVyperDISPLAYCORAL");
             Challenge("CursedAppleVyperMastery", "Vyper: Mastery", "As Vyper, beat the game or obliterate on Monsoon.");
             SkinUnlocks.Register(Challenges.Masteries.ViscousSkin, "CURSEDAPPLE_VISCOUS_SKIN_BLUE", "skinCursedAppleViscousBLUE", "skinCursedAppleViscousDISPLAYBLUE");
+            // Pisscous: its own challenge (user 3.0), one long Cube.
+            SkinUnlocks.Register(Challenges.Masteries.ViscousPisscousSkin, "CURSEDAPPLE_VISCOUS_SKIN_PISSCOUS", "skinCursedAppleViscousPISSCOUS", "skinCursedAppleViscousDISPLAYPISSCOUS");
+            Challenge(Challenges.ViscousHoldItIn.Identifier, "Viscous: Hold It In", $"As Viscous, stay inside one Cube for {Challenges.ViscousHoldItIn.Seconds:0} seconds straight.");
             Challenge("CursedAppleViscousMastery", "Viscous: Mastery", "As Viscous, beat the game or obliterate on Monsoon.");
             SkinUnlocks.Register(Challenges.Masteries.CelesteSkin, "CURSEDAPPLE_CELESTE_SKIN_MINT", "skinCursedAppleCelesteMINT", "skinCursedAppleCelesteDISPLAYMINT");
             Challenge("CursedAppleCelesteMastery", "Celeste: Mastery", "As Celeste, beat the game or obliterate on Monsoon.");
+            // Spirit Guardian (TSelky's model): its own challenge (user 3.0), one Shining Wonder hitting the same enemy 12 times.
+            SkinUnlocks.Register(Challenges.Masteries.CelesteGuardianSkin, "CURSEDAPPLE_CELESTE_SKIN_GUARDIAN", "skinCursedAppleCelesteGUARDIAN", "skinCursedAppleCelesteDISPLAYGUARDIAN");
             SkinUnlocks.Register(Challenges.Masteries.MinaSkin, "CURSEDAPPLE_MINA_SKIN_NIGHTSHADE", "skinCursedAppleMinaNIGHTSHADE", "skinCursedAppleMinaDISPLAYNIGHTSHADE");
             Challenge("CursedAppleMinaMastery", "Mina: Mastery", "As Mina, beat the game or obliterate on Monsoon.");
+            // Blackmore Colors: its own challenge (user 3.0), a Nox Nostra with every bonus bat.
+            SkinUnlocks.Register(Challenges.Masteries.MinaBlackmoreSkin, "CURSEDAPPLE_MINA_SKIN_BLACKMORE", "skinCursedAppleMinaBLACKMORE", "skinCursedAppleMinaDISPLAYBLACKMORE");
             SkinUnlocks.Register(Challenges.Masteries.ParadoxSkin, "CURSEDAPPLE_PARADOX_SKIN_TEAL", "skinCursedAppleParadoxTEAL", "skinCursedAppleParadoxDISPLAYTEAL");
             Challenge("CursedAppleParadoxMastery", "Paradox: Mastery", "As Paradox, beat the game or obliterate on Monsoon.");
-            Challenge(Challenges.BebopLongArm.Identifier, "Bebop: Long Arm of the Law", "As Bebop, hook an enemy with Grapple Arm within 10 m of its maximum reach.");
+            Challenge(Challenges.CelesteEncore.Identifier, "Celeste: Encore", $"As Celeste, hit the same enemy {Challenges.CelesteEncore.Hits} times with one Shining Wonder.");
+            Challenge(Challenges.MinaHonorRoll.Identifier, "Mina: Honor Roll", $"As Mina, cast Nox Nostra with all {Challenges.MinaHonorRoll.Bonus} bonus bats (one per Love Bites burst in a stage).");
+            Challenge(Challenges.BebopLongArm.Identifier, "Bebop: Catch of the Day", "As Bebop, hook an enemy with Grapple Arm within 10 m of its maximum reach.");
             ShotTracker.Init();
             RoR2Application.onLoad += UsePortraits;
         }
@@ -138,9 +162,7 @@ namespace CursedAppleCuriosities.Unlocks
             def.sortScore = 200;
             def.achievementIcon = ItemBase.CreatePlaceholderSprite(survivor.primaryColor);
 
-            LanguageAPI.Add(token + "_HOW", SecretWhere.TryGetValue(hero, out string where)
-                ? $"Something of theirs waits in {where}, a Deadlock district."
-                : "Complete their challenge.");
+            LanguageAPI.Add(token + "_HOW", SecretWhere.TryGetValue(hero, out string hint) ? hint : "Complete their challenge.");
             def.getHowToUnlockString = () => Language.GetStringFormatted("UNLOCK_VIA_ACHIEVEMENT_FORMAT",
                 Language.GetString(survivor.displayNameToken), Language.GetString(token + "_HOW"));
             def.getUnlockedString = () => Language.GetStringFormatted("UNLOCKED_FORMAT", Language.GetString(survivor.displayNameToken));

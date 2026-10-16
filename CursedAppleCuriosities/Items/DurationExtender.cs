@@ -38,10 +38,8 @@ namespace CursedAppleCuriosities.Items
 
         public override void Init(ConfigFile config)
         {
-            DurationPerStack = config.Bind("White", "Duration Extender - Duration Per Stack", 0.15f,
-                "Extra duration from the first stack (0.15 = +15%).").Value;
-            DurationPerExtraStack = config.Bind("White", "Duration Extender - Duration Per Extra Stack", 0.075f,
-                "Extra duration per additional stack.").Value;
+            DurationPerStack = 0.15f;
+            DurationPerExtraStack = 0.075f;
             CreateLang();
             CreateItem();
             _def = ItemDef;

@@ -51,10 +51,8 @@ namespace CursedAppleCuriosities.Items
             RampBuffDef.iconSprite  = BuffIcon(IconFileName, color);
             ContentAddition.AddBuffDef(RampBuffDef);
 
-            BaseMaxBonus = config.Bind("White", "Intensifying Magazine - Max Damage Bonus", 0.45f,
-                "Maximum sustained-fire damage bonus at 1 stack.").Value;
-            BonusMaxPerStack = config.Bind("White", "Intensifying Magazine - Max Damage Bonus Per Stack", 0.15f,
-                "Extra maximum damage bonus per additional stack.").Value;
+            BaseMaxBonus = 0.45f;
+            BonusMaxPerStack = 0.15f;
             CreateLang();
             CreateItem();
             StaticItemDef = ItemDef;
@@ -74,6 +72,7 @@ namespace CursedAppleCuriosities.Items
             GameObject victim)
         {
             orig(self, damageInfo, victim);
+            if (damageInfo == null || damageInfo.rejected) return; // blocked hits proc nothing (vanilla's own check is inside orig)
 
             if (!NetworkServer.active) return;
             if (damageInfo == null || damageInfo.procCoefficient <= 0f) return;

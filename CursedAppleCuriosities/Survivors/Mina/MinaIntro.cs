@@ -21,9 +21,9 @@ namespace CursedAppleCuriosities.Survivors.Mina
             yield return null;
             Lift(-200f);
 
-            var path = new GameObject("MinaIntroSwarm").transform;
+            var path = Own(new GameObject("MinaIntroSwarm")).transform;
             path.position = Home + start * Scale;
-            GameObject cloud = MinaBatVisual.Cloud(path, 14);
+            GameObject cloud = Own(MinaBatVisual.Cloud(path, 14)); // its own root: clicked off mid-flight, the bats stayed (user 3.0)
             DeadlockSounds.Play("mina_retreat_start", Home);
             DeadlockVoice? loop = DeadlockSounds.Loop("mina_retreat_loop", path.gameObject, Flight + 0.3f);
             for (float t = 0f; t < Flight; t += Time.deltaTime)
@@ -39,7 +39,7 @@ namespace CursedAppleCuriosities.Survivors.Mina
             DeadlockSounds.Play("mina_retreat_end_final", Home);
             if (MinaSurvivor.BlinkEffect != null)
             {
-                GameObject fx = Object.Instantiate(MinaSurvivor.BlinkEffect, Home + Vector3.up * Scale, Quaternion.identity);
+                GameObject fx = Own(Object.Instantiate(MinaSurvivor.BlinkEffect, Home + Vector3.up * Scale, Quaternion.identity));
                 if (fx.TryGetComponent(out EffectComponent ec)) ec.enabled = false; // a plain copy: no EffectData here
                 Object.Destroy(fx, 3f);
             }

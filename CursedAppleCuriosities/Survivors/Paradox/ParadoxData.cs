@@ -35,6 +35,8 @@ namespace CursedAppleCuriosities.Survivors.Paradox
 
         // ---- primary: the burst rifle (citadel_weapon_chrono_set: 5-round bursts, 0.0735 s apart, 0.294 s between, falloff 20 -> 57.5 m) ----
         public static float GunDamage = 0.4f;
+        // Her rifle is her only proc source (user 3.0), middle of the pack: ~8.5 shots/s x 0.45 = ~3.8 procs/s, about Commando's.
+        public const float GunProc = 0.45f;
         public const int BurstCount = 5;                // Deadlock m_iBurstShotCount
         public const float BurstInterval = 0.0735f;     // Deadlock m_flIntraBurstCycleTime
         public static float BurstCycle = 0.294f;        // Deadlock m_flCycleTime
@@ -48,7 +50,7 @@ namespace CursedAppleCuriosities.Survivors.Paradox
         public static float PulseDuration = 3.2f;       // Deadlock AbilityDuration (Duration Extender lengthens it)
         public const float PulseRadius = 5.5f;          // Deadlock Radius
         public const float PulseRadiusGrowth = 1f;      // Deadlock RadiusIncreasePerPulse
-        public static float PulseAmpPerStack = 0.04f;   // Deadlock DamageAmplificationPerStack: Paradox's damage to the target
+        public static float PulseAmpPerStack = 0.10f;   // Paradox's damage to the target (Deadlock DamageAmplificationPerStack 4%; 10% since 3.0, user: not more, stacks go well past 4 with attack speed, Backup Mags, Duration Extender)
         public const float PulseAmpSeconds = 8f;        // Deadlock DebuffDuration
         public const float PulseSlow = 0.2f, PulseSlowSeconds = 0.4f; // Deadlock SlowPercent / MovementSlowDuration 0.2 (a pulse apart, a little longer)
         public static float PulseCooldown = 8f;         // Deadlock 32
@@ -60,14 +62,14 @@ namespace CursedAppleCuriosities.Survivors.Paradox
         public static float WallDuration = 5.5f;        // Deadlock AbilityDuration
         public const float WallWidth = 8f, WallHeight = 4f, WallDepth = 0.5f; // Deadlock TimeWallWidth/Height/Depth
         public const float WallDistance = 5f;           // Deadlock AbilityCastRange 200 hu
-        public static float WallFriendlyBonus = 0.3f;   // Deadlock FriendlyBulletDamageBonus
+        public static float WallFriendlyBonus = 0.3f;   // Deadlock FriendlyBulletDamageBonus (3.0, user: briefly 50%, back to 30%: the wall already hits hard on swaps and helps the whole team)
         public const float WallSlow = 0.64f, WallSlowSeconds = 2f; // Deadlock MovementSlowPct / AuraEffectDuration
         public const float WallFormation = 0.5f;        // Deadlock TimeWallFormationTime
         public static float WallCooldown = 12f;         // Deadlock 25
 
         // ---- utility: Kinetic Carbine (citadel_ability_chrono_kinetic_carbine: tap to charge, left click fires (user 2.5); charge 2.5 s, +25% speed for 3.5 s, time-slow on hit) ----
         public static float CarbineMinDamage = 4f;
-        public static float CarbineMaxDamage = 20f;     // fully charged (Deadlock MaxBonusBulletDamage scales hardest of her kit)
+        public static float CarbineMaxDamage = 15f;     // fully charged (Deadlock MaxBonusBulletDamage scales hardest of her kit); 2000% until 3.0 (user)
         public const float CarbineChargeSeconds = 2.5f; // Deadlock MaxChargeDuration
         public const float CarbineHoldSeconds = 5f;     // seconds full charge waits for her click, x Duration Extender; then wasted (user 2.5)
         public static float CarbineSpeed = 0.25f;       // Deadlock SpeedChange: builds while charging, held for 3.5 s after the shot
@@ -90,28 +92,9 @@ namespace CursedAppleCuriosities.Survivors.Paradox
         public const float SwapGroupRadius = 4f;        // enemies this close to the one hit are swapped along with it (user 2.5; Mystic Expansion: wider)
         public static float SwapCooldown = 30f;         // Deadlock 110
 
-        public static void Bind(ConfigFile c)
+        public static void Bind(ConfigFile c) // the hero's config section is only its keybind layout (3.0)
         {
             Movement.Bind(c, Section);
-            BaseHealth = c.Bind(Section, "Base Health", BaseHealth, "Paradox max health at level 1 (+28 per level).").Value;
-            GunDamage = c.Bind(Section, "Gun - Damage", GunDamage, "Damage coefficient per bullet (5-round bursts).").Value;
-            BurstCycle = c.Bind(Section, "Gun - Time Between Bursts", BurstCycle, "Seconds after a burst before the next (before attack speed).").Value;
-            PulseDamage = c.Bind(Section, "Pulse Bomb - Damage", PulseDamage, "Damage coefficient per pulse (bosses: half).").Value;
-            PulseInterval = c.Bind(Section, "Pulse Bomb - Pulse Interval", PulseInterval, "Seconds between pulses before attack speed.").Value;
-            PulseDuration = c.Bind(Section, "Pulse Bomb - Duration", PulseDuration, "Seconds the bomb keeps pulsing.").Value;
-            PulseAmpPerStack = c.Bind(Section, "Pulse Bomb - Damage Amp Per Stack", PulseAmpPerStack, "Extra damage Paradox deals to the target per pulse that hit it.").Value;
-            PulseCooldown = c.Bind(Section, "Pulse Bomb - Cooldown", PulseCooldown, "Seconds.").Value;
-            WallDamage = c.Bind(Section, "Time Wall - Damage", WallDamage, "Damage coefficient to enemies passing through.").Value;
-            WallDuration = c.Bind(Section, "Time Wall - Duration", WallDuration, "Seconds.").Value;
-            WallFriendlyBonus = c.Bind(Section, "Time Wall - Friendly Damage Bonus", WallFriendlyBonus, "Extra damage on allies' attacks that pass through it.").Value;
-            WallCooldown = c.Bind(Section, "Time Wall - Cooldown", WallCooldown, "Seconds.").Value;
-            CarbineMinDamage = c.Bind(Section, "Kinetic Carbine - Min Damage", CarbineMinDamage, "Damage coefficient uncharged.").Value;
-            CarbineMaxDamage = c.Bind(Section, "Kinetic Carbine - Max Damage", CarbineMaxDamage, "Damage coefficient fully charged.").Value;
-            CarbineSpeed = c.Bind(Section, "Kinetic Carbine - Move Speed", CarbineSpeed, "Move speed bonus at full charge.").Value;
-            CarbineCooldown = c.Bind(Section, "Kinetic Carbine - Cooldown", CarbineCooldown, "Seconds.").Value;
-            SwapDamage = c.Bind(Section, "Paradoxical Swap - Damage", SwapDamage, "Damage coefficient to the swapped enemy.").Value;
-            SwapRange = c.Bind(Section, "Paradoxical Swap - Range", SwapRange, "Metres the shot flies.").Value;
-            SwapCooldown = c.Bind(Section, "Paradoxical Swap - Cooldown", SwapCooldown, "Seconds.").Value;
         }
 
         // ---- Deadlock assets (read from the player's own install, never shipped) ----
@@ -121,6 +104,10 @@ namespace CursedAppleCuriosities.Survivors.Paradox
         public const string MuzzleBone = "muzzle_fx";   // checked against her skeleton once the converter works again
 
         public const string IconPortrait = "panorama/images/heroes/chrono_sm_psd.vtex_c";
+
+        // The primary shows the weapon itself (user 3.0, like Celeste's baton): Deadlock's shop image of the hero's gun.
+
+        public const string IconGun = "panorama/images/heroes/guns/chrono_gun_psd.vtex_c";
         public const string IconPulse = "panorama/images/hud/abilities/chrono/chrono_time_bomb_psd.vtex_c";
         public const string IconWall = "panorama/images/hud/abilities/chrono/chrono_time_wall_psd.vtex_c";
         public const string IconCarbine = "panorama/images/hud/abilities/duo/duo_attack_psd.vtex_c"; // Kinetic Carbine's m_strAbilityImage

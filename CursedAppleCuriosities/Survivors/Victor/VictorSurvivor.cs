@@ -46,7 +46,7 @@ namespace CursedAppleCuriosities.Survivors.Victor
         {
             VictorData.Bind(config);
             foreach (DeadlockSound s in VictorData.Sounds) DeadlockSounds.Register(s);
-            foreach (string icon in new[] { VictorData.IconPortrait, VictorData.IconBattery, VictorData.IconJumpstart, VictorData.IconAura, VictorData.IconRevive })
+            foreach (string icon in new[] { VictorData.IconPortrait, VictorData.IconGun, VictorData.IconBattery, VictorData.IconJumpstart, VictorData.IconAura, VictorData.IconRevive })
                 DeadlockInstall.WantIcon(icon);
             DeadlockHeroes.Register(VictorModel.Def);
             DeadlockInstall.WantModel(VictorModel.Def.ModelRequest());
@@ -223,7 +223,7 @@ namespace CursedAppleCuriosities.Survivors.Victor
             Survivor.outroFlavorToken = Token + "OUTRO";
             Survivor.mainEndingEscapeFailureFlavorToken = Token + "FAILURE";
             Survivor.primaryColor = Color;
-            Survivor.desiredSortPosition = 105f; // after Grey Talon
+            Survivor.desiredSortPosition = 111f; // RosterOrder re-sorts the whole roster A-Z at load (user 3.0)
             ContentAddition.AddSurvivorDef(Survivor);
         }
 
@@ -253,6 +253,7 @@ namespace CursedAppleCuriosities.Survivors.Victor
                 locator.passiveSkill = passive;
             }
             if (portrait != null) _gun!.icon = Kit.Sprite(portrait);
+            Set(_gun, VictorData.IconGun); // the weapon itself (user 3.0); the portrait stays if it isn't cached
             CursedAppleCuriositiesPlugin.Logger?.LogInfo($"[Victor] icons: {(portrait != null ? "from Deadlock" : "placeholders (no Deadlock icons cached)")}");
         }
 
@@ -278,7 +279,7 @@ namespace CursedAppleCuriosities.Survivors.Victor
             LanguageAPI.Add(Token + "PASSIVE_NAME", "Shocking Reanimation");
             LanguageAPI.Add(Token + "PASSIVE_DESC",
                 $"When you would die, go down instead, <style=cIsUtility>invulnerable</style> for {VictorData.ReviveChannel:0}s, then revive with <style=cIsHealing>{P(VictorData.ReviveHealth)} health</style>, " +
-                $"dealing <style=cIsDamage>{D(VictorData.ReviveDamage)} damage</style> and <style=cIsUtility>stunning</style> nearby enemies. Recharges in <style=cIsUtility>{VictorData.ReviveCooldown:0}s</style> or each stage." + Kit.MovementLine(VictorData.Movement));
+                $"dealing <style=cIsDamage>{D(VictorData.ReviveDamage)} damage</style> and <style=cIsUtility>stunning</style> nearby enemies. Recharges in <style=cIsUtility>{VictorData.ReviveCooldown:0}s</style> or each stage.");
 
             LanguageAPI.Add(Token + "GUN_NAME", "Memento Mori");
             LanguageAPI.Add(Token + "GUN_DESC",

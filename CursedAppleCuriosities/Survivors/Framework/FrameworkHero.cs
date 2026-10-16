@@ -60,7 +60,6 @@ namespace CursedAppleCuriosities.Survivors.Framework
         public void Init(ConfigFile config, GameObject host)
         {
             Movement.Bind(config, Name);
-            BaseHealth = config.Bind(Name, "Base Health", BaseHealth, $"{Name} max health at level 1.").Value;
             foreach (DeadlockSound s in Sounds) DeadlockSounds.Register(s);
             DeadlockInstall.WantIcon(IconPortrait);
             foreach (FrameworkAbility a in Abilities) if (a.Icon != "") DeadlockInstall.WantIcon(a.Icon);

@@ -122,6 +122,8 @@ namespace CursedAppleCuriosities
 
             DurationExtender.HookSources(); // last: wraps every other hook on hits and damage
 
+            try { ModSettings.PurgeOrphans(Config); }
+            catch (Exception e) { Logger.LogError($"  ! Config cleanup failed: {e}"); }
             try { ModSettings.TryRegister(Config, ItemBase.LoadEmbeddedIcon("icon_curiositycatalog.png")); }
             catch (Exception e) { Logger.LogError($"  ! Settings page failed: {e}"); }
 
@@ -138,6 +140,7 @@ namespace CursedAppleCuriosities
             DeadlockSounds.Bind(Config);
             DeadlockSounds.Ensure(gameObject);
             Unlocks.SurvivorUnlocks.Init();
+            Survivors.RosterOrder.Hook(); // the whole roster A-Z, vanilla included (user 3.0)
             var heroes = new (string Name, Action<BepInEx.Configuration.ConfigFile, UnityEngine.GameObject> Init, Func<RoR2.SurvivorDef?> Def)[]
             {
                 ("Lash", LashSurvivor.Init, () => LashSurvivor.Survivor),

@@ -86,24 +86,9 @@ namespace CursedAppleCuriosities.Survivors.Ivy
         public const float AirDropBuffSeconds = 8f;      // Deadlock BuffDuration
         public static float AirDropCooldown = 30f;
 
-        public static void Bind(ConfigFile c)
+        public static void Bind(ConfigFile c) // the hero's config section is only its keybind layout (3.0)
         {
             Movement.Bind(c, Section);
-            BaseHealth = c.Bind(Section, "Base Health", BaseHealth, "Ivy max health at level 1 (+30 per level).").Value;
-            GunDamage = c.Bind(Section, "Gun - Damage", GunDamage, "Damage coefficient per bullet.").Value;
-            ThornsDps = c.Bind(Section, "Kudzu Bomb - Damage Per Second", ThornsDps, "Damage coefficient per second in the patch.").Value;
-            ThornsDuration = c.Bind(Section, "Kudzu Bomb - Duration", ThornsDuration, "Seconds.").Value;
-            ThornsRadius = c.Bind(Section, "Kudzu Bomb - Radius", ThornsRadius, "Metres.").Value;
-            ThornsCooldown = c.Bind(Section, "Kudzu Bomb - Cooldown", ThornsCooldown, "Seconds.").Value;
-            TetherAttackSpeed = c.Bind(Section, "Kudzu Connection - Attack Speed", TetherAttackSpeed, "Attack speed bonus for both (half alone).").Value;
-            TetherLifesteal = c.Bind(Section, "Kudzu Connection - Lifesteal", TetherLifesteal, "Share of damage dealt healed, for both (half alone).").Value;
-            TetherSharedHeal = c.Bind(Section, "Kudzu Connection - Shared Healing", TetherSharedHeal, "Share of healing one receives that the other gets too.").Value;
-            StoneDamage = c.Bind(Section, "Stone Form - Damage", StoneDamage, "Damage coefficient of the slam.").Value;
-            StoneHeal = c.Bind(Section, "Stone Form - Heal", StoneHeal, "Share of max health healed per second while stone.").Value;
-            StoneCooldown = c.Bind(Section, "Stone Form - Cooldown", StoneCooldown, "Seconds.").Value;
-            AirDropDamage = c.Bind(Section, "Air Drop - Damage", AirDropDamage, "Damage coefficient of the bomb.").Value;
-            AirDropRadius = c.Bind(Section, "Air Drop - Radius", AirDropRadius, "Metres.").Value;
-            AirDropCooldown = c.Bind(Section, "Air Drop - Cooldown", AirDropCooldown, "Seconds.").Value;
         }
 
         // ---- Deadlock assets ----

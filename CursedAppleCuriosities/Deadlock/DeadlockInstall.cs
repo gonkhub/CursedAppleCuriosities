@@ -26,6 +26,12 @@ namespace CursedAppleCuriosities.Deadlock
             public string DlModel = "";          // model path in pak01, e.g. models/heroes_wip/lash/lash.vmdl_c
             public string[] Clips = Array.Empty<string>();
             public string[] HideMeshes = Array.Empty<string>();
+            /// <summary>
+            /// A model from another VPK than pak01 (a fan-made model skin): finds the file, or null when the player doesn't have
+            /// it (Missing then says where to put it). Read-only, like pak01.
+            /// </summary>
+            public Func<string?>? Source;
+            public string Missing = "";
         }
 
         public static ConfigEntry<string>? ConverterPath;
@@ -239,6 +245,14 @@ namespace CursedAppleCuriosities.Deadlock
             if (why == null || !Noticed.Add(hero + why)) return;
             string color = pending ? "#9fd3ff" : "#ffb347";
             RoR2.Chat.AddMessage($"<color={color}>{displayName}'s Deadlock model {why}.{(pending ? "" : " Until then, a stand-in model is used.")}</color>");
+        }
+
+        /// <summary>The same for a model skin the player can't see yet: the hero's own model stands in.</summary>
+        public static void ShowSkinNotice(string key, string skinName, string heroName)
+        {
+            string? why = ModelNotice(key, out bool pending);
+            if (why == null || !Noticed.Add(key + why)) return;
+            RoR2.Chat.AddMessage($"<color={(pending ? "#9fd3ff" : "#ffb347")}>The {skinName} skin {why}.{(pending ? "" : $" Until then, {heroName}'s own model is shown.")}</color>");
         }
 
         private static void Note(string hero, string? why) { lock (ModelNotes) { if (why == null) ModelNotes.Remove(hero); else ModelNotes[hero] = why; } }
@@ -501,15 +515,30 @@ namespace CursedAppleCuriosities.Deadlock
                 if (!File.Exists(cache)) { lock (FailedModels) FailedModels.Add(m.Hero); Note(m.Hero, "needs the model converter (vrf/Source2Viewer-CLI.exe), missing from the mod's folder"); }
                 return;
             }
-            Directory.CreateDirectory(folder);
             string vpk = Path.Combine(citadel, "pak01_dir.vpk");
+            string? workDir = null;
+            if (m.Source != null)
+            {
+                string? found = m.Source();
+                if (found == null)
+                {
+                    Log($"model {m.Hero}: its VPK isn't here");
+                    lock (FailedModels) FailedModels.Add(m.Hero);
+                    Note(m.Hero, m.Missing);
+                    return;
+                }
+                vpk = found;
+                // The converter splits -i on commas, and LocalLow's "Hopoo Games, LLC" has one: run it from the VPK's folder.
+                if (vpk.Contains(",")) { workDir = Path.GetDirectoryName(vpk); vpk = Path.GetFileName(vpk); }
+            }
+            Directory.CreateDirectory(folder);
 
             if (!File.Exists(cache))
             {
                 Log($"converting {m.Hero} model (once, read-only)...");
                 Note(m.Hero, "is being converted from your Deadlock install (first launch only) and appears in a minute or two");
                 if (RunConverter(converter, $"-i \"{vpk}\" -f \"{m.DlModel}\" -d --gltf_export_format glb --gltf_export_materials " +
-                        "--gltf_textures_adapt --gltf_export_animations --gltf_animation_list cursedapple_none", cache))
+                        "--gltf_textures_adapt --gltf_export_animations --gltf_animation_list cursedapple_none", cache, workDir))
                 {
                     lock (ReadyModels) ReadyModels[m.Hero] = cache;
                     Note(m.Hero, null);
@@ -520,7 +549,7 @@ namespace CursedAppleCuriosities.Deadlock
             if (clips.Length > 0 && !File.Exists(animCache))
             {
                 Log($"converting {m.Clips.Length} {m.Hero} animations (once, read-only)...");
-                if (RunConverter(converter, $"-i \"{vpk}\" -f \"{m.DlModel}\" -d --gltf_export_format glb --gltf_export_animations --gltf_animation_list \"{clips}\"", animCache))
+                if (RunConverter(converter, $"-i \"{vpk}\" -f \"{m.DlModel}\" -d --gltf_export_format glb --gltf_export_animations --gltf_animation_list \"{clips}\"", animCache, workDir))
                 {
                     lock (ReadyClips) ReadyClips[m.Hero] = animCache;
                     Log($"{m.Hero} animations cached at {animCache}");
@@ -572,11 +601,12 @@ namespace CursedAppleCuriosities.Deadlock
         }
 
         /// <summary>Run the converter into a temporary file, renamed when complete (a cut-short run never looks cached).</summary>
-        private static bool RunConverter(string converter, string args, string output)
+        private static bool RunConverter(string converter, string args, string output, string? workDir = null)
         {
             string part = output + ".part.glb";
             var psi = new ProcessStartInfo(converter, $"{args} -o \"{part}\"")
             { UseShellExecute = false, CreateNoWindow = true, RedirectStandardOutput = true, RedirectStandardError = true };
+            if (workDir != null) psi.WorkingDirectory = workDir;
             using (Process p = Process.Start(psi))
             {
                 // Drain both streams: an unread stream fills its buffer and the converter blocks forever.
@@ -604,6 +634,30 @@ namespace CursedAppleCuriosities.Deadlock
         }
 
         /// <summary>CRC of every entry in a VPK's directory that want accepts (path -> CRC).</summary>
+        /// <summary>
+        /// The first .vpk holding the given file, from the player's skins folders (CursedApple\skins, shared by every profile,
+        /// then a skins folder next to the mod DLL) and Deadlock's own addons folder, read-only. Null when none has it.
+        /// </summary>
+        internal static string? FindVpkWith(string vpkPath)
+        {
+            var dirs = new List<string> { Path.Combine(Path.GetDirectoryName(CacheDir) ?? CacheDir, "skins") };
+            string? here = Path.GetDirectoryName(typeof(DeadlockInstall).Assembly.Location);
+            if (here != null) dirs.Add(Path.Combine(here, "skins"));
+            string? citadel = CitadelDir();
+            if (citadel != null) dirs.Add(Path.Combine(citadel, "addons"));
+            foreach (string dir in dirs)
+            {
+                if (!Directory.Exists(dir)) continue;
+                foreach (string f in Directory.GetFiles(dir, "*.vpk"))
+                {
+                    if (System.Text.RegularExpressions.Regex.IsMatch(Path.GetFileName(f), @"_\d{3}\.vpk$")) continue; // archive parts of a _dir.vpk
+                    try { if (VpkCrcs(f, p => p == vpkPath).Count > 0) return f; }
+                    catch (Exception e) { Warn($"skin VPK {f}: {e.Message}"); }
+                }
+            }
+            return null;
+        }
+
         internal static Dictionary<string, uint> VpkCrcs(string file, Func<string, bool> want)
         {
             var d = new Dictionary<string, uint>();

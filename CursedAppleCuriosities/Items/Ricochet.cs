@@ -44,16 +44,11 @@ namespace CursedAppleCuriosities.Items
         {
             RicochetProc = ProcTypeAPI.ReserveProcType();
 
-            DamageFraction = config.Bind("Red", "Ricochet - Damage Fraction", 0.5f,
-                "Ricochet damage as a fraction of the original hit (0.5 = half).").Value;
-            BaseTargets = config.Bind("Red", "Ricochet - Targets Base", 2,
-                "Enemies each hit ricochets to with a single copy.").Value;
-            TargetsPerStack = config.Bind("Red", "Ricochet - Targets Per Stack", 1,
-                "Additional ricochet targets per extra copy.").Value;
-            Range = config.Bind("Red", "Ricochet - Range", 26f,
-                "Ricochet search radius around the enemy that was hit, in meters.").Value;
-            RangePerStack = config.Bind("Red", "Ricochet - Range Per Stack", 5f,
-                "Additional ricochet search radius per extra copy, in meters.").Value;
+            DamageFraction = 0.5f;
+            BaseTargets = 2;
+            TargetsPerStack = 1;
+            Range = 26f;
+            RangePerStack = 5f;
             CreateLang();
             CreateItem();
             Hooks();
@@ -69,6 +64,7 @@ namespace CursedAppleCuriosities.Items
             GlobalEventManager self, DamageInfo damageInfo, GameObject victim)
         {
             orig(self, damageInfo, victim);
+            if (damageInfo == null || damageInfo.rejected) return; // blocked hits proc nothing (vanilla's own check is inside orig)
 
             if (!NetworkServer.active) return;
             if (damageInfo?.attacker == null || victim == null) return;

@@ -81,6 +81,27 @@ namespace CursedAppleCuriosities.Survivors.Paradox
             return di;
         }
 
+        /// <summary>
+        /// Server: an ability hit that procs nothing (user 3.0: only her rifle procs): proc coefficient 0 and no on-hit events. Just
+        /// the damage (it can still crit), and whatever the ability itself applies.
+        /// </summary>
+        public static void HitNoProc(CharacterBody attacker, HealthComponent target, float damage, bool crit, Vector3 force, DamageTypeCombo type, GameObject? inflictor = null)
+        {
+            if (target == null || !target.alive || damage <= 0f) return;
+            target.TakeDamage(new DamageInfo
+            {
+                attacker = attacker.gameObject,
+                inflictor = inflictor != null ? inflictor : attacker.gameObject,
+                damage = damage,
+                crit = crit,
+                position = Core(target),
+                force = force,
+                procCoefficient = 0f,
+                damageColorIndex = DamageColorIndex.Default,
+                damageType = type,
+            });
+        }
+
         public static List<HealthComponent> EnemiesIn(Vector3 center, float radius, TeamIndex team)
         {
             var list = new List<HealthComponent>();
@@ -280,7 +301,7 @@ namespace CursedAppleCuriosities.Survivors.Paradox
             foreach (HealthComponent hc in ParadoxNet.EnemiesIn(transform.position, radius, _owner.teamComponent.teamIndex))
             {
                 float damage = ParadoxData.PulseDamage * (pd != null ? pd.damage : _owner.damage) * (ParadoxNet.IsBoss(hc.body) ? ParadoxData.PulseBossScale : 1f);
-                ParadoxNet.Hit(_owner, hc, damage, pd != null && pd.crit, Vector3.zero, DamageSource.Secondary, 0.5f);
+                ParadoxNet.HitNoProc(_owner, hc, damage, pd != null && pd.crit, Vector3.zero, DamageSource.Secondary, gameObject); // procs nothing (user 3.0)
                 if (!hc.alive || hc.body == null) continue;
                 EquipmentFx.Sound("paradox_pulse_hit", ParadoxNet.Core(hc));
                 using (DurationExtender.From(_owner))
@@ -478,7 +499,7 @@ namespace CursedAppleCuriosities.Survivors.Paradox
                 var box = c.GetComponent<HurtBox>();
                 HealthComponent? hc = box != null ? box.healthComponent : null;
                 if (hc == null || !hc.alive || box!.teamIndex == Team || !_cut.Add(hc)) continue;
-                ParadoxNet.Hit(Owner, hc, ParadoxData.WallDamage * Owner.damage, Owner.RollCrit(), Vector3.zero, DamageSource.Secondary);
+                ParadoxNet.HitNoProc(Owner, hc, ParadoxData.WallDamage * Owner.damage, Owner.RollCrit(), Vector3.zero, DamageSource.Secondary); // procs nothing (user 3.0)
                 EquipmentFx.Sound("paradox_wall_hit", ParadoxNet.Core(hc));
                 if (!hc.alive) continue;
                 using (DurationExtender.From(Owner))
@@ -591,7 +612,7 @@ namespace CursedAppleCuriosities.Survivors.Paradox
                 EffectManager.SpawnEffect(ParadoxSurvivor.SwapHitEffect, new EffectData { origin = paradox.corePosition, scale = 3f }, true);
             }
             CursedAppleCuriosities.Unlocks.Challenges.ParadoxDisplacement.Swapped(paradox, enemy.body);
-            ParadoxNet.Hit(paradox, enemy, damage, crit, Vector3.zero, DamageSource.Special);
+            ParadoxNet.HitNoProc(paradox, enemy, damage, crit, Vector3.zero, DamageSource.Special); // procs nothing (user 3.0)
             CursedAppleCuriositiesPlugin.Logger?.LogInfo($"[Paradox] swap with {enemy.name}: {Vector3.Distance(a, b):0.#} m in {duration:0.##} s");
             if (enemy.alive)
             {

@@ -68,24 +68,20 @@ namespace CursedAppleCuriosities.Interactables
         public static void Init(ConfigFile config)
         {
             const string S = "Soul Urn";
-            Enabled = config.Bind(S, "Enabled", true,
-                "Spawn the Soul Urn: carry it to the teleporter in time, without taking damage, for a pile of items.").Value;
-            SpawnChance = config.Bind(S, "Spawn Chance", 0.3f, "Chance that a Soul Urn appears on any stage (0.3 = 30%).").Value;
-            TimeLimit = config.Bind(S, "Time Limit", 30f,
-                "The shortest time (s) to reach the teleporter after picking the urn up. Urns further away get longer (Seconds Per Meter).").Value;
-            SecondsPerMeter = config.Bind(S, "Seconds Per Meter", 1f / 6f,
-                "Delivery time per metre of straight-line distance from the urn's spawn to the teleporter (1/6 = 30 s at 180 m, 60 s at 360 m). Never less than Time Limit.").Value;
-            MaxTimeLimit = config.Bind(S, "Max Time Limit", 120f, "The longest time (s) any urn gets.").Value;
-            MinTeleporterDistance = config.Bind(S, "Min Teleporter Distance", 180f, // 60 until 2.0 (user)
-                "The urn always spawns at least this far (m) from the teleporter.").Value;
-            DeliveryRadius = config.Bind(S, "Delivery Radius", 12f, "How close (m) to the teleporter the carrier must get.").Value;
-            BaseItems = config.Bind(S, "Base Items", 3, "Items for a delivery on stage 1.").Value;
-            ItemsPerStage = config.Bind(S, "Items Per Stage", 1f, "Extra items per stage already cleared this run (fractions add up and round down).").Value;
-            MaxItems = config.Bind(S, "Max Items", 30, "Most items a single delivery can drop.").Value;
-            WhiteWeight = config.Bind(S, "White Weight", 0.8f, "Relative chance for each reward to be white (common), as a small chest.").Value;
-            GreenWeight = config.Bind(S, "Green Weight", 0.2f, "Relative chance for each reward to be green (uncommon).").Value;
-            RedWeight = config.Bind(S, "Red Weight", 0.01f, "Relative chance for each reward to be red (legendary).").Value;
-            DebugAlwaysSpawn = config.Bind(S, "Debug - Spawn Every Stage", false, "Testing: a Soul Urn spawns on every stage.").Value;
+            Enabled = true;
+            SpawnChance = 0.3f;
+            TimeLimit = 30f;
+            SecondsPerMeter = 1f / 6f;
+            MaxTimeLimit = 120f;
+            MinTeleporterDistance = 180f; // 60 until 2.0 (user)
+            DeliveryRadius = 12f;
+            BaseItems = 3;
+            ItemsPerStage = 1f;
+            MaxItems = 30;
+            WhiteWeight = 0.8f;
+            GreenWeight = 0.2f;
+            RedWeight = 0.01f;
+            DebugAlwaysSpawn = false;
 
             LanguageAPI.Add(NameToken, "Soul Urn");
             LanguageAPI.Add(ContextToken, "Pick up the Soul Urn");
@@ -194,6 +190,7 @@ namespace CursedAppleCuriosities.Interactables
             if (scene == null || scene.sceneType != SceneType.Stage || scene.isFinalStage) return;
             TeleporterInteraction? tp = TeleporterInteraction.instance;
             if (tp == null) return; // nowhere to deliver it
+            if (SoulUrnController.Instances.Count > 0) return; // one already stands at a Deadlock district's Walker spot
 
             var rng = new Xoroshiro128Plus(run.seed ^ (ulong)(run.stageClearCount + 1) * 0xA24BAED4963EE407UL);
             if (!DebugAlwaysSpawn && rng.nextNormalizedFloat >= SpawnChance) return;
@@ -222,6 +219,18 @@ namespace CursedAppleCuriosities.Interactables
                 return;
             }
             CursedAppleCuriositiesPlugin.Logger?.LogWarning("[SoulUrn] No spot far enough from the teleporter for the urn this stage.");
+        }
+
+        /// <summary>Can an urn go on this stage at all (on, the expansion on, a teleporter to deliver to)?</summary>
+        internal static bool CanSpawn => Enabled && CuriositiesExpansion.Enabled && _prefab != null && TeleporterInteraction.instance != null;
+
+        /// <summary>Server: an urn exactly here (a Deadlock district's Walker spot, user 3.0).</summary>
+        internal static GameObject? SpawnAt(Vector3 pos, float yaw)
+        {
+            if (!NetworkServer.active || !CanSpawn) return null;
+            GameObject go = UnityEngine.Object.Instantiate(_prefab!, pos, Quaternion.Euler(0f, yaw, 0f));
+            NetworkServer.Spawn(go);
+            return go;
         }
 
         [ConCommand(commandName = "cac_urn_spawn", flags = ConVarFlags.ExecuteOnServer,
@@ -265,6 +274,9 @@ namespace CursedAppleCuriosities.Interactables
         {
             CharacterBody? victim = report.victimBody;
             if (victim == null || report.damageDealt <= 0f) return;
+            // Only hits from enemies (user 3.0): never your own damage (Blood Tribute, Victor's payments), falls (no attacker),
+            // allies, or Shiv's Bloodletting ticks (they name the enemy who dealt the original hit, but are his own drain).
+            if (report.attacker == null || report.attackerTeamIndex == report.victimTeamIndex || Items.ItemBase.FinalDamage(report.damageInfo)) return;
             foreach (SoulUrnController urn in SoulUrnController.Instances)
                 if (urn.Carrier == victim) urn.DropServer(SoulUrnDropReason.Damaged);
         }

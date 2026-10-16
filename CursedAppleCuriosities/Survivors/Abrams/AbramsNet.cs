@@ -318,7 +318,8 @@ namespace CursedAppleCuriosities.Survivors.Abrams
                 if (fx && AbramsSurvivor.DrainEffect != null && hc.body != null)
                     EffectManager.SimpleImpactEffect(AbramsSurvivor.DrainEffect, hc.body.corePosition, Vector3.up, true);
             }
-            if (dealt > 0f) _body.healthComponent.Heal(dealt * AbramsData.SiphonHeal, default(ProcChainMask));
+            if (dealt > 0f)
+                CursedAppleCuriosities.Unlocks.Challenges.AbramsSeeingRed.Siphoned(_body, _body.healthComponent.Heal(dealt * AbramsData.SiphonHeal, default(ProcChainMask))); // Crimson's challenge
         }
 
         private void Update()

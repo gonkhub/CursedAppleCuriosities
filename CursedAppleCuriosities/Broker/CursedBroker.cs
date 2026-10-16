@@ -39,16 +39,11 @@ namespace CursedAppleCuriosities.Broker
 
         public static void Init(ConfigFile config)
         {
-            Enabled = config.Bind("Cursed Broker", "Enabled", true,
-                "Spawn the Cursed Broker, a rare shrine that curses one of your items: a far stronger item, a harsh penalty.").Value;
-            SpawnChance = config.Bind("Cursed Broker", "Spawn Chance", 0.02f, // user 3.0 (was 10%)
-                "Chance that a Cursed Broker appears on any stage (0.02 = 2%). Stage 3 of each loop uses its own chance.").Value;
-            StageThreeChance = config.Bind("Cursed Broker", "Stage 3 Chance", 0.5f,
-                "Chance that a Cursed Broker appears on stage 3 of every loop (0.5 = 50%).").Value;
-            BazaarChance = config.Bind("Cursed Broker", "Bazaar Chance", 0.5f,
-                "Chance per visit to the Bazaar Between Time that a Cursed Broker appears there. Once one has, no more appear in the Bazaar until the next loop.").Value;
-            DebugAlwaysSpawn = config.Bind("Cursed Broker", "Debug - Spawn Every Stage", false,
-                "Testing: a Cursed Broker spawns on every stage, ignoring stage number and chance.").Value;
+            Enabled = true;
+            SpawnChance = 0.02f; // user 3.0 (was 10%)
+            StageThreeChance = 0.5f;
+            BazaarChance = 0.5f;
+            DebugAlwaysSpawn = false;
 
             LanguageAPI.Add(NameToken, "Cursed Broker");
             LanguageAPI.Add(ContextToken, "Consult the Cursed Broker");
@@ -192,6 +187,9 @@ namespace CursedAppleCuriosities.Broker
             bool forced = _forceNextStage;
             _forceNextStage = false;
             if (!forced && !StageEligible(run)) return;
+            // A stage with its own broker (a Deadlock district's souls dealer, placed before the director populates) never rolls a
+            // second one (user 3.0: Sunken Plaza had two).
+            if (UnityEngine.Object.FindObjectOfType<CursedBrokerMarker>() != null) return;
 
             var rng = new Xoroshiro128Plus(run.seed ^ (ulong)(run.stageClearCount + 1) * 0x9E3779B97F4A7C15UL);
             float chance = IsLoopStageThree(run) ? StageThreeChance : SpawnChance;

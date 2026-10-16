@@ -19,11 +19,23 @@ namespace CursedAppleCuriosities.Unlocks.Challenges
         /// <summary>Bebop's Chrome skin: its own challenge (BebopLongArm), not a mastery.</summary>
         public const string BebopChromeSkin = "Bebop.Chrome";
         public const string ApolloSkin = "Apollo.Mastery";
+        /// <summary>Apollo's Sapphire skin: its own challenge (ApolloEnGarde, which used to unlock Riposte), not a mastery.</summary>
+        public const string ApolloSapphireSkin = "Apollo.Sapphire";
+        /// <summary>Abrams' Crimson skin: its own challenge (AbramsSeeingRed), not a mastery.</summary>
+        public const string AbramsCrimsonSkin = "Abrams.Crimson";
         public const string SevenSkin = "Seven.Mastery";
+        /// <summary>Seven's Bunny Seven skin (funnymonkeyman's model): its own challenge (SevenHareTrigger), not a mastery.</summary>
+        public const string SevenBunnySkin = "Seven.Bunny";
         public const string VyperSkin = "Vyper.Mastery";
         public const string ViscousSkin = "Viscous.Mastery";
         public const string CelesteSkin = "Celeste.Mastery";
+        /// <summary>Viscous' Pisscous skin: its own challenge (ViscousHoldItIn), not a mastery.</summary>
+        public const string ViscousPisscousSkin = "Viscous.Pisscous";
+        /// <summary>Celeste's Spirit Guardian skin (TSelky's model): its own challenge (CelesteEncore), not a mastery.</summary>
+        public const string CelesteGuardianSkin = "Celeste.Guardian";
         public const string MinaSkin = "Mina.Mastery";
+        /// <summary>Mina's Blackmore Colors: its own challenge (MinaHonorRoll), not a mastery.</summary>
+        public const string MinaBlackmoreSkin = "Mina.Blackmore";
         public const string ParadoxSkin = "Paradox.Mastery";
     }
 

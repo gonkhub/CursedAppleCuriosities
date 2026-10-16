@@ -62,7 +62,9 @@ namespace CursedAppleCuriosities.Survivors.Celeste
         public const float FlareDelay = 0.3f;            // Deadlock AbilityCastDelay
         public static float FlareCooldown = 7f;          // Deadlock 20
         public static float MarkSeconds = 8f;            // Deadlock AbilityDuration
-        public static float MarkDaggerBonus = 2.5f;      // (1.8 until 2.0, user) extra damage coefficient on each Carny Life hit on a marked enemy (Deadlock Damage 15)
+        // Extra damage on everything she deals to a marked enemy (user 3.0: all her damage, not just Carny Life). Until 3.0 it was a flat
+        // +250% on blades only (1.8 until 2.0); +125% keeps a blade on a marked enemy exactly as hard as that (200% x 2.25 = 450%).
+        public static float MarkDamageBonus = 1.25f;
         public static float MarkLifesteal = 0.18f;       // share of her damage to marked enemies she heals (Deadlock AbilityLifestealPercentHero)
         public const float FlareHangFall = 1f;           // m/s: she hangs in the air while casting (Deadlock m_flJumpFallSpeedMax)
 
@@ -111,31 +113,9 @@ namespace CursedAppleCuriosities.Survivors.Celeste
         public const float OrbFinalApproach = 4f;        // m: this close, it flies straight at the target
         public const float OrbAimFall = 3f;              // m/s: aiming in the air slows her fall (Deadlock: "slows Celeste's glide")
 
-        public static void Bind(ConfigFile c)
+        public static void Bind(ConfigFile c) // the hero's config section is only its keybind layout (3.0)
         {
             Movement.Bind(c, Section);
-            BaseHealth = c.Bind(Section, "Base Health", BaseHealth, "Celeste max health at level 1 (+28 per level).").Value;
-            DaggerDamage = c.Bind(Section, "Carny Life - Damage", DaggerDamage, "Damage coefficient of each thrown blade.").Value;
-            FlareDamage = c.Bind(Section, "Light Eater - Damage", FlareDamage, "Damage coefficient of the flare.").Value;
-            FlareRange = c.Bind(Section, "Light Eater - Range", FlareRange, "Metres (a 70 degree cone).").Value;
-            FlareCooldown = c.Bind(Section, "Light Eater - Cooldown", FlareCooldown, "Seconds.").Value;
-            MarkSeconds = c.Bind(Section, "Light Eater - Mark Duration", MarkSeconds, "Seconds an enemy stays marked.").Value;
-            MarkDaggerBonus = c.Bind(Section, "Light Eater - Blade Bonus", MarkDaggerBonus, "Extra damage coefficient of each Carny Life hit on a marked enemy.").Value;
-            MarkLifesteal = c.Bind(Section, "Light Eater - Lifesteal", MarkLifesteal, "Share of Celeste's damage to marked enemies that heals her.").Value;
-            BeamDamage = c.Bind(Section, "Radiant Daggers - Damage", BeamDamage, "Damage coefficient of the beam's explosion.").Value;
-            BeamRange = c.Bind(Section, "Radiant Daggers - Range", BeamRange, "Metres to the aimed spot.").Value;
-            BeamRadius = c.Bind(Section, "Radiant Daggers - Radius", BeamRadius, "Metres.").Value;
-            BeamCooldown = c.Bind(Section, "Radiant Daggers - Cooldown", BeamCooldown, "Seconds.").Value;
-            RadianceDamage = c.Bind(Section, "Radiant Daggers - Damage Per Stack", RadianceDamage, "Damage bonus per Radiance stack (one per enemy hit, no cap; each cast's stacks last " + RadianceSeconds + " s).").Value;
-            PrismBarrier = c.Bind(Section, "Dazzling Trick - Barrier", PrismBarrier, "Barrier as a share of max health.").Value;
-            PrismDamage = c.Bind(Section, "Dazzling Trick - Damage", PrismDamage, "Damage coefficient of the burst when the barrier breaks.").Value;
-            PrismRadius = c.Bind(Section, "Dazzling Trick - Radius", PrismRadius, "Metres.").Value;
-            PrismStun = c.Bind(Section, "Dazzling Trick - Stun", PrismStun, "Seconds enemies caught are stunned.").Value;
-            PrismCooldown = c.Bind(Section, "Dazzling Trick - Cooldown", PrismCooldown, "Seconds.").Value;
-            OrbDamage = c.Bind(Section, "Shining Wonder - Damage", OrbDamage, "Damage coefficient of each hit.").Value;
-            OrbBounces = c.Bind(Section, "Shining Wonder - Bounces", OrbBounces, "Bounces after the first hit.").Value;
-            OrbBounceRange = c.Bind(Section, "Shining Wonder - Bounce Range", OrbBounceRange, "Metres from the enemy it just hit to the next target (the nearest enemy, or Celeste's prism).").Value;
-            OrbCooldown = c.Bind(Section, "Shining Wonder - Cooldown", OrbCooldown, "Seconds.").Value;
         }
 
         // ---- Deadlock assets (read from the player's own install, never shipped) ----
@@ -143,6 +123,13 @@ namespace CursedAppleCuriosities.Survivors.Celeste
         public const string DlModel = "models/heroes_wip/unicorn/unicorn.vmdl_c";
         public const float ModelHeightScale = 1.08f * 1.25f * 1.15f * 0.95f; // Lash's size, then x1.15 by playtest, then x0.95 (user, 1.7: all but Vyper a little smaller)
         public const string MuzzleBone = "hand_R";           // she throws from her right hand
+
+        // Spirit Guardian skin: TSelky's Spirit Guardian Celeste, a Deadlock mod (a fan-made model on her skeleton, not Valve's
+        // and not shipped). The player drops TSelky's .vpk into a skins folder (or keeps it in Deadlock's addons); it is found by
+        // a file only it has and converted once, read-only, like her own model.
+        public const string GuardianKey = "celeste_spiritguardian";
+        public const string GuardianName = "Spirit Guardian (by TSelky)";
+        public const string GuardianMarker = "models/heroes_wip/unicorn/materials/guardian_star_ring.vtex_c";
 
         public const string IconPortrait = "panorama/images/heroes/unicorn_sm_psd.vtex_c";
         public const string IconFlare = "panorama/images/hud/abilities/unicorn/unicorn_flare_psd.vtex_c";

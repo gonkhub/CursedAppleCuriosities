@@ -4,6 +4,7 @@ using RoR2.CharacterAI;
 using RoR2.Navigation;
 using UnityEngine;
 using UnityEngine.AddressableAssets;
+using UnityEngine.Networking;
 
 namespace CursedAppleCuriosities.Survivors.Bebop
 {
@@ -16,15 +17,29 @@ namespace CursedAppleCuriosities.Survivors.Bebop
     {
         public static GameObject? MasterPrefab;
         public static CharacterSpawnCard? Card;
+        private const string MasterName = "CursedAppleBebopMonsterMaster";
+        private static bool _dropHooked;
+
+        /// <summary>Server: a slain invading Bebop drops a Sticky Bomb (user 3.0), popping up where he fell.</summary>
+        private static void DropStickyBomb(DamageReport report)
+        {
+            if (!NetworkServer.active || report?.victimMaster == null || !report.victimMaster.name.StartsWith(MasterName) || report.victimBody == null) return;
+            PickupIndex sticky = PickupCatalog.FindPickupIndex(RoR2Content.Items.StickyBomb.itemIndex);
+            if (sticky == PickupIndex.none) return;
+            PickupDropletController.CreatePickupDroplet(sticky, report.victimBody.corePosition + Vector3.up, Vector3.up * 15f + report.victimBody.transform.forward * 3f);
+        }
 
         /// <summary>At load, after the body exists: the master and its spawn card (registered on every machine).</summary>
         public static void Build(GameObject body)
         {
             GameObject? template = Addressables.LoadAssetAsync<GameObject>("RoR2/Base/Commando/CommandoMonsterMaster.prefab").WaitForCompletion();
             if (template == null) { CursedAppleCuriositiesPlugin.Logger?.LogWarning("[Bebop] no Commando AI master to copy: no invader"); return; }
-            GameObject master = template.InstantiateClone("CursedAppleBebopMonsterMaster", true);
+            GameObject master = template.InstantiateClone(MasterName, true);
+            if (!_dropHooked) { _dropHooked = true; GlobalEventManager.onCharacterDeathGlobal += DropStickyBomb; }
             master.GetComponent<CharacterMaster>().bodyPrefab = body;
             foreach (AISkillDriver d in master.GetComponents<AISkillDriver>()) Object.DestroyImmediate(d);
+            // He knows where everyone is (user 3.0: spawned in his room, he didn't notice the player who woke him).
+            foreach (BaseAI ai in master.GetComponents<BaseAI>()) ai.fullVision = true;
 
             Driver(master, "HyperBeam", SkillSlot.Special, 0f, 45f, AISkillDriver.MovementType.StrafeMovetarget, AISkillDriver.ButtonPressType.Hold, hold: 2f, aim: true);
             Driver(master, "Uppercut", SkillSlot.Utility, 0f, 8f, AISkillDriver.MovementType.ChaseMoveTarget, AISkillDriver.ButtonPressType.TapContinuous);

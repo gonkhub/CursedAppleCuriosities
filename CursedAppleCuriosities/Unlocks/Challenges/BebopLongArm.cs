@@ -6,7 +6,7 @@ using UnityEngine;
 namespace CursedAppleCuriosities.Unlocks.Challenges
 {
     /// <summary>
-    /// Bebop's Chrome skin unlock (user, 2026-10-15): "Long Arm of the Law", as Bebop hook an enemy with Grapple Arm within
+    /// Bebop's Chrome skin unlock (user, 2026-10-15): "Catch of the Day" (renamed from "Long Arm of the Law", user), as Bebop hook an enemy with Grapple Arm within
     /// 10 m of the hook's maximum reach (200 m by default; Mystic Expansion's longer reach moves the mark with it). Judged
     /// where the hand flies (Bebop's own machine): it knows how far the hand had gone when it latched.
     /// </summary>

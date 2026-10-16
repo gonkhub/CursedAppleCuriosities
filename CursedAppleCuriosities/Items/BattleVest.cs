@@ -28,8 +28,7 @@ namespace CursedAppleCuriosities.Items
 
         public override void Init(ConfigFile config)
         {
-            DamageBonusPerStack = config.Bind("White", "Battle Vest - Damage Per Stack", 0.20f,
-                "Bonus damage per stack while above the health threshold.").Value;
+            DamageBonusPerStack = 0.20f;
             CreateLang();
             CreateItem();
             Hooks();

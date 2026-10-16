@@ -38,14 +38,10 @@ namespace CursedAppleCuriosities.Items
 
         public override void Init(ConfigFile config)
         {
-            CooldownSeconds = config.Bind("Equipment", "Ethereal Shift - Cooldown", 45f,
-                "Equipment cooldown in seconds.").Value;
-            ShiftDuration = config.Bind("Equipment", "Ethereal Shift - Duration", 3f,
-                "Seconds of invulnerability (no skills while shifted).").Value;
-            SpecialBonus = config.Bind("Equipment", "Ethereal Shift - Special Damage Bonus", 1f,
-                "Bonus damage on Special-skill hits after the shift ends (1 = +100%).").Value;
-            EmpowerDuration = config.Bind("Equipment", "Ethereal Shift - Special Bonus Duration", 8f,
-                "Seconds the Special damage bonus lasts after the shift ends.").Value;
+            CooldownSeconds = 45f;
+            ShiftDuration = 3f;
+            SpecialBonus = 1f;
+            EmpowerDuration = 8f;
 
             var shiftColor             = new Color(0.55f, 0.95f, 0.75f);
             ShiftBuffDef               = ScriptableObject.CreateInstance<BuffDef>();

@@ -31,7 +31,12 @@ namespace CursedAppleCuriosities.Survivors.Apollo
             // Blackmore Colors (skin 1, his mastery, user 3.0): his fencing whites become a Blackmore Academy uniform, after Graves'
             // jacket (her burgundy blazer with dark forest-green panels, read from her Deadlock textures): his white jacket goes
             // burgundy, his crimson panels forest green, his white trousers charcoal with burgundy piping. Skin and hair untouched.
-            Skins = new[] { new DeadlockSkin { Id = "blackmore1", Only = new[] { "fencer_upper", "fencer_lower" }, RecolorFile = ApolloSkins.Blackmore } },
+            Skins = new[]
+            {
+                new DeadlockSkin { Id = "blackmore1", Only = new[] { "fencer_upper", "fencer_lower" }, RecolorFile = ApolloSkins.Blackmore },
+                // Sapphire (skin 2, user 3.0): his reds swapped for Abrams' blue, his red skin included, and his gem.
+                new DeadlockSkin { Id = "sapphire1", Only = new[] { "fencer_upper", "fencer_lower", "fencer_head", "fencer_gem" }, RecolorFile = ApolloSkins.Sapphire },
+            },
             HideMeshes = new[] { "head_ui_smug_reduced", "head_ui_cocky", "head_ui_smug" }, // menu-portrait heads over his real one
             // His sword hangs off root_motion (weaponPivot/weapon); every clip puts its root exactly on weapon_target_hand_R (his right
             // hand's sword socket): snapped there, it stays in his hand whatever plays (user 2.5).
@@ -43,7 +48,7 @@ namespace CursedAppleCuriosities.Survivors.Apollo
     }
 
     /// <summary>
-    /// Apollo from Deadlock (hero_fencer) as a RoR2 survivor. The user asked me to design him (2026-10-14): Pride of Ixia's sword waves,
+    /// Apollo from Deadlock (hero_fencer) as a RoR2 survivor. The user asked me to design him (2026-10-14): Family Heirloom's sword waves (Deadlock's Pride of Ixia),
     /// Disengaging Sigil, Flawless Advance (alt: Riposte), Itani Lo Sahn.
     /// </summary>
     public static class ApolloSurvivor
@@ -67,7 +72,7 @@ namespace CursedAppleCuriosities.Survivors.Apollo
         {
             ApolloData.Bind(config);
             foreach (DeadlockSound s in ApolloData.Sounds) DeadlockSounds.Register(s);
-            foreach (string icon in new[] { ApolloData.IconPortrait, ApolloData.IconSigil, ApolloData.IconRiposte, ApolloData.IconAdvance, ApolloData.IconUlt })
+            foreach (string icon in new[] { ApolloData.IconPortrait, ApolloData.IconGun, ApolloData.IconSigil, ApolloData.IconRiposte, ApolloData.IconAdvance, ApolloData.IconUlt })
                 DeadlockInstall.WantIcon(icon);
             DeadlockHeroes.Register(ApolloModel.Def);
             DeadlockInstall.WantModel(ApolloModel.Def.ModelRequest());
@@ -169,7 +174,7 @@ namespace CursedAppleCuriosities.Survivors.Apollo
             locator.secondary = Kit.Slot(body, BodyName, "Secondary", _sigil!);
             locator.utility = Kit.Slot(body, BodyName, "Utility", _advance!, _riposte!);
             locator.special = Kit.Slot(body, BodyName, "Special", _ult!);
-            locator.passiveSkill = new SkillLocator.PassiveSkill { enabled = true, skillNameToken = Token + "PASSIVE_NAME", skillDescriptionToken = Token + "PASSIVE_DESC", icon = ItemBase.CreatePlaceholderSprite(Color) }; // his/her Deadlock movement (user 2.5: every survivor shows it)
+            locator.passiveSkill = new SkillLocator.PassiveSkill { enabled = false, skillNameToken = Token + "PASSIVE_NAME", skillDescriptionToken = Token + "PASSIVE_DESC", icon = ItemBase.CreatePlaceholderSprite(Color) }; // hidden: it only described his Deadlock movement, and the user cut those blurbs (3.0)
             DeadlockMovement.Apply(body, ApolloData.Movement);
             body.AddComponent<ApolloAdvanceRecast>();
             body.AddComponent<ApolloUltLook>();
@@ -179,7 +184,8 @@ namespace CursedAppleCuriosities.Survivors.Apollo
             Kit.MuteStandIn(body, model.gameObject, ApolloData.Hero);
             var children = model.GetComponent<ChildLocator>();
             if (children != null && children.FindChild(MuzzleName) == null) children.AddChild(MuzzleName, model);
-            Kit.OwnSkin(model.gameObject, "skinCursedAppleApolloDEFAULT", Token + "SKIN_DEFAULT", null, ("skinCursedAppleApolloBLACKMORE", Token + "SKIN_BLACKMORE", ApolloSkins.BlackmoreIcon));
+            Kit.OwnSkin(model.gameObject, "skinCursedAppleApolloDEFAULT", Token + "SKIN_DEFAULT", ApolloSkins.DefaultIcon, ("skinCursedAppleApolloBLACKMORE", Token + "SKIN_BLACKMORE", ApolloSkins.BlackmoreIcon),
+                ("skinCursedAppleApolloSAPPHIRE", Token + "SKIN_SAPPHIRE", ApolloSkins.SapphireIcon));
             ContentAddition.AddBody(body);
             return body;
         }
@@ -194,7 +200,8 @@ namespace CursedAppleCuriosities.Survivors.Apollo
                 var swap = cm.gameObject.AddComponent<DeadlockModelSwap>();
                 swap.HeroKey = ApolloData.Hero;
                 swap.IsDisplay = true;
-                Kit.OwnSkin(cm.gameObject, "skinCursedAppleApolloDISPLAY", Token + "SKIN_DEFAULT", null, ("skinCursedAppleApolloDISPLAYBLACKMORE", Token + "SKIN_BLACKMORE", ApolloSkins.BlackmoreIcon));
+                Kit.OwnSkin(cm.gameObject, "skinCursedAppleApolloDISPLAY", Token + "SKIN_DEFAULT", ApolloSkins.DefaultIcon, ("skinCursedAppleApolloDISPLAYBLACKMORE", Token + "SKIN_BLACKMORE", ApolloSkins.BlackmoreIcon),
+                    ("skinCursedAppleApolloDISPLAYSAPPHIRE", Token + "SKIN_SAPPHIRE", ApolloSkins.SapphireIcon));
             }
             display.AddComponent<ApolloDisplayIntro>(); // lobby entrance (user 2.5)
             return display;
@@ -211,7 +218,7 @@ namespace CursedAppleCuriosities.Survivors.Apollo
             Survivor.outroFlavorToken = Token + "OUTRO";
             Survivor.mainEndingEscapeFailureFlavorToken = Token + "FAILURE";
             Survivor.primaryColor = Color;
-            Survivor.desiredSortPosition = 113f;
+            Survivor.desiredSortPosition = 101f; // RosterOrder re-sorts the whole roster A-Z at load (user 3.0)
             ContentAddition.AddSurvivorDef(Survivor);
         }
 
@@ -234,6 +241,7 @@ namespace CursedAppleCuriosities.Survivors.Apollo
             Set(_advance, ApolloData.IconAdvance);
             Set(_ult, ApolloData.IconUlt);
             if (portrait != null) _wave!.icon = Kit.Sprite(portrait);
+            Set(_wave, ApolloData.IconGun); // the weapon itself (user 3.0); the portrait stays if it isn't cached
             CursedAppleCuriositiesPlugin.Logger?.LogInfo($"[Apollo] icons: {(portrait != null ? "from Deadlock" : "placeholders (no Deadlock icons cached)")}");
         }
 
@@ -242,25 +250,25 @@ namespace CursedAppleCuriosities.Survivors.Apollo
             string D(float coeff) => $"{coeff * 100f:0}%";
             LanguageAPI.Add(Token + "NAME", "Apollo");
             LanguageAPI.Add(Token + "PASSIVE_NAME", "Deadlock Movement");
-            LanguageAPI.Add(Token + "PASSIVE_DESC", Kit.MovementLine(ApolloData.Movement, alone: true));
+            LanguageAPI.Add(Token + "PASSIVE_DESC", "");
             LanguageAPI.Add(Token + "SUBTITLE", "The Duelist");
             LanguageAPI.Add(Token + "SKIN_DEFAULT", "Default");
             LanguageAPI.Add(Token + "SKIN_BLACKMORE", "Blackmore Colors");
+            LanguageAPI.Add(Token + "SKIN_SAPPHIRE", "Sapphire");
             LanguageAPI.Add(Token + "DESCRIPTION",
                 "Apollo is the prince of North Ixia, sent away for his own safety and waiting to prove he's worthy of his family's ancestral blade.<color=#CCD3E0>\n\n" +
-                "< ! > Your sword waves cut through every enemy in a line: line them up.\n\n" +
                 "< ! > Flawless Advance hits hardest when released on the glint. You get three stabs in a row.\n\n" +
                 "< ! > Riposte turns the next hit you take into a counterattack.\n\n" +
                 "< ! > Itani Lo Sahn freezes everything it cuts, then finishes them; it hits harder on wounded enemies.</color>\n");
             LanguageAPI.Add(Token + "OUTRO", "..and so he left, undefeated.");
             LanguageAPI.Add(Token + "FAILURE", "..and so he vanished, outmatched at last.");
-            LanguageAPI.Add(Token + "WAVE_NAME", "Pride of Ixia");
-            LanguageAPI.Add(Token + "WAVE_DESC", $"Slash a sword wave that <style=cIsDamage>pierces</style> enemies for <style=cIsDamage>{D(ApolloData.WaveDamage)} damage</style>, up to {ApolloData.WaveRange:0} m.");
+            LanguageAPI.Add(Token + "WAVE_NAME", "Family Heirloom"); // Deadlock's "Pride of Ixia" (user 3.0: that name went to Riposte's challenge)
+            LanguageAPI.Add(Token + "WAVE_DESC", $"Slash a sword wave for <style=cIsDamage>{D(ApolloData.WaveDamage)} damage</style>, up to {ApolloData.WaveRange:0} m.");
             LanguageAPI.Add(Token + "SIGIL_NAME", "Disengaging Sigil");
             LanguageAPI.Add(Token + "SIGIL_DESC", $"Draw a sigil ahead that bursts for <style=cIsDamage>{D(ApolloData.SigilDamage)} damage</style> and <style=cIsUtility>slows</style>, as you <style=cIsUtility>flip away</style> from it (look down to cast it below you). Gain <style=cIsDamage>+{D(ApolloData.SigilHaste)} fire rate</style>; a hit gives back <style=cIsUtility>1 stamina</style> and your air jumps.");
             LanguageAPI.Add(Token + "ADVANCE_NAME", "Flawless Advance");
             LanguageAPI.Add(Token + "ADVANCE_DESC",
-                $"Hold to ready a stab, release to lunge through enemies for <style=cIsDamage>{D(ApolloData.StabMin)}-{D(ApolloData.StabMax)} damage</style>; on the glint, <style=cIsDamage>{D(ApolloData.StabPerfect)}</style> and <style=cIsHealing>heal {D(ApolloData.PerfectHeal)} max health</style>. Up to <style=cIsUtility>{ApolloData.Stabs} stabs</style> in a row.");
+                $"Hold to ready a stab, release to lunge through enemies for <style=cIsDamage>{D(ApolloData.StabMin)}-{D(ApolloData.StabMax)} damage</style>; on the glint, <style=cIsDamage>{D(ApolloData.StabPerfect)}</style> and <style=cIsHealing>heal {D(ApolloData.PerfectHeal)} max health</style>. Up to <style=cIsUtility>{ApolloData.Stabs} stabs</style> in a row. Take <style=cIsHealing>{D(ApolloData.AdvanceDamageResist)} less damage</style> while advancing.");
             LanguageAPI.Add(Token + "RIPOSTE_NAME", "Riposte");
             LanguageAPI.Add(Token + "RIPOSTE_DESC",
                 $"Ready a parry. The next hit is <style=cIsUtility>deflected</style>. Press again within {ApolloData.RiposteCounterWindow:0}s to dash at the enemy you aim at (up to {ApolloData.RiposteCounterRange:0} m) and slash for <style=cIsDamage>{D(ApolloData.RiposteDamage)} damage</style>, <style=cIsUtility>stunning</style> and slowing, then <style=cIsHealing>steal {D(ApolloData.RiposteLifesteal)} of damage dealt</style> for {ApolloData.RiposteLifestealSeconds:0}s.");

@@ -38,7 +38,7 @@ namespace CursedAppleCuriosities.Survivors.Mina
         {
             MinaData.Bind(config);
             foreach (DeadlockSound s in MinaData.Sounds) DeadlockSounds.Register(s);
-            foreach (string icon in new[] { MinaData.IconPortrait, MinaData.IconRake, MinaData.IconRetreat, MinaData.IconLoveBites, MinaData.IconNox })
+            foreach (string icon in new[] { MinaData.IconPortrait, MinaData.IconGun, MinaData.IconRake, MinaData.IconRetreat, MinaData.IconLoveBites, MinaData.IconNox })
                 DeadlockInstall.WantIcon(icon);
             DeadlockHeroes.Register(MinaModel.Def);
             DeadlockInstall.WantModel(MinaModel.Def.ModelRequest());
@@ -177,7 +177,8 @@ namespace CursedAppleCuriosities.Survivors.Mina
             Kit.MuteStandIn(body, model.gameObject, MinaData.Hero);
             var children = model.GetComponent<ChildLocator>();
             if (children != null && children.FindChild(MuzzleName) == null) children.AddChild(MuzzleName, model);
-            Kit.OwnSkin(model.gameObject, "skinCursedAppleMinaDEFAULT", Token + "SKIN_DEFAULT", MinaModel.DefaultIcon, ("skinCursedAppleMinaNIGHTSHADE", Token + "SKIN_NIGHTSHADE", MinaModel.NightshadeIcon));
+            Kit.OwnSkin(model.gameObject, "skinCursedAppleMinaDEFAULT", Token + "SKIN_DEFAULT", MinaModel.DefaultIcon, ("skinCursedAppleMinaNIGHTSHADE", Token + "SKIN_NIGHTSHADE", MinaModel.NightshadeIcon),
+                ("skinCursedAppleMinaBLACKMORE", Token + "SKIN_BLACKMORE", MinaModel.BlackmoreIcon));
 
             ContentAddition.AddBody(body);
             return body;
@@ -193,7 +194,8 @@ namespace CursedAppleCuriosities.Survivors.Mina
                 var swap = cm.gameObject.AddComponent<DeadlockModelSwap>();
                 swap.HeroKey = MinaData.Hero;
                 swap.IsDisplay = true;
-                Kit.OwnSkin(cm.gameObject, "skinCursedAppleMinaDISPLAY", Token + "SKIN_DEFAULT", MinaModel.DefaultIcon, ("skinCursedAppleMinaDISPLAYNIGHTSHADE", Token + "SKIN_NIGHTSHADE", MinaModel.NightshadeIcon));
+                Kit.OwnSkin(cm.gameObject, "skinCursedAppleMinaDISPLAY", Token + "SKIN_DEFAULT", MinaModel.DefaultIcon, ("skinCursedAppleMinaDISPLAYNIGHTSHADE", Token + "SKIN_NIGHTSHADE", MinaModel.NightshadeIcon),
+                    ("skinCursedAppleMinaDISPLAYBLACKMORE", Token + "SKIN_BLACKMORE", MinaModel.BlackmoreIcon));
             }
             display.AddComponent<MinaDisplayIntro>();
             return display;
@@ -210,7 +212,7 @@ namespace CursedAppleCuriosities.Survivors.Mina
             Survivor.outroFlavorToken = Token + "OUTRO";
             Survivor.mainEndingEscapeFailureFlavorToken = Token + "FAILURE";
             Survivor.primaryColor = Color;
-            Survivor.desiredSortPosition = 109f;
+            Survivor.desiredSortPosition = 107f; // RosterOrder re-sorts the whole roster A-Z at load (user 3.0)
             ContentAddition.AddSurvivorDef(Survivor);
         }
 
@@ -244,6 +246,7 @@ namespace CursedAppleCuriosities.Survivors.Mina
                 locator.passiveSkill = passive;
             }
             if (portrait != null) _gun!.icon = Kit.Sprite(portrait);
+            Set(_gun, MinaData.IconGun); // the weapon itself (user 3.0); the portrait stays if it isn't cached
             CursedAppleCuriositiesPlugin.Logger?.LogInfo($"[Mina] icons: {(portrait != null ? "from Deadlock" : "placeholders (no Deadlock icons cached)")}");
         }
 
@@ -256,6 +259,7 @@ namespace CursedAppleCuriosities.Survivors.Mina
             LanguageAPI.Add(Token + "SUBTITLE", "The Vampire Socialite");
             LanguageAPI.Add(Token + "SKIN_DEFAULT", "Default");
             LanguageAPI.Add(Token + "SKIN_NIGHTSHADE", "Nightshade");
+            LanguageAPI.Add(Token + "SKIN_BLACKMORE", "Blackmore Colors");
             LanguageAPI.Add(Token + "DESCRIPTION",
                 "Mina is a centuries-old vampire socialite who never misses a party, or a meal.<color=#CCD3E0>\n\n" +
                 "< ! > Your pistol is weak on its own: keep it on a target to fill Love Bites for a big burst.\n\n" +
@@ -268,8 +272,8 @@ namespace CursedAppleCuriosities.Survivors.Mina
 
             LanguageAPI.Add(Token + "PASSIVE_NAME", "Love Bites");
             LanguageAPI.Add(Token + "PASSIVE_DESC",
-                $"<style=cIsUtility>Hold jump in the air</style> to float on your umbrella for up to {MinaData.HoverSeconds:0}s. Your damage builds Love Bites on enemies. When full, it bursts for <style=cIsDamage>{D(MinaData.LoveBitesDamage)} damage</style> and you gain a stack (resets each stage). " +
-                $"The same enemy can't be Love Bitten again for <style=cIsUtility>{MinaData.LoveBitesTargetCooldown:0}s</style>." + Kit.MovementLine(MinaData.Movement));
+                $"<style=cIsUtility>Hold jump in the air</style> to float on your umbrella for up to {MinaData.HoverSeconds:0}s. Your damage builds Love Bites on enemies, each bit of it biting for a little extra damage (<style=cIsDamage>{D(MinaData.BuildUpBonusPerMeter)}</style> over a full meter). When full, it bursts for <style=cIsDamage>{D(MinaData.LoveBitesDamage)} damage</style> and you gain a stack (resets each stage). " +
+                $"The same enemy can't be Love Bitten again for <style=cIsUtility>{MinaData.LoveBitesTargetCooldown:0}s</style>.");
 
             LanguageAPI.Add(Token + "GUN_NAME", "Pistol");
             LanguageAPI.Add(Token + "GUN_DESC", $"Shoot for <style=cIsDamage>{D(MinaData.GunDamage)} damage</style>. Falls off with distance.");

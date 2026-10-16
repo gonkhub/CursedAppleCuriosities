@@ -46,21 +46,22 @@ namespace CursedAppleCuriosities.Survivors.Paradox
             Move(side * Away);
             Face(90f);
 
-            GameObject? stayer = previousPrefab != null ? Leftover(previousPrefab) : null;
+            GameObject? stayer = previousPrefab != null ? Own(Leftover(previousPrefab)) : null;
             yield return new WaitForSeconds(0.25f);
 
             // The shot: her swap projectile's glow, from her to the pedestal.
             Play("swap_cast");
             DeadlockSounds.Play("paradox_swap_cast", Home);
             GameObject? shot = ShotVisual();
+            if (shot != null) Own(shot);
             for (float t = 0f; t < Shot; t += Time.deltaTime)
             {
                 if (shot != null) shot.transform.position = Home + (side * Away * (1f - t / Shot) + Vector3.up * 1.2f) * Scale;
                 yield return null;
             }
             if (shot != null) Destroy(shot);
-            Flash(Home + Vector3.up * Scale);
-            Flash(Home + (side * Away + Vector3.up) * Scale);
+            Own(Flash(Home + Vector3.up * Scale));
+            Own(Flash(Home + (side * Away + Vector3.up) * Scale));
             DeadlockSounds.Play("paradox_swap_go", Home);
 
             // The swap: both at once on mirrored arcs (ParadoxSwap.PathAt), passing each other.
@@ -111,12 +112,13 @@ namespace CursedAppleCuriosities.Survivors.Paradox
             return ghost;
         }
 
-        private static void Flash(Vector3 at)
+        private static GameObject? Flash(Vector3 at)
         {
-            if (ParadoxSurvivor.SwapHitEffect == null) return;
+            if (ParadoxSurvivor.SwapHitEffect == null) return null;
             GameObject fx = Instantiate(ParadoxSurvivor.SwapHitEffect, at, Quaternion.identity);
             if (fx.TryGetComponent(out EffectComponent ec)) ec.enabled = false; // a plain copy: no EffectData in the lobby
             Destroy(fx, 3f);
+            return fx;
         }
     }
 }

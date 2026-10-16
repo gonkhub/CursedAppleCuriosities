@@ -15,6 +15,10 @@ files are included in this package.
 Item icons are cropped from Deadlock item card art © Valve Corporation, sourced from the
 [Deadlock Graphical Library](https://forums.playdeadlock.com/resources/deadlock-graphical-library.30/).
 
+Celeste's Spirit Guardian skin uses the Spirit Guardian Celeste model made by **TSelky** as a Deadlock mod. Their files
+are not included in this package: the mod converts the player's own copy of TSelky's `.vpk` on their machine. All credit
+for the model and its textures goes to TSelky.
+
 ---
 
 ## MIT License — NLayer

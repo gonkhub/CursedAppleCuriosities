@@ -70,10 +70,8 @@ namespace CursedAppleCuriosities.Items
             ToxicWeakenedBuffDef.isHidden  = true;  // UI: folded into the poison icon
             ContentAddition.AddBuffDef(ToxicWeakenedBuffDef);
 
-            DamageToTrigger = config.Bind("Green", "Toxic Bullets - Damage To Trigger", 10f,
-                "Damage coefficient your hits must deal to an enemy to fill its Toxin (10 = 1000% of your damage).").Value;
-            DotDpsPercent = config.Bind("Green", "Toxic Bullets - Poison DPS Percent", 0.005f, // 0.01 before 3.0 (user)
-                "Max HP per second dealt by the poison, per stack.").Value;
+            DamageToTrigger = 10f;
+            DotDpsPercent = 0.005f; // 0.01 before 3.0 (user)
             CreateLang();
             CreateItem();
             StaticItemDef = ItemDef;
@@ -95,6 +93,7 @@ namespace CursedAppleCuriosities.Items
             GlobalEventManager self, DamageInfo damageInfo, GameObject victim)
         {
             orig(self, damageInfo, victim);
+            if (damageInfo == null || damageInfo.rejected) return; // blocked hits proc nothing (vanilla's own check is inside orig)
             if (!NetworkServer.active) return;
             if (damageInfo?.attacker == null || victim == null) return;
             if (damageInfo.procCoefficient <= 0f) return;

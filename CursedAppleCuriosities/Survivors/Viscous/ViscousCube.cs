@@ -151,6 +151,7 @@ namespace CursedAppleCuriosities.Survivors.Viscous
         private static void Finish(CharacterBody body, Entry e)
         {
             Cubes.Remove(body);
+            Unlocks.Challenges.ViscousHoldItIn.CubeEnded(body, Time.time - e.Start); // Pisscous' challenge: how long this one held
             BuffDef? cube = ViscousSurvivor.CubeBuff;
             if (cube != null)
             {

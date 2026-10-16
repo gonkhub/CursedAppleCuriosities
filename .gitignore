@@ -28,3 +28,7 @@ exceptions.txt
 HANDOFF.md
 docs/
 tools/itempass/README.md
+
+# Fan-made Deadlock skin mods (TSelky's Spirit Guardian Celeste, funnymonkeyman's Bunny Seven): never commit, only
+# packed into the friends' zip (packaging/build-friends-package.ps1) until the authors say yes
+*.vpk

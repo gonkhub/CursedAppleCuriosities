@@ -32,6 +32,14 @@ card's top 200×200 square, resized.
 Deadlock models, animations and sounds for survivors are read at runtime from the player's own
 Deadlock install and are never shipped.
 
+## Fan-made skins
+
+Two skins use fan-made Deadlock mods, read from the player's own copy and never shipped:
+
+- Celeste's **Spirit Guardian**: TSelky's Spirit Guardian Celeste.
+- Seven's **Bunny Seven**: [Bunny Seven](https://gamebanana.com/mods/681692) by
+  [funnymonkeyman](https://gamebanana.com/members/4819246).
+
 ## License
 
 The code is under the [MIT License](LICENSE). Deadlock and its art, models, animations and sounds

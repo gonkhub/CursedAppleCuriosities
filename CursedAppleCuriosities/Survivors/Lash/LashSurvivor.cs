@@ -53,7 +53,7 @@ namespace CursedAppleCuriosities.Survivors.Lash
             foreach (DeadlockSound s in LashData.Sounds) DeadlockSounds.Register(s);
             DeadlockHeroVoice.Track(BodyName, LashData.Hero, "lash");
             DeadlockPingVoice.Track(BodyName, LashData.Hero, "lash");
-            foreach (string icon in new[] { LashData.IconPortrait, LashData.IconGroundStrike, LashData.IconGrapple, LashData.IconDeathSlam })
+            foreach (string icon in new[] { LashData.IconPortrait, LashData.IconGun, LashData.IconGroundStrike, LashData.IconGrapple, LashData.IconDeathSlam })
                 DeadlockInstall.WantIcon(icon);
             DeadlockHeroes.Register(LashModelSwap.Def);
             DeadlockInstall.WantModel(LashModelSwap.Def.ModelRequest());
@@ -185,7 +185,7 @@ namespace CursedAppleCuriosities.Survivors.Lash
             locator.special = Slot(body, "Special", _deathSlam!);
             locator.passiveSkill = new SkillLocator.PassiveSkill
             {
-                enabled = true,
+                enabled = false, // hidden: it only described the Deadlock movement, and the user cut those blurbs (3.0)
                 skillNameToken = Token + "PASSIVE_NAME",
                 skillDescriptionToken = Token + "PASSIVE_DESC",
                 icon = ItemBase.CreatePlaceholderSprite(Color),
@@ -247,7 +247,7 @@ namespace CursedAppleCuriosities.Survivors.Lash
             Survivor.outroFlavorToken = Token + "OUTRO";
             Survivor.mainEndingEscapeFailureFlavorToken = Token + "FAILURE";
             Survivor.primaryColor = Color;
-            Survivor.desiredSortPosition = 100f;
+            Survivor.desiredSortPosition = 106f; // RosterOrder re-sorts the whole roster A-Z at load (user 3.0)
             ContentAddition.AddSurvivorDef(Survivor);
         }
 
@@ -273,6 +273,7 @@ namespace CursedAppleCuriosities.Survivors.Lash
                 locator.passiveSkill = passive;
                 _gun!.icon = passive.icon;
             }
+            Set(_gun, LashData.IconGun); // the weapon itself (user 3.0); the portrait stays if it isn't cached
             CursedAppleCuriositiesPlugin.Logger?.LogInfo($"[Lash] icons: {(portrait != null ? "from Deadlock" : "placeholders (no Deadlock icons cached)")}");
         }
 
@@ -320,7 +321,7 @@ namespace CursedAppleCuriosities.Survivors.Lash
             LanguageAPI.Add(Token + "LORE", "A showman from the Cursed Apple, lost to the stars and looking for a bigger stage.");
 
             LanguageAPI.Add(Token + "PASSIVE_NAME", "Perfect Cardio, Perfect Form, Perfect Hair");
-            LanguageAPI.Add(Token + "PASSIVE_DESC", Kit.MovementLine(LashData.Movement, alone: true));
+            LanguageAPI.Add(Token + "PASSIVE_DESC", "");
 
             LanguageAPI.Add(Token + "GUN_NAME", "Lash's Glove");
             LanguageAPI.Add(Token + "GUN_DESC", $"Fire a three-round burst for <style=cIsDamage>3x{D(LashData.GunDamage)} damage</style>.");

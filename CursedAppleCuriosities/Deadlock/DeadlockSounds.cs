@@ -41,6 +41,7 @@ namespace CursedAppleCuriosities.Deadlock
             public bool Followed; // started on an object: Unity's null check turns true once it is destroyed
             public float Until = float.MaxValue;
             public float Gain = 1f;
+            public object? Owner; // DeadlockSounds.Owner when it started (a lobby display): StopOwned silences it
         }
 
         private static DeadlockSounds? _instance;
@@ -237,7 +238,7 @@ namespace CursedAppleCuriosities.Deadlock
         {
             var voice = new DeadlockVoice { Clip = clip, Loop = loop };
             if (row.PitchJitter > 0f) voice.Pitch = 1.0 + Random.Range(-row.PitchJitter, row.PitchJitter);
-            var p = new Playing { Voice = voice, Row = row, Pos = pos, Follow = follow != null ? follow.transform : null, Followed = follow != null };
+            var p = new Playing { Voice = voice, Row = row, Pos = pos, Follow = follow != null ? follow.transform : null, Followed = follow != null, Owner = Owner };
             if (row.VolumeJitter > 0f) p.Gain = 1f - Random.Range(0f, row.VolumeJitter);
             if (seconds > 0f) p.Until = Time.time + seconds;
             Active.Add(p);
@@ -290,6 +291,18 @@ namespace CursedAppleCuriosities.Deadlock
         public static void Stop(DeadlockVoice? voice)
         {
             if (voice != null) voice.Stopped = true;
+        }
+
+        /// <summary>
+        /// Who is playing sounds right now (main thread; set around a lobby display's intro and select line). Every sound started
+        /// meanwhile belongs to them, and StopOwned silences them all at once.
+        /// </summary>
+        public static object? Owner;
+
+        /// <summary>Silence every sound started for this owner (user 3.0: a hero clicked off in the lobby goes quiet at once).</summary>
+        public static void StopOwned(object owner)
+        {
+            foreach (Playing p in Active) if (p.Owner == owner) p.Voice.Stopped = true;
         }
     }
 }

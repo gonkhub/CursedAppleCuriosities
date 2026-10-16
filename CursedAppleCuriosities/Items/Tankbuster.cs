@@ -24,19 +24,27 @@ namespace CursedAppleCuriosities.Items
         public override ItemTag[] ItemTags => new[] { ItemTag.Damage };
         protected override string IconFileName => "icon_tankbuster.png";
 
-        public const float DamageThreshold  = 5f;
+        public const float DamageThreshold  = 4f; // Runald's and Kjaro's Bands' own threshold (user 3.0; was 5)
         public static float BurstPercent;
         public static float StackPercent;
         public const float Cooldown         = 10f;
 
         public static ItemDef? StaticItemDef;
+        /// <summary>The cooldown, shown like the elemental Bands' (user 3.0): one stack per second left, counting down.</summary>
+        public static BuffDef? CooldownBuff;
 
         public override void Init(ConfigFile config)
         {
-            BurstPercent = config.Bind("Green", "Tankbuster - Burst Percent Of Enemy HP", 0.05f, // 0.10 before 1.8 (user)
-                "Bonus burst damage as a fraction of the enemy's max HP on a heavy hit.").Value;
-            StackPercent = config.Bind("Green", "Tankbuster - Stack Percent Of Enemy HP", 0.025f, // 0.05 before 1.8 (user)
-                "Extra burst damage per additional stack, as a fraction of the enemy's max HP.").Value;
+            BurstPercent = 0.05f; // 0.10 before 1.8 (user)
+            StackPercent = 0.025f; // 0.05 before 1.8 (user)
+            CooldownBuff = ScriptableObject.CreateInstance<BuffDef>();
+            CooldownBuff.name = "CursedApple_TankbusterCooldown";
+            CooldownBuff.canStack = true;
+            CooldownBuff.isDebuff = false;
+            CooldownBuff.isCooldown = true; // Duration Extender leaves it alone, cleansing doesn't clear it
+            CooldownBuff.buffColor = new Color(0.55f, 0.55f, 0.6f);
+            CooldownBuff.iconSprite = BuffIcon(IconFileName, CooldownBuff.buffColor);
+            ContentAddition.AddBuffDef(CooldownBuff);
             CreateLang();
             CreateItem();
             StaticItemDef = ItemDef;
@@ -53,6 +61,7 @@ namespace CursedAppleCuriosities.Items
             GlobalEventManager self, DamageInfo damageInfo, GameObject victim)
         {
             orig(self, damageInfo, victim);
+            if (damageInfo == null || damageInfo.rejected) return; // blocked hits proc nothing (vanilla's own check is inside orig)
             if (!NetworkServer.active) return;
             if (damageInfo?.attacker == null || victim == null) return;
             if (damageInfo.procCoefficient <= 0f) return;
@@ -65,9 +74,7 @@ namespace CursedAppleCuriosities.Items
             if (attackerBody.damage <= 0f) return;
             if (damageInfo.damage / attackerBody.damage < DamageThreshold) return;
 
-            var tracker = attackerBody.GetComponent<TankbusterTracker>()
-                ?? attackerBody.gameObject.AddComponent<TankbusterTracker>();
-            if (!tracker.IsReady) return;
+            if (CooldownBuff != null && attackerBody.HasBuff(CooldownBuff)) return; // still cooling down
 
             var victimHC = victim.GetComponent<HealthComponent>();
             if (victimHC == null) return;
@@ -82,22 +89,9 @@ namespace CursedAppleCuriosities.Items
             di.position         = damageInfo.position;
             victimHC.TakeDamage(di);
 
-            tracker.StartCooldown(Cooldown);
+            // As vanilla does the Bands' cooldown: a stack per second, each lasting one second longer, so the icon counts down.
+            if (CooldownBuff != null)
+                for (int i = 1; i <= Mathf.CeilToInt(Cooldown); i++) attackerBody.AddTimedBuff(CooldownBuff, i);
         }
-    }
-
-    public class TankbusterTracker : MonoBehaviour
-    {
-        private float _cooldownRemaining;
-
-        public bool IsReady => _cooldownRemaining <= 0f;
-
-        private void Update()
-        {
-            if (_cooldownRemaining > 0f)
-                _cooldownRemaining -= Time.deltaTime;
-        }
-
-        public void StartCooldown(float duration) => _cooldownRemaining = duration;
     }
 }

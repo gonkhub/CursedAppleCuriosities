@@ -62,14 +62,10 @@ namespace CursedAppleCuriosities.Items
 
         public override void Init(ConfigFile config)
         {
-            CooldownSeconds = config.Bind("Equipment", "Colossus - Cooldown", 35f,
-                "Equipment cooldown in seconds.").Value;
-            DamageResist = config.Bind("Equipment", "Colossus - Damage Resistance", 0.65f,
-                "Damage resistance from a single activation. Extra activations stack multiplicatively (diminishing returns).").Value;
-            MaxResist = config.Bind("Equipment", "Colossus - Max Damage Resistance", 0.90f,
-                "Maximum damage resistance reachable by stacking activations.").Value;
-            MaxStacks = config.Bind("Equipment", "Colossus - Max Stacks", 5,
-                "Maximum number of stacked activations (each further grows size and resistance).").Value;
+            CooldownSeconds = 35f;
+            DamageResist = 0.65f;
+            MaxResist = 0.90f;
+            MaxStacks = 5;
 
             var color              = new Color(0.55f, 0.25f, 0.9f);
             ColossusBuffDef        = ScriptableObject.CreateInstance<BuffDef>();

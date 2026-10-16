@@ -22,7 +22,7 @@ namespace CursedAppleCuriosities.Survivors.GreyTalon
             yield return null; // the Deadlock model attaches on its first frame
             Lift(-50f);
 
-            var owl = new GameObject("CursedAppleGreyTalonIntroOwl");
+            var owl = Own(new GameObject("CursedAppleGreyTalonIntroOwl"));
             owl.transform.localScale = Vector3.one * Scale;
             GreyTalonOwlVisual.Build(owl.transform);
             DeadlockVoice? hum = DeadlockSounds.Loop("greytalon_owl_loop", owl, Flight + 0.3f);
@@ -44,8 +44,8 @@ namespace CursedAppleCuriosities.Survivors.GreyTalon
             DeadlockSounds.Stop(hum);
             Destroy(owl);
             var blast = new EffectData { origin = end, scale = BlastScale * Scale };
-            if (GreyTalonSurvivor.OwlBlastEffect != null) EffectManager.SpawnEffect(GreyTalonSurvivor.OwlBlastEffect, blast, false);
-            if (GreyTalonSurvivor.OwlBlastWave != null) EffectManager.SpawnEffect(GreyTalonSurvivor.OwlBlastWave, blast, false);
+            Effect(GreyTalonSurvivor.OwlBlastEffect, blast);
+            Effect(GreyTalonSurvivor.OwlBlastWave, blast.Clone());
             DeadlockSounds.Play("greytalon_owl_explode", Home);
             Lift(0f);
             Play("owl_outro"); // standing up out of the blast

@@ -70,11 +70,11 @@ namespace CursedAppleCuriosities.Survivors.Bebop
         private void Build()
         {
             LineRenderer? source = BebopSurvivor.HyperBeamPrefab != null ? BebopSurvivor.HyperBeamPrefab.GetComponentInChildren<LineRenderer>(true) : null;
-            _beam = Line("BebopIntroBeam", source != null && source.sharedMaterial != null ? source.sharedMaterial : BebopSurvivor.ChainMaterial);
+            _beam = Own(Line("BebopIntroBeam", source != null && source.sharedMaterial != null ? source.sharedMaterial : BebopSurvivor.ChainMaterial));
             _beam.colorGradient = source != null ? source.colorGradient : new Gradient();
             _beam.textureMode = LineTextureMode.Tile;
             // A solid red glow around it, so it reads end to end.
-            _glow = Line("BebopIntroBeamGlow", CursedAppleCuriosities.Deadlock.DeadlockSurvivorKit.LineMaterial());
+            _glow = Own(Line("BebopIntroBeamGlow", CursedAppleCuriosities.Deadlock.DeadlockSurvivorKit.LineMaterial()));
             _glow.startColor = _glow.endColor = new Color(1f, 0.15f, 0.08f, 0.35f);
         }
 

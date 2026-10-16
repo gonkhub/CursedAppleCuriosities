@@ -36,8 +36,7 @@ namespace CursedAppleCuriosities.Items
 
         public override void Init(ConfigFile config)
         {
-            DamageToBarrier = config.Bind("Green", "Spirit Snatch - Damage To Barrier", 0.10f,
-                "Barrier per close-range hit, as a fraction of the damage it dealt (after armor, no overkill), per stack.").Value;
+            DamageToBarrier = 0.10f;
             CreateLang();
             CreateItem();
             StaticItemDef = ItemDef;

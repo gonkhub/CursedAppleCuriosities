@@ -28,10 +28,8 @@ namespace CursedAppleCuriosities.Items
 
         public override void Init(ConfigFile config)
         {
-            RadiusPerStack = config.Bind("White", "Mystic Expansion - Radius Per Stack", 0.30f, // 0.15 at first; doubled by playtest
-                "Area-of-effect radius increase from the first stack.").Value;
-            RadiusPerExtraStack = config.Bind("White", "Mystic Expansion - Radius Per Extra Stack", 0.15f,
-                "Area-of-effect radius increase per additional stack.").Value;
+            RadiusPerStack = 0.30f; // 0.15 at first; doubled by playtest
+            RadiusPerExtraStack = 0.15f;
             CreateLang();
             CreateItem();
             _def = ItemDef;

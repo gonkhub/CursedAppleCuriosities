@@ -83,28 +83,23 @@ namespace CursedAppleCuriosities.Deadlock
         public string Sound(string key) => Hero + "_" + key;
         public void Play(GameObject body, string state) => Anim?.Invoke(body, state);
 
-        /// <summary>The player-facing knobs, in the hero's config section.</summary>
+        // Per-hero keys (3.0, user: the hero tabs hold only the keybind layout). None = the player's own RoR2 control.
+        public ConfigEntry<KeyboardShortcut>? PrimaryKeyEntry, SecondaryKeyEntry, UtilityKeyEntry, SpecialKeyEntry, DashKeyEntry;
+
+        /// <summary>The hero's keybind layout, its whole config section; read live, so rebinding applies at once.</summary>
         public void Bind(ConfigFile c, string section)
         {
-            StaminaPips = c.Bind(section, "Stamina", StaminaPips, "Stamina pips for dashes and air jumps.").Value;
-            GroundDash = c.Bind(section, "Ground Dash", GroundDash, "Sprint key on the ground dashes (one stamina). Off = no ground dash.").Value;
-            GroundDashSeconds = c.Bind(section, "Ground Dash - Duration", GroundDashSeconds, $"Seconds to cover the {GroundDashMetres:0} m ground dash burst (lower = faster). The dash then eases to a run until {GroundDashTotalSeconds} s, as in Deadlock.").Value;
-            DashJumpSpeed = c.Bind(section, "Dash Jump - Forward Speed", DashJumpSpeed, "Forward launch speed of a timed dash-jump (m/s).").Value;
-            DashJumpUp = c.Bind(section, "Dash Jump - Up Speed", DashJumpUp, "Upward launch speed of a timed dash-jump (m/s).").Value;
-            // (Seconds now; the old "Window Opens/Closes" keys held shares of the dash.)
-            DashJumpWindowOpen = c.Bind(section, "Dash Jump - Window Opens At", DashJumpWindowOpen, "Seconds into a ground dash the dash-jump window opens (Deadlock 0.3). Jumping before it: too early.").Value;
-            DashJumpWindowLength = c.Bind(section, "Dash Jump - Window Length", DashJumpWindowLength, "Seconds the dash-jump window stays open (Deadlock 0.25). Jumping after it, still dashing: too late.").Value;
-            SprintRampSeconds = c.Bind(section, "Sprint - Build Up Time", SprintRampSeconds, "Seconds for the out-of-combat sprint to build up to full speed.").Value;
-            SprintCalmSeconds = c.Bind(section, "Sprint - Delay After Combat", SprintCalmSeconds, "Seconds after taking damage or attacking before the sprint starts.").Value;
-            QuailStaminaRegen = c.Bind(section, "Wax Quail - Stamina Regen", QuailStaminaRegen, "Faster stamina refill per Wax Quail (0.25 = +25% per stack).").Value;
-            SlideKeyEntry = c.Bind(section, "Slide Key", new KeyboardShortcut(SlideKey), "Hold on the ground while fast (sprint, dash) or on a downhill slope to slide; hold in the air to slide on landing. Deadlock's crouch.");
-            SlideKey = SlideKeyEntry.Value.MainKey;
-            SlideFriction = c.Bind(section, "Slide - Friction", SlideFriction, "Share of slide speed lost per second on flat ground.").Value;
-            AirAccel = c.Bind(section, "Air Control", AirAccel, "How hard you steer in the air (m/s2). Momentum is kept either way.").Value;
-            AirControlBoost = c.Bind(section, "Air Control - Boost After Air Moves", AirControlBoost, "Air control multiplier after any move in the air that costs stamina, until you land (1 = none).").Value;
-            DownDashSpeed = c.Bind(section, "Down Dash - Speed", DownDashSpeed, "Downward speed added by a down-dash (double-tap the slide key in the air), m/s.").Value;
-            WallJumpUp = c.Bind(section, "Wall Jump - Up Speed", WallJumpUp, $"Upward launch speed off a wall (m/s). Each wall jump within {WallJumpRecharge} s of the last is {WallJumpPowerMin * 100f:0}% of the one before; an air jump or air dash restores full height.").Value;
+            const string ownControl = " None = your RoR2 control for it.";
+            PrimaryKeyEntry = c.Bind(section, "Primary Key", KeyboardShortcut.Empty, "Key for the primary ability." + ownControl);
+            SecondaryKeyEntry = c.Bind(section, "Secondary Key", KeyboardShortcut.Empty, "Key for the secondary ability." + ownControl);
+            UtilityKeyEntry = c.Bind(section, "Utility Key", KeyboardShortcut.Empty, "Key for the utility ability." + ownControl);
+            SpecialKeyEntry = c.Bind(section, "Special Key", KeyboardShortcut.Empty, "Key for the special ability." + ownControl);
+            DashKeyEntry = c.Bind(section, "Dash Key", KeyboardShortcut.Empty, "Key to dash (ground or air, one stamina). None = your RoR2 sprint control.");
+            SlideKeyEntry = c.Bind(section, "Slide Key", new KeyboardShortcut(SlideKey), "Hold on the ground while fast (sprint, dash) or on a downhill slope to slide; hold in the air to slide on landing; double-tap in the air to down-dash. Deadlock's crouch.");
         }
+
+        /// <summary>A bound key, or KeyCode.None when the entry is unset (the game's own control applies).</summary>
+        public static KeyCode KeyOf(ConfigEntry<KeyboardShortcut>? e) => e != null ? e.Value.MainKey : KeyCode.None;
     }
 
     /// <summary>Wires Deadlock movement onto a survivor body.</summary>
@@ -125,6 +120,15 @@ namespace CursedAppleCuriosities.Deadlock
             foreach (Type t in new[] { typeof(EntityStates.CursedApple.Deadlock.DeadlockMain), typeof(EntityStates.CursedApple.Deadlock.DeadlockDash), typeof(EntityStates.CursedApple.Deadlock.DeadlockSlide) })
                 ContentAddition.AddEntityState(t, out _);
             DeadlockStaminaHud.Hook();
+            DeadlockRoseBuckler.Hook();
+            // Per-hero ability keys (config) replace RoR2's skill buttons once it has polled them this tick.
+            On.RoR2.PlayerCharacterMasterController.PollButtonInput += (orig, self) =>
+            {
+                orig(self);
+                CharacterBody? body = self.master != null ? self.master.GetBody() : null;
+                if (body == null || !body.hasEffectiveAuthority || body.inputBank == null) return;
+                body.GetComponent<DeadlockMover>()?.ApplySkillKeys(body.inputBank);
+            };
         }
 
         /// <summary>
@@ -142,6 +146,7 @@ namespace CursedAppleCuriosities.Deadlock
             body.GetComponent<CharacterMotor>().airControl = 0f;         // DeadlockMain steers in the air itself (keeps momentum)
             body.GetComponent<CharacterMotor>().gravityScale = profile.GravityScale;
             var mover = body.AddComponent<DeadlockMover>();
+            body.AddComponent<DeadlockRoseBuckler>(); // Rose Buckler counts while moving, not only while sprinting (user 3.0)
             Profiles[profile.Hero] = profile;
             mover.HeroKey = profile.Hero;
             foreach (EntityStateMachine esm in body.GetComponents<EntityStateMachine>())
@@ -192,7 +197,12 @@ namespace CursedAppleCuriosities.Deadlock
         /// <summary>0-1 progress of the next pip refilling.</summary>
         public float RegenProgress => Pips < Max ? Mathf.Clamp01(_regen / Profile.StaminaRegenSeconds) : 0f;
 
-        public bool SlideHeld => Input.GetKey(Profile.SlideKeyEntry != null ? Profile.SlideKeyEntry.Value.MainKey : Profile.SlideKey) || Testing.SelfTest.SlideHeld;
+        public bool SlideHeld => Input.GetKey(SlideKeyNow) || Testing.SelfTest.SlideHeld;
+        private KeyCode SlideKeyNow => Profile.SlideKeyEntry != null ? Profile.SlideKeyEntry.Value.MainKey : Profile.SlideKey;
+
+        // The hero's own ability/dash keys (config): taps latched per frame, read once per fixed tick, so a quick tap between ticks still counts.
+        private readonly bool[] _keyTapped = new bool[4];
+        private float _dashDownAt = -10f;
 
         private void Awake() => _body = GetComponent<CharacterBody>();
         private void OnEnable() { if (_body != null) _body.onSkillActivatedAuthority += OnSkillUsed; }
@@ -232,11 +242,69 @@ namespace CursedAppleCuriosities.Deadlock
         private void Update()
         {
             if (!_body.hasEffectiveAuthority || !_body.isPlayerControlled) return;
-            KeyCode key = Profile.SlideKeyEntry != null ? Profile.SlideKeyEntry.Value.MainKey : Profile.SlideKey;
-            if (!Input.GetKeyDown(key)) return;
+            LatchKeys();
+            if (!Input.GetKeyDown(SlideKeyNow)) return;
             bool air = _body.characterMotor != null && !_body.characterMotor.isGrounded;
             if (air && Time.time - _lastSlideTap <= Profile.DownDashDoubleTap) { _downDashAt = Time.time; _lastSlideTap = -10f; }
             else _lastSlideTap = Time.time;
+        }
+
+        /// <summary>Keys go to the game, not to chat, the console or a menu.</summary>
+        private bool InputAllowed
+        {
+            get
+            {
+                LocalUser? user = _body.master != null && _body.master.playerCharacterMasterController != null ? _body.master.playerCharacterMasterController.networkUser?.localUser : null;
+                return user != null && !user.isUIFocused;
+            }
+        }
+
+        private void LatchKeys()
+        {
+            if (!InputAllowed) return;
+            DeadlockMovementProfile p = Profile;
+            if (Input.GetKeyDown(DeadlockMovementProfile.KeyOf(p.DashKeyEntry))) _dashDownAt = Time.time;
+            _keyTapped[0] |= Input.GetKeyDown(DeadlockMovementProfile.KeyOf(p.PrimaryKeyEntry));
+            _keyTapped[1] |= Input.GetKeyDown(DeadlockMovementProfile.KeyOf(p.SecondaryKeyEntry));
+            _keyTapped[2] |= Input.GetKeyDown(DeadlockMovementProfile.KeyOf(p.UtilityKeyEntry));
+            _keyTapped[3] |= Input.GetKeyDown(DeadlockMovementProfile.KeyOf(p.SpecialKeyEntry));
+        }
+
+        /// <summary>The hero has its own dash key bound (otherwise RoR2's sprint control dashes).</summary>
+        public bool HasDashKey => DeadlockMovementProfile.KeyOf(Profile.DashKeyEntry) != KeyCode.None;
+
+        /// <summary>The hero's own dash key was just pressed. Presses older than a moment are dropped.</summary>
+        public bool ConsumeDash()
+        {
+            bool fresh = Time.time - _dashDownAt <= 0.15f;
+            _dashDownAt = -10f;
+            return fresh;
+        }
+
+        /// <summary>
+        /// After RoR2 pushed this tick's skill buttons (from its own controls): a skill with its own key bound in the
+        /// hero's section takes that key's state instead. Owner only.
+        /// </summary>
+        public void ApplySkillKeys(InputBankTest bank)
+        {
+            bool allowed = InputAllowed;
+            DeadlockMovementProfile p = Profile;
+            OverrideButton(ref bank.skill1, p.PrimaryKeyEntry, 0, allowed);
+            OverrideButton(ref bank.skill2, p.SecondaryKeyEntry, 1, allowed);
+            OverrideButton(ref bank.skill3, p.UtilityKeyEntry, 2, allowed);
+            OverrideButton(ref bank.skill4, p.SpecialKeyEntry, 3, allowed);
+        }
+
+        private void OverrideButton(ref InputBankTest.ButtonState b, ConfigEntry<KeyboardShortcut>? entry, int i, bool allowed)
+        {
+            KeyCode key = DeadlockMovementProfile.KeyOf(entry);
+            bool tapped = _keyTapped[i];
+            _keyTapped[i] = false;
+            if (key == KeyCode.None) return;
+            bool down = allowed && (Input.GetKey(key) || tapped);
+            b.hasPressBeenClaimed &= down;
+            b.down = down; // PushState already moved last tick's (our) state into wasDown
+            if (down && !b.wasDown) b.lastPressedTimeStamp = Run.FixedTimeStamp.now;
         }
 
         /// <summary>A down-dash was just asked for (the owning state performs it). Asks older than a moment are dropped.</summary>
@@ -516,6 +584,8 @@ namespace EntityStates.CursedApple.Deadlock
         /// <summary>The dash key this frame, for any state on a Deadlock hero (Grey Talon dashes inside Rain of Arrows' glide).</summary>
         public static bool SprintKeyPressed(CharacterBody body, InputBankTest bank)
         {
+            DeadlockMover? mover = body.GetComponent<DeadlockMover>();
+            if (mover != null && mover.HasDashKey) return mover.ConsumeDash() || CursedAppleCuriosities.Testing.SelfTest.Active && bank.sprint.justPressed;
             var player = body.master != null && body.master.playerCharacterMasterController != null
                 ? body.master.playerCharacterMasterController.networkUser?.localUser?.inputPlayer : null;
             return player != null ? player.GetButtonDown(RewiredConsts.Action.Sprint) : bank.sprint.justPressed;

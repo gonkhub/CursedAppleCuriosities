@@ -7,7 +7,7 @@ namespace CursedAppleCuriosities.Survivors.Vyper
     /// <summary>
     /// Vyper's numbers (Deadlock's hero_viper / ability_viper_*, read from client 6774; her icons are named kali_*).
     /// Deadlock values are kept where RoR2 has the same scale (metres, seconds, speeds; 39.37 hu = 1 m); damage becomes
-    /// RoR2 damage coefficients and cooldowns RoR2-length. Headline knobs are in the [Vyper] config section.
+    /// RoR2 damage coefficients and cooldowns RoR2-length.
     /// </summary>
     public static class VyperData
     {
@@ -91,28 +91,9 @@ namespace CursedAppleCuriosities.Survivors.Vyper
         public const float BolaLifetime = 2f;           // Deadlock m_flBulletLifetime
         public const float BolaDrop = 4f;               // m/s2: a mostly straight throw with a little drop (~2 m over the first 50 m)
 
-        public static void Bind(ConfigFile c)
+        public static void Bind(ConfigFile c) // the hero's config section is only its keybind layout (3.0)
         {
             Movement.Bind(c, Section);
-            BaseHealth = c.Bind(Section, "Base Health", BaseHealth, "Vyper max health at level 1 (+30 per level).").Value;
-            GunDamage = c.Bind(Section, "Gun - Damage", GunDamage, "Damage coefficient per bullet (full-auto, proc coefficient 1).").Value;
-            GunCycle = c.Bind(Section, "Gun - Time Between Shots", GunCycle, "Seconds between shots before attack speed.").Value;
-            GunSlideFireRate = c.Bind(Section, "Gun - Slide Fire Rate Bonus", GunSlideFireRate, "Extra fire rate while sliding (0.5 = +50%).").Value;
-            GunSpreadMin = c.Bind(Section, "Gun - Spread Min", GunSpreadMin, "Degrees of spread on the first shot.").Value;
-            GunSpreadPerShot = c.Bind(Section, "Gun - Spread Per Shot", GunSpreadPerShot, "Degrees of spread added by each shot while holding the trigger.").Value;
-            GunSpreadMax = c.Bind(Section, "Gun - Spread Max", GunSpreadMax, "Most degrees of spread when holding the trigger.").Value;
-            DaggerDamage = c.Bind(Section, "Screwjab Dagger - Damage", DaggerDamage, "Damage coefficient of a dagger.").Value;
-            DaggerStackDamage = c.Bind(Section, "Screwjab Dagger - Damage Per Stack", DaggerStackDamage, "Damage coefficient added for each earlier dagger on the same target (no cap).").Value;
-            DaggerRecharge = c.Bind(Section, "Screwjab Dagger - Recharge", DaggerRecharge, "Seconds per charge (2 charges).").Value;
-            VenomMinDamage = c.Bind(Section, "Lethal Venom - Min Damage", VenomMinDamage, "Damage coefficient against a target at full health.").Value;
-            VenomMaxDamage = c.Bind(Section, "Lethal Venom - Max Damage", VenomMaxDamage, "Damage coefficient against a target at 30% health or lower.").Value;
-            VenomRange = c.Bind(Section, "Lethal Venom - Range", VenomRange, "Metres.").Value;
-            VenomCooldown = c.Bind(Section, "Lethal Venom - Cooldown", VenomCooldown, "Seconds.").Value;
-            BolaDamage = c.Bind(Section, "Petrifying Bola - Damage", BolaDamage, "Damage coefficient to everything in the blast.").Value;
-            BolaDirectDamage = c.Bind(Section, "Petrifying Bola - Direct Hit Damage", BolaDirectDamage, "Extra damage coefficient to the enemy hit directly.").Value;
-            BolaRadius = c.Bind(Section, "Petrifying Bola - Radius", BolaRadius, "Metres.").Value;
-            PetrifySeconds = c.Bind(Section, "Petrifying Bola - Petrify Duration", PetrifySeconds, "Seconds enemies are petrified (stunned and immune to everything but Lethal Venom).").Value;
-            BolaCooldown = c.Bind(Section, "Petrifying Bola - Cooldown", BolaCooldown, "Seconds.").Value;
         }
 
         // ---- Deadlock assets (read from the player's own install, never shipped) ----
@@ -122,6 +103,10 @@ namespace CursedAppleCuriosities.Survivors.Vyper
         public const string MuzzleBone = "muzzle_fx";
 
         public const string IconPortrait = "panorama/images/heroes/kali_sm_psd.vtex_c";
+
+        // The primary shows the weapon itself (user 3.0, like Celeste's baton): Deadlock's shop image of the hero's gun.
+
+        public const string IconGun = "panorama/images/heroes/guns/viper_gun_psd.vtex_c";
         public const string IconDagger = "panorama/images/hud/abilities/viper/viper_debuffdagger_psd.vtex_c";
         public const string IconVenom = "panorama/images/hud/abilities/viper/viper_venom_psd.vtex_c";
         public const string IconSlither = "panorama/images/hud/abilities/viper/viper_snakedash_psd.vtex_c";

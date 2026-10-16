@@ -31,7 +31,7 @@ namespace CursedAppleCuriosities.Items
         public override ItemTag[] ItemTags => new[] { ItemTag.Damage };
         protected override string IconFileName => "icon_spiritburn.png";
 
-        public const float DamageThreshold = 5f;
+        public const float DamageThreshold = 4f; // as Tankbuster and the elemental Bands (user 3.0; was 5)
         public const float ExplosionRadius = 15f;
         public static float BurnDpsPerStack;
         public const float BurnDuration    = 5f;
@@ -40,11 +40,20 @@ namespace CursedAppleCuriosities.Items
         // of the described DPS.)
         private const float BurnDpsPerMultiplier = 0.5f;
         public const float Cooldown         = 3f;
+        /// <summary>The cooldown, shown like the elemental Bands' and Tankbuster's (user 3.0): one stack per second left, counting down.</summary>
+        public static BuffDef? CooldownBuff;
 
         public override void Init(ConfigFile config)
         {
-            BurnDpsPerStack = config.Bind("Void", "Spirit Burn - Burn DPS Per Stack", 0.6f, // 0.35 before 1.8, which actually dealt ~0.09 (user: buff)
-                "Ignite damage per second as a fraction of your damage, per stack.").Value;
+            BurnDpsPerStack = 0.6f; // 0.35 before 1.8, which actually dealt ~0.09 (user: buff)
+            CooldownBuff = ScriptableObject.CreateInstance<BuffDef>();
+            CooldownBuff.name = "CursedApple_SpiritBurnCooldown";
+            CooldownBuff.canStack = true;
+            CooldownBuff.isDebuff = false;
+            CooldownBuff.isCooldown = true; // Duration Extender leaves it alone, cleansing doesn't clear it
+            CooldownBuff.buffColor = new Color(0.55f, 0.4f, 0.65f);
+            CooldownBuff.iconSprite = BuffIcon(IconFileName, CooldownBuff.buffColor);
+            ContentAddition.AddBuffDef(CooldownBuff);
             CreateLang();
             CreateItem();
             Hooks();
@@ -80,6 +89,7 @@ namespace CursedAppleCuriosities.Items
             GlobalEventManager self, DamageInfo damageInfo, GameObject victim)
         {
             orig(self, damageInfo, victim);
+            if (damageInfo == null || damageInfo.rejected) return; // blocked hits proc nothing (vanilla's own check is inside orig)
             if (!NetworkServer.active) return;
             if (damageInfo?.attacker == null || victim == null) return;
             if (damageInfo.procCoefficient <= 0f) return;
@@ -92,10 +102,12 @@ namespace CursedAppleCuriosities.Items
             if (attackerBody.damage <= 0f) return;
             if (damageInfo.damage / attackerBody.damage < DamageThreshold) return;
 
-            var tracker = attackerBody.GetComponent<SpiritBurnTracker>()
-                ?? attackerBody.gameObject.AddComponent<SpiritBurnTracker>();
-            if (!tracker.IsReady) return;
-            tracker.StartCooldown(Cooldown);
+            if (CooldownBuff != null)
+            {
+                if (attackerBody.HasBuff(CooldownBuff)) return; // still cooling down
+                // As vanilla does the Bands' cooldown: a stack per second, each lasting one second longer, so the icon counts down.
+                for (int i = 1; i <= Mathf.CeilToInt(Cooldown); i++) attackerBody.AddTimedBuff(CooldownBuff, i);
+            }
 
             var victimHC = victim.GetComponent<HealthComponent>();
             Vector3 blastCenter = victimHC?.body?.transform.position ?? damageInfo.position;
@@ -127,20 +139,5 @@ namespace CursedAppleCuriosities.Items
                     damageMultiplier);
             }
         }
-    }
-
-    public class SpiritBurnTracker : MonoBehaviour
-    {
-        private float _cooldownRemaining;
-
-        public bool IsReady => _cooldownRemaining <= 0f;
-
-        private void Update()
-        {
-            if (_cooldownRemaining > 0f)
-                _cooldownRemaining -= Time.deltaTime;
-        }
-
-        public void StartCooldown(float duration) => _cooldownRemaining = duration;
     }
 }

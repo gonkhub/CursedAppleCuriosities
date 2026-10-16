@@ -50,10 +50,8 @@ namespace CursedAppleCuriosities.Items
             ContentAddition.AddBuffDef(RadiantBuffDef);
 
             // New keys in 1.8: the old ones were flat HP (20 and 2), which would read as 2000% here.
-            HealFraction = config.Bind("Green", "Radiant Regen - Skill Cast Heal Percent", 0.05f,
-                "Share of max health healed when you use a secondary, utility or special skill (5 s cooldown).").Value;
-            RegenFraction = config.Bind("Green", "Radiant Regen - Regen Percent Per Radiance", 0.01f,
-                "Share of max health regenerated per second by each Radiance stack.").Value;
+            HealFraction = 0.05f;
+            RegenFraction = 0.01f;
             CreateLang();
             CreateItem();
             StaticItemDef = ItemDef;
@@ -106,6 +104,7 @@ namespace CursedAppleCuriosities.Items
             GlobalEventManager self, DamageInfo damageInfo, GameObject victim)
         {
             orig(self, damageInfo, victim);
+            if (damageInfo == null || damageInfo.rejected) return; // blocked hits proc nothing (vanilla's own check is inside orig)
             if (!NetworkServer.active) return;
             if (damageInfo?.attacker == null || victim == null) return;
             if (damageInfo.procCoefficient <= 0f) return; // ignore passive/item ticks

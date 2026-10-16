@@ -96,28 +96,13 @@ namespace CursedAppleCuriosities.Survivors.Mina
         public const float BuildUpPerRake = 40f;
         public const float BuildUpDecayDelay = 3f;      // Deadlock m_flBuildUpDecayDelay
         public const float BuildUpDecaySeconds = 2f;    // from full to nothing once decaying
+        // Every bit of meter gained also hits for a share of her damage (user 3.0): a whole meter's worth = this x her damage
+        // (a pistol shot's 18.4 = +18%, a bat +20%, Rake +40%). No procs, no meter of its own.
+        public const float BuildUpBonusPerMeter = 1f;
 
-        public static void Bind(ConfigFile c)
+        public static void Bind(ConfigFile c) // the hero's config section is only its keybind layout (3.0)
         {
             Movement.Bind(c, Section);
-            BaseHealth = c.Bind(Section, "Base Health", BaseHealth, "Mina max health at level 1 (+27 per level).").Value;
-            HoverFallSpeed = c.Bind(Section, "Umbrella Hover - Fall Speed", HoverFallSpeed, "Fastest fall (m/s) while holding jump in the air.").Value;
-            HoverSeconds = c.Bind(Section, "Umbrella Hover - Duration", HoverSeconds, "Seconds of hover per time in the air.").Value;
-            GunDamage = c.Bind(Section, "Pistol - Damage", GunDamage, "Damage coefficient per shot.").Value;
-            GunCycle = c.Bind(Section, "Pistol - Time Between Shots", GunCycle, "Seconds between shots before attack speed.").Value;
-            RakeDamage = c.Bind(Section, "Rake - Damage", RakeDamage, "Damage coefficient of the swipe.").Value;
-            RakeMissingHealth = c.Bind(Section, "Rake - Missing Health Damage", RakeMissingHealth, "Extra damage as a share of the target's missing health.").Value;
-            RakeKillHeal = c.Bind(Section, "Rake - Heal Per Kill", RakeKillHeal, "Share of Mina's max health healed per kill.").Value;
-            RakeCooldown = c.Bind(Section, "Rake - Cooldown", RakeCooldown, "Seconds.").Value;
-            RakeRange = c.Bind(Section, "Rake - Range", RakeRange, "Metres.").Value;
-            RetreatMetres = c.Bind(Section, "Sanguine Retreat - Distance", RetreatMetres, "Metres travelled as bats.").Value;
-            RetreatRecastWindow = c.Bind(Section, "Sanguine Retreat - Recast Window", RetreatRecastWindow, "Seconds to recast once.").Value;
-            RetreatCooldown = c.Bind(Section, "Sanguine Retreat - Cooldown", RetreatCooldown, "Seconds.").Value;
-            Bats = c.Bind(Section, "Nox Nostra - Bats", Bats, "Bats per cast, before Love Bites stacks.").Value;
-            BatMaxHealth = c.Bind(Section, "Nox Nostra - Bat Max Health Damage", BatMaxHealth, "Share of the target's max health a bat deals (bosses: half).").Value;
-            NoxCooldown = c.Bind(Section, "Nox Nostra - Cooldown", NoxCooldown, "Seconds.").Value;
-            LoveBitesDamage = c.Bind(Section, "Love Bites - Damage", LoveBitesDamage, "Damage coefficient of the burst.").Value;
-            LoveBitesTargetCooldown = c.Bind(Section, "Love Bites - Per Target Cooldown", LoveBitesTargetCooldown, "Seconds before the same enemy can be Love Bitten again.").Value;
         }
 
         // ---- Deadlock assets (read from the player's own install, never shipped) ----
@@ -127,6 +112,10 @@ namespace CursedAppleCuriosities.Survivors.Mina
         public const string MuzzleBone = "muzzle_fx";   // checked against her skeleton once the converter works again
 
         public const string IconPortrait = "panorama/images/heroes/vampirebat_sm_psd.vtex_c";
+
+        // The primary shows the weapon itself (user 3.0, like Celeste's baton): Deadlock's shop image of the hero's gun.
+
+        public const string IconGun = "panorama/images/heroes/guns/vampirebat_gun_psd.vtex_c";
         public const string IconRake = "panorama/images/hud/abilities/vampirebat/vampirebat_rake_psd.vtex_c";
         public const string IconRetreat = "panorama/images/hud/abilities/vampirebat/vampirebat_sanguine_retreat_psd.vtex_c";
         public const string IconLoveBites = "panorama/images/hud/abilities/vampirebat/vampirebat_love_bites_psd.vtex_c";

@@ -31,6 +31,8 @@ namespace CursedAppleCuriosities.Survivors.Apollo
                     b.AddTimedBuff(ApolloSurvivor.UltMaskBuff, ApolloData.UltCharge + ApolloData.UltMaxHold + ApolloData.UltLock + 1f);
                     break;
                 case ApolloUltKind.Strike:
+                    // A strike up (or off a ledge) leaves him in the air when the lock ends: no fall damage on that landing.
+                    CursedAppleCuriosities.Deadlock.DeadlockFallGuard.ProtectNextLanding(b.gameObject, 10f);
                     if (ApolloSurvivor.UltStreak != null)
                         EffectManager.SpawnEffect(ApolloSurvivor.UltStreak, new EffectData { origin = To, start = From }, true);
                     ApolloNet.Effect(ApolloSurvivor.UltEffect, To, 2f);

@@ -7,8 +7,7 @@ namespace CursedAppleCuriosities.Survivors.Seven
     /// <summary>
     /// Seven's numbers (Deadlock's hero_gigawatt / citadel_ability_lightning_ball, _static_charge_v2, ability_power_surge,
     /// citadel_ability_storm_cloud, read from client 6774). Deadlock values are kept where RoR2 has the same scale (metres,
-    /// seconds, speeds; 39.37 hu = 1 m); damage becomes RoR2 damage coefficients and cooldowns RoR2-length. Headline knobs
-    /// are in the [Seven] config section.
+    /// seconds, speeds; 39.37 hu = 1 m); damage becomes RoR2 damage coefficients and cooldowns RoR2-length.
     /// </summary>
     public static class SevenData
     {
@@ -118,40 +117,28 @@ namespace CursedAppleCuriosities.Survivors.Seven
         public const float StrikeRange = 120f;
         public const float StrikeKnockback = 3000f;     // Deadlock LightningStrikeKnockBackForce 500 (RoR2 force units)
 
-        public static void Bind(ConfigFile c)
+        public static void Bind(ConfigFile c) // the hero's config section is only its keybind layout (3.0)
         {
             Movement.Bind(c, Section);
-            BaseHealth = c.Bind(Section, "Base Health", BaseHealth, "Seven max health at level 1 (+33 per level).").Value;
-            GunDamage = c.Bind(Section, "Gun - Damage", GunDamage, "Damage coefficient per bullet (3-round bursts).").Value;
-            BurstCycle = c.Bind(Section, "Gun - Time Between Bursts", BurstCycle, "Seconds after a burst before the next (before attack speed).").Value;
-            GunFalloffStart = c.Bind(Section, "Gun - Falloff Start", GunFalloffStart, "Metres of full damage.").Value;
-            GunFalloffEnd = c.Bind(Section, "Gun - Falloff End", GunFalloffEnd, "Metres where damage reaches its floor (60%).").Value;
-            BallDps = c.Bind(Section, "Lightning Ball - Damage Per Second", BallDps, "Damage coefficient per second to every enemy inside the ball.").Value;
-            BallRadius = c.Bind(Section, "Lightning Ball - Radius", BallRadius, "Metres.").Value;
-            BallCooldown = c.Bind(Section, "Lightning Ball - Cooldown", BallCooldown, "Seconds.").Value;
-            StaticDamage = c.Bind(Section, "Static Charge - Damage", StaticDamage, "Damage coefficient when the charge goes off.").Value;
-            StaticStun = c.Bind(Section, "Static Charge - Stun", StaticStun, "Seconds enemies are stunned.").Value;
-            StaticRadius = c.Bind(Section, "Static Charge - Radius", StaticRadius, "Metres (grows with Mystic Expansion).").Value;
-            StaticCooldown = c.Bind(Section, "Static Charge - Cooldown", StaticCooldown, "Seconds.").Value;
-            SurgeChainDamage = c.Bind(Section, "Power Surge - Chain Damage", SurgeChainDamage, "Damage coefficient of the first jump of the shock.").Value;
-            SurgeChainGrowth = c.Bind(Section, "Power Surge - Chain Growth", SurgeChainGrowth, "Damage coefficient added on each further jump.").Value;
-            SurgeMoveSpeed = c.Bind(Section, "Power Surge - Move Speed", SurgeMoveSpeed, "Metres per second added while surging.").Value;
-            SurgeCooldown = c.Bind(Section, "Power Surge - Cooldown", SurgeCooldown, "Seconds.").Value;
-            StormDpsStart = c.Bind(Section, "Storm Cloud - Damage Per Second At Start", StormDpsStart, "Damage coefficient per second when the channel starts. Rises with the cloud's growth.").Value;
-            StormDpsEnd = c.Bind(Section, "Storm Cloud - Damage Per Second At End", StormDpsEnd, "Damage coefficient per second at the end of the channel.").Value;
-            StormFinalRadius = c.Bind(Section, "Storm Cloud - Final Radius", StormFinalRadius, "Metres the cloud reaches by the end of the channel (1000 = the whole map).").Value;
-            StrikeDamage = c.Bind(Section, "Storm Cloud - Lightning Strike Damage", StrikeDamage, "Damage coefficient of the one Lightning Strike per cast.").Value;
-            StormCooldown = c.Bind(Section, "Storm Cloud - Cooldown", StormCooldown, "Seconds.").Value;
         }
 
         // ---- Deadlock assets (read from the player's own install, never shipped) ----
 
         public const string DlModel = "models/heroes_staging/gigawatt_prisoner/gigawatt_prisoner.vmdl_c";
+
+        // Bunny Seven skin (user 3.0): funnymonkeyman's Bunny Seven, a Deadlock mod (https://gamebanana.com/mods/681692; a fan-made
+        // model on his skeleton, not Valve's and not shipped). The player drops its .vpk into a skins folder (or keeps it in Deadlock's
+        // addons); it is found by a file only it has and converted once, read-only, like his own model. Credit in the skin's name.
+        public const string BunnyKey = "seven_bunny";
+        public const string BunnyName = "Bunny Seven (by funnymonkeyman)";
+        public const string BunnyMarker = "models/heroes_staging/gigawatt_prisoner/materials/colourlightdarkpurple_vmat_g_tcolor_a9d5fdf5.vtex_c";
         public const float ModelHeightScale = 1.08f * 1.25f * 1.15f * 0.95f; // Lash's size, then x1.15 by playtest (heroes read small on the stand-in), then x0.95 (user, 1.7: all but Vyper a little smaller)
         public const string MuzzleBone = "muzzle_fx";
 
         // Deadlock's internal name for Seven is "gigawatt" (icons giga_*).
         public const string IconPortrait = "panorama/images/heroes/gigawatt_sm_psd.vtex_c";
+        // The primary shows the weapon itself (user 3.0, like Celeste's baton): Deadlock's shop image of the hero's gun.
+        public const string IconGun = "panorama/images/heroes/guns/gigawatt_gun_psd.vtex_c";
         public const string IconBall = "panorama/images/hud/abilities/giga_ball_psd.vtex_c";
         public const string IconStatic = "panorama/images/hud/abilities/giga_static_psd.vtex_c";
         public const string IconSurge = "panorama/images/hud/abilities/giga_chain_psd.vtex_c";

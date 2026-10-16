@@ -63,6 +63,8 @@ namespace CursedAppleCuriosities.Stages.DeadlockMap
         /// Sunken Plaza's purple pit.
         /// </summary>
         public float[] ImpLordSpot = System.Array.Empty<float>();
+        /// <summary>Where the pit's invader comes from (x, y, z in the section's Unity space): empty = beside whoever woke him.</summary>
+        public float[] InvaderSpot = System.Array.Empty<float>();
         /// <summary>
         /// The district's secrets: a blacked-out silhouette of each hero stands at its spot (cac_map_mark). Touching one unlocks
         /// that hero for everyone in the run.
@@ -103,11 +105,18 @@ namespace CursedAppleCuriosities.Stages.DeadlockMap
             Ropes = SunkenPlazaData.Ropes,
             // The sunken square in the plaza's middle (~30 x 30 m, 8 m below the street; Deadlock -2750, 2550, floor -1.1 m).
             ImpLordSpot = new[] { 16.51f, -1.10f, 24.13f, 0f },
+            // The invading Bebop comes out of the empty roofed room the pit's two stairways lead down into, on the way to the shop
+            // (user 3.0; found on the floor/roof render: flat floor at -3.25 m, roofed, nothing within 3 m of its centre).
+            InvaderSpot = new[] { 43.16f, -3.25f, 26.12f },
             Secrets = new[]
             {
-                new SecretSpot("Paradox", 20.45f, 6.51f, 2.05f, 88.0f),    // user's mark paradoxsecret2, 2026-10-15
+                new SecretSpot("Paradox", -47.79f, 11.19f, 17.10f, 88.5f), // user's mark moveparadoxhere, 2026-10-15 (the paradoxsecret2 spot scrapped)
                 new SecretSpot("Lash", 19.76f, 210.12f, -38.88f, -1.8f),   // user's mark paradoxsecret: the top of the district's highest building (user: "perfect for him")
             },
+            // The souls dealer's garage near the map's centre (Deadlock 3578_souls_dealer_shop_trigger and its fx
+            // point; Chinatown's mirror), a Cursed Broker every visit (user 3.0).
+            BrokerSpot = new[] { -1056f, 3108f, 464f, -1048f, 2977f },
+            WalkerSlot = new[] { -47.19f, 10.98f, -43.95f, 46.3f }, // the Walker's spot (user's mark sunkenplazawalker, 2026-10-15)
         };
 
         /// <summary>Haunted Lot: the Hidden King side west of the blue lane, around the yellow lane's southern Walker (stage 1). Newt altars and player spawns: to be marked in game.</summary>
@@ -132,7 +141,13 @@ namespace CursedAppleCuriosities.Stages.DeadlockMap
             Ropes = HauntedLotData.Ropes,
             NewtAltars = HauntedLotData.NewtAltars,
             PlayerSpawns = HauntedLotData.PlayerSpawns,
+            // North-east corner (user 3.0, mark hauntedlotbarrierblocksdoor, then the user's drawn correction): the barrier's notch ran
+            // across a doorway's mouth; it now curves straight from -1398, -2835 to -1890, -3268, the doorway and its ramp inside.
             Secrets = new[] { new SecretSpot("Bebop", 37.31f, 30.90f, 41.68f, -32.0f) }, // user's mark bebopsecret, 2026-10-15
+            // The Walker's spot (user 3.0: every district's Walker holds the teleporter or a major side objective). Not marked in
+            // game: Deadlock's own Walker there (npc_boss_tier2 at -6272, -4736, 384), the same way the three marked spots match
+            // their Walkers within a metre; facing the district's middle (Deadlock gives it no angle).
+            WalkerSlot = new[] { 31.39f, 9.75f, -37.39f, -40f },
         };
 
         /// <summary>Umbria University: the Archmother side east of the blue lane, around the purple lane's northern Walker (stage 2). Newt altars and player spawns: to be marked in game.</summary>
@@ -184,9 +199,11 @@ namespace CursedAppleCuriosities.Stages.DeadlockMap
             SubwayTeleports = ChinatownData.SubwayTeleports,
             InteractableSpots = ChinatownData.InteractableSpots,
             Ropes = ChinatownData.Ropes,
-            // The legendary chest on the bell tower's top floor: inside the tower's footprint, under its roof (rays from just
-            // above the top of its climb rope, ChinatownData.Ropes[2]), beside where the rope's geyser lands you.
-            FixedInteractables = new[] { FixedSpawn.OnTop(FixedSpawn.LegendaryChest, 2636f, -2532f, 3532f, -1256f, below: 2630f + 120f, besideX: 3088f, besideY: -1888f) },
+            // The legendary chest where the user put it (mark movelegendarychesthere, 2026-10-15); it was on the bell tower's top floor.
+            FixedInteractables = new[] { new FixedSpawn(FixedSpawn.LegendaryChest, -74.97f, 63.52f, -28.33f, 178.0f) },
+            // North edge by the street west of the bell tower (user 3.0, mark barrierfollowthiswall, then the user's drawn correction):
+            // along the building's south and east walls, the railing at y -3712 and up to the north edge; the sunken area east of it
+            // is in the map (was straight across the street at y -4520, then x 1076 up to y -3230).
             NewtAltars = ChinatownData.NewtAltars,
             PlayerSpawns = ChinatownData.PlayerSpawns,
             WalkerSlot = new[] { 9.43f, 10.17f, 47.00f, -89.7f }, // the Walker's spot (user's mark, 2026-10-14)
@@ -338,7 +355,7 @@ namespace CursedAppleCuriosities.Stages.DeadlockMap
             -3292, -2240, 270, -3100, -2112, 1030,
             -7344, -2512, 271, -7152, -2320, 1152,
         };
-        public static readonly float[] Outline = {-9055, -157, -8268, -118, -7835, -197, -7717, -354, -7618, -236, -6004, -236, -4547, -276, -4331, -354, -925, -354, -472, -433, -433, -2283, -965, -2717, -1398, -2835, -1909, -2795, -2106, -2992, -1890, -3268, -1811, -3622, -1811, -4882, -2008, -5276, -2795, -5315, -2953, -5472, -3051, -6220, -3248, -6378, -3189, -7323, -4567, -7323, -5335, -6929, -5728, -6575, -6181, -6339, -6693, -5787, -6791, -5787, -7559, -4724, -7953, -4331, -8366, -4331, -8701, -4213, -8957, -3622, -9055, -2953 };
+        public static readonly float[] Outline = {-9055, -157, -8268, -118, -7835, -197, -7717, -354, -7618, -236, -6004, -236, -4547, -276, -4331, -354, -925, -354, -472, -433, -433, -2283, -965, -2717, -1398, -2835, -1520, -2930, -1657, -3034, -1778, -3136, -1890, -3268, -1811, -3622, -1811, -4882, -2008, -5276, -2795, -5315, -2953, -5472, -3051, -6220, -3248, -6378, -3189, -7323, -4567, -7323, -5335, -6929, -5728, -6575, -6181, -6339, -6693, -5787, -6791, -5787, -7559, -4724, -7953, -4331, -8366, -4331, -8701, -4213, -8957, -3622, -9055, -2953 };
         public static readonly int[] VentTunnels = { // min x, y, z, max x, y, z
             -832, -1696, -640, 1280, -1408, -192,
             -832, -1952, -640, 192, -1696, -192,
@@ -500,7 +517,7 @@ namespace CursedAppleCuriosities.Stages.DeadlockMap
             3864, -904, 272, 4024, -744, 1130,
             3008, -1968, 400, 3168, -1808, 2630,
         };
-        public static readonly float[] Outline = {-217, -5354, -200, -4520, 1076, -4520, 1076, -3230, 480, -3230, 531, -472, 610, -433, 2480, -433, 3720, -591, 9114, -591, 9016, -1654, 9016, -3346, 8740, -5079, 8386, -5276, 7126, -5276, 6949, -5472, 6890, -6142, 6732, -6260, 5315, -6260, 5118, -6457, 5157, -7795, 5079, -7874, 1201, -7795, 1083, -7441, 925, -7283, 610, -7244, 492, -7087, 433, -5630, 276, -5472 };
+        public static readonly float[] Outline = {-217, -5354, -200, -4520, 71, -4520, 71, -4285, 454, -4285, 454, -3712, 882, -3712, 882, -3230, 480, -3230, 531, -472, 610, -433, 2480, -433, 3720, -591, 9114, -591, 9016, -1654, 9016, -3346, 8740, -5079, 8386, -5276, 7126, -5276, 6949, -5472, 6890, -6142, 6732, -6260, 5315, -6260, 5118, -6457, 5157, -7795, 5079, -7874, 1201, -7795, 1083, -7441, 925, -7283, 610, -7244, 492, -7087, 433, -5630, 276, -5472 };
         public static readonly int[] VentTunnels = { // min x, y, z, max x, y, z
             -832, -1696, -640, 1280, -1408, -192,
             256, -1408, -640, 384, -1296, -448,

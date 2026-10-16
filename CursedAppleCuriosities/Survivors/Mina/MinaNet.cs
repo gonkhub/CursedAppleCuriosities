@@ -180,14 +180,17 @@ namespace CursedAppleCuriosities.Survivors.Mina
             else add = MinaData.BuildUpPerShot * Mathf.Clamp01(info.procCoefficient);
             if (add <= 0f) return;
             var lb = victim.GetComponent<MinaLoveBites>() ?? victim.gameObject.AddComponent<MinaLoveBites>();
-            lb.Build(mina, add);
+            lb.Build(mina, add, info.crit);
         }
 
-        private void Build(CharacterBody mina, float add)
+        private void Build(CharacterBody mina, float add, bool crit)
         {
             if (_readyAt.TryGetValue(mina, out float ready) && Time.time < ready) return; // still on Love Bites' per-target wait
             if (!_marks.TryGetValue(mina, out Mark m)) _marks[mina] = m = new Mark();
+            float gained = Mathf.Min(add, MinaData.BuildUpMax - m.BuildUp);
             m.BuildUp += add;
+            BonusHit(mina, gained, crit);
+            if (_body.healthComponent == null || !_body.healthComponent.alive) { _marks.Remove(mina); return; } // the bonus finished it
             m.LastHit = Time.time;
             if (m.BuildUp >= MinaData.BuildUpMax)
             {
@@ -200,6 +203,15 @@ namespace CursedAppleCuriosities.Survivors.Mina
             }
             EquipmentFx.Sound("mina_lovebites_buildup", _body.corePosition, _body.gameObject);
             Show();
+        }
+
+        /// <summary>Server: the meter went up by gained: a small hit worth that share of a whole meter (user 3.0).</summary>
+        private void BonusHit(CharacterBody mina, float gained, bool crit)
+        {
+            if (gained <= 0f || _body.healthComponent == null) return;
+            MinaNet.Bursting = true; // its damage builds no meter of its own
+            try { MinaNet.Hit(mina, _body.healthComponent, MinaData.BuildUpBonusPerMeter * gained / MinaData.BuildUpMax * mina.damage, crit, Vector3.zero, DamageSource.NoneSpecified, 0f); }
+            finally { MinaNet.Bursting = false; }
         }
 
         private void Burst(CharacterBody mina)

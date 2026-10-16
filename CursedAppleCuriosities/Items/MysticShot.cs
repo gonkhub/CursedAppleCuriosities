@@ -31,10 +31,8 @@ namespace CursedAppleCuriosities.Items
 
         public override void Init(ConfigFile config)
         {
-            BaseDamagePercent = config.Bind("White", "Mystic Shot - Burst Damage", 1.0f,
-                "Bonus burst damage (fraction of base damage) on the periodic charged hit at 1 stack.").Value;
-            DamagePercentPerStack = config.Bind("White", "Mystic Shot - Burst Damage Per Stack", 1.0f,
-                "Additional burst damage (fraction of base damage) per extra copy of the item.").Value;
+            BaseDamagePercent = 1.0f;
+            DamagePercentPerStack = 1.0f;
             CreateLang();
             CreateItem();
             Hooks();
@@ -50,6 +48,7 @@ namespace CursedAppleCuriosities.Items
             GlobalEventManager self, DamageInfo damageInfo, GameObject victim)
         {
             orig(self, damageInfo, victim);
+            if (damageInfo == null || damageInfo.rejected) return; // blocked hits proc nothing (vanilla's own check is inside orig)
             if (!NetworkServer.active) return;
             if (damageInfo?.attacker == null || victim == null) return;
             if (damageInfo.procCoefficient <= 0f) return;

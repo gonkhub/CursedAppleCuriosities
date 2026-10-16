@@ -55,14 +55,9 @@ namespace CursedAppleCuriosities.Items
             FrenzyBuffDef.iconSprite = BuffIcon(IconFileName, color);
             ContentAddition.AddBuffDef(FrenzyBuffDef);
 
-            MaxDamageBase = config.Bind("Red", "Frenzy - Max Damage At Brink", 0.40f,
-                "Maximum bonus damage at near-zero health (1 stack).").Value;
-            MaxAttackSpeedBase = config.Bind("Red", "Frenzy - Max Attack Speed At Brink", 0.50f,
-                "Maximum bonus attack speed at near-zero health (1 stack).").Value;
-            MaxMoveSpeedBase = config.Bind("Red", "Frenzy - Max Move Speed At Brink", 0.25f,
-                "Maximum bonus move speed at near-zero health (1 stack).").Value;
-            HoldSeconds = config.Bind("Red", "Frenzy - Duration", HoldSeconds,
-                "Seconds the bonus stays, at the strongest it reached, after your health climbs back above the threshold.").Value;
+            MaxDamageBase = 0.40f;
+            MaxAttackSpeedBase = 0.50f;
+            MaxMoveSpeedBase = 0.25f;
             CreateLang();
             CreateItem();
             Hooks();

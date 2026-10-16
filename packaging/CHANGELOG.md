@@ -1,22 +1,66 @@
 # Changelog
 
 ## 3.0.0
-- Updating from an older version: your config file keeps the values it already has, so changed defaults (like the Cursed
-  Broker's chance) only apply to settings you reset, or if you delete `BepInEx/config/com.cursedapple.curiosities.cfg`.
-- Five new survivors from Deadlock: **Shiv**, **Mina**, **Paradox**, **Bebop** and **Apollo** (thirteen in all).
-- **Unlockables**: a new profile starts with **Abrams** and **Seven**. Mina, Bebop, Paradox and Lash are hidden as
-  silhouettes in the Deadlock districts; every other hero unlocks through their own challenge (see the Challenges menu).
+- **Settings cleaned up**: the config now only holds each hero's key layout, audio volumes and your Deadlock folder/converter.
+  Every balance number is built in, and the old tuning entries are removed from your config file the first time you start
+  the game, so everyone plays the same numbers. You no longer need to reset or delete your config after updating.
+- Five new survivors from Deadlock: **Shiv**, **Mina**, **Paradox**, **Bebop** and **Apollo** (thirteen in all). The
+  character select is sorted A-Z, vanilla survivors included.
+
+### Unlockables
+- **Every Deadlock hero starts locked.** Mina, Bebop, Paradox and Lash are hidden as silhouettes in the Deadlock
+  districts (the Challenges menu gives a hint for each); every other hero unlocks through their own challenge, playable
+  as any survivor (e.g. Abrams: Infernal Resilience, Seven: Electric Chair).
 - **Alt skills** for Abrams, Seven, Celeste, Viscous, Shiv, Paradox, Bebop and Apollo start locked behind challenges.
-- **Mastery skins** for all thirteen heroes (beat the game or obliterate on Monsoon), plus a Chrome skin for Bebop.
-- **Deadlock district stages**: if you own Deadlock, four districts of its map can replace a stage: **Haunted Lot**
-  (stage 1), **Umbria University** (2), **Sunken Plaza** (3) and **Chinatown** (4), each at a 10% chance and only when
-  every player in the lobby has the same map converted. Their shops charge a Shop Tax (20%) over chest prices, the climb
-  ropes launch you like geysers, and Sunken Plaza's pit holds a hostile Bebop.
+- **Mastery skins** for all thirteen heroes (beat the game or obliterate on Monsoon).
+- **Challenge skins**: Abrams Crimson, Mina Blackmore Colors, Apollo Sapphire, Viscous Pisscous and Bebop Chrome.
+- **Fan-made model skins**: Celeste's **Spirit Guardian** (TSelky's Spirit Guardian Celeste, challenge **Celeste: Encore**)
+  and Seven's **Bunny Seven** (funnymonkeyman's Bunny Seven, challenge **Seven: Hare Trigger**). They read your own copy
+  of the mod's `.vpk` (see the README); without it the skin shows the hero's own model.
+
+### Deadlock district stages
+- If you own Deadlock, four districts of its map can replace a stage: **Haunted Lot** (stage 1), **Umbria University** (2),
+  **Sunken Plaza** (3) and **Chinatown** (4), each at a 10% chance and only when every player in the lobby has the same map
+  converted.
+- Their shops sell items at chest prices plus a 20% Shop Tax, and every purchase raises that shop's prices by another 25%
+  for the stage. The climb ropes launch you like geysers, and Sunken Plaza's pit holds a hostile Bebop.
+
+### Balance
 - **Cursed Broker**: 2% chance on any stage (was 10%); stage 3 and Bazaar chances unchanged. Chinatown's souls dealer
   garage always has one.
+- **Spirit Snatch**: barrier equal to 10% (+10% per stack) of the damage you deal to enemies within 13 m, uncapped (was 1%
+  of max health per hit).
+- **Toxic Bullets**: hits fill a Toxin meter on the enemy (1000% of your damage fills it), which drains if you stop
+  hitting. Full: poison for 0.5% of max health per second per stack (was 1%) and -50% healing.
+- **Intensifying Magazine**: +45% at one stack, +15% per extra stack (was +30% each). The ramp now shows as a buff.
+- **Mystic Expansion**: +30% at one stack, +15% per extra stack (was +30% each).
+- **Duration Extender**: +15% at one stack, +7.5% per extra stack (was +15% each).
+- **Tankbuster** and **Spirit Burn** trigger on hits of 400% or more (was 500%).
+- **Fortitude**: +15% max health per stack and nothing else.
+- **Lifestrike**: no cap on healing per hit. **Sprint Boots**: +1 health/s per stack out of danger (was +0.5).
+- **Trophy Collector**: $10 per minute per Trophy, +50% for each Trophy beyond the first.
 - **Abrams**: Seismic Impact is his default special, Heavy Melee the alternate.
 - **Apollo**'s Riposte only parries; press it again within 3 s to dash-counter the enemy you aim at.
-- **Bebop**'s Sticky Bomb can go on allies.
+- **Bebop**'s Sticky Bomb can go on allies, and Humble Pie is drawn as a red ray to the crosshair.
+- **Celeste**: each Radiant Daggers cast's Radiance stacks expire on their own 10 s timer, +10% damage each (was 7%).
+  Light Eater's mark makes all her damage to the enemy +125%.
+- **Mina** can cast Sanguine Retreat during Nox Nostra and pick the ult back up where she reforms.
+- **Shiv**: Bloodletting defers 75% of damage taken (was 50%) and drains exactly what its yellow bar shows. Full Rage holds
+  6 s before draining. Slice'n'Dice always keeps at least 1 s of cooldown.
+- **Victor**: Shocking Reanimation cooldown 120 s (was 90 s).
+- **Vyper**'s petrified enemies turn to stone and freeze in place.
+
+### Fixes
+- **Spellslinger**'s shorter cooldowns now actually apply (they never did).
+- Mod on-hit items no longer trigger on hits the target blocks (Petrified enemies, invulnerable bosses, Tougher Times).
+- **Berserker** no longer gains Rage from blocked hits; **Counterspell**'s ward is no longer used up by damage-over-time
+  ticks; **Ethereal Shift** blocks every kind of damage.
+- **Soul Urn** only drops when an enemy hits you (not self-damage, falls or allies).
+- **Mystic Expansion** grows Captain's supply-drop range. Seven's hits show his lightning sparks; Shiv's full-Rage glow
+  shows.
+- **Focus Lens** echoes exactly 50% of the damage the target took.
+- Lobby intros clean up their sounds and effects when you switch heroes mid-intro; Paradox's Pulse Bomb no longer
+  cancels her Kinetic Carbine; Mina's ult pose no longer sticks.
 
 ## 2.0.0
 - Updating from an older version: your config file keeps the values it already has, so balance changes from past

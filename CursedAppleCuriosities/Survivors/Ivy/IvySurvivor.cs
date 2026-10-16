@@ -231,7 +231,7 @@ namespace CursedAppleCuriosities.Survivors.Ivy
             Survivor.outroFlavorToken = Token + "OUTRO";
             Survivor.mainEndingEscapeFailureFlavorToken = Token + "FAILURE";
             Survivor.primaryColor = Color;
-            Survivor.desiredSortPosition = 112f;
+            Survivor.desiredSortPosition = 105f; // RosterOrder re-sorts the whole roster A-Z at load (user 3.0)
             ContentAddition.AddSurvivorDef(Survivor);
         }
 
@@ -283,7 +283,7 @@ namespace CursedAppleCuriosities.Survivors.Ivy
                 $"Hold to aim, release to throw a bomb that grows a {IvyData.ThornsRadius:0} m kudzu patch for {IvyData.ThornsDuration:0}s, dealing <style=cIsDamage>{D(IvyData.ThornsDps)} damage per second</style> and <style=cIsUtility>slowing</style> enemies in it.");
             LanguageAPI.Add(Token + "KUDZU_NAME", "Kudzu Connection");
             LanguageAPI.Add(Token + "KUDZU_DESC",
-                $"Always bound to the nearest ally within {IvyData.TetherRange:0} m: both gain <style=cIsDamage>+{D(IvyData.TetherAttackSpeed)} attack speed</style> and <style=cIsHealing>{D(IvyData.TetherLifesteal)} lifesteal</style>, and share <style=cIsHealing>{D(IvyData.TetherSharedHeal)}</style> of healing. Alone, half the bonuses." + Kit.MovementLine(IvyData.Movement));
+                $"Always bound to the nearest ally within {IvyData.TetherRange:0} m: both gain <style=cIsDamage>+{D(IvyData.TetherAttackSpeed)} attack speed</style> and <style=cIsHealing>{D(IvyData.TetherLifesteal)} lifesteal</style>, and share <style=cIsHealing>{D(IvyData.TetherSharedHeal)}</style> of healing. Alone, half the bonuses.");
             LanguageAPI.Add(Token + "STONE_NAME", "Stone Form");
             LanguageAPI.Add(Token + "STONE_DESC",
                 $"Turn to stone: <style=cIsUtility>invulnerable</style> and <style=cIsHealing>healing {D(IvyData.StoneHeal)} max health per second</style>. Slam down for <style=cIsDamage>{D(IvyData.StoneDamage)} damage</style>, <style=cIsUtility>stunning</style>.");

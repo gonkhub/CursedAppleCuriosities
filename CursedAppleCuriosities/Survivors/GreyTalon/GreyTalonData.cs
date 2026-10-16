@@ -96,29 +96,9 @@ namespace CursedAppleCuriosities.Survivors.GreyTalon
         public const float OwlCameraHold = 0.8f;        // Deadlock m_flCameraHoldAtExplosion
         public const float OwlCameraBack = 4f, OwlCameraUp = 1f;
 
-        public static void Bind(ConfigFile c)
+        public static void Bind(ConfigFile c) // the hero's config section is only its keybind layout (3.0)
         {
             Movement.Bind(c, Section);
-            BaseHealth = c.Bind(Section, "Base Health", BaseHealth, "Grey Talon max health at level 1 (+30 per level).").Value;
-            BowDamage = c.Bind(Section, "Bow - Damage", BowDamage, "Damage coefficient per arrow.").Value;
-            BowCycle = c.Bind(Section, "Bow - Time Between Shots", BowCycle, "Seconds between shots before attack speed.").Value;
-            BowFalloffStart = c.Bind(Section, "Bow - Falloff Start", BowFalloffStart, "Metres of full damage.").Value;
-            BowFalloffEnd = c.Bind(Section, "Bow - Falloff End", BowFalloffEnd, "Metres where damage reaches its floor (50%).").Value;
-            ChargedDamage = c.Bind(Section, "Charged Shot - Damage", ChargedDamage, "Damage coefficient to every enemy it pierces.").Value;
-            ChargedRadius = c.Bind(Section, "Charged Shot - Hit Radius", ChargedRadius, "Metres around the arrow's path that it hits.").Value;
-            ChargedCooldown = c.Bind(Section, "Charged Shot - Cooldown", ChargedCooldown, "Seconds.").Value;
-            RainCooldown = c.Bind(Section, "Rain of Arrows - Cooldown", RainCooldown, "Seconds.").Value;
-            RainLaunchSpeed = c.Bind(Section, "Rain of Arrows - Leap Speed", RainLaunchSpeed, "Metres per second of the leap (kept if you cancel it on the way up).").Value;
-            RainHeight = c.Bind(Section, "Rain of Arrows - Leap Height", RainHeight, "Metres up where the leap stops and the glide begins.").Value;
-            RainRepeatHit = c.Bind(Section, "Rain of Arrows - Repeat Hit Damage", RainRepeatHit, "Damage multiplier for each further arrow of one 5-arrow shot that hits the same enemy.").Value;
-            RainDuration = c.Bind(Section, "Rain of Arrows - Glide", RainDuration, "Seconds of glide and split arrows.").Value;
-            OwlDamage = c.Bind(Section, "Guided Owl - Damage", OwlDamage, "Damage coefficient of the owl's blast.").Value;
-            OwlBossBonus = c.Bind(Section, "Guided Owl - Boss Kill Bonus", OwlBossBonus, "Extra owl damage for each boss, elite or miniboss it has killed this run (0.1 = +10%).").Value;
-            OwlRadius = c.Bind(Section, "Guided Owl - Radius", OwlRadius, "Metres.").Value;
-            OwlCooldown = c.Bind(Section, "Guided Owl - Cooldown", OwlCooldown, "Seconds.").Value;
-            OwlSpeed = c.Bind(Section, "Guided Owl - Cruise Speed", OwlSpeed, "Metres per second without forward held (it speeds up to 36 while forward is held).").Value;
-            OwlExitGrace = c.Bind(Section, "Guided Owl - Exit Grace", OwlExitGrace, "Seconds Grey Talon stays invulnerable and unseen after the owl ends or is released.").Value;
-            OwlTurnDegPerSec = c.Bind(Section, "Guided Owl - Turn Rate", OwlTurnDegPerSec, "Degrees per second the owl turns toward where you look.").Value;
         }
 
         /// <summary>The bow's damage at a distance: full to the falloff start, easing to the floor at its end.</summary>
@@ -139,6 +119,10 @@ namespace CursedAppleCuriosities.Survivors.GreyTalon
         public const string PerchedOwlMesh = "owl_bodygroup"; // the owl on his arm: hidden (user)
 
         public const string IconPortrait = "panorama/images/heroes/archer_sm_psd.vtex_c";
+
+        // The primary shows the weapon itself (user 3.0, like Celeste's baton): Deadlock's shop image of the hero's gun.
+
+        public const string IconGun = "panorama/images/heroes/guns/archer_gun_psd.vtex_c";
         public const string IconCharged = "panorama/images/hud/abilities/archer/archer_charged_shot_psd.vtex_c";
         public const string IconRain = "panorama/images/hud/abilities/archer/archer_power_jump_psd.vtex_c";
         public const string IconOwl = "panorama/images/hud/abilities/archer/archer_guided_arrow_psd.vtex_c";

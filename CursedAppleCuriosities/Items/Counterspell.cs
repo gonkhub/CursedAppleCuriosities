@@ -47,10 +47,8 @@ namespace CursedAppleCuriosities.Items
 
         public override void Init(ConfigFile config)
         {
-            CooldownSeconds = config.Bind("Equipment", "Counterspell - Cooldown", 25f,
-                "Equipment cooldown in seconds.").Value;
-            HealFraction = config.Bind("Equipment", "Counterspell - Heal On Block", 0.08f,
-                "Max HP healed on a successful block (0 = pure block, no heal).").Value;
+            CooldownSeconds = 25f;
+            HealFraction = 0.08f;
 
             var color               = new Color(0.4f, 0.8f, 1f);
             WardBuffDef             = ScriptableObject.CreateInstance<BuffDef>();
@@ -95,8 +93,10 @@ namespace CursedAppleCuriosities.Items
                 && self.body != null
                 && damageInfo != null
                 && damageInfo.damage > 0f
-                // DoT ticks shouldn't waste the ward — it should save a real hit.
-                && damageInfo.dotIndex == DotController.DotIndex.None)
+                // DoT ticks shouldn't waste the ward — it should save a real hit. The mod's own ticks (Bloodletting,
+                // Toxic Bullets) carry the DoT flag but no dotIndex.
+                && damageInfo.dotIndex == DotController.DotIndex.None
+                && (damageInfo.damageType.damageType & DamageType.DoT) == 0)
             {
                 var ward = self.body.GetComponent<CounterspellWard>();
                 if (ward != null && ward.IsActive)

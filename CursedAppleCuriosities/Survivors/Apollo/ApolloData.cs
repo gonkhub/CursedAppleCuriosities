@@ -61,6 +61,7 @@ namespace CursedAppleCuriosities.Survivors.Apollo
         public const int Stabs = 3;                     // Deadlock MaxStabs
         public const float StabRecastWindow = 5f;       // Deadlock RecastTime
         public static float AdvanceCooldown = 9f;
+        public static float AdvanceDamageResist = 0.15f; // less damage taken while readying and running a stab (user 3.0)
 
         // ---- utility alt: Riposte (ability_fencer_riposte: 0.8 s stance, parry the next attack; dash 35 m to the attacker; 6 m slash, 0.8 s
         // stun, 40% slow 4 s, 22 s) ----
@@ -93,26 +94,9 @@ namespace CursedAppleCuriosities.Survivors.Apollo
         public const string DlMaskModel = "models/abilities/fencer_mask_model_fx.vmdl_c"; // the mask he dons for Itani Lo Sahn
         public static float UltCooldown = 40f;
 
-        public static void Bind(ConfigFile c)
+        public static void Bind(ConfigFile c) // the hero's config section is only its keybind layout (3.0)
         {
             Movement.Bind(c, Section);
-            BaseHealth = c.Bind(Section, "Base Health", BaseHealth, "Apollo max health at level 1 (+30 per level).").Value;
-            WaveDamage = c.Bind(Section, "Sword Wave - Damage", WaveDamage, "Damage coefficient per slash.").Value;
-            WaveCycle = c.Bind(Section, "Sword Wave - Time Between Slashes", WaveCycle, "Seconds before attack speed.").Value;
-            SigilDamage = c.Bind(Section, "Disengaging Sigil - Damage", SigilDamage, "Damage coefficient of the sigil's blast.").Value;
-            SigilCooldown = c.Bind(Section, "Disengaging Sigil - Cooldown", SigilCooldown, "Seconds.").Value;
-            SigilHaste = c.Bind(Section, "Disengaging Sigil - Fire Rate Bonus", SigilHaste, "Attack speed bonus for a few seconds after casting it.").Value;
-            StabMin = c.Bind(Section, "Flawless Advance - Min Damage", StabMin, "Damage coefficient of a quick stab.").Value;
-            StabMax = c.Bind(Section, "Flawless Advance - Max Damage", StabMax, "Damage coefficient of a fully held stab (outside the perfect window).").Value;
-            StabPerfect = c.Bind(Section, "Flawless Advance - Perfect Damage", StabPerfect, "Damage coefficient of a stab released in the perfect window.").Value;
-            AdvanceCooldown = c.Bind(Section, "Flawless Advance - Cooldown", AdvanceCooldown, "Seconds (after the last stab).").Value;
-            RiposteDamage = c.Bind(Section, "Riposte - Damage", RiposteDamage, "Damage coefficient of the counter slash.").Value;
-            RiposteCooldown = c.Bind(Section, "Riposte - Cooldown", RiposteCooldown, "Seconds.").Value;
-            RiposteLifesteal = c.Bind(Section, "Riposte - Lifesteal", RiposteLifesteal, "Share of damage dealt healed for 5 s after a successful parry.").Value;
-            PerfectHeal = c.Bind(Section, "Flawless Advance - Perfect Heal", PerfectHeal, "Share of max health healed when a perfect stab hits.").Value;
-            UltImpact = c.Bind(Section, "Itani Lo Sahn - Impact Damage", UltImpact, "Damage coefficient of the slash itself.").Value;
-            UltDelayed = c.Bind(Section, "Itani Lo Sahn - Delayed Damage", UltDelayed, "Damage coefficient dealt when the slow motion ends.").Value;
-            UltCooldown = c.Bind(Section, "Itani Lo Sahn - Cooldown", UltCooldown, "Seconds.").Value;
         }
 
         // ---- Deadlock assets ----
@@ -120,6 +104,8 @@ namespace CursedAppleCuriosities.Survivors.Apollo
         public const float ModelHeightScale = 1.08f * 1.25f * 1.15f * 0.95f;
         public const string MuzzleBone = "muzzle_fx";
         public const string IconPortrait = "panorama/images/heroes/fencer_sm_psd.vtex_c";
+        // The primary shows the weapon itself (user 3.0, like Celeste's baton): Deadlock's shop image of the hero's gun.
+        public const string IconGun = "panorama/images/heroes/guns/fencer_rapier_psd.vtex_c";
         public const string IconSigil = "panorama/images/hud/abilities/fencer/fencer_sigil_psd.vtex_c";
         public const string IconRiposte = "panorama/images/hud/abilities/fencer/fencer_riposte_psd.vtex_c";
         public const string IconAdvance = "panorama/images/hud/abilities/fencer/fencer_lungingstab_psd.vtex_c";

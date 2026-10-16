@@ -319,17 +319,6 @@ namespace CursedAppleCuriosities.Deadlock
         private static Material? _line, _area;
 
         /// <summary>
-        /// The one line every survivor's passive ends with: their Deadlock movement, from their own numbers (user 2.5: these were
-        /// written a dozen different ways, or missing). Call it after the config is bound.
-        /// </summary>
-        public static string MovementLine(DeadlockMovementProfile p, bool alone = false)
-        {
-            string Times(int n) => n == 1 ? "" : $" x{n}";
-            string dash = p.GroundDash ? "Dash, slide" : "Slide";
-            return (alone ? "" : "\n\n") + $"<style=cIsUtility>{p.StaminaPips} stamina</style>: {dash}, air jump{Times(p.AirJumps)} and air dash{Times(p.AirDashesPerAir)}. Sprints automatically out of combat.";
-        }
-
-        /// <summary>
         /// A plain glowing line material for LineRenderers coloured by their start/end colours. Shader.Find is off limits in RoR2
         /// (RoR2BepInExPack throws for unknown names: Ivy's preview, Paradox's wall border and Bebop's beam never drew), so it's the
         /// laser-pointer beam, as Abrams' rings use. Shared: tint with the line's colours, not the material.

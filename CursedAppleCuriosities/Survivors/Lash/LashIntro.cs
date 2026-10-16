@@ -36,8 +36,7 @@ namespace CursedAppleCuriosities.Survivors.Lash
             Lift(0f);
             Play("gs_land");
             DeadlockSounds.Play("lash_gs_impact", Home);
-            if (LashSurvivor.GroundSlamEffect != null)
-                EffectManager.SpawnEffect(LashSurvivor.GroundSlamEffect, new EffectData { origin = Home, scale = SlamRadius * Scale }, false);
+            Effect(LashSurvivor.GroundSlamEffect, new EffectData { origin = Home, scale = SlamRadius * Scale });
         }
     }
 }

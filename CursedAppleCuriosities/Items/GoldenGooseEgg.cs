@@ -63,17 +63,12 @@ namespace CursedAppleCuriosities.Items
         {
             if (All.Count == 0)
             {
-                SecondsPerStack = config.Bind("Equipment", "Goose Eggs - Seconds Per Stack", 300f, // 150 at first; 5 min by playtest
-                    "Seconds an egg must be held to gain a stack.").Value;
-                DamagePenalty = config.Bind("Equipment", "Goose Eggs - Damage Penalty", 0.25f,
-                    "Damage reduction while any egg is held.").Value;
+                SecondsPerStack = 300f; // 150 at first; 5 min by playtest
+                DamagePenalty = 0.25f;
             }
-            FirstStack = config.Bind("Equipment", $"{EquipmentName} - First Stack Items", DefaultFirstStack,
-                "Items the first stack yields.").Value;
-            ExtraPerStack = config.Bind("Equipment", $"{EquipmentName} - Extra Items Per Stack", DefaultExtraPerStack,
-                "Each stack after the first yields this many more items than the one before (fractions add up; the hatch rounds down).").Value;
-            DropWeight = config.Bind("Equipment", $"{EquipmentName} - Drop Weight", DefaultDropWeight,
-                "Relative chance an egg drop is this egg.").Value;
+            FirstStack = DefaultFirstStack;
+            ExtraPerStack = DefaultExtraPerStack;
+            DropWeight = DefaultDropWeight;
 
             StackBuff = ScriptableObject.CreateInstance<BuffDef>();
             StackBuff.name = "CursedApple_Maturation" + Kind;

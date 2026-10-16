@@ -103,6 +103,7 @@ namespace CursedAppleCuriosities.Survivors.Seven
                     if (SevenSurvivor.SurgeBuff == null) return;
                     body.ClearTimedBuffs(SevenSurvivor.SurgeBuff);
                     body.AddTimedBuff(SevenSurvivor.SurgeBuff, SevenData.SurgeDuration);
+                    CursedAppleCuriosities.Unlocks.Challenges.SevenHareTrigger.SurgeStarted(body); // Bunny Seven's challenge: a new Surge
                     break;
                 case SevenBuffKind.StormStart:
                     if (SevenSurvivor.StormBuff == null) return;

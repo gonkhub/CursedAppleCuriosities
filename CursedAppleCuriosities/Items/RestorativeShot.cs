@@ -30,8 +30,7 @@ namespace CursedAppleCuriosities.Items
 
         public override void Init(ConfigFile config)
         {
-            BaseHealPercent = config.Bind("White", "Restorative Shot - Heal Percent", 0.03f,
-                "Max HP healed by the periodic charged hit at 1 stack.").Value;
+            BaseHealPercent = 0.03f;
             CreateLang();
             CreateItem();
             Hooks();
@@ -49,6 +48,7 @@ namespace CursedAppleCuriosities.Items
             GameObject victim)
         {
             orig(self, damageInfo, victim);
+            if (damageInfo == null || damageInfo.rejected) return; // blocked hits proc nothing (vanilla's own check is inside orig)
 
             if (!NetworkServer.active) return;
             if (damageInfo == null || damageInfo.attacker == null) return;

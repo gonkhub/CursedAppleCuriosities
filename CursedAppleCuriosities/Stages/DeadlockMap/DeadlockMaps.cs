@@ -14,8 +14,8 @@ namespace CursedAppleCuriosities.Stages.DeadlockMap
     /// </summary>
     public static class DeadlockMaps
     {
-        public static ConfigEntry<bool>? Enabled;
-        public static ConfigEntry<float>? Scale;
+        /// <summary>Size of the Deadlock map in Risk of Rain 2 (1 = Deadlock's own size).</summary>
+        public const float Scale = 1f;
         /// <summary>Every district (MapSectionDef.All), registered on every machine whatever the config.</summary>
         public static readonly List<District> Districts = new List<District>();
         /// <summary>The district whose world was built last (the one in the current stage, or the walk test's).</summary>
@@ -25,15 +25,10 @@ namespace CursedAppleCuriosities.Stages.DeadlockMap
 
         public static void Init(ConfigFile config)
         {
-            Enabled = config.Bind("Deadlock Map", "Enabled", true,
-                "Convert Deadlock's map from your own Deadlock install (once, in the background) for the Deadlock district stages. " +
-                "A district is only picked when every player in the run has it.");
-            Scale = config.Bind("Deadlock Map", "Scale", 1f, "Size of the Deadlock map in Risk of Rain 2 (1 = Deadlock's own size).");
             foreach (MapSectionDef def in MapSectionDef.All) Districts.Add(new District(def));
             // Registered on every machine whatever the config: scene catalogs must match between host and clients.
             DeadlockStages.Init(config, Districts);
             PartyCheck.Init();
-            if (!Enabled.Value) { Log("off in the config"); return; }
             foreach (District d in Districts) d.Converter = new MapConverter(d.Def);
             // One conversion at a time (each one peaks near 2 GB): the first district is ready first.
             new Thread(() => { foreach (District d in Districts) d.Converter!.RunNow(); })
@@ -127,7 +122,7 @@ namespace CursedAppleCuriosities.Stages.DeadlockMap
                 _walk = UnityEngine.Object.Instantiate(t.Root);
                 _walk.name = "DeadlockMapWalk";
                 _walk.transform.position = new Vector3(0f, 2000f, 0f);
-                _walk.transform.localScale = Vector3.one * (Scale?.Value ?? 1f);
+                _walk.transform.localScale = Vector3.one * (Scale);
                 _walk.SetActive(true);
                 foreach (MapZone z in UnityEngine.Object.FindObjectsOfType<MapZone>()) z.enabled = false; // far outside this stage's bounds
             }

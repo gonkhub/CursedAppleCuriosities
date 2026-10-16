@@ -28,6 +28,9 @@ namespace CursedAppleCuriosities.Survivors.Celeste
             {
                 float barrierBefore = self.barrier;
                 bool prism = CelesteSurvivor.PrismBuff != null && self.body != null && self.body.HasBuff(CelesteSurvivor.PrismBuff);
+                // Light Eater: everything Celeste deals to a marked enemy hits harder (user 3.0: all her damage, not just her blades).
+                if (NetworkServer.active && info.attacker != null && Marked(self) && info.attacker.TryGetComponent(out CharacterBody from) && from.bodyIndex == CelesteSurvivor.BodyIndex)
+                    info.damage *= 1f + CelesteData.MarkDamageBonus;
                 orig(self, info);
                 if (!NetworkServer.active || info.rejected) return;
                 // Dazzling Trick: the hit that takes the barrier down breaks the prism.
@@ -444,8 +447,7 @@ namespace CursedAppleCuriosities.Survivors.Celeste
                 _done = true;
                 float dmg = _pd != null ? _pd.damage : body.damage;
                 bool crit = _pd != null && _pd.crit;
-                float coeff = CelesteData.DaggerDamage + (CelesteNet.Marked(hc) ? CelesteData.MarkDaggerBonus : 0f);
-                CelesteNet.Hit(body, hc, coeff * dmg, crit, DamageSource.Primary, 1f, transform.position);
+                CelesteNet.Hit(body, hc, CelesteData.DaggerDamage * dmg, crit, DamageSource.Primary, 1f, transform.position);
                 EquipmentFx.Sound("celeste_gun_impact", transform.position);
                 Destroy(gameObject);
                 return;
@@ -646,6 +648,8 @@ namespace CursedAppleCuriosities.Survivors.Celeste
             EquipmentFx.Sound("celeste_orb_linger", transform.position, gameObject);
         }
 
+        private readonly System.Collections.Generic.Dictionary<HealthComponent, int> _perEnemy = new System.Collections.Generic.Dictionary<HealthComponent, int>(); // Encore challenge
+
         private void Strike(CharacterBody owner, HealthComponent hc)
         {
             if (hc == owner.healthComponent) { OffPrism(owner); return; }
@@ -656,6 +660,9 @@ namespace CursedAppleCuriosities.Survivors.Celeste
                 using (DurationExtender.From(owner)) hc.body.AddTimedBuff(CelesteSurvivor.OrbSlow, CelesteData.OrbSlowSeconds);
             if (CelesteSurvivor.OrbHitEffect != null) EffectManager.SpawnEffect(CelesteSurvivor.OrbHitEffect, new EffectData { origin = CelesteNet.Core(hc), scale = 2f }, true);
             _hits++;
+            _perEnemy.TryGetValue(hc, out int same);
+            _perEnemy[hc] = ++same;
+            Unlocks.Challenges.CelesteEncore.Hit(owner, same);
             _last = hc;
             transform.position = CelesteNet.Core(hc);
             bool final = _hits > CelesteData.OrbBounces;

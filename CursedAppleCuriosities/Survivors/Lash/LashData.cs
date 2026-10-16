@@ -6,7 +6,6 @@ namespace CursedAppleCuriosities.Survivors.Lash
     /// <summary>
     /// Lash's numbers. Deadlock values (from Deadlock's hero data) are kept where RoR2 has the same
     /// scale (metres, seconds, speeds); damage becomes RoR2 damage coefficients and cooldowns RoR2-length.
-    /// Headline knobs are in the [Lash] config section.
     /// </summary>
     public static class LashData
     {
@@ -94,33 +93,9 @@ namespace CursedAppleCuriosities.Survivors.Lash
         public const float DeathSlamRadius = 6f;        // Deadlock ImpactRadius
         public const float DeathSlamSlowSeconds = 4f;
 
-        public static void Bind(ConfigFile c)
+        public static void Bind(ConfigFile c) // the hero's config section is only its keybind layout (3.0)
         {
             Movement.Bind(c, Section);
-            BaseHealth = c.Bind(Section, "Base Health", BaseHealth, "Lash max health at level 1 (+36 per level).").Value;
-            GunDamage = c.Bind(Section, "Gun - Damage", GunDamage, "Damage coefficient per bullet (3-round bursts).").Value;
-            BurstCycle = c.Bind(Section, "Gun - Time Between Bursts", BurstCycle, "Seconds after a burst before the next (before attack speed).").Value;
-            GunSpread = c.Bind(Section, "Gun - Spread", GunSpread, "Bullet spread: share of the normal spread bloom (0 = pinpoint).").Value;
-            GunFalloffStart = c.Bind(Section, "Gun - Falloff Start", GunFalloffStart, "Metres of full damage.").Value;
-            GunFalloffEnd = c.Bind(Section, "Gun - Falloff End", GunFalloffEnd, "Metres where damage reaches its floor (35%).").Value;
-            GroundStrikeDamage = c.Bind(Section, "Ground Strike - Damage", GroundStrikeDamage, "Damage coefficient on landing, before fall height.").Value;
-            GroundStrikeDamagePerMetre = c.Bind(Section, "Ground Strike - Damage Per Metre", GroundStrikeDamagePerMetre, "Extra damage coefficient per metre fallen (first 25 m).").Value;
-            GroundStrikeSpeed = c.Bind(Section, "Ground Strike - Dive Speed", GroundStrikeSpeed, "Metres per second.").Value;
-            GroundStrikeCooldown = c.Bind(Section, "Ground Strike - Cooldown", GroundStrikeCooldown, "Seconds.").Value;
-            GrappleLaunchSpeed = c.Bind(Section, "Grapple - Launch Speed", GrappleLaunchSpeed, "Metres per second, launched up toward the target.").Value;
-            GrappleLaunchAngle = c.Bind(Section, "Grapple - Launch Angle", GrappleLaunchAngle, "Degrees above flat Lash is launched at toward the target (90 = straight up).").Value;
-            DeathSlamThrow = c.Bind(Section, "Death Slam - Throw Distance", DeathSlamThrow, "Farthest (metres, flat) Death Slam can throw enemies toward your crosshair.").Value;
-            DeathSlamChannelMaxSpeed = c.Bind(Section, "Death Slam - Channel Speed Limit", DeathSlamChannelMaxSpeed, "Most horizontal speed (m/s) Lash keeps while channeling Death Slam.").Value;
-            GrappleRange = c.Bind(Section, "Grapple - Range", GrappleRange, "Metres.").Value;
-            DeathSlamLockOn = c.Bind(Section, "Death Slam - Lock On Time", DeathSlamLockOn, "Seconds an enemy must stay in the cone to be locked on.").Value;
-            DeathSlamRange = c.Bind(Section, "Death Slam - Radius", DeathSlamRange, "Radius of the lock-on cylinder around Lash (metres; it reaches 60 m above him and all the way down below).").Value;
-            DeathSlamAimDeg = c.Bind(Section, "Death Slam - Aim Angle", DeathSlamAimDeg, "How close (degrees) the crosshair must be to an enemy to lock onto it.").Value;
-            GrappleCooldown = c.Bind(Section, "Grapple - Cooldown", GrappleCooldown, "Seconds (only spent when there is a target).").Value;
-            DeathSlamDamage = c.Bind(Section, "Death Slam - Damage", DeathSlamDamage, "Damage coefficient where thrown enemies land.").Value;
-            CameraHeight = c.Bind(Section, "Camera - Height", CameraHeight, "Metres the camera is raised above the default survivor camera.").Value;
-            CameraDistance = c.Bind(Section, "Camera - Distance", CameraDistance, "Camera distance behind Lash, as a multiple of the default survivor camera.").Value;
-            DeathSlamCooldown = c.Bind(Section, "Death Slam - Cooldown", DeathSlamCooldown, "Seconds.").Value;
-            DeathSlamMaxTargets = c.Bind(Section, "Death Slam - Max Targets", DeathSlamMaxTargets, "Most enemies one Death Slam can lift.").Value;
         }
 
         // ---- Deadlock assets (read from the player's own install, never shipped) ----
@@ -133,6 +108,10 @@ namespace CursedAppleCuriosities.Survivors.Lash
         public const string MuzzleBone = "muzzle_fx";     // Lash's gun is his glove
 
         public const string IconPortrait = "panorama/images/heroes/lash_sm_psd.vtex_c";
+
+        // The primary shows the weapon itself (user 3.0, like Celeste's baton): Deadlock's shop image of the hero's gun.
+
+        public const string IconGun = "panorama/images/heroes/guns/lash_gun_psd.vtex_c";
         // Deadlock's own file names are swapped for Lash's first ability.
         public const string IconGroundStrike = "panorama/images/hud/abilities/lash/lash_death_slam_psd.vtex_c";
         public const string IconGrapple = "panorama/images/hud/abilities/lash/lash_lash_psd.vtex_c";

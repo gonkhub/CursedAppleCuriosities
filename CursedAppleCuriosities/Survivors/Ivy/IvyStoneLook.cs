@@ -27,7 +27,7 @@ namespace CursedAppleCuriosities.Survivors.Ivy
 
         private void Awake() => _body = GetComponent<CharacterBody>();
 
-        private static Material? Stone()
+        internal static Material? Stone()
         {
             if (_tried) return _stone;
             _tried = true;

@@ -13,8 +13,8 @@ Items, equipment and survivors adapted from Deadlock's item shop for Risk of Rai
   without taking damage, for a pile of items (more the later the stage)
 - **Thirteen playable survivors** from Deadlock: **Abrams**, **Seven**, **Lash**, **Vyper**, **Grey Talon**, **Victor**,
   **Viscous**, **Celeste**, **Shiv**, **Mina**, **Paradox**, **Bebop** and **Apollo**, with Deadlock-style movement
-  (stamina, air dashes, dash-jumps, slides, wall jumps). Abrams and Seven are free; the rest unlock through challenges or
-  secrets hidden in the Deadlock district stages, along with alt skills and mastery skins
+  (stamina, air dashes, dash-jumps, slides, wall jumps). Each one unlocks through a challenge or a secret hidden in the
+  Deadlock district stages, along with alt skills and skins
 - **Deadlock district stages** (needs Deadlock installed): Haunted Lot, Umbria University, Sunken Plaza and Chinatown can
   replace stages 1-4
 
@@ -26,9 +26,9 @@ appears; the survivors can still be played either way.
 
 ## Settings
 
-The main numbers for every item, equipment and survivor can be changed in the Risk Of Options
-mod settings page or in
-`BepInEx/config/com.cursedapple.curiosities.cfg`.
+Each hero's key layout (Primary, Secondary, Utility, Special, Dash and Slide keys; None uses your normal RoR2 controls),
+the mod's audio volumes and your Deadlock folder can be changed on the Risk Of Options mod settings page or in
+`BepInEx/config/com.cursedapple.curiosities.cfg`. Balance numbers are built in, so every player plays the same mod.
 
 ## Multiplayer
 
@@ -39,9 +39,22 @@ Everyone in the lobby needs the mod, at the same version.
 If you own Deadlock, the survivors use their models, animations and voices from your
 install (close Deadlock the first time you play). Otherwise they use a stand-in body.
 
+Celeste's **Spirit Guardian** skin is TSelky's Spirit Guardian Celeste model, a Deadlock mod by TSelky. It isn't
+included here: get TSelky's `.vpk` and put it in `%USERPROFILE%\AppData\LocalLow\Hopoo Games, LLC\Risk of Rain 2\CursedApple\skins`
+(or keep it in Deadlock's `game\citadel\addons` folder), then start the game with Deadlock closed. Without it the skin
+shows Celeste's own model.
+
+Seven's **Bunny Seven** skin is funnymonkeyman's [Bunny Seven](https://gamebanana.com/mods/681692), a Deadlock mod by
+funnymonkeyman. It isn't included here either: get the `.vpk` from its GameBanana page and put it in the same `skins`
+folder (or keep it in Deadlock's `addons` folder), then start the game with Deadlock closed. Without it the skin shows
+Seven's own model.
+
 ## Credits
 
 Item icons are cropped from Deadlock item card art © Valve, from the
 [Deadlock Graphical Library](https://forums.playdeadlock.com/resources/deadlock-graphical-library.30/).
-Not affiliated with Valve or Hopoo Games. Bundled third-party tools are listed in
+Celeste's Spirit Guardian skin is **TSelky**'s Spirit Guardian Celeste, made by TSelky as a Deadlock mod
+and read from the player's own copy of it. Seven's Bunny Seven skin is **funnymonkeyman**'s
+[Bunny Seven](https://gamebanana.com/mods/681692) ([funnymonkeyman on GameBanana](https://gamebanana.com/members/4819246)),
+also a Deadlock mod read from the player's own copy. Not affiliated with Valve or Hopoo Games. Bundled third-party tools are listed in
 `THIRD_PARTY_NOTICES.md`.

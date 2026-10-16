@@ -25,8 +25,7 @@ namespace CursedAppleCuriosities.Items
 
         public override void Init(ConfigFile config)
         {
-            CooldownSeconds = config.Bind("Equipment", "Refresher - Cooldown", 80f,
-                "Equipment cooldown in seconds.").Value;
+            CooldownSeconds = 80f;
             CreateLang();
             CreateEquipment();
             StaticEquipmentDef = EquipmentDef;

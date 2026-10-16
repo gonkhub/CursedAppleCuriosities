@@ -65,8 +65,8 @@ namespace CursedAppleCuriosities.Stages.DeadlockMap
             bool on = _lightmap != null && DeadlockStages.WorldMaterial != null;
             Shader.SetGlobalTexture(LightmapId, on ? (Texture)_lightmap! : Texture2D.blackTexture);
             Shader.SetGlobalFloat(LightmapOnId, on ? 1f : 0f);
-            Shader.SetGlobalFloat(ExposureId, DeadlockStages.Exposure?.Value ?? 1f);
-            Shader.SetGlobalFloat(DynamicId, DeadlockStages.DynamicLight?.Value ?? 0.15f);
+            Shader.SetGlobalFloat(ExposureId, DeadlockStages.Exposure);
+            Shader.SetGlobalFloat(DynamicId, DeadlockStages.DynamicLight);
             Shader.SetGlobalColor(FallbackId, new Color(0.45f, 0.38f, 0.4f)); // dusk: props off the lightmap, the far backdrop
         }
 
@@ -268,7 +268,9 @@ namespace CursedAppleCuriosities.Stages.DeadlockMap
                     var rm = new Material[used.Count];
                     for (int i = 0; i < rm.Length; i++) rm[i] = mats[used[i]]!;
                     r.sharedMaterials = rm;
-                    r.shadowCastingMode = c.Backdrop ? ShadowCastingMode.Off : ShadowCastingMode.On;
+                    // Under Deadlock's lightmap the map's own shadows are already baked in: casting them again in realtime drew the whole
+                    // playable section (millions of triangles) into every sun shadow cascade (user 3.0: fps drops). Characters still cast.
+                    r.shadowCastingMode = c.Backdrop || lit ? ShadowCastingMode.Off : ShadowCastingMode.On;
                     foreach (MapSub s in subs) { if (c.Backdrop) backTris += s.Tris.Length / 3; else tris += s.Tris.Length / 3; }
                 }
                 if (c.Backdrop || !colliders) continue;

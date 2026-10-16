@@ -50,6 +50,11 @@ namespace CursedAppleCuriosities.Stages.DeadlockMap
         private static int ScaledCost(int baseCost) =>
             Run.instance != null ? Run.instance.GetDifficultyScaledCost(baseCost) : baseCost;
 
+        // What this shop charges now: the scaled price, raised by every item already bought here this stage (user 3.0: buying out
+        // the shop by farming gold was too strong).
+        private static int Price(MapShopMarker marker, int baseCost) =>
+            Mathf.Max(1, Mathf.RoundToInt(ScaledCost(baseCost) * (1f + Mathf.Max(0f, DeadlockStages.ShopTaxPerBuy) * marker.Buys)));
+
         internal static GameObject? Spawn(Vector3 pos, int white, int green, int red)
         {
             var prefab = CommandCubePrefab;
@@ -125,7 +130,7 @@ namespace CursedAppleCuriosities.Stages.DeadlockMap
                 options[i] = new PickupPickerController.Option
                 {
                     pickupIndex = pickups[i],
-                    available   = money >= (uint)ScaledCost(marker.BaseCosts![i]),
+                    available   = money >= (uint)Price(marker, marker.BaseCosts![i]),
                 };
 #pragma warning restore CS0618
             }
@@ -163,9 +168,9 @@ namespace CursedAppleCuriosities.Stages.DeadlockMap
             if (shop?.TierCosts == null) return orig(self, activator);
             int[] tiers = shop.TierCosts;
             return "Browse Curiosities — " +
-                   $"<color=#ffffff>{ScaledCost(tiers[0])}g</color> / " +
-                   $"<color=#77ff17>{ScaledCost(tiers[1])}g</color> / " +
-                   $"<color=#e7543a>{ScaledCost(tiers[2])}g</color>";
+                   $"<color=#ffffff>{Price(shop, tiers[0])}g</color> / " +
+                   $"<color=#77ff17>{Price(shop, tiers[1])}g</color> / " +
+                   $"<color=#e7543a>{Price(shop, tiers[2])}g</color>";
         }
 
         // ── Record the shopper and grey out what they can't afford ────────────
@@ -201,10 +206,11 @@ namespace CursedAppleCuriosities.Stages.DeadlockMap
             var body = marker.ActivatorBody;
             if (body == null || body.master == null) return;
 
-            int cost = ScaledCost(marker.BaseCosts![index]); // live price at the moment of purchase
+            int cost = Price(marker, marker.BaseCosts![index]); // live price at the moment of purchase
             if (body.master.money >= (uint)cost)
             {
                 body.master.money -= (uint)cost;
+                marker.Buys++; // every later buy here costs more
                 PickupDropletController.CreatePickupDroplet(
                     new GenericPickupController.CreatePickupInfo
                     {
@@ -214,10 +220,7 @@ namespace CursedAppleCuriosities.Stages.DeadlockMap
                     body.transform.position + Vector3.up * 1.5f,
                     Vector3.up * 15f + Random.insideUnitSphere * 3f);
             }
-            else
-            {
-                Chat.AddMessage($"<color=#ff6644>Not enough gold — need {cost}g.</color>");
-            }
+            // Not enough gold: nothing to say, the option is already greyed out (user 3.0).
 
             // The shop stays put so the player can keep spending; just re-grey
             // whatever their remaining gold no longer covers.
@@ -231,5 +234,6 @@ namespace CursedAppleCuriosities.Stages.DeadlockMap
         public int[]?         BaseCosts; // unscaled, parallel to Pickups; price is scaled live per purchase
         public CharacterBody? ActivatorBody;
         public int[]?         TierCosts; // base white / green / red, for the hover prompt
+        public int            Buys;      // items bought here this stage (server): each raises the prices by Shop Tax Per Purchase
     }
 }

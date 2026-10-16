@@ -110,38 +110,9 @@ namespace CursedAppleCuriosities.Survivors.Bebop
         public const float HyperCancelAfter = 0.5f;
         public static float HyperCooldown = 40f;         // Deadlock 120
 
-        public static void Bind(ConfigFile c)
+        public static void Bind(ConfigFile c) // the hero's config section is only its keybind layout (3.0)
         {
             Movement.Bind(c, Section);
-            BaseHealth = c.Bind(Section, "Base Health", BaseHealth, "Bebop max health at level 1 (+34 per level).").Value;
-            BeamDamage = c.Bind(Section, "Beam - Damage Per Tick", BeamDamage, "Damage coefficient of each beam tick.").Value;
-            BeamTick = c.Bind(Section, "Beam - Tick Interval", BeamTick, "Seconds between beam ticks before attack speed.").Value;
-            BeamProc = c.Bind(Section, "Beam - Proc Coefficient", BeamProc, "Proc coefficient of each tick.").Value;
-            BeamRange = c.Bind(Section, "Beam - Range", BeamRange, "Metres.").Value;
-            StickyDamage = c.Bind(Section, "Sticky Bomb - Damage", StickyDamage, "Damage coefficient of the blast, before its stacks.").Value;
-            StickyRange = c.Bind(Section, "Sticky Bomb - Range", StickyRange, "Metres to stick it on an enemy.").Value;
-            StickyFuse = c.Bind(Section, "Sticky Bomb - Fuse", StickyFuse, "Seconds before it blows.").Value;
-            StickyRadius = c.Bind(Section, "Sticky Bomb - Radius", StickyRadius, "Metres.").Value;
-            StickyPerHit = c.Bind(Section, "Sticky Bomb - Bonus Per Hit", StickyPerHit, "Permanent % damage per enemy the blast damages (lost on death).").Value;
-            StickyPerKill = c.Bind(Section, "Sticky Bomb - Bonus Per Kill", StickyPerKill, "Permanent % damage per enemy the blast kills (lost on death).").Value;
-            StickyCooldown = c.Bind(Section, "Sticky Bomb - Cooldown", StickyCooldown, "Seconds.").Value;
-            HookRange = c.Bind(Section, "Hook - Range", HookRange, "Metres.").Value;
-            HookAmp = c.Bind(Section, "Hook - Primary Damage Bonus", HookAmp, "Extra beam damage to the hooked enemy (0.5 = +50%).").Value;
-            HookAmpSeconds = c.Bind(Section, "Hook - Bonus Duration", HookAmpSeconds, "Seconds.").Value;
-            HookCooldown = c.Bind(Section, "Hook - Cooldown", HookCooldown, "Seconds.").Value;
-            UppercutDamage = c.Bind(Section, "Uppercut - Damage", UppercutDamage, "Damage coefficient of the punch.").Value;
-            UppercutLandDamage = c.Bind(Section, "Uppercut - Landing Damage", UppercutLandDamage, "Damage coefficient of each landing blast.").Value;
-            UppercutLandRadius = c.Bind(Section, "Uppercut - Landing Radius", UppercutLandRadius, "Metres.").Value;
-            UppercutBuffDamage = c.Bind(Section, "Uppercut - Primary Damage Bonus", UppercutBuffDamage, "Beam damage bonus after landing an uppercut.").Value;
-            UppercutHeal = c.Bind(Section, "Uppercut - Missing Health Heal", UppercutHeal, "Share of missing health healed after landing an uppercut.").Value;
-            UppercutCooldown = c.Bind(Section, "Uppercut - Cooldown", UppercutCooldown, "Seconds.").Value;
-            HyperDps = c.Bind(Section, "Hyper Beam - Damage Per Second", HyperDps, "Damage coefficient per second (bosses: half).").Value;
-            HyperLifesteal = c.Bind(Section, "Hyper Beam - Lifesteal", HyperLifesteal, "Share of its damage healed (0.4 = 40%).").Value;
-            HyperImpactRadius = c.Bind(Section, "Hyper Beam - Impact Radius", HyperImpactRadius, "Metres around where it meets terrain that it also hits.").Value;
-            StickySpeed = c.Bind(Section, "Sticky Bomb - Speed Boost", StickySpeed, "Move speed (m/s) added for a few seconds after casting it.").Value;
-            HyperDuration = c.Bind(Section, "Hyper Beam - Duration", HyperDuration, "Seconds of beam.").Value;
-            HyperLength = c.Bind(Section, "Hyper Beam - Length", HyperLength, "Metres.").Value;
-            HyperCooldown = c.Bind(Section, "Hyper Beam - Cooldown", HyperCooldown, "Seconds.").Value;
         }
 
         // ---- Deadlock assets (read from the player's own install, never shipped) ----
@@ -151,6 +122,10 @@ namespace CursedAppleCuriosities.Survivors.Bebop
         public const string MuzzleBone = "muzzle_fx";
 
         public const string IconPortrait = "panorama/images/heroes/bebop_sm_psd.vtex_c";
+
+        // The primary shows the weapon itself (user 3.0, like Celeste's baton): Deadlock's shop image of the hero's gun.
+
+        public const string IconGun = "panorama/images/heroes/guns/bebop_gun_psd.vtex_c";
         public const string IconUppercut = "panorama/images/hud/abilities/bebop/bebop_uppercut_psd.vtex_c";
         public const string IconSticky = "panorama/images/hud/abilities/bebop/bebop_sticky_bomb_psd.vtex_c";
         public const string IconHook = "panorama/images/hud/abilities/bebop/bebop_hook_psd.vtex_c";

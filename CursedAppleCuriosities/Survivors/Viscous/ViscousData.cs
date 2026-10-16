@@ -10,7 +10,7 @@ namespace CursedAppleCuriosities.Survivors.Viscous
     /// Viscous' numbers (Deadlock's hero_viscous / viscous_goo_bowling_ball, read 2026-10-12). Deadlock distances are
     /// hammer units (39.37 hu = 1 m) and are kept as metres; damage becomes RoR2 damage coefficients (~5% per point, as
     /// Victor) and cooldowns RoR2-length. A Goo Ball prototype first (user: get the ball right before the rest of him):
-    /// his gun is a placeholder and he has no secondary or utility yet. Headline knobs in the [Viscous] config section.
+    /// his gun is a placeholder and he has no secondary or utility yet.
     /// </summary>
     public static class ViscousData
     {
@@ -127,44 +127,10 @@ namespace CursedAppleCuriosities.Survivors.Viscous
         public static float PostCubeSpeed = 2.5f;       // Deadlock BonusMoveSpeed upgrade, m/s
         public static float PostCubeStamina = 0.3f;     // Deadlock StaminaCooldownReduction 30%: stamina refills this much faster
 
-        public static void Bind(ConfigFile c)
+        public static void Bind(ConfigFile c) // the hero's config section is only its keybind layout (3.0)
         {
             Movement.Bind(c, Section);
-            BaseHealth = c.Bind(Section, "Base Health", BaseHealth, "Viscous max health at level 1 (+34 per level).").Value;
-            GunDamage = c.Bind(Section, "Gun - Damage", GunDamage, "Damage coefficient per bullet.").Value;
-            BallDuration = c.Bind(Section, "Goo Ball - Duration", BallDuration, "Seconds rolling (Special again ends it early).").Value;
-            BallCooldown = c.Bind(Section, "Goo Ball - Cooldown", BallCooldown, "Seconds.").Value;
-            BallSpeed = c.Bind(Section, "Goo Ball - Speed", BallSpeed, "Rolling speed in m/s.").Value;
-            BallFastSpeed = c.Bind(Section, "Goo Ball - Fast Speed", BallFastSpeed, "Rolling speed in m/s while Primary is held.").Value;
-            BallJump = c.Bind(Section, "Goo Ball - Jump", BallJump, "Upward speed of the ball's jump and double jump, m/s.").Value;
             BallAirJump = BallJump;
-            BallHitRadius = c.Bind(Section, "Goo Ball - Hit Radius", BallHitRadius, "Metres from the ball's centre.").Value;
-            BallDamage = c.Bind(Section, "Goo Ball - Damage", BallDamage, "Base damage coefficient per hit, before Heavy (each enemy at most once every 1.2 s).").Value;
-            BallHeavyDamage = c.Bind(Section, "Goo Ball - Heavy Damage Per Speed", BallHeavyDamage, "Heavy: extra damage coefficient per m/s of the ball's speed (Loader's punch uses 0.3).").Value;
-            BallStun = c.Bind(Section, "Goo Ball - Stun", BallStun, "Seconds.").Value;
-            BossFreeze = c.Bind(Section, "Goo Ball - Boss Freeze", BossFreeze, "Seconds the ball stops dead on hitting a boss, before bouncing off it.").Value;
-            BossDamageMult = c.Bind(Section, "Goo Ball - Boss Damage Multiplier", BossDamageMult, "Bosses take this many times the ball's damage (and are not stunned).").Value;
-            AltDamage = c.Bind(Section, "Alt Fire - Damage", AltDamage, "Damage coefficient of each glob's burst.").Value;
-            AltRadius = c.Bind(Section, "Alt Fire - Radius", AltRadius, "Metres (Mystic Expansion widens it).").Value;
-            SplatterDamage = c.Bind(Section, "Splatter - Damage", SplatterDamage, "Damage coefficient of each burst (one per bounce).").Value;
-            SplatterPassDamage = c.Bind(Section, "Splatter - Pass-Through Damage", SplatterPassDamage, "Damage coefficient to each enemy the glob flies through (once each).").Value;
-            SplatterBounces = c.Bind(Section, "Splatter - Bounces", SplatterBounces, "Bursts before the glob is spent.").Value;
-            SplatterRadius = c.Bind(Section, "Splatter - Radius", SplatterRadius, "Metres (Mystic Expansion widens it).").Value;
-            SplatterCooldown = c.Bind(Section, "Splatter - Cooldown", SplatterCooldown, "Seconds.").Value;
-            PunchDamage = c.Bind(Section, "Puddle Punch - Damage", PunchDamage, "Damage coefficient to enemies punched.").Value;
-            PunchRange = c.Bind(Section, "Puddle Punch - Range", PunchRange, "Metres to where the fist comes up (Mystic Expansion: farther).").Value;
-            PunchRadius = c.Bind(Section, "Puddle Punch - Radius", PunchRadius, "Metres (Mystic Expansion widens it).").Value;
-            PunchUp = c.Bind(Section, "Puddle Punch - Launch", PunchUp, "Speed everything punched is thrown at, straight out of the surface, m/s (bosses don't move).").Value;
-            PunchToss = c.Bind(Section, "Puddle Punch - Toss Duration", PunchToss, "Seconds everything punched keeps the full launch speed (no gravity, no braking) before it falls; after that it keeps its momentum until it hits something.").Value;
-            PunchCooldown = c.Bind(Section, "Puddle Punch - Cooldown", PunchCooldown, "Seconds.").Value;
-            PunchSelfAirControl = c.Bind(Section, "Puddle Punch - Self Air Control", PunchSelfAirControl, "Air control multiplier for a moment after punching himself into the air.").Value;
-            CubeDuration = c.Bind(Section, "The Cube - Duration", CubeDuration, "Seconds (Duration Extender lengthens it). Jump breaks out after 1 s.").Value;
-            CubeHeal = c.Bind(Section, "The Cube - Healing", CubeHeal, "Share of max health healed per second inside.").Value;
-            CubeRange = c.Bind(Section, "The Cube - Range", CubeRange, "Metres to an ally (Mystic Expansion: farther).").Value;
-            CubeCooldown = c.Bind(Section, "The Cube - Cooldown", CubeCooldown, "Seconds.").Value;
-            PostCubeSpeed = c.Bind(Section, "The Cube - Move Speed After", PostCubeSpeed, "Bonus move speed (m/s) after leaving the cube.").Value;
-            PostCubeStamina = c.Bind(Section, "The Cube - Stamina Regen After", PostCubeStamina, "Stamina refills this much faster after leaving the cube (0.3 = 30%).").Value;
-            BallResist = c.Bind(Section, "Goo Ball - Damage Resist", BallResist, "Share of incoming damage blocked while rolling.").Value;
         }
 
         // ---- Deadlock assets (read from the player's own install, never shipped) ----
@@ -181,6 +147,10 @@ namespace CursedAppleCuriosities.Survivors.Viscous
         public const float BallModelRadius = 1.51f;     // the inflated mesh around inflated_center, model units (median vertex distance)
 
         public const string IconPortrait = "panorama/images/heroes/viscous_sm_psd.vtex_c";
+
+        // The primary shows the weapon itself (user 3.0, like Celeste's baton): Deadlock's shop image of the hero's gun.
+
+        public const string IconGun = "panorama/images/heroes/guns/viscous_gun_psd.vtex_c";
         public const string IconBall = "panorama/images/hud/abilities/viscous/viscous_goo_sphere_psd.vtex_c";
         public const string IconSplatter = "panorama/images/hud/abilities/viscous/viscous_goo_ball_psd.vtex_c";
         public const string IconPunch = "panorama/images/hud/abilities/viscous/viscous_goo_punch_psd.vtex_c";

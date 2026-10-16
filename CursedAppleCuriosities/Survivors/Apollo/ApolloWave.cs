@@ -7,7 +7,7 @@ using UnityEngine.Networking;
 namespace CursedAppleCuriosities.Survivors.Apollo
 {
     /// <summary>
-    /// Server, on a Pride of Ixia sword wave: Deadlock fires it as a slow, wide projectile (citadel_weapon_fencer_set: 5000 hu/s,
+    /// Server, on a Family Heirloom sword wave: Deadlock fires it as a slow, wide projectile (citadel_weapon_fencer_set: 5000 hu/s,
     /// 10 hu radius, 1000 hu range, no gravity). Here a small spinning blade (user 2.5) that stops at the first enemy it reaches,
     /// sweeping its path each step so nothing slips between steps, or at terrain or the end of its range.
     /// </summary>

@@ -50,7 +50,7 @@ namespace CursedAppleCuriosities.Survivors.GreyTalon
             // His own Deadlock sounds wait for the user's review (their rule); the shared movement ones are already approved.
             foreach (DeadlockSound s in GreyTalonData.Sounds)
                 if (GreyTalonData.SoundsApproved || GreyTalonData.PreApproved.Contains(s.Id)) DeadlockSounds.Register(s);
-            foreach (string icon in new[] { GreyTalonData.IconPortrait, GreyTalonData.IconCharged, GreyTalonData.IconRain, GreyTalonData.IconOwl })
+            foreach (string icon in new[] { GreyTalonData.IconPortrait, GreyTalonData.IconGun, GreyTalonData.IconCharged, GreyTalonData.IconRain, GreyTalonData.IconOwl })
                 DeadlockInstall.WantIcon(icon);
             DeadlockHeroes.Register(GreyTalonModel.Def);
             DeadlockInstall.WantModel(GreyTalonModel.Def.ModelRequest());
@@ -225,7 +225,7 @@ namespace CursedAppleCuriosities.Survivors.GreyTalon
             locator.special = Kit.Slot(body, BodyName, "Special", _owl!);
             locator.passiveSkill = new SkillLocator.PassiveSkill
             {
-                enabled = true,
+                enabled = false, // hidden: it only described the Deadlock movement, and the user cut those blurbs (3.0)
                 skillNameToken = Token + "PASSIVE_NAME",
                 skillDescriptionToken = Token + "PASSIVE_DESC",
                 icon = ItemBase.CreatePlaceholderSprite(Color),
@@ -271,7 +271,7 @@ namespace CursedAppleCuriosities.Survivors.GreyTalon
             Survivor.outroFlavorToken = Token + "OUTRO";
             Survivor.mainEndingEscapeFailureFlavorToken = Token + "FAILURE";
             Survivor.primaryColor = Color;
-            Survivor.desiredSortPosition = 104f; // after Lash, Abrams, Seven and Vyper
+            Survivor.desiredSortPosition = 104f; // RosterOrder re-sorts the whole roster A-Z at load (user 3.0)
             ContentAddition.AddSurvivorDef(Survivor);
         }
 
@@ -301,6 +301,7 @@ namespace CursedAppleCuriosities.Survivors.GreyTalon
                 passive.icon = _bow.icon;
                 locator.passiveSkill = passive;
             }
+            Set(_bow, GreyTalonData.IconGun); // the weapon itself (user 3.0); the portrait stays if it isn't cached
             CursedAppleCuriositiesPlugin.Logger?.LogInfo($"[GreyTalon] icons: {(portrait != null ? "from Deadlock" : "placeholders (no Deadlock icons cached)")}");
         }
 
@@ -324,7 +325,7 @@ namespace CursedAppleCuriosities.Survivors.GreyTalon
             LanguageAPI.Add(Token + "LORE", "Every monster he ever hunted had a weakness. He meant to find this one's.");
 
             LanguageAPI.Add(Token + "PASSIVE_NAME", "Seasoned Hunter");
-            LanguageAPI.Add(Token + "PASSIVE_DESC", Kit.MovementLine(GreyTalonData.Movement, alone: true));
+            LanguageAPI.Add(Token + "PASSIVE_DESC", "");
 
             LanguageAPI.Add(Token + "BOW_NAME", "Bow");
             LanguageAPI.Add(Token + "BOW_DESC",

@@ -27,6 +27,7 @@ namespace CursedAppleCuriosities.Testing
     /// shot name                       save a screenshot of the screen
     /// portrait name yaw [zoom] [h]    render the player's body from yaw degrees (0 = its front) to name.png; h = aim height (0..1)
     /// setskill special CursedAppleAbramsSeismic   put a skill in a slot of the live body only (the saved loadout is untouched)
+    /// skin 2                          put the live body in skin N (the saved loadout is untouched)
     /// probe                           log the body's foot, main hurtbox bounds, Body state and animation state
     /// log text                        write a line to the BepInEx log
     /// quit
@@ -205,6 +206,7 @@ namespace CursedAppleCuriosities.Testing
                     return Screen(p[1]);
                 case "portrait": return Portrait(p[1], F(p, 2, 0f), F(p, 3, 1f), F(p, 4, 0.5f));
                 case "setskill": SetSkill(p[1], p[2]); return null;
+                case "skin": SetSkin((int)F(p, 1, 0f)); return null;
                 case "probe":
                 {
                     CharacterBody? b = LocalUserManager.GetFirstLocalUser()?.cachedBody;
@@ -265,6 +267,16 @@ namespace CursedAppleCuriosities.Testing
             if (gs == null || def == null) { Log($"setskill: no slot {slot} or skill {skillName}"); return; }
             gs.SetBaseSkill(def);
             Log($"setskill: {slot} = {skillName}");
+        }
+
+        private static void SetSkin(int index)
+        {
+            CharacterBody? body = LocalUserManager.GetFirstLocalUser()?.cachedBody;
+            var msc = body != null && body.modelLocator != null && body.modelLocator.modelTransform != null ? body.modelLocator.modelTransform.GetComponent<ModelSkinController>() : null;
+            if (body == null || msc == null) { Log("skin: no body"); return; }
+            body.skinIndex = (uint)index;
+            msc.ApplySkin(index);
+            Log($"skin: {index} ({(index < msc.skins.Length ? msc.skins[index].name : "?")})");
         }
 
         private static IEnumerator Wait(float s) { yield return new WaitForSeconds(s); }

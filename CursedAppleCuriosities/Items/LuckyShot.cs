@@ -33,8 +33,7 @@ namespace CursedAppleCuriosities.Items
 
         public override void Init(ConfigFile config)
         {
-            ChancePerStack = config.Bind("Red", "Lucky Shot - Hyperbolic Chance Per Stack", 0.4f,
-                "Hyperbolic second-crit chance weight per stack (chance = 1 - 1/(1 + weight*count)).").Value;
+            ChancePerStack = 0.4f;
             CreateLang();
             CreateItem();
             Hooks();
@@ -52,6 +51,7 @@ namespace CursedAppleCuriosities.Items
             GameObject victim)
         {
             orig(self, damageInfo, victim);
+            if (damageInfo == null || damageInfo.rejected) return; // blocked hits proc nothing (vanilla's own check is inside orig)
 
             if (!NetworkServer.active) return;
             if (damageInfo == null || victim == null) return;

@@ -21,12 +21,15 @@ namespace CursedAppleCuriosities.Stages.DeadlockMap
     /// </summary>
     public static class DeadlockStages
     {
-        public static ConfigEntry<int>? ShopWhite, ShopGreen, ShopRed;
-        public static ConfigEntry<float>? ShopTax;
+        // Curiosity shop: base price per tier (a small / large / legendary chest's base cost, scaled by difficulty like chests),
+        // a tax on top (user 3.0: buying must cost more than looting a chest) and a rise per item bought at that shop for the stage.
+        public const int ShopWhite = 25, ShopGreen = 50, ShopRed = 400;
+        public const float ShopTax = 0.2f, ShopTaxPerBuy = 0.25f;
 
         /// <summary>A shop price: the tier's base cost plus the shop tax (user 3.0: buying must cost more than looting a chest).</summary>
-        internal static int Taxed(int baseCost) => Mathf.Max(1, Mathf.RoundToInt(baseCost * (1f + Mathf.Max(0f, ShopTax?.Value ?? 0.2f))));
-        public static ConfigEntry<float>? Exposure, DynamicLight;
+        internal static int Taxed(int baseCost) => Mathf.Max(1, Mathf.RoundToInt(baseCost * (1f + Mathf.Max(0f, ShopTax))));
+        /// <summary>Deadlock's baked lighting brightness (1 = as baked), and how much the game's own lights add on top.</summary>
+        public const float Exposure = 1f, DynamicLight = 0.15f;
         private static AssetBundle? _scenes, _assets;
         internal static Material? BarrierMaterial, GlassMaterial, WorldMaterial;
         internal const string NewtPrefab = "RoR2/Base/NewtStatue/NewtStatue.prefab";
@@ -36,22 +39,6 @@ namespace CursedAppleCuriosities.Stages.DeadlockMap
 
         public static void Init(ConfigFile config, IReadOnlyList<District> districts)
         {
-            ShopWhite = config.Bind("Deadlock Map", "Shop White Base Cost", 25, "Curiosity shop on the map: base price of a white (a small chest's base cost; scaled by difficulty like chests).");
-            ShopGreen = config.Bind("Deadlock Map", "Shop Green Base Cost", 50, "Base price of a green (a large chest's base cost).");
-            ShopRed = config.Bind("Deadlock Map", "Shop Red Base Cost", 400, "Base price of a red (a legendary chest's base cost).");
-            ShopTax = config.Bind("Deadlock Map", "Shop Tax", 0.2f, "Extra charged on top of every shop base cost (0.2 = 20%), so buying an item costs more than looting the same tier from a chest.");
-            Exposure = config.Bind("Deadlock Map", "Lightmap Exposure", 1f,
-                "Brightness of Deadlock's own baked lighting on the map (1 = as baked).");
-            DynamicLight = config.Bind("Deadlock Map", "Dynamic Light Share", 0.15f,
-                "How much the game's own lights (the sun, explosions, glows) light the map on top of Deadlock's baked lighting (0 = none).");
-            WalkerTeleporter = config.Bind("Deadlock Map", "Walker Teleporter Chance", 0.5f,
-                "Chance (0-1) that a district's Walker spot holds the teleporter; otherwise a major interactable stands there (Large Chest, Large Multishop or Shrine of the Mountain).");
-            SecretChance = config.Bind("Deadlock Map", "Unfound Secret Chance", 0.5f,
-                "Chance that a district replaces its stage while it still hides a hero someone in the run hasn't unlocked (used instead of the district's own chance when higher; a district set to 0 stays off).");
-            ImpPitRadius = config.Bind("Deadlock Map", "Imp Pit Radius", 20f,
-                "Sunken Plaza's purple pit: using an interactable within this many metres of it wakes a hostile Bebop nearby (once per visit).");
-            InvaderHealth = config.Bind("Deadlock Map", "Pit Invader Health Boost", 10,
-                "Extra health on the pit's hostile Bebop, in Infusion-like steps of +10% (10 = double health).");
             MapShop.Init();
             HeroSilhouette.Init(districts.Select(d => d.Def));
             _scenes = LoadBundle("cac_stagescenes");
@@ -74,8 +61,10 @@ namespace CursedAppleCuriosities.Stages.DeadlockMap
             };
         }
 
-        public static ConfigEntry<float>? WalkerTeleporter;
-        public static ConfigEntry<float>? SecretChance;
+        /// <summary>Chance a district's Walker spot holds the teleporter (else a major interactable stands there).</summary>
+        public const float WalkerTeleporter = 0.5f;
+        /// <summary>Chance a district replaces its stage while it still hides a hero someone hasn't unlocked (if higher than its own; 0 stays off).</summary>
+        public const float SecretChance = 0.5f;
 
         /// <summary>True while the district hides a hero that someone in the run hasn't unlocked yet.</summary>
         private static bool HasUnfoundSecret(MapSectionDef def)
@@ -94,7 +83,13 @@ namespace CursedAppleCuriosities.Stages.DeadlockMap
             _walkerTeleporter = null;
             if (at == null || self.teleporterInstance != null || self.teleporterSpawnCard == null || DirectorCore.instance == null) { orig(self); return; }
             self.teleporterInstance = SpawnUpright(self.teleporterSpawnCard, at.Value.Pos, at.Value.Yaw, new Xoroshiro128Plus(Run.instance.stageRng.nextUlong));
-            if (self.teleporterInstance == null) { Warn("the teleporter didn't fit at the Walker's spot: placed as usual"); orig(self); return; }
+            if (self.teleporterInstance == null)
+            {
+                Warn("the teleporter didn't fit at the Walker's spot: placed as usual, a side objective goes there instead");
+                QueueWalker(at.Value.Pos, at.Value.Yaw);
+                orig(self);
+                return;
+            }
             Run.instance.OnServerTeleporterPlaced(self, self.teleporterInstance);
             // Vanilla's event for whoever listens (our log, other mods): only invokable through its backing field.
             var placed = typeof(SceneDirector).GetField("onTeleporterPlaced", BindingFlags.Static | BindingFlags.NonPublic)?.GetValue(null) as Action<SceneDirector, GameObject>;
@@ -116,20 +111,85 @@ namespace CursedAppleCuriosities.Stages.DeadlockMap
             var rule = new DirectorPlacementRule { placementMode = DirectorPlacementRule.PlacementMode.Direct, spawnOnTarget = anchor.transform };
             GameObject? spawned = DirectorCore.instance.TrySpawnObject(new DirectorSpawnRequest(card, rule, rng));
             UnityEngine.Object.Destroy(anchor);
+            ScaleCost(spawned);
             return spawned;
         }
 
+        /// <summary>
+        /// A gold price scaled by difficulty, as vanilla's director does for the interactables it places itself (only those: user 3.0,
+        /// Chinatown's legendary chest always cost 400). Every interactable the districts place by hand goes through here.
+        /// </summary>
+        internal static void ScaleCost(GameObject? spawned)
+        {
+            if (spawned == null || Run.instance == null || !spawned.TryGetComponent(out PurchaseInteraction pi) || pi.costType != CostTypeIndex.Money) return;
+            pi.Networkcost = Run.instance.GetDifficultyScaledCost(pi.cost);
+        }
+
+        /// <summary>
+        /// What a Walker spot holds when it isn't the teleporter (user 3.0: a major side objective, always): these, or the Soul Urn
+        /// (<see cref="WalkerUrn"/>). Ones whose DLC is off in the run are skipped.
+        /// </summary>
         internal static readonly string[] WalkerInteractables =
         {
-            "RoR2/Base/Chest2/iscChest2.asset",                   // Large Chest
-            "RoR2/Base/TripleShopLarge/iscTripleShopLarge.asset", // Large Multishop
-            "RoR2/Base/ShrineBoss/iscShrineBoss.asset",           // Shrine of the Mountain
+            "RoR2/Base/ShrineBoss/iscShrineBoss.asset",                         // Shrine of the Mountain
+            "RoR2/Base/ShrineRestack/iscShrineRestack.asset",                   // Shrine of Order
+            "RoR2/Base/ShrineGoldshoresAccess/iscShrineGoldshoresAccess.asset", // Altar of Gold
+            "RoR2/DLC2/iscShrineHalcyonite.asset",                              // Halcyon Shrine
+            "RoR2/DLC1/VoidCamp/iscVoidCamp.asset",                             // Void Seed
         };
+        internal const string WalkerUrn = "SoulUrn";
+        /// <summary>The Soul Urn only goes to the Walker spot when the teleporter is at least this far (metres) from it.</summary>
+        internal const float WalkerUrnMinDistance = 60f;
 
-        public static ConfigEntry<float>? ImpPitRadius;
-        public static ConfigEntry<int>? InvaderHealth;
+        /// <summary>A Walker spot waiting for its side objective (server): filled once the teleporter is placed.</summary>
+        internal static (Vector3 Pos, float Yaw)? _walkerPending;
+
+        /// <summary>Leave the Walker spot to <see cref="FillWalker"/>.</summary>
+        internal static void QueueWalker(Vector3 pos, float yaw)
+        {
+            _walkerPending = (pos, yaw);
+            SceneDirector.onPostPopulateSceneServer -= FillWalker;
+            SceneDirector.onPostPopulateSceneServer += FillWalker;
+        }
+
+        /// <summary>
+        /// After the director populated (the teleporter is placed): a major side objective at the Walker spot, trying them in a
+        /// random order until one fits, so the spot is never left empty.
+        /// </summary>
+        private static void FillWalker(SceneDirector director)
+        {
+            SceneDirector.onPostPopulateSceneServer -= FillWalker;
+            (Vector3 Pos, float Yaw)? at = _walkerPending;
+            _walkerPending = null;
+            if (at == null || Run.instance == null || DirectorCore.instance == null) return;
+            var rng = new Xoroshiro128Plus(Run.instance.stageRng.nextUlong);
+            var options = new List<string>(WalkerInteractables) { WalkerUrn };
+            Util.ShuffleList(options, rng);
+            foreach (string key in options)
+            {
+                if (key == WalkerUrn)
+                {
+                    TeleporterInteraction? tp = TeleporterInteraction.instance;
+                    if (!Interactables.SoulUrn.CanSpawn || tp == null || Vector3.Distance(tp.transform.position, at.Value.Pos) < WalkerUrnMinDistance) continue;
+                    if (Interactables.SoulUrn.SpawnAt(at.Value.Pos, at.Value.Yaw) != null) { Log("the Walker's spot holds a Soul Urn this stage"); return; }
+                    continue;
+                }
+                SpawnCard? card = Addressables.LoadAssetAsync<SpawnCard>(key).WaitForCompletion();
+                if (card == null) { Warn($"walker spot: no spawn card {key}"); continue; }
+                RoR2.ExpansionManagement.ExpansionDef? dlc = card.prefab != null && card.prefab.TryGetComponent(out RoR2.ExpansionManagement.ExpansionRequirementComponent req) ? req.requiredExpansion : null;
+                if (dlc != null && !Run.instance.IsExpansionEnabled(dlc)) continue;
+                GameObject? spawned = SpawnUpright(card, at.Value.Pos, at.Value.Yaw, rng);
+                if (spawned != null) { Log($"the Walker's spot holds {card.name} this stage"); return; }
+                Log($"{card.name} didn't fit at the Walker's spot, trying another");
+            }
+            Warn("nothing fit at the Walker's spot");
+        }
+
+        /// <summary>Sunken Plaza's pit: an interactable used within this many metres wakes a hostile Bebop; he gets +10% health per step.</summary>
+        public const float ImpPitRadius = 20f;
+        public const int InvaderHealth = 10;
         /// <summary>This stage's armed Imp Overlord pit (server): cleared once it has woken.</summary>
-        internal static (Stage Stage, Vector3 Pit)? _impPit;
+        internal static (Stage Stage, Vector3 Pit, Vector3? Room)? _impPit;
 
         /// <summary>
         /// The first time anyone uses an interactable in the pit (a chest, a shrine...), a hostile Bebop invades nearby: once per
@@ -139,14 +199,14 @@ namespace CursedAppleCuriosities.Stages.DeadlockMap
         private static void ImpPitInteraction(Interactor interactor, IInteractable interactable, GameObject used)
         {
             if (!NetworkServer.active || _impPit == null || used == null) return;
-            var (stage, pit) = _impPit.Value;
+            var (stage, pit, room) = _impPit.Value;
             if (stage != Stage.instance) { _impPit = null; return; }
-            if ((used.transform.position - pit).sqrMagnitude > Mathf.Pow(ImpPitRadius?.Value ?? 20f, 2f)) return;
+            if ((used.transform.position - pit).sqrMagnitude > Mathf.Pow(ImpPitRadius, 2f)) return;
             _impPit = null;
-            SpawnInvader(used.transform.position, pit);
+            SpawnInvader(used.transform.position, pit, room, interactor != null ? interactor.GetComponent<CharacterBody>() : null);
         }
 
-        private static void SpawnInvader(Vector3 near, Vector3 pit)
+        private static void SpawnInvader(Vector3 near, Vector3 pit, Vector3? room, CharacterBody? waker)
         {
             if (Run.instance == null || DirectorCore.instance == null) return;
             CharacterSpawnCard? card = Survivors.Bebop.BebopInvader.Card;
@@ -158,7 +218,7 @@ namespace CursedAppleCuriosities.Stages.DeadlockMap
             {
                 CharacterMaster? master = result.success && result.spawnedInstance != null ? result.spawnedInstance.GetComponent<CharacterMaster>() : null;
                 if (master == null || master.inventory == null) return;
-                master.inventory.GiveItemPermanent(RoR2Content.Items.BoostHp, Mathf.Max(0, InvaderHealth?.Value ?? 10));
+                master.inventory.GiveItemPermanent(RoR2Content.Items.BoostHp, Mathf.Max(0, InvaderHealth));
                 GameObject? body = master.GetBodyObject();
                 if (body != null)
                 {
@@ -169,6 +229,14 @@ namespace CursedAppleCuriosities.Stages.DeadlockMap
                     rewards.expReward = (uint)Mathf.Max(1f, worth * Run.instance.compensatedDifficultyCoefficient);
                     rewards.goldReward = (uint)Mathf.Max(1f, worth * 2f * Run.instance.compensatedDifficultyCoefficient);
                 }
+                // He comes for whoever woke him, at once (user 3.0: he sat in his room until someone came into view).
+                if (waker != null && waker.healthComponent != null && waker.healthComponent.alive)
+                    foreach (RoR2.CharacterAI.BaseAI ai in master.GetComponents<RoR2.CharacterAI.BaseAI>())
+                    {
+                        if (ai == null) continue;
+                        ai.currentEnemy.gameObject = waker.gameObject;
+                        ai.enemyAttention = 15f;
+                    }
                 Chat.SendBroadcastChat(new Chat.SimpleChatMessage { baseToken = "<color=#ff5544>Bebop has invaded!</color>" });
                 Log($"a hostile Bebop invaded from the pit at {body?.transform.position}");
             }
@@ -178,8 +246,25 @@ namespace CursedAppleCuriosities.Stages.DeadlockMap
                 ignoreTeamMemberLimit = true,
                 onSpawnedServer = Configure,
             };
+            GameObject? spawned = null;
+            // The district's invader room (Sunken Plaza: the empty room under the pit, user 3.0): on its floor's nodes, else right there.
+            if (room != null)
+            {
+                anchor.transform.position = room.Value;
+                spawned = DirectorCore.instance.TrySpawnObject(Request(new DirectorPlacementRule
+                {
+                    placementMode = DirectorPlacementRule.PlacementMode.Approximate, spawnOnTarget = anchor.transform, minDistance = 0f, maxDistance = 6f,
+                }));
+                if (spawned == null)
+                {
+                    anchor.transform.position = room.Value + Vector3.up * 0.2f;
+                    spawned = DirectorCore.instance.TrySpawnObject(Request(new DirectorPlacementRule { placementMode = DirectorPlacementRule.PlacementMode.Direct, spawnOnTarget = anchor.transform }));
+                }
+                if (spawned == null) Warn("the Bebop invader didn't fit in his room: placed near whoever woke him");
+                anchor.transform.position = near;
+            }
             // Nearby, not on top of whoever woke him; failing that, right in the pit.
-            GameObject? spawned = DirectorCore.instance.TrySpawnObject(Request(new DirectorPlacementRule
+            spawned ??= DirectorCore.instance.TrySpawnObject(Request(new DirectorPlacementRule
             {
                 placementMode = DirectorPlacementRule.PlacementMode.Approximate, spawnOnTarget = anchor.transform, minDistance = 8f, maxDistance = 25f,
             }));
@@ -214,8 +299,8 @@ namespace CursedAppleCuriosities.Stages.DeadlockMap
                 foreach (District d in DeadlockMaps.Districts)
                 {
                     SceneDef? def = d.Stage.Def;
-                    float chance = Mathf.Clamp(d.Stage.Chance?.Value ?? 0f, 0f, 0.95f);
-                    if (chance > 0f && HasUnfoundSecret(d.Def)) chance = Mathf.Max(chance, Mathf.Clamp(SecretChance?.Value ?? 0f, 0f, 0.95f));
+                    float chance = Mathf.Clamp(d.Stage.Chance, 0f, 0.95f);
+                    if (chance > 0f && HasUnfoundSecret(d.Def)) chance = Mathf.Max(chance, Mathf.Clamp(SecretChance, 0f, 0.95f));
                     if (def == null || chance <= 0f || order != d.Def.StageOrder || Offered(choices, def) || vanilla <= 0f) continue;
                     // A weight that makes it this likely against the slot's vanilla stages: w / (vanilla + w) = chance.
                     if (PartyCheck.AllReady(d, out string why)) choices.AddChoice(def, vanilla * chance / (1f - chance));
@@ -322,8 +407,10 @@ namespace CursedAppleCuriosities.Stages.DeadlockMap
     {
         public readonly District District;
         public readonly SceneDef? Def;
-        public readonly ConfigEntry<float>? Chance;
-        public readonly ConfigEntry<string>? Sky;
+        /// <summary>Chance this district replaces its usual stage (only when everyone in the run can load it).</summary>
+        public readonly float Chance = 0.1f;
+        /// <summary>Skybox material borrowed from a vanilla stage (Addressables key).</summary>
+        public readonly string Sky;
         private MapSectionDef D => District.Def;
 
         private static void Log(string s) => CursedAppleCuriositiesPlugin.Logger?.LogInfo("[DeadlockMap] " + s);
@@ -332,10 +419,7 @@ namespace CursedAppleCuriosities.Stages.DeadlockMap
         internal DistrictStage(District district, ConfigFile config)
         {
             District = district;
-            Sky = config.Bind("Deadlock Map", $"{D.Name} Sky", D.Sky,
-                "Skybox material borrowed from a vanilla stage (Addressables key).");
-            Chance = config.Bind("Deadlock Map", $"{D.Name} Chance", 0.1f,
-                $"Chance that {D.Name} replaces the usual stage {D.StageOrder} (0.1 = 10%; 0 = never on its own). Only when everyone in the run can load it.");
+            Sky = D.Sky;
             if (Array.IndexOf(MapSectionDef.Scenes, D.Scene) < 0) { Warn($"{D.Id}: scene {D.Scene} isn't in the stage bundle"); return; }
             string token = "CURSEDAPPLE_STAGE_" + D.Id.ToUpperInvariant();
             LanguageAPI.Add(token + "_NAME", D.Name);
@@ -388,7 +472,7 @@ namespace CursedAppleCuriosities.Stages.DeadlockMap
                 return;
             }
             var watch = System.Diagnostics.Stopwatch.StartNew();
-            float scale = DeadlockMaps.Scale?.Value ?? 1f;
+            float scale = DeadlockMaps.Scale;
             GameObject world = UnityEngine.Object.Instantiate(t.Root);
             world.name = "DeadlockMap";
             world.transform.localScale = Vector3.one * scale;
@@ -397,7 +481,7 @@ namespace CursedAppleCuriosities.Stages.DeadlockMap
             Physics.SyncTransforms();
 
             var section = new SectionSpace(conv.Def, t.OriginUnits);
-            StageDressing.Build(scene, world.transform, section, t.Playable, Sky?.Value ?? "");
+            StageDressing.Build(scene, world.transform, section, t.Playable, Sky);
 
             // AI navigation from the geometry (cached after the first time), then the stage's own objects.
             Bounds area = t.Playable;
@@ -504,13 +588,15 @@ namespace CursedAppleCuriosities.Stages.DeadlockMap
                 GameObject? world = GameObject.Find("DeadlockMap");
                 DeadlockStages._impPit = null;
                 if (p.Length < 4 || world == null || Stage.instance == null) return;
-                DeadlockStages._impPit = (Stage.instance, world.transform.TransformPoint(new Vector3(p[0], p[1], p[2])));
+                float[] r = def.InvaderSpot;
+                Vector3? room = r.Length >= 3 ? world.transform.TransformPoint(new Vector3(r[0], r[1], r[2])) : (Vector3?)null;
+                DeadlockStages._impPit = (Stage.instance, world.transform.TransformPoint(new Vector3(p[0], p[1], p[2])), room);
                 Log("the Imp Overlord's pit is armed");
             }
 
             /// <summary>
             /// The Walker's spot: the teleporter (placed there by <see cref="PlaceTeleporter"/> when the director populates) or,
-            /// the rest of the time, one major interactable.
+            /// the rest of the time, a major side objective (<see cref="FillWalker"/>). Never empty (user 3.0).
             /// </summary>
             private static void WalkerSlot(MapSectionDef def)
             {
@@ -519,17 +605,13 @@ namespace CursedAppleCuriosities.Stages.DeadlockMap
                 if (w.Length < 4 || world == null || Run.instance == null || DirectorCore.instance == null) return;
                 Vector3 at = world.transform.TransformPoint(new Vector3(w[0], w[1], w[2]));
                 float yaw = w[3] + world.transform.eulerAngles.y;
-                if (Run.instance.stageRng.nextNormalizedFloat < (DeadlockStages.WalkerTeleporter?.Value ?? 0.5f))
+                if (Run.instance.stageRng.nextNormalizedFloat < (DeadlockStages.WalkerTeleporter))
                 {
                     DeadlockStages._walkerTeleporter = (at, yaw);
                     Log("the Walker's spot holds the teleporter this stage");
                     return;
                 }
-                string key = DeadlockStages.WalkerInteractables[Run.instance.stageRng.RangeInt(0, DeadlockStages.WalkerInteractables.Length)];
-                SpawnCard? card = Addressables.LoadAssetAsync<SpawnCard>(key).WaitForCompletion();
-                if (card == null) { Warn($"walker spot: no spawn card {key}"); return; }
-                GameObject? spawned = DeadlockStages.SpawnUpright(card, at, yaw, new Xoroshiro128Plus(Run.instance.stageRng.nextUlong));
-                Log(spawned != null ? $"the Walker's spot holds {card.name} this stage" : $"{card.name} didn't fit at the Walker's spot");
+                DeadlockStages.QueueWalker(at, yaw); // filled once the teleporter is placed (the Soul Urn needs to know where it is)
             }
 
             /// <summary>The district's fixed interactables (a legendary chest on a bell tower...), each exactly at its spot.</summary>
@@ -562,7 +644,8 @@ namespace CursedAppleCuriosities.Stages.DeadlockMap
                         isc.slightlyRandomizeOrientation = false;
                         card = isc;
                     }
-                    if (DirectorCore.instance.TrySpawnObject(new DirectorSpawnRequest(card, rule, rng)) != null) placed++;
+                    GameObject? spawned = DirectorCore.instance.TrySpawnObject(new DirectorSpawnRequest(card, rule, rng));
+                    if (spawned != null) { DeadlockStages.ScaleCost(spawned); placed++; }
                     else Warn($"fixed interactable {f.Card} couldn't be placed at {anchor.transform.position}");
                 }
                 Destroy(anchor);
@@ -636,8 +719,8 @@ namespace CursedAppleCuriosities.Stages.DeadlockMap
                     Vector3 top = world.transform.TransformPoint(MapCache.ToUnity(centre, t.OriginUnits));
                     if (!Physics.Raycast(top, Vector3.down, out RaycastHit hit, 12f, LayerIndex.world.mask, QueryTriggerInteraction.Ignore)) continue;
                     if (MapShop.Spawn(hit.point,
-                            DeadlockStages.Taxed(DeadlockStages.ShopWhite?.Value ?? 25), DeadlockStages.Taxed(DeadlockStages.ShopGreen?.Value ?? 50),
-                            DeadlockStages.Taxed(DeadlockStages.ShopRed?.Value ?? 400)) != null)
+                            DeadlockStages.Taxed(DeadlockStages.ShopWhite), DeadlockStages.Taxed(DeadlockStages.ShopGreen),
+                            DeadlockStages.Taxed(DeadlockStages.ShopRed)) != null)
                         placed++;
                 }
                 Log($"{placed} curiosity shops placed at Deadlock's shop counters");
@@ -714,6 +797,7 @@ namespace CursedAppleCuriosities.Stages.DeadlockMap
                     };
                     GameObject? spawned = DirectorCore.instance.TrySpawnObject(new DirectorSpawnRequest(card.GetSpawnCard(), rule, rng));
                     if (spawned == null) continue;
+                    DeadlockStages.ScaleCost(spawned);
                     spent += card.cost;
                     sd.interactableCredit -= card.cost;
                     placed++;

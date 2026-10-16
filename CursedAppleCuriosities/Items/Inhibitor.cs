@@ -34,10 +34,8 @@ namespace CursedAppleCuriosities.Items
 
         public override void Init(ConfigFile config)
         {
-            ReductionCoefficient = config.Bind("Red", "Inhibitor - Damage Reduction Coefficient", 1f / 3f,
-                "Hyperbolic coefficient for the enemy damage reduction: 1 - 1/(1 + c * stacks). 0.333 = 25% at 1 stack, 40% at 2, 50% at 3.").Value;
-            SlowAmount = config.Bind("Red", "Inhibitor - Slow", 0.25f,
-                "Movement slow on inhibited enemies (does not stack).").Value;
+            ReductionCoefficient = 1f / 3f;
+            SlowAmount = 0.25f;
 
             var color                   = new Color(0.85f, 0.3f, 0.3f);
             InhibitedBuffDef            = ScriptableObject.CreateInstance<BuffDef>();
@@ -65,6 +63,7 @@ namespace CursedAppleCuriosities.Items
             GlobalEventManager self, DamageInfo damageInfo, GameObject victim)
         {
             orig(self, damageInfo, victim);
+            if (damageInfo == null || damageInfo.rejected) return; // blocked hits proc nothing (vanilla's own check is inside orig)
             if (!NetworkServer.active) return;
             if (damageInfo?.attacker == null || victim == null) return;
             if (damageInfo.procCoefficient <= 0f) return;
@@ -88,6 +87,7 @@ namespace CursedAppleCuriosities.Items
             HealthComponent self,
             DamageInfo damageInfo)
         {
+            if (FinalDamage(damageInfo)) { orig(self, damageInfo); return; } // already worked out (Bloodletting's ticks)
             if (NetworkServer.active
                 && damageInfo?.attacker != null
                 && InhibitedBuffDef != null

@@ -23,7 +23,13 @@ namespace CursedAppleCuriosities.Survivors.Viscous
             Anims = ViscousData.Anims,
             RootLocked = ViscousData.Locked,
             // Blue Viscous (skin 1): his green goo turned blue.
-            Skins = new[] { new DeadlockSkin { Id = "blue1", Recolor = DeadlockSkin.HueShift(70f, 170f, 95f) } },
+            Skins = new[]
+            {
+                new DeadlockSkin { Id = "blue1", Recolor = DeadlockSkin.HueShift(70f, 170f, 95f) },
+                // Pisscous (skin 2, user 3.0): his greens set to a bright yellow. A plain hue rotation kept their brightness and came out
+                // olive; yellow has to be lighter than green to read as yellow (previewed on his textures, the cube's included).
+                new DeadlockSkin { Id = "pisscous1", Recolor = DeadlockSkin.SetHue(70f, 170f, 54f, 1.1f, 0.55f, 1.25f) },
+            },
             ItemAnchors = ViscousItemDisplays.Anchors,
         };
 

@@ -9,7 +9,7 @@ namespace CursedAppleCuriosities.Survivors.Shiv
     /// Shiv's numbers (Deadlock's hero_shiv, id 19 / citadel_weapon_shiv_set + _alt / citadel_ability_shiv_*, read from the
     /// 2026-10-06 vdata: today's client 6782 can't be decoded by the bundled converter). Deadlock values are kept where RoR2
     /// has the same scale (metres, seconds, speeds; 39.37 hu = 1 m); damage becomes RoR2 damage coefficients and cooldowns
-    /// RoR2-length. The kit is the user's (2026-10-14). Headline knobs are in the [Shiv] config section.
+    /// RoR2-length. The kit is the user's (2026-10-14).
     /// </summary>
     public static class ShivData
     {
@@ -97,37 +97,9 @@ namespace CursedAppleCuriosities.Survivors.Shiv
         public static float RageFullDrainDelay = 6f;    // user 3.0: full rage lasts longer before it starts to drain (my number)
         public static float RageDrainSeconds = 4f;      // from full to empty once draining (Deadlock RageDrainRate 0.25)
 
-        public static void Bind(ConfigFile c)
+        public static void Bind(ConfigFile c) // the hero's config section is only its keybind layout (3.0)
         {
             Movement.Bind(c, Section);
-            BaseHealth = c.Bind(Section, "Base Health", BaseHealth, "Shiv max health at level 1 (+33 per level).").Value;
-            PelletDamage = c.Bind(Section, "Shotgun - Pellet Damage", PelletDamage, "Damage coefficient per pellet.").Value;
-            Pellets = c.Bind(Section, "Shotgun - Pellets", Pellets, "Pellets per shot.").Value;
-            ShotCycle = c.Bind(Section, "Shotgun - Time Between Shots", ShotCycle, "Seconds between shots before attack speed.").Value;
-            AltPelletDamage = c.Bind(Section, "Alt Fire - Pellet Damage", AltPelletDamage, "Damage coefficient per pellet of the alt fire.").Value;
-            AltPellets = c.Bind(Section, "Alt Fire - Pellets", AltPellets, "Pellets per alt fire shot.").Value;
-            AltCycle = c.Bind(Section, "Alt Fire - Time Between Shots", AltCycle, "Seconds between alt fire shots before attack speed.").Value;
-            AltFalloffStart = c.Bind(Section, "Alt Fire - Falloff Start", AltFalloffStart, "Metres of full damage before the alt fire falls off.").Value;
-            AltFalloffEnd = c.Bind(Section, "Alt Fire - Falloff End", AltFalloffEnd, "Metres where the alt fire is down to 10%.").Value;
-            AltKnockback = c.Bind(Section, "Alt Fire - Self Knockback", AltKnockback, "m/s Shiv is pushed away from where he aims.").Value;
-            KnifeDamage = c.Bind(Section, "Serrated Knife - Damage", KnifeDamage, "Damage coefficient of the knife hit.").Value;
-            KnifeBleeds = c.Bind(Section, "Serrated Knife - Bleed Stacks", KnifeBleeds, "Bleed stacks per knife (Tri-Tip Dagger's bleed).").Value;
-            KnifeRecharge = c.Bind(Section, "Serrated Knife - Recharge", KnifeRecharge, "Seconds per charge (3 charges).").Value;
-            DashDamage = c.Bind(Section, "Slice n Dice - Damage", DashDamage, "Damage coefficient to enemies in the dash's path.").Value;
-            DashCooldown = c.Bind(Section, "Slice n Dice - Cooldown", DashCooldown, "Seconds.").Value;
-            DashCooldownPerHit = c.Bind(Section, "Slice n Dice - Cooldown Per Hit", DashCooldownPerHit, "Seconds taken off the cooldown per enemy struck.").Value;
-            DashMinWait = c.Bind(Section, "Slice n Dice - Minimum Wait", DashMinWait, "However many enemies a dash strikes, at least this many seconds of cooldown are left after it.").Value;
-            LungeDamage = c.Bind(Section, "Killing Blow - Damage", LungeDamage, "Damage coefficient to enemies in the lunge's path.").Value;
-            LungeMetres = c.Bind(Section, "Killing Blow - Distance", LungeMetres, "Metres the lunge covers.").Value;
-            ExecuteThreshold = c.Bind(Section, "Killing Blow - Execute Threshold", ExecuteThreshold, "Health fraction under which an enemy is executed (bosses: half).").Value;
-            ExecuteThresholdRage = c.Bind(Section, "Killing Blow - Execute Threshold At Full Rage", ExecuteThresholdRage, "Execute threshold at full rage (bosses: half).").Value;
-            ExecuteRage = c.Bind(Section, "Killing Blow - Rage On Execute", ExecuteRage, "Rage gained by an execute (100 = full).").Value;
-            KillingBlowCooldown = c.Bind(Section, "Killing Blow - Cooldown", KillingBlowCooldown, "Seconds (refunded by an execute).").Value;
-            DeferredShare = c.Bind(Section, "Bloodletting - Deferred Share", DeferredShare, "Share of damage taken that is dealt over 6 s instead.").Value;
-            RageFillDamage = c.Bind(Section, "Rage - Damage To Fill", RageFillDamage, "Full rage after dealing this many times Shiv's damage stat.").Value;
-            RageDrainDelay = c.Bind(Section, "Rage - Drain Delay", RageDrainDelay, "Seconds without dealing damage before rage drains.").Value;
-            RageFullDrainDelay = c.Bind(Section, "Rage - Full Drain Delay", RageFullDrainDelay, "Seconds without dealing damage before FULL rage starts to drain.").Value;
-            RageDrainSeconds = c.Bind(Section, "Rage - Drain Time", RageDrainSeconds, "Seconds for full rage to drain to nothing.").Value;
         }
 
         /// <summary>Execute threshold for a target (bosses at half: user).</summary>
@@ -141,6 +113,10 @@ namespace CursedAppleCuriosities.Survivors.Shiv
         public const string MuzzleBone = "muzzle_fx";  // checked against his skeleton once the converter works again
 
         public const string IconPortrait = "panorama/images/heroes/shiv_sm_psd.vtex_c";
+
+        // The primary shows the weapon itself (user 3.0, like Celeste's baton): Deadlock's shop image of the hero's gun.
+
+        public const string IconGun = "panorama/images/heroes/guns/shiv_gun_psd.vtex_c";
         public const string IconKnife = "panorama/images/hud/abilities/shiv/shiv_toss_psd.vtex_c";           // dagger's m_strAbilityImage
         public const string IconDash = "panorama/images/hud/abilities/shiv/shiv_flash_psd.vtex_c";           // dash's
         public const string IconBloodletting = "panorama/images/hud/abilities/shiv/shiv_bloodletting_psd.vtex_c";

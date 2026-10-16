@@ -32,6 +32,8 @@ namespace CursedAppleCuriosities.Survivors.Viscous
         /// <summary>Skin icon in the hero's own palette (goo greens and his dark outline), not the stand-in's.</summary>
         private static Sprite DefaultSkinIcon => _defaultSkinIcon ??= Kit.SkinIcon(new Color(0.38f, 0.75f, 0.4f), new Color(0.43f, 0.94f, 0.43f), new Color(0.14f, 0.16f, 0.15f), new Color(0.17f, 0.55f, 0.2f));
         private static Sprite? _defaultSkinIcon;
+        private static Sprite PisscousSkinIcon => _pisscousSkinIcon ??= Kit.SkinIcon(new Color(0.93f, 0.86f, 0.3f), new Color(0.95f, 0.9f, 0.4f), new Color(0.14f, 0.16f, 0.15f), new Color(0.85f, 0.72f, 0.15f));
+        private static Sprite? _pisscousSkinIcon;
         private static Sprite BlueSkinIcon => _blueSkinIcon ??= Kit.SkinIcon(new Color(0.3f, 0.45f, 0.75f), new Color(0.35f, 0.55f, 0.95f), new Color(0.14f, 0.16f, 0.16f), new Color(0.3f, 0.45f, 0.75f));
         private static Sprite? _blueSkinIcon;
         public const float Hue = 0.33f;
@@ -50,7 +52,7 @@ namespace CursedAppleCuriosities.Survivors.Viscous
         {
             ViscousData.Bind(config);
             foreach (DeadlockSound s in ViscousData.Sounds) DeadlockSounds.Register(s);
-            foreach (string icon in new[] { ViscousData.IconPortrait, ViscousData.IconBall, ViscousData.IconSplatter, ViscousData.IconPunch, ViscousData.IconCube, ViscousData.IconAlt })
+            foreach (string icon in new[] { ViscousData.IconPortrait, ViscousData.IconGun, ViscousData.IconBall, ViscousData.IconSplatter, ViscousData.IconPunch, ViscousData.IconCube, ViscousData.IconAlt })
                 DeadlockInstall.WantIcon(icon);
             DeadlockHeroes.Register(ViscousModel.Def);
             DeadlockInstall.WantModel(ViscousModel.Def.ModelRequest());
@@ -191,7 +193,7 @@ namespace CursedAppleCuriosities.Survivors.Viscous
             locator.special = Kit.Slot(body, BodyName, "Special", _ball!);
             locator.passiveSkill = new SkillLocator.PassiveSkill
             {
-                enabled = true,
+                enabled = false, // hidden: it only described the Deadlock movement, and the user cut those blurbs (3.0)
                 skillNameToken = Token + "PASSIVE_NAME",
                 skillDescriptionToken = Token + "PASSIVE_DESC",
                 icon = ItemBase.CreatePlaceholderSprite(Color),
@@ -207,7 +209,8 @@ namespace CursedAppleCuriosities.Survivors.Viscous
             Kit.MuteStandIn(body, model.gameObject, ViscousData.Hero);
             var children = model.GetComponent<ChildLocator>();
             if (children != null && children.FindChild(MuzzleName) == null) children.AddChild(MuzzleName, model);
-            Kit.OwnSkin(model.gameObject, "skinCursedAppleViscousDEFAULT", Token + "SKIN_DEFAULT", DefaultSkinIcon, ("skinCursedAppleViscousBLUE", Token + "SKIN_BLUE", BlueSkinIcon));
+            Kit.OwnSkin(model.gameObject, "skinCursedAppleViscousDEFAULT", Token + "SKIN_DEFAULT", DefaultSkinIcon, ("skinCursedAppleViscousBLUE", Token + "SKIN_BLUE", BlueSkinIcon),
+                ("skinCursedAppleViscousPISSCOUS", Token + "SKIN_PISSCOUS", PisscousSkinIcon));
 
             Kit.BiggerCamera(body, "ccpCursedAppleViscous", 0.5f, 1.2f); // pivot up (m), distance (x Commando's) for the bigger model
             ContentAddition.AddBody(body);
@@ -225,7 +228,8 @@ namespace CursedAppleCuriosities.Survivors.Viscous
                 swap.HeroKey = ViscousData.Hero;
                 swap.IsDisplay = true;
                 cm.gameObject.AddComponent<ViscousBallLook>(); // keeps the ball hidden on the pedestal
-                Kit.OwnSkin(cm.gameObject, "skinCursedAppleViscousDISPLAY", Token + "SKIN_DEFAULT", DefaultSkinIcon, ("skinCursedAppleViscousDISPLAYBLUE", Token + "SKIN_BLUE", BlueSkinIcon));
+                Kit.OwnSkin(cm.gameObject, "skinCursedAppleViscousDISPLAY", Token + "SKIN_DEFAULT", DefaultSkinIcon, ("skinCursedAppleViscousDISPLAYBLUE", Token + "SKIN_BLUE", BlueSkinIcon),
+                    ("skinCursedAppleViscousDISPLAYPISSCOUS", Token + "SKIN_PISSCOUS", PisscousSkinIcon));
             }
             display.AddComponent<ViscousDisplayIntro>();
             return display;
@@ -242,7 +246,7 @@ namespace CursedAppleCuriosities.Survivors.Viscous
             Survivor.outroFlavorToken = Token + "OUTRO";
             Survivor.mainEndingEscapeFailureFlavorToken = Token + "FAILURE";
             Survivor.primaryColor = Color;
-            Survivor.desiredSortPosition = 106f; // after Victor
+            Survivor.desiredSortPosition = 112f; // RosterOrder re-sorts the whole roster A-Z at load (user 3.0)
             ContentAddition.AddSurvivorDef(Survivor);
         }
 
@@ -274,6 +278,7 @@ namespace CursedAppleCuriosities.Survivors.Viscous
                     locator.passiveSkill = passive;
                 }
             }
+            Set(_gun, ViscousData.IconGun); // the weapon itself (user 3.0); the portrait stays if it isn't cached
             CursedAppleCuriositiesPlugin.Logger?.LogInfo($"[Viscous] icons: {(portrait != null ? "from Deadlock" : "placeholders (no Deadlock icons cached)")}");
         }
 
@@ -286,6 +291,7 @@ namespace CursedAppleCuriosities.Survivors.Viscous
             LanguageAPI.Add(Token + "SUBTITLE", "The Goo");
             LanguageAPI.Add(Token + "SKIN_DEFAULT", "Default");
             LanguageAPI.Add(Token + "SKIN_BLUE", "Bluescous"); // user 3.0
+            LanguageAPI.Add(Token + "SKIN_PISSCOUS", "Pisscous"); // user 3.0
             LanguageAPI.Add(Token + "DESCRIPTION",
                 "Viscous is a living blob of goo in a diving suit, here to help, mostly.<color=#CCD3E0>\n\n" +
                 "< ! > Goo Ball steers where you look. The faster it rolls, the harder it hits.\n\n" +
@@ -296,7 +302,7 @@ namespace CursedAppleCuriosities.Survivors.Viscous
             LanguageAPI.Add(Token + "LORE", "Goo.");
 
             LanguageAPI.Add(Token + "PASSIVE_NAME", "Goo");
-            LanguageAPI.Add(Token + "PASSIVE_DESC", Kit.MovementLine(ViscousData.Movement, alone: true));
+            LanguageAPI.Add(Token + "PASSIVE_DESC", "");
 
             LanguageAPI.Add(Token + "GUN_NAME", "Goo Gun");
             LanguageAPI.Add(Token + "GUN_DESC", $"Fire for <style=cIsDamage>{D(ViscousData.GunDamage)} damage</style>.");

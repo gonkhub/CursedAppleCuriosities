@@ -98,6 +98,14 @@ namespace CursedAppleCuriosities.Deadlock
         public string Id = "";
         public Func<byte[], bool> Recolor = _ => false;
         /// <summary>
+        /// A whole other model instead of a recolour (a fan-made model skin): its model key, asked for with
+        /// DeadlockInstall.WantModel. It plays the hero's own clips, so it needs the hero's skeleton; until it is there
+        /// (or when the player doesn't have it) the hero's own model stands in.
+        /// </summary>
+        public string? Model;
+        /// <summary>Its name for the chat notice when the model can't be shown.</summary>
+        public string ModelName = "";
+        /// <summary>
         /// Instead of Recolor, when a skin needs to know which texture it's on and where a pixel is (Lash's Gilded: dark pixels
         /// of his body texture turn gold, except on his face): (file name, RGBA pixels bottom row first, width, height).
         /// </summary>
@@ -109,7 +117,8 @@ namespace CursedAppleCuriosities.Deadlock
         /// Hues between fromLo and fromHi (feathered 10 degrees) set to toHue, saturation raised to max(sat x satMul, minSat),
         /// value x valMul: pale, barely-tinted colours (skin) become a definite new colour (Victor's Green Monster skin).
         /// </summary>
-        public static Func<byte[], bool> SetHue(float fromLo, float fromHi, float toHue, float satMul, float minSat, float valMul) => px =>
+        /// With gate above 0.08, only colours more saturated than gate change (feathered): a coat, not the greyer cloth of the same hue.
+        public static Func<byte[], bool> SetHue(float fromLo, float fromHi, float toHue, float satMul, float minSat, float valMul, float gate = 0.08f) => px =>
         {
             const float Feather = 10f;
             bool changed = false;
@@ -117,11 +126,13 @@ namespace CursedAppleCuriosities.Deadlock
             {
                 Color.RGBToHSV(new Color32(px[i], px[i + 1], px[i + 2], 255), out float h, out float s, out float v);
                 if (v <= 0f || s < 0.08f) continue;
+                float gw = gate > 0.08f ? Mathf.Clamp01((s - gate) / 0.06f) : 1f;
+                if (gw <= 0f) continue;
                 h *= 360f;
                 float w = Mathf.Clamp01((h - (fromLo - Feather)) / Feather) * Mathf.Clamp01(((fromHi + Feather) - h) / Feather);
                 if (w <= 0f) continue;
                 Color n = Color.HSVToRGB(toHue / 360f, Mathf.Min(1f, Mathf.Max(s * satMul, minSat)), Mathf.Min(1f, v * valMul));
-                Mix(px, i, n, w);
+                Mix(px, i, n, w * gw);
                 changed = true;
             }
             return changed;
@@ -181,6 +192,31 @@ namespace CursedAppleCuriosities.Deadlock
             px[i + 1] = (byte)Mathf.RoundToInt(Mathf.Lerp(px[i + 1], n.g * 255f, w));
             px[i + 2] = (byte)Mathf.RoundToInt(Mathf.Lerp(px[i + 2], n.b * 255f, w));
         }
+        /// <summary>
+        /// Black and dark-grey cloth to a night sky (Mina's Nightshade dress, user 3.0): deep indigo in the folds, a lighter midnight blue
+        /// on the highlights, following the cloth's own shading (UV islands are scattered, so a gradient across the texture would be
+        /// patchy). Skin and its shadows (red well above blue) and anything already coloured are left alone.
+        /// </summary>
+        public static Func<byte[], bool> NightSky() => px =>
+        {
+            bool changed = false;
+            for (int i = 0; i < px.Length; i += 4)
+            {
+                float r = px[i] / 255f, g = px[i + 1] / 255f, b = px[i + 2] / 255f;
+                float v = Mathf.Max(r, Mathf.Max(g, b));
+                if (v <= 0f) continue;
+                float sat = (v - Mathf.Min(r, Mathf.Min(g, b))) / v;
+                float warm = Mathf.Clamp01(((r - b) / v - 0.08f) / 0.1f);
+                float w = Mathf.Clamp01((0.32f - sat) / 0.1f) * Mathf.Clamp01((0.5f - v) / 0.12f) * (1f - warm);
+                if (w <= 0f) continue;
+                float t = Mathf.Clamp01(v / 0.5f);
+                Color n = Color.HSVToRGB((242f - 30f * t) / 360f, 0.85f - 0.3f * t, Mathf.Min(1f, 0.07f + v * 1.05f + 0.1f * t));
+                Mix(px, i, n, w);
+                changed = true;
+            }
+            return changed;
+        };
+
         /// <summary>Only textures whose file name contains one of these are recoloured (empty = every texture): a jacket can change without the skin tones.</summary>
         public string[] Only = Array.Empty<string>();
 
@@ -236,9 +272,14 @@ namespace CursedAppleCuriosities.Deadlock
     public static class DeadlockHeroes
     {
         private static readonly Dictionary<string, DeadlockHeroDef> Defs = new Dictionary<string, DeadlockHeroDef>();
+        private static readonly Dictionary<string, string> MaterialsOf = new Dictionary<string, string>(); // skin model key -> hero
         private static Material? _baseMaterial;
 
-        public static void Register(DeadlockHeroDef def) => Defs[def.Hero] = def;
+        public static void Register(DeadlockHeroDef def)
+        {
+            Defs[def.Hero] = def;
+            foreach (DeadlockSkin s in def.Skins) if (s.Model != null) MaterialsOf[s.Model] = def.Hero;
+        }
         public static DeadlockHeroDef? Get(string hero) => Defs.TryGetValue(hero, out DeadlockHeroDef d) ? d : null;
 
         /// <summary>
@@ -269,7 +310,7 @@ namespace CursedAppleCuriosities.Deadlock
         /// </summary>
         public static Material HeroMaterial(string key, string name, Texture2D? tex)
         {
-            DeadlockHeroDef? def = Get(key);
+            DeadlockHeroDef? def = Get(key) ?? (MaterialsOf.TryGetValue(key, out string hero) ? Get(hero) : null); // a model skin: the hero's glows
             Material m = MakeMaterial(def != null ? def.DisplayName : key, name, tex);
             if (def?.MaterialTints != null && def.MaterialTints.TryGetValue(name, out Color tint)) m.color = tint;
             if (def?.MaterialGlows != null && def.MaterialGlows.TryGetValue(name, out Color glow))
@@ -298,6 +339,11 @@ namespace CursedAppleCuriosities.Deadlock
 
         private DeadlockHeroDef? _def;
         private GlbModel? _template;
+        private bool _skinApplied;
+        private string _attachedKey = ""; // the model on now: the hero's, or a model skin's
+        // the model's place on the body before a Detach: a skin swap reattaches mid-air (drop pod), where
+        // re-measuring footPosition would leave the new model metres off
+        private Vector3? _keptLocalPosition;
         private Material[] _baseMaterials = Array.Empty<Material>();
         private int _skin;
         private CharacterModel? _model;
@@ -319,7 +365,14 @@ namespace CursedAppleCuriosities.Deadlock
         {
             _model = GetComponent<CharacterModel>();
             var skins = GetComponent<ModelSkinController>();
-            if (skins != null) skins.onSkinApplied += i => { _skin = i; ApplySkinMaterials(); Reassert(); };
+            if (skins != null) skins.onSkinApplied += i =>
+            {
+                _skin = i;
+                _skinApplied = true;
+                if (_hero != null && _def != null && ModelKey() != _attachedKey) { Detach(); TryAttach(); return; }
+                ApplySkinMaterials();
+                Reassert();
+            };
         }
 
         private void Start()
@@ -335,13 +388,73 @@ namespace CursedAppleCuriosities.Deadlock
         /// <summary>The hero's character-select line.</summary>
         public void PlaySelectVoice(Vector3 at)
         {
-            if (_def != null) DeadlockSounds.Play(_def.Sound("vo_select"), at);
+            if (_def == null) return;
+            object? before = DeadlockSounds.Owner;
+            if (IsDisplay && before == null) DeadlockSounds.Owner = this; // an intro already owns it otherwise
+            DeadlockSounds.Play(_def.Sound("vo_select"), at);
+            DeadlockSounds.Owner = before;
+        }
+
+        /// <summary>A lobby display clicked off goes quiet at once (user 3.0).</summary>
+        private void OnDisable()
+        {
+            if (IsDisplay) DeadlockSounds.StopOwned(this);
         }
 
         private void Update()
         {
             // The model may still be converting (first launch) or preloading. Keep trying for a few minutes, then give up.
             if (_hero == null && _tries < 3000 && Time.unscaledTime >= _nextTry) { _nextTry = Time.unscaledTime + 0.1f; TryAttach(); }
+            // A model skin still converting or loading wore the hero's own model meanwhile: swap once it's ready.
+            else if (_hero != null && _def != null && Time.unscaledTime >= _nextTry)
+            {
+                _nextTry = Time.unscaledTime + 0.5f;
+                string key = ModelKey();
+                if (key != _attachedKey && DeadlockInstall.Model(key) != null) { Detach(); TryAttach(); }
+            }
+        }
+
+        /// <summary>The model the current skin wears: a model skin's own, else the hero's.</summary>
+        private string ModelKey()
+        {
+            if (_def == null) return HeroKey;
+            DeadlockSkin? s = _skin >= 1 && _skin - 1 < _def.Skins.Length ? _def.Skins[_skin - 1] : null;
+            return s?.Model ?? _def.Hero;
+        }
+
+        /// <summary>
+        /// Take the attached model off (a skin change to or from a model skin): items go back onto the stand-in's points
+        /// first, or they'd be destroyed with the hero's bones.
+        /// </summary>
+        private void Detach()
+        {
+            if (_hero == null) return;
+            var locator = GetComponent<ChildLocator>();
+            if (locator != null)
+            {
+                var pairs = (ChildLocator.NameTransformPair[])PairsField.GetValue(locator);
+                for (int i = 0; i < pairs.Length; i++)
+                    foreach (var kv in _itemAnchors)
+                        if (pairs[i].transform == kv.Value) { pairs[i].transform = kv.Key; break; }
+            }
+            foreach (var kv in _itemAnchors)
+            {
+                if (kv.Key == null || kv.Value == null) continue;
+                for (int c = kv.Value.childCount - 1; c >= 0; c--)
+                {
+                    Transform child = kv.Value.GetChild(c);
+                    if (child.GetComponent<ItemDisplay>() != null) child.SetParent(kv.Key, false);
+                }
+            }
+            _itemAnchors.Clear();
+            _keptLocalPosition = _hero.transform.localPosition;
+            _hero.SetActive(false);
+            Destroy(_hero);
+            _hero = null;
+            Animator = null;
+            _template = null;
+            _heroInfos = Array.Empty<CharacterModel.RendererInfo>();
+            _tries = 0;
         }
 
         private void TryAttach()
@@ -349,7 +462,20 @@ namespace CursedAppleCuriosities.Deadlock
             if (_def == null) return;
             _tries++;
             DeadlockHeroDef def = _def;
-            GlbModel? template = DeadlockInstall.Model(def.Hero);
+            // The skin decides the model: the body's (its ModelSkinController may not have applied it yet), else the last one applied.
+            var skinner = GetComponent<ModelSkinController>();
+            if (_body != null) _skin = (int)_body.skinIndex;
+            else if (!_skinApplied && skinner != null) _skin = skinner.currentSkinIndex;
+            string key = ModelKey();
+            GlbModel? template = DeadlockInstall.Model(key);
+            if (template == null && key != def.Hero)
+            {
+                // A model skin not here (yet): the hero's own model meanwhile, and say why to this player.
+                if (IsDisplay || (_body != null && _body.hasEffectiveAuthority && _body.isPlayerControlled))
+                    DeadlockInstall.ShowSkinNotice(key, def.Skins[_skin - 1].ModelName, def.DisplayName);
+                key = def.Hero;
+                template = DeadlockInstall.Model(key);
+            }
             if (template == null)
             {
                 // Say why the hero is the stand-in, to their own player only (or in the lobby).
@@ -379,6 +505,7 @@ namespace CursedAppleCuriosities.Deadlock
                 feet = _body.footPosition;
             }
             _hero.transform.SetPositionAndRotation(feet, frame.rotation * yaw);
+            if (_keptLocalPosition is Vector3 kept) _hero.transform.localPosition = kept;
             float scale = height / Mathf.Max(0.1f, template.Height);
             _hero.transform.localScale = Vector3.one * (scale / Mathf.Max(1e-4f, transform.lossyScale.x));
             _hero.SetActive(true);
@@ -401,10 +528,9 @@ namespace CursedAppleCuriosities.Deadlock
             }
             _heroInfos = infos.ToArray();
             _template = template;
+            _attachedKey = key;
             _baseMaterials = new Material[_heroInfos.Length];
             for (int i = 0; i < _heroInfos.Length; i++) _baseMaterials[i] = _heroInfos[i].defaultMaterial;
-            var msc = GetComponent<ModelSkinController>();
-            if (msc != null) _skin = msc.currentSkinIndex;
             ApplySkinMaterials();
 
             // The muzzle on the hero's gun, findable by the gun state. ChildLocators are locked after load (AddChild
@@ -432,7 +558,7 @@ namespace CursedAppleCuriosities.Deadlock
         private void ApplySkinMaterials()
         {
             if (_hero == null || _template == null) return;
-            Dictionary<Material, Material>? swap = _skin >= 1 && _skin - 1 < _template.SkinMaterials.Count ? _template.SkinMaterials[_skin - 1] : null;
+            Dictionary<Material, Material>? swap = _attachedKey == _def?.Hero && _skin >= 1 && _skin - 1 < _template.SkinMaterials.Count ? _template.SkinMaterials[_skin - 1] : null;
             for (int i = 0; i < _heroInfos.Length; i++)
             {
                 Material m = _baseMaterials[i];
@@ -698,7 +824,27 @@ namespace CursedAppleCuriosities.Deadlock
             if (_clips != null) return;
             _clips = DeadlockInstall.Clips(_def.Hero);
             if (_clips != null && _clips.Count == 0) _clips = null;
-            if (_clips != null) Switch("idle", 0f);
+            if (_clips == null) return;
+            PinUnanimatedCloth();
+            Switch("idle", 0f);
+        }
+
+        // Cloth bones under the model root that no clip moves (Spirit Guardian's skirt: 90 $cloth bones, 12
+        // animated) stay at standing height when the hips drop into a slide. Still in bind pose here, so
+        // re-parenting them to the pelvis keeps their rest place and makes them follow it.
+        private void PinUnanimatedCloth()
+        {
+            if (!_bones.TryGetValue("pelvis", out Transform pelvis) || pelvis.parent == null) return;
+            var animated = new HashSet<string>();
+            foreach (AnimClip clip in _clips!.Values) foreach (AnimTrack track in clip.Tracks) animated.Add(track.Bone);
+            int pinned = 0;
+            foreach (Transform bone in _bones.Values)
+            {
+                if (bone.parent != pelvis.parent || !bone.name.StartsWith("$cloth") || animated.Contains(bone.name)) continue;
+                bone.SetParent(pelvis, true);
+                pinned++;
+            }
+            if (pinned > 0) CursedAppleCuriositiesPlugin.Logger?.LogInfo($"[Deadlock] {_def.Hero}: pinned {pinned} unanimated cloth bones to the pelvis");
         }
 
         // ---- states ----
@@ -785,7 +931,17 @@ namespace CursedAppleCuriosities.Deadlock
         }
 
         private bool Grounded => _body == null || _body.characterMotor == null || _body.characterMotor.isGrounded;
-        private bool Dead => _body != null && _body.healthComponent != null && !_body.healthComponent.alive;
+        // Latched (user 3.0): RoR2 destroys the body a few seconds after death and keeps the model as the corpse, which made this
+        // false again, so the corpse let go of its death pose and stood back up to idle. Only a body alive again (a revive) clears it.
+        private bool _died;
+        private bool Dead
+        {
+            get
+            {
+                if (_body != null && _body.healthComponent != null) _died = !_body.healthComponent.alive;
+                return _died;
+            }
+        }
 
         /// <summary>Time.time of the last "shoot" (every client plays it): sprinting while shooting runs the gun-up run instead.</summary>
         private float _lastShot = -10f;

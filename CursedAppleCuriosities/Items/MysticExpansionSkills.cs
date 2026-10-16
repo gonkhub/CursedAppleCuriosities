@@ -82,36 +82,48 @@ namespace CursedAppleCuriosities.Items
                     string methodName = dot < 0 ? reader : reader.Substring(dot + 1);
                     // Every overload of that name (GetMethod threw AmbiguousMatchException once a game update added one, and the
                     // whole item failed to load); an overload that never reads the field just warns.
+                    // Static ones too (Captain's SetupSupplyDrop.GetPlacementInfo is static: it was never found).
                     var methods = new List<MethodInfo>();
                     if (owner != null)
-                        foreach (MethodInfo m in owner.GetMethods(BindingFlags.Public | BindingFlags.NonPublic | BindingFlags.Instance | BindingFlags.DeclaredOnly))
+                        foreach (MethodInfo m in owner.GetMethods(BindingFlags.Public | BindingFlags.NonPublic | BindingFlags.Instance | BindingFlags.Static | BindingFlags.DeclaredOnly))
                             if (m.Name == methodName && !m.IsAbstract) methods.Add(m);
                     if (methods.Count == 0) { Warn($"{reader} not found ({fieldName})"); continue; }
                     FieldInfo f = field;
-                    foreach (MethodInfo method in methods) Hooks.Add(new ILHook(method, il => ScaleReads(il, f, reader)));
+                    int reads = 0; // over every overload: one that never reads the field (UpdateTrajectoryInfo's ref wrapper) is fine
+                    foreach (MethodInfo method in methods) Hooks.Add(new ILHook(method, il => reads += ScaleReads(il, f, reader)));
+                    if (reads == 0) Warn($"{reader}: no read of {fieldName}");
                 }
             }
         }
 
         /// <summary>After every read of the range field, multiply it by the Mystic Expansion of whoever this method runs for.</summary>
-        private static void ScaleReads(ILContext il, FieldInfo field, string where)
+        private static int ScaleReads(ILContext il, FieldInfo field, string where)
         {
             var c = new ILCursor(il);
+            // Whoever the method runs for: its instance, or a static method's GameObject argument.
+            Mono.Cecil.ParameterDefinition? who = null;
+            if (!il.Method.HasThis)
+            {
+                foreach (Mono.Cecil.ParameterDefinition p in il.Method.Parameters)
+                    if (p.ParameterType.FullName == "UnityEngine.GameObject") { who = p; break; }
+                if (who == null) { Warn($"{where}: static with no GameObject argument"); return 0; }
+            }
             int n = 0;
             while (c.TryGotoNext(MoveType.After, i => (i.OpCode == OpCodes.Ldfld || i.OpCode == OpCodes.Ldsfld) && i.Operand is Mono.Cecil.FieldReference r
                 && r.Name == field.Name && r.DeclaringType.FullName.Replace('/', '+') == field.DeclaringType!.FullName))
             {
-                c.Emit(OpCodes.Ldarg_0);
+                if (who != null) c.Emit(OpCodes.Ldarg, who);
+                else c.Emit(OpCodes.Ldarg_0);
                 c.EmitDelegate<Func<float, object, float>>((range, self) => range * MysticExpansion.RadiusMultiplier(BodyOf(self)));
                 n++;
             }
-            if (n == 0) Warn($"{where}: no read of {field.Name}");
+            return n;
         }
 
         /// <summary>The body a state, tracker or projectile acts for (a projectile's owner).</summary>
         private static CharacterBody? BodyOf(object self)
         {
-            GameObject? go = self is EntityStates.EntityState s ? (s.outer != null ? s.outer.gameObject : null) : (self as Component)?.gameObject;
+            GameObject? go = self is EntityStates.EntityState s ? (s.outer != null ? s.outer.gameObject : null) : self as GameObject ?? (self as Component)?.gameObject;
             if (go == null) return null;
             var pc = go.GetComponent<ProjectileController>();
             if (pc != null) return pc.owner != null ? pc.owner.GetComponent<CharacterBody>() : null;

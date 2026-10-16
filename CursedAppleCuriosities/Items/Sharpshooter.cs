@@ -33,8 +33,7 @@ namespace CursedAppleCuriosities.Items
 
         public override void Init(ConfigFile config)
         {
-            MaxBonusPerStack = config.Bind("White", "Long Range - Max Bonus Damage", 0.30f,
-                "Bonus damage per stack when hitting an enemy at maximum range.").Value;
+            MaxBonusPerStack = 0.30f;
             CreateLang();
             CreateItem();
             Hooks();

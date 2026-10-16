@@ -48,10 +48,8 @@ namespace CursedAppleCuriosities.Items
             StolenHealthBuff.iconSprite = CreatePlaceholderSprite(Color.red);
             ContentAddition.AddBuffDef(StolenHealthBuff);
 
-            StealPerHitPercent = config.Bind("Red", "Siphon Bullets - Steal Fraction Of Damage", 0.01f,
-                "Bonus max HP stolen per hit as a fraction of the damage dealt.").Value;
-            MaxStealPercent = config.Bind("Red", "Siphon Bullets - Cap Per Enemy Per Stack", 0.10f,
-                "Maximum stolen HP per enemy, as a fraction of that enemy's max HP, per stack.").Value;
+            StealPerHitPercent = 0.01f;
+            MaxStealPercent = 0.10f;
             CreateLang();
             CreateItem();
             Hooks();
@@ -69,6 +67,7 @@ namespace CursedAppleCuriosities.Items
             GlobalEventManager self, DamageInfo damageInfo, GameObject victim)
         {
             orig(self, damageInfo, victim);
+            if (damageInfo == null || damageInfo.rejected) return; // blocked hits proc nothing (vanilla's own check is inside orig)
             if (!NetworkServer.active) return;
             if (damageInfo?.procCoefficient <= 0f) return;
             if (damageInfo.attacker == null || victim == null) return;

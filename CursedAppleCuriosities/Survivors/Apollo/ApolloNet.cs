@@ -34,6 +34,15 @@ namespace CursedAppleCuriosities.Survivors.Apollo
                     info.damage *= ApolloData.UltDamageTaken;
                 orig(self, info);
             };
+            // Flawless Advance: 15% less damage taken while he readies and runs a stab (user 3.0). The server runs his Body machine's
+            // states too (synced from his owner), so it knows.
+            On.RoR2.HealthComponent.TakeDamage += (orig, self, info) =>
+            {
+                if (NetworkServer.active && info != null && self.TryGetComponent(out ApolloAdvanceRecast _) // only Apollo carries it: no state lookup on anyone else
+                    && EntityStateMachine.FindByCustomName(self.gameObject, "Body")?.state is EntityStates.CursedApple.Apollo.AdvanceReady or EntityStates.CursedApple.Apollo.AdvanceStab)
+                    info.damage *= 1f - Mathf.Clamp01(ApolloData.AdvanceDamageResist);
+                orig(self, info);
+            };
             // Riposte: the first hit Apollo takes in the stance is deflected (Deadlock: the next incoming attack), and he counters.
             On.RoR2.HealthComponent.TakeDamage += (orig, self, info) =>
             {
@@ -140,7 +149,12 @@ namespace CursedAppleCuriosities.Survivors.Apollo
                 }
             }
             // Itani Lo Sahn: Apollo is invulnerable while his targets are in slow motion (Deadlock).
-            if (Kind == ApolloHitKind.Ult) body.AddTimedBuff(RoR2Content.Buffs.HiddenInvincibility, ApolloData.UltLock * DurationExtender.Multiplier(body));
+            if (Kind == ApolloHitKind.Ult)
+            {
+                body.AddTimedBuff(RoR2Content.Buffs.HiddenInvincibility, ApolloData.UltLock * DurationExtender.Multiplier(body));
+                // Riposte's challenge: the kills of this cast, its finishing blows included (they land after the lock).
+                CursedAppleCuriosities.Unlocks.Challenges.ApolloPrideOfIxia.Cast(body, ApolloData.UltLock * DurationExtender.Multiplier(body) + 1f);
+            }
             foreach (GameObject t in Targets)
             {
                 var hc = t != null ? t.GetComponent<HealthComponent>() : null;

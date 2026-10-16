@@ -43,14 +43,10 @@ namespace CursedAppleCuriosities.Items
             ContentAddition.AddBuffDef(ActiveBuffDef);
             EquipmentFx.RegisterBuffFx(ActiveBuffDef, "RoR2/Base/Tonic/TonicBuffEffect.prefab", "bloodtribute_loop"); // Spinel Tonic aura while active
 
-            HpDrainPercent = config.Bind("Equipment", "Blood Tribute - HP Drain Per Second", 0.05f,
-                "Max HP drained per second while active.").Value;
-            AttackSpeedBonus = config.Bind("Equipment", "Blood Tribute - Attack Speed Bonus", 1.0f,
-                "Bonus attack speed while active (1.0 = +100%).").Value;
-            MoveSpeedBonus = config.Bind("Equipment", "Blood Tribute - Move Speed Bonus", 0.5f,
-                "Bonus move speed while active (0.5 = +50%).").Value;
-            HealReductionPercent = config.Bind("Equipment", "Blood Tribute - Healing Reduction", 0.50f,
-                "Healing received is reduced by this fraction while active.").Value;
+            HpDrainPercent = 0.05f;
+            AttackSpeedBonus = 1.0f;
+            MoveSpeedBonus = 0.5f;
+            HealReductionPercent = 0.50f;
 
             CreateLang();
             CreateEquipment();

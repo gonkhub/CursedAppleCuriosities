@@ -43,10 +43,8 @@ namespace CursedAppleCuriosities.Items
             BurstBuffDef.iconSprite = BuffIcon(IconFileName, color);
             ContentAddition.AddBuffDef(BurstBuffDef);
 
-            MoveSpeedBonusPerStack = config.Bind("Green", "Burst Fire - Move Speed Per Stack", 0.10f,
-                "Move speed granted per stack on hit.").Value;
-            AttackSpeedBonusPerStack = config.Bind("Green", "Burst Fire - Attack Speed Per Stack", 0.15f,
-                "Attack speed granted per stack on hit.").Value;
+            MoveSpeedBonusPerStack = 0.10f;
+            AttackSpeedBonusPerStack = 0.15f;
             CreateLang();
             CreateItem();
             Hooks();
@@ -65,6 +63,7 @@ namespace CursedAppleCuriosities.Items
             GameObject victim)
         {
             orig(self, damageInfo, victim);
+            if (damageInfo == null || damageInfo.rejected) return; // blocked hits proc nothing (vanilla's own check is inside orig)
 
             if (!NetworkServer.active) return;
             if (damageInfo == null || damageInfo.procCoefficient <= 0f) return;
