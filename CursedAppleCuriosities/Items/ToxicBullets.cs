@@ -13,11 +13,11 @@ namespace CursedAppleCuriosities.Items
 
         public override string ItemPickupDesc => "Repeated hits poison enemies and reduce their healing.";
         public override string ItemFullDescription =>
-            $"Hits build up <style=cIsHealing>Toxin</style> on enemies " +
-            $"(max <style=cIsUtility>{ChargesRequired} charges</style>). " +
-            $"At full charge, inflict a poison dealing " +
-            $"<style=cIsHealing>{DotDpsPercent * 100:0}% max HP/s</style> " +
-            $"<style=cStack>(+{DotDpsPercent * 100:0}% per stack)</style> " +
+            $"Hits build up <style=cIsHealing>Toxin</style> on enemies by the damage they deal: " +
+            $"<style=cIsDamage>{DamageToTrigger * 100:0}% damage</style> fills it. " +
+            $"At full Toxin, inflict a poison dealing " +
+            $"<style=cIsHealing>{DotDpsPercent * 100:0.#}% max HP/s</style> " +
+            $"<style=cStack>(+{DotDpsPercent * 100:0.#}% per stack)</style> " +
             $"for <style=cIsUtility>{DotDuration:0}s</style> " +
             $"and reduce their <style=cIsHealing>healing by {HealReduction * 100:0}%</style>.";
 
@@ -27,11 +27,15 @@ namespace CursedAppleCuriosities.Items
         public override ItemTag[] ItemTags => new[] { ItemTag.Damage };
         protected override string IconFileName => "icon_toxicbullets.png";
 
-        public static int   ChargesRequired;
+        // 3.0 (user): Toxin is a 0-100 meter per attacker, filled by damage and drained like Mina's Love Bites
+        // (was one charge per hit, 10 to trigger, 8 s each); shown on the enemy as 0-100 stacks.
+        public static float DamageToTrigger;  // damage coefficient that fills the meter (10 = 1000% of your damage)
         public static float DotDpsPercent;
         public const float DotDuration     = 5f;
         public const float HealReduction   = 0.50f;
-        public const float ChargeDuration  = 8f;
+        public const float BuildUpMax         = 100f;
+        public const float BuildUpDecayDelay  = 3f; // Love Bites'
+        public const float BuildUpDecaySeconds = 2f; // full to nothing once draining
 
         public static ItemDef? StaticItemDef;
         public static BuffDef? ToxicChargeBuffDef;
@@ -46,7 +50,7 @@ namespace CursedAppleCuriosities.Items
             ToxicChargeBuffDef.canStack  = true;
             ToxicChargeBuffDef.isDebuff  = true;
             ToxicChargeBuffDef.buffColor = chargeColor;
-            ToxicChargeBuffDef.isHidden  = true;  // UI: only the poison itself shows
+            ToxicChargeBuffDef.isHidden  = false; // the buildup shows as 0-100 stacks (user, 3.0)
             ContentAddition.AddBuffDef(ToxicChargeBuffDef);
 
             var dotColor = new Color(0.15f, 0.7f, 0.1f);
@@ -66,10 +70,10 @@ namespace CursedAppleCuriosities.Items
             ToxicWeakenedBuffDef.isHidden  = true;  // UI: folded into the poison icon
             ContentAddition.AddBuffDef(ToxicWeakenedBuffDef);
 
-            ChargesRequired = config.Bind("Green", "Toxic Bullets - Charges To Trigger", 10,
-                "Number of hits to build full Toxin before the poison triggers.").Value;
-            DotDpsPercent = config.Bind("Green", "Toxic Bullets - Poison DPS Percent", 0.01f,
-                "Max HP per second dealt by the poison at 1 stack.").Value;
+            DamageToTrigger = config.Bind("Green", "Toxic Bullets - Damage To Trigger", 10f,
+                "Damage coefficient your hits must deal to an enemy to fill its Toxin (10 = 1000% of your damage).").Value;
+            DotDpsPercent = config.Bind("Green", "Toxic Bullets - Poison DPS Percent", 0.005f, // 0.01 before 3.0 (user)
+                "Max HP per second dealt by the poison, per stack.").Value;
             CreateLang();
             CreateItem();
             StaticItemDef = ItemDef;
@@ -102,14 +106,16 @@ namespace CursedAppleCuriosities.Items
 
             var victimBody = victim.GetComponent<CharacterBody>();
             if (victimBody == null || ToxicChargeBuffDef == null) return;
+            if (victimBody.healthComponent == null || !victimBody.healthComponent.alive) return;
+            if (attackerBody.damage <= 0f || DamageToTrigger <= 0f) return;
 
-            victimBody.AddTimedBuff(ToxicChargeBuffDef, ChargeDuration);
+            // Like any proc item, the hit must proc it: chance = its proc coefficient (luck applies) (user, 3.0).
+            if (!Util.CheckRoll(100f * Mathf.Min(damageInfo.procCoefficient, 1f), attackerBody.master)) return;
 
-            int charges = victimBody.GetBuffCount(ToxicChargeBuffDef.buffIndex);
-            if (charges < ChargesRequired) return;
-
-            for (int i = 0; i < charges; i++)
-                victimBody.RemoveBuff(ToxicChargeBuffDef.buffIndex);
+            // The hit's damage coefficient (before armor and crits) fills the attacker's meter on this enemy.
+            float add = damageInfo.damage / attackerBody.damage / DamageToTrigger * BuildUpMax;
+            var buildup = victimBody.GetComponent<ToxicBuildup>() ?? victimBody.gameObject.AddComponent<ToxicBuildup>();
+            if (!buildup.Build(attackerBody, add)) return;
 
             float dps    = DotDpsPercent * itemCount;
             var tracker  = victimBody.GetComponent<ToxicPoisonTracker>();
@@ -134,6 +140,58 @@ namespace CursedAppleCuriosities.Items
                 && self.body.GetBuffCount(ToxicWeakenedBuffDef.buffIndex) > 0)
                 amount *= 1f - HealReduction;
             return orig(self, amount, procChainMask, nonRegen);
+        }
+    }
+
+    /// <summary>
+    /// Server, on the enemy: each attacker's Toxin meter (0-100), drained like Mina's Love Bites: it starts emptying
+    /// <see cref="ToxicBullets.BuildUpDecayDelay"/> s after that attacker's last hit. The fullest meter shows as stacks.
+    /// </summary>
+    public class ToxicBuildup : MonoBehaviour
+    {
+        private class Mark { public float BuildUp, LastHit; }
+        private readonly System.Collections.Generic.Dictionary<CharacterBody, Mark> _marks =
+            new System.Collections.Generic.Dictionary<CharacterBody, Mark>();
+        private CharacterBody _body = null!;
+
+        private void Awake() => _body = GetComponent<CharacterBody>();
+
+        /// <summary>Adds to the attacker's meter; true (and the meter empties) when it fills.</summary>
+        public bool Build(CharacterBody attacker, float add)
+        {
+            if (add <= 0f) return false;
+            if (!_marks.TryGetValue(attacker, out Mark m)) _marks[attacker] = m = new Mark();
+            m.BuildUp += add;
+            m.LastHit = Time.time;
+            bool full = m.BuildUp >= ToxicBullets.BuildUpMax;
+            if (full) _marks.Remove(attacker);
+            Show();
+            return full;
+        }
+
+        private void FixedUpdate()
+        {
+            if (!NetworkServer.active || _marks.Count == 0) return;
+            bool changed = false;
+            foreach (var kv in new System.Collections.Generic.List<System.Collections.Generic.KeyValuePair<CharacterBody, Mark>>(_marks))
+            {
+                if (kv.Key == null) { _marks.Remove(kv.Key!); changed = true; continue; }
+                if (Time.time - kv.Value.LastHit < ToxicBullets.BuildUpDecayDelay) continue;
+                kv.Value.BuildUp -= ToxicBullets.BuildUpMax / ToxicBullets.BuildUpDecaySeconds * Time.fixedDeltaTime;
+                if (kv.Value.BuildUp <= 0f) _marks.Remove(kv.Key);
+                changed = true;
+            }
+            if (changed) Show();
+        }
+
+        private void Show()
+        {
+            if (ToxicBullets.ToxicChargeBuffDef == null) return;
+            float most = 0f;
+            foreach (Mark m in _marks.Values) most = Mathf.Max(most, m.BuildUp);
+            int want = Mathf.Clamp(Mathf.CeilToInt(most), 0, 99);
+            if (_body.GetBuffCount(ToxicBullets.ToxicChargeBuffDef) != want)
+                _body.SetBuffCount(ToxicBullets.ToxicChargeBuffDef.buffIndex, want);
         }
     }
 

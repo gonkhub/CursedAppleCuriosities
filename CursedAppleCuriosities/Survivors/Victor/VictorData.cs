@@ -79,7 +79,7 @@ namespace CursedAppleCuriosities.Survivors.Victor
         public const float AuraEndGrace = 0.3f;         // special again after this ends it early (Deadlock "End Aura")
 
         // ---- passive: Shocking Reanimation (Deadlock ultimate, here automatic: user; 240 s cooldown: user) ----
-        public static float ReviveCooldown = 90f;       // user (Deadlock 240); also ready again on every new stage
+        public static float ReviveCooldown = 120f;      // user (Deadlock 240; 90 before 3.0); also ready again on every new stage
         public const float ReviveChannel = 3f;          // Deadlock AbilityChannelTime
         public const float RevivePost = 0.66f;          // Deadlock AbilityPostCastDuration
         public static float ReviveHealth = 0.5f;        // Deadlock RespawnHealthPercent

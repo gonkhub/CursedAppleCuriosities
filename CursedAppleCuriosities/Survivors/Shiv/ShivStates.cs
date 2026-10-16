@@ -252,8 +252,13 @@ namespace EntityStates.CursedApple.Shiv
             if (isAuthority && characterMotor != null)
             {
                 characterMotor.velocity = _dir * characterBody.moveSpeed * 1.5f; // a little of the dash carries on
-                // User: each enemy struck takes a second off the cooldown.
-                if (_hit.Count > 0 && activatorSkillSlot != null) activatorSkillSlot.RunRecharge(_hit.Count * ShivData.DashCooldownPerHit);
+                // User: each enemy struck takes a second off the cooldown, but at least DashMinWait is left (3.0: crowds of 8+
+                // reset it outright, an endless chain).
+                if (_hit.Count > 0 && activatorSkillSlot != null)
+                {
+                    float refund = Mathf.Min(_hit.Count * ShivData.DashCooldownPerHit, activatorSkillSlot.cooldownRemaining - ShivData.DashMinWait);
+                    if (refund > 0f) activatorSkillSlot.RunRecharge(refund);
+                }
             }
             base.OnExit();
         }

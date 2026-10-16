@@ -68,6 +68,7 @@ namespace CursedAppleCuriosities.Survivors.Shiv
         public static float DashDamage = 6f;            // user: 600%
         public static float DashCooldown = 8f;          // Deadlock 16
         public static float DashCooldownPerHit = 1f;    // user: -1 s per enemy struck
+        public static float DashMinWait = 1f;           // user 3.0: the refund always leaves this long (at most 7 s off the 8 s cooldown)
         public const float DashMetres = 12f;            // Deadlock DashRange
         public const float DashSpeed = 61f;             // Deadlock DashSpeed 2400 hu/s
         public const float AirAimPitch = 80f;           // in the air, Slice'n'Dice and Killing Blow follow the aim this far up or down (user 2.5)
@@ -115,6 +116,7 @@ namespace CursedAppleCuriosities.Survivors.Shiv
             DashDamage = c.Bind(Section, "Slice n Dice - Damage", DashDamage, "Damage coefficient to enemies in the dash's path.").Value;
             DashCooldown = c.Bind(Section, "Slice n Dice - Cooldown", DashCooldown, "Seconds.").Value;
             DashCooldownPerHit = c.Bind(Section, "Slice n Dice - Cooldown Per Hit", DashCooldownPerHit, "Seconds taken off the cooldown per enemy struck.").Value;
+            DashMinWait = c.Bind(Section, "Slice n Dice - Minimum Wait", DashMinWait, "However many enemies a dash strikes, at least this many seconds of cooldown are left after it.").Value;
             LungeDamage = c.Bind(Section, "Killing Blow - Damage", LungeDamage, "Damage coefficient to enemies in the lunge's path.").Value;
             LungeMetres = c.Bind(Section, "Killing Blow - Distance", LungeMetres, "Metres the lunge covers.").Value;
             ExecuteThreshold = c.Bind(Section, "Killing Blow - Execute Threshold", ExecuteThreshold, "Health fraction under which an enemy is executed (bosses: half).").Value;

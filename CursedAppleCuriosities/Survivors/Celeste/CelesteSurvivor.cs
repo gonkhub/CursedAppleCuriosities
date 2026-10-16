@@ -379,7 +379,7 @@ namespace CursedAppleCuriosities.Survivors.Celeste
             LanguageAPI.Add(Token + "BEAM_NAME", "Radiant Daggers");
             LanguageAPI.Add(Token + "BEAM_DESC",
                 $"Hold to aim, release to call down a beam of light that explodes after {CelesteData.BeamDelay:0.#}s for <style=cIsDamage>{D(CelesteData.BeamDamage)} damage</style>. " +
-                $"Each enemy hit grants <style=cIsDamage>+{D(CelesteData.RadianceDamage)} damage</style> for {CelesteData.RadianceSeconds:0}s, <style=cIsDamage>stacking without limit</style>.");
+                $"Each enemy hit grants <style=cIsDamage>+{D(CelesteData.RadianceDamage)} damage</style> for {CelesteData.RadianceSeconds:0}s, <style=cIsDamage>stacking without limit</style> (each cast's stacks run out on their own).");
 
             LanguageAPI.Add(Token + "PRISM_NAME", "Dazzling Trick");
             LanguageAPI.Add(Token + "PRISM_DESC",

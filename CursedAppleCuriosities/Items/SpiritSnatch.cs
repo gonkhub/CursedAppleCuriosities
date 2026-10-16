@@ -18,8 +18,8 @@ namespace CursedAppleCuriosities.Items
         public override string ItemPickupDesc => "Hitting nearby enemies grants barrier.";
         public override string ItemFullDescription =>
             $"Hitting an enemy within <style=cIsUtility>{Range}m</style> grants a " +
-            $"<style=cIsHealing>temporary barrier</style> for <style=cIsHealing>{BarrierPerHit * 100:0.#}% of your maximum health</style> " +
-            $"<style=cStack>(+{BarrierPerHit * 100:0.#}% per stack)</style>. Scales with proc coefficient.";
+            $"<style=cIsHealing>temporary barrier</style> for <style=cIsHealing>{DamageToBarrier * 100:0.#}% of the damage dealt</style> " +
+            $"<style=cStack>(+{DamageToBarrier * 100:0.#}% per stack)</style>.";
 
         public override string ItemLore =>
             "Bought that off a Knickerbocker that was about to get his legs broken.";
@@ -29,15 +29,15 @@ namespace CursedAppleCuriosities.Items
         protected override string IconFileName => "icon_spiritsnatch.png";
 
         public const float Range = 13f; // Focus Crystal's
-        public static float BarrierPerHit;
+        public static float DamageToBarrier; // 3.0 (user): proportional to damage, was 1% max HP per hit x proc (fast guns lived in full barrier)
 
         public static ItemDef? StaticItemDef;
         internal static Material? RingMaterial;
 
         public override void Init(ConfigFile config)
         {
-            BarrierPerHit = config.Bind("Green", "Spirit Snatch - Barrier Per Hit", 0.01f,
-                "Barrier per close-range hit, as a fraction of max health, per stack (times the hit's proc coefficient).").Value;
+            DamageToBarrier = config.Bind("Green", "Spirit Snatch - Damage To Barrier", 0.10f,
+                "Barrier per close-range hit, as a fraction of the damage it dealt (after armor, no overkill), per stack.").Value;
             CreateLang();
             CreateItem();
             StaticItemDef = ItemDef;
@@ -53,7 +53,7 @@ namespace CursedAppleCuriosities.Items
 
         public override void Hooks()
         {
-            On.RoR2.GlobalEventManager.OnHitEnemy   += OnHitEnemy;
+            GlobalEventManager.onServerDamageDealt   += OnDamageDealt;
             On.RoR2.CharacterBody.OnInventoryChanged += OnInventoryChanged;
         }
 
@@ -63,19 +63,15 @@ namespace CursedAppleCuriosities.Items
 
         public static float RangeFor(CharacterBody body) => Range * MysticExpansion.RadiusMultiplier(body);
 
-        private void OnHitEnemy(
-            On.RoR2.GlobalEventManager.orig_OnHitEnemy orig,
-            GlobalEventManager self,
-            DamageInfo damageInfo,
-            GameObject victim)
+        // Server only (onServerDamageDealt). Proc > 0 keeps DoT ticks and proc-less item damage out; the proc
+        // coefficient no longer scales it, since damage already accounts for fire rate.
+        private void OnDamageDealt(DamageReport report)
         {
-            orig(self, damageInfo, victim);
+            var damageInfo = report.damageInfo;
+            if (damageInfo == null || damageInfo.procCoefficient <= 0f) return;
+            if (report.victim == null || report.attackerTeamIndex == report.victimTeamIndex) return;
 
-            if (!NetworkServer.active) return;
-            if (damageInfo == null || victim == null || damageInfo.attacker == null) return;
-            if (damageInfo.procCoefficient <= 0f) return;
-
-            var attackerBody = damageInfo.attacker.GetComponent<CharacterBody>();
+            var attackerBody = report.attackerBody;
             int count = Count(attackerBody);
             if (count <= 0) return;
             var hc = attackerBody!.healthComponent;
@@ -85,7 +81,8 @@ namespace CursedAppleCuriosities.Items
             float range = RangeFor(attackerBody);
             if ((attackerBody.corePosition - damageInfo.position).sqrMagnitude > range * range) return;
 
-            hc.AddBarrier(hc.fullBarrier * BarrierPerHit * count * Mathf.Min(damageInfo.procCoefficient, 1f));
+            float dealt = Mathf.Min(report.damageDealt, report.combinedHealthBeforeDamage); // no overkill
+            if (dealt > 0f) hc.AddBarrier(dealt * DamageToBarrier * count);
         }
 
         // Inventories sync to every client, so each machine can attach the ring itself; it only draws for

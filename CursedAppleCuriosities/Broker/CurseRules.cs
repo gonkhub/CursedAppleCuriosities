@@ -219,13 +219,13 @@ namespace CursedAppleCuriosities.Broker
             // ── Cursed Apple Curiosities (white) ──────────────────────────────────────────────────────────
             ["ITEM_CURSEDAPPLE_LONGRANGE"]         = new CurseRule(2, 0, "Long Range's distance bonus is doubled."),
             ["ITEM_CURSEDAPPLE_KINETICDASH"]       = new CurseRule(2, 0, "Kinetic Dash's attack speed is doubled."),
-            ["ITEM_CURSEDAPPLE_INTENSIFYINGMAGAZINE"] = new CurseRule(2, 1, "Intensifying Magazine ramps to about double damage."),
+            ["ITEM_CURSEDAPPLE_INTENSIFYINGMAGAZINE"] = new CurseRule(2, 2, "Intensifying Magazine ramps to double damage."),
             ["ITEM_CURSEDAPPLE_RESTORATIVESHOT"]   = new CurseRule(2, 0, "Restorative Shot heals twice as much."),
             ["ITEM_CURSEDAPPLE_SPRINTBOOTS"]       = new CurseRule(2, 1, "Sprint Boots ramp to about double the speed."),
             ["ITEM_CURSEDAPPLE_BATTLEVEST"]        = new CurseRule(2, 0, "Battle Vest's bonus damage is doubled."),
             ["ITEM_CURSEDAPPLE_MYSTICSHOT"]        = new CurseRule(2, 0, "Mystic Shot's burst deals double damage."),
-            ["ITEM_CURSEDAPPLE_MYSTICEXPANSION"]   = new CurseRule(2, 0, "Mystic Expansion's radius and range bonus is doubled."),
-            ["ITEM_CURSEDAPPLE_DURATIONEXTENDER"]  = new CurseRule(2, 0, "Duration Extender's bonus duration is doubled."),
+            ["ITEM_CURSEDAPPLE_MYSTICEXPANSION"]   = new CurseRule(2, 1, "Mystic Expansion's radius and range bonus is doubled."),
+            ["ITEM_CURSEDAPPLE_DURATIONEXTENDER"]  = new CurseRule(2, 1, "Duration Extender's bonus duration is doubled."),
             ["ITEM_CURSEDAPPLE_TROPHYCOLLECTOR"]   = new CurseRule(2, 0, "Trophy Collector holds twice as many Trophies."),
 
             // ── Cursed Apple Curiosities ──────────────────────────────────────────────────────────────────

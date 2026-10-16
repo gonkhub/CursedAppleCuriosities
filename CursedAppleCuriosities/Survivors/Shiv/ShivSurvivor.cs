@@ -267,7 +267,7 @@ namespace CursedAppleCuriosities.Survivors.Shiv
 
             LanguageAPI.Add(Token + "SLICE_NAME", "Slice'n'Dice");
             LanguageAPI.Add(Token + "SLICE_DESC",
-                $"Dash forward, dealing <style=cIsDamage>{D(ShivData.DashDamage)} damage</style> to enemies in your path. Each enemy struck reduces the cooldown by <style=cIsUtility>{ShivData.DashCooldownPerHit:0}s</style>.");
+                $"Dash forward, dealing <style=cIsDamage>{D(ShivData.DashDamage)} damage</style> to enemies in your path. Each enemy struck reduces the cooldown by <style=cIsUtility>{ShivData.DashCooldownPerHit:0}s</style> (at least <style=cIsUtility>{ShivData.DashMinWait:0.#}s</style> remain).");
 
             LanguageAPI.Add(Token + "KILLINGBLOW_NAME", "Killing Blow");
             LanguageAPI.Add(Token + "KILLINGBLOW_DESC",

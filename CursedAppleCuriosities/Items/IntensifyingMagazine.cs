@@ -29,7 +29,7 @@ namespace CursedAppleCuriosities.Items
         public const float BaseMaxRampTime  = 2f;
         public const float RampTimePerStack = 1f;
         public static float BaseMaxBonus;
-        public const float BonusMaxPerStack = 0.30f;
+        public static float BonusMaxPerStack; // 3.0 (user): 0.15, was a const 0.30
         public const float HitGapDuration  = 0.3f;
 
         public static BuffDef? RampBuffDef;
@@ -45,7 +45,7 @@ namespace CursedAppleCuriosities.Items
             var color               = new Color(1f, 0.45f, 0.1f); // fiery orange
             RampBuffDef             = ScriptableObject.CreateInstance<BuffDef>();
             RampBuffDef.name        = "CursedApple_IntensifyingMag";
-            RampBuffDef.canStack    = false;
+            RampBuffDef.canStack    = true; // stacks = the ramp, 0-100 (user, 3.0)
             RampBuffDef.isDebuff    = false;
             RampBuffDef.buffColor   = color;
             RampBuffDef.iconSprite  = BuffIcon(IconFileName, color);
@@ -53,6 +53,8 @@ namespace CursedAppleCuriosities.Items
 
             BaseMaxBonus = config.Bind("White", "Intensifying Magazine - Max Damage Bonus", 0.45f,
                 "Maximum sustained-fire damage bonus at 1 stack.").Value;
+            BonusMaxPerStack = config.Bind("White", "Intensifying Magazine - Max Damage Bonus Per Stack", 0.15f,
+                "Extra maximum damage bonus per additional stack.").Value;
             CreateLang();
             CreateItem();
             StaticItemDef = ItemDef;
@@ -129,7 +131,7 @@ namespace CursedAppleCuriosities.Items
         private float         _rampTimer;
         private float         _hitTimer;
         private CharacterBody _body;
-        private bool          _buffActive;
+        private int           _shown;
 
         public float RampRatio => Mathf.Clamp01(_rampTimer / IntensifyingMagazine.GetMaxRampTime(GetItemCount()));
 
@@ -155,23 +157,21 @@ namespace CursedAppleCuriosities.Items
                 _rampTimer = Mathf.Max(0f, _rampTimer - Time.deltaTime);
             }
 
-            // Buff is visible while any ramp bonus is active (it lingers as the ramp fades out).
-            SyncBuff(_rampTimer > 0f);
+            // The buff shows the ramp as 0-100 stacks while any bonus is active (it lingers as the ramp fades out).
+            SyncBuff(_rampTimer > 0f ? Mathf.Clamp(Mathf.CeilToInt(RampRatio * 100f), 1, 100) : 0);
         }
 
-        private void OnDestroy() => SyncBuff(false);
+        private void OnDestroy() => SyncBuff(0);
 
-        private void SyncBuff(bool active)
+        private void SyncBuff(int stacks)
         {
             if (!NetworkServer.active || _body == null) return;
             if (IntensifyingMagazine.RampBuffDef == null
                 || IntensifyingMagazine.RampBuffDef.buffIndex == BuffIndex.None) return;
-            if (active == _buffActive) return;
+            if (stacks == _shown) return;
 
-            _buffActive = active;
-            var idx = IntensifyingMagazine.RampBuffDef.buffIndex;
-            if (active && !_body.HasBuff(idx)) _body.AddBuff(idx);
-            else if (!active && _body.HasBuff(idx)) _body.RemoveBuff(idx);
+            _shown = stacks;
+            _body.SetBuffCount(IntensifyingMagazine.RampBuffDef.buffIndex, stacks);
         }
     }
 }

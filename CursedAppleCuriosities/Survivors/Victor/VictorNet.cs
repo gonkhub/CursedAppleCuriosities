@@ -482,7 +482,7 @@ namespace CursedAppleCuriosities.Survivors.Victor
     // ================= Shocking Reanimation =================
 
     /// <summary>
-    /// Server, on Victor's master: when Reanimation is ready again (user: 90 s, or a new stage). It outlives the body, so a
+    /// Server, on Victor's master: when Reanimation is ready again (user: 120 s, or a new stage). It outlives the body, so a
     /// respawn on the same stage doesn't reset it; a cooldown started on an earlier stage is over.
     /// </summary>
     public class VictorReviveClock : MonoBehaviour

@@ -96,7 +96,7 @@ namespace CursedAppleCuriosities.Survivors.Celeste
 
         /// <summary>
         /// Server: Radiant Daggers hit this many enemies: that many more Radiance stacks, uncapped (user: it's taken in place of
-        /// Light Eater, her only healing), and the whole pile's RadianceSeconds timer (Duration Extender lengthens it) starts over (CelesteRadiance).
+        /// Light Eater, her only healing), each cast's batch running out after RadianceSeconds (Duration Extender lengthens it) on its own (CelesteRadiance).
         /// </summary>
         public static void AddRadiance(CharacterBody celeste, int stacks)
         {
@@ -239,23 +239,33 @@ namespace CursedAppleCuriosities.Survivors.Celeste
     /// </summary>
     public class CelesteRadiance : MonoBehaviour
     {
+        // Each cast's stacks run out on their own timer (user, 3.0: one shared timer that every cast reset never ran out
+        // once cooldown reduction let her recast before it ended).
+        private readonly List<(int Stacks, float Until)> _batches = new List<(int, float)>();
         private CharacterBody _body = null!;
-        private float _until;
 
         private void Awake() => _body = GetComponent<CharacterBody>();
 
         public void Add(int stacks, float seconds)
         {
             if (CelesteSurvivor.RadianceBuff == null) return;
-            _body.SetBuffCount(CelesteSurvivor.RadianceBuff.buffIndex, _body.GetBuffCount(CelesteSurvivor.RadianceBuff) + stacks);
-            _until = Time.fixedTime + seconds;
+            _batches.Add((stacks, Time.fixedTime + seconds));
+            Show();
         }
 
         private void FixedUpdate()
         {
-            if (CelesteSurvivor.RadianceBuff == null || Time.fixedTime < _until || !_body.HasBuff(CelesteSurvivor.RadianceBuff)) return;
-            _body.SetBuffCount(CelesteSurvivor.RadianceBuff.buffIndex, 0);
-            EquipmentFx.Sound("celeste_beam_buff_expire", _body.corePosition, _body.gameObject);
+            if (CelesteSurvivor.RadianceBuff == null || _batches.Count == 0) return;
+            if (_batches.RemoveAll(b => Time.fixedTime >= b.Until) == 0) return;
+            Show();
+            if (_batches.Count == 0) EquipmentFx.Sound("celeste_beam_buff_expire", _body.corePosition, _body.gameObject);
+        }
+
+        private void Show()
+        {
+            int total = 0;
+            foreach (var b in _batches) total += b.Stacks;
+            _body.SetBuffCount(CelesteSurvivor.RadianceBuff!.buffIndex, total);
         }
     }
 
