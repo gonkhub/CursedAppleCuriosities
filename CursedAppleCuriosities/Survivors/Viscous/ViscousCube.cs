@@ -268,6 +268,7 @@ namespace CursedAppleCuriosities.Survivors.Viscous
                     bool blue = ViscousSurvivor.BlueCubeBuff != null && body.HasBuff(ViscousSurvivor.BlueCubeBuff);
                     _drawn[body] = (ViscousCubes.MakeVisual(height, blue), DeadlockSounds.Loop("viscous_cube_loop", body.gameObject, 30f));
                 }
+            if (_drawn.Count > 0) // no copy of the keys every frame while nobody is cubed
             foreach (CharacterBody body in _drawn.Keys.ToArray())
             {
                 var (box, loop) = _drawn[body];

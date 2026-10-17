@@ -90,19 +90,21 @@ namespace CursedAppleCuriosities.Items
                     if (methods.Count == 0) { Warn($"{reader} not found ({fieldName})"); continue; }
                     FieldInfo f = field;
                     int reads = 0; // over every overload: one that never reads the field (UpdateTrajectoryInfo's ref wrapper) is fine
-                    foreach (MethodInfo method in methods) Hooks.Add(new ILHook(method, il => reads += ScaleReads(il, f, reader)));
+                    foreach (MethodInfo method in methods) Hooks.Add(new ILHook(method, il => reads += ScaleReads(il, f, reader, method.IsStatic)));
                     if (reads == 0) Warn($"{reader}: no read of {fieldName}");
                 }
             }
         }
 
         /// <summary>After every read of the range field, multiply it by the Mystic Expansion of whoever this method runs for.</summary>
-        private static int ScaleReads(ILContext il, FieldInfo field, string where)
+        private static int ScaleReads(ILContext il, FieldInfo field, string where, bool isStatic)
         {
             var c = new ILCursor(il);
-            // Whoever the method runs for: its instance, or a static method's GameObject argument.
+            // Whoever the method runs for: its instance, or a static method's GameObject argument. Ask the original method:
+            // the hook's copy is always static (an instance method's `this` becomes its first parameter, still arg 0), so
+            // il.Method.HasThis was false for every one of them and nothing was scaled.
             Mono.Cecil.ParameterDefinition? who = null;
-            if (!il.Method.HasThis)
+            if (isStatic)
             {
                 foreach (Mono.Cecil.ParameterDefinition p in il.Method.Parameters)
                     if (p.ParameterType.FullName == "UnityEngine.GameObject") { who = p; break; }

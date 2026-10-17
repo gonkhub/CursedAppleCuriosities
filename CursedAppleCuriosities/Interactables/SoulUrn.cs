@@ -67,7 +67,6 @@ namespace CursedAppleCuriosities.Interactables
 
         public static void Init(ConfigFile config)
         {
-            const string S = "Soul Urn";
             Enabled = true;
             SpawnChance = 0.3f;
             TimeLimit = 30f;

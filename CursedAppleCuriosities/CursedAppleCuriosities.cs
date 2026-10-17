@@ -97,6 +97,7 @@ namespace CursedAppleCuriosities
 
             try { CuriositiesExpansion.Init(); } // before items: their defs require it
             catch (Exception e) { Logger.LogError($"  ! Expansion failed to init: {e}"); }
+            Logger.LogInfo($"  plugin hooks + expansion done at {clock.ElapsedMilliseconds} ms");
             InitItems();
             Logger.LogInfo($"  items done at {clock.ElapsedMilliseconds} ms");
             InitEquipments();
@@ -105,11 +106,14 @@ namespace CursedAppleCuriosities
             InitSurvivors();
             Logger.LogInfo($"  survivors done at {clock.ElapsedMilliseconds} ms");
 
-            try { Stages.DeadlockMap.DeadlockMaps.Init(Config); Logger.LogInfo("  + [Stage] Deadlock map (Sunken Plaza)"); }
+            var lap = System.Diagnostics.Stopwatch.StartNew();
+            try { Stages.DeadlockMap.DeadlockMaps.Init(Config); Logger.LogInfo($"  + [Stage] Deadlock districts ({lap.ElapsedMilliseconds} ms)"); }
             catch (Exception e) { Logger.LogError($"  ! [Stage] Deadlock map failed to init: {e}"); }
-            try { Broker.CursedBroker.Init(Config); Logger.LogInfo("  + [Interactable] Cursed Broker"); }
+            lap.Restart();
+            try { Broker.CursedBroker.Init(Config); Logger.LogInfo($"  + [Interactable] Cursed Broker ({lap.ElapsedMilliseconds} ms)"); }
             catch (Exception e) { Logger.LogError($"  ! [Interactable] Cursed Broker failed to init: {e}"); }
-            try { Interactables.SoulUrn.Init(Config); Logger.LogInfo("  + [Interactable] Soul Urn"); }
+            lap.Restart();
+            try { Interactables.SoulUrn.Init(Config); Logger.LogInfo($"  + [Interactable] Soul Urn ({lap.ElapsedMilliseconds} ms)"); }
             catch (Exception e) { Logger.LogError($"  ! [Interactable] Soul Urn failed to init: {e}"); }
             try { if (Interactables.SoulUrn.Enabled) Interactables.SoulUrnVoice.Init(gameObject); }
             catch (Exception e) { Logger.LogError($"  ! [Interactable] Soul Urn voice failed to init: {e}"); }
@@ -124,8 +128,10 @@ namespace CursedAppleCuriosities
 
             try { ModSettings.PurgeOrphans(Config); }
             catch (Exception e) { Logger.LogError($"  ! Config cleanup failed: {e}"); }
+            lap.Restart();
             try { ModSettings.TryRegister(Config, ItemBase.LoadEmbeddedIcon("icon_curiositycatalog.png")); }
             catch (Exception e) { Logger.LogError($"  ! Settings page failed: {e}"); }
+            Logger.LogInfo($"  settings page {lap.ElapsedMilliseconds} ms");
 
             Logger.LogInfo($"{PluginInfo.PLUGIN_NAME} v{PluginInfo.PLUGIN_VERSION} loaded in {clock.ElapsedMilliseconds} ms.");
         }
@@ -209,10 +215,11 @@ namespace CursedAppleCuriosities
             {
                 try
                 {
+                    var clock = System.Diagnostics.Stopwatch.StartNew();
                     var eq = (EquipmentBase)Activator.CreateInstance(type);
                     eq.Init(Config);
                     _equipments.Add(eq);
-                    Logger?.LogInfo($"  + [Equipment] {eq.EquipmentName}");
+                    Logger?.LogInfo($"  + [Equipment] {eq.EquipmentName} ({clock.ElapsedMilliseconds} ms)");
                 }
                 catch (Exception e)
                 {
@@ -253,10 +260,11 @@ namespace CursedAppleCuriosities
             {
                 try
                 {
+                    var clock = System.Diagnostics.Stopwatch.StartNew();
                     var item = (ItemBase)Activator.CreateInstance(type);
                     item.Init(Config);
                     _items.Add(item);
-                    Logger?.LogInfo($"  + {item.ItemName}");
+                    Logger?.LogInfo($"  + {item.ItemName} ({clock.ElapsedMilliseconds} ms)");
                 }
                 catch (Exception e)
                 {

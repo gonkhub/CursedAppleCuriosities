@@ -12,6 +12,8 @@ Fixes and balance, no new content.
 - **Shiv:** Bloodletting defers 50% of damage taken (was 75%), 75% at full Rage. Its drain no longer stops his sprint (real hits still do).
 - **Shiv, alt fire:** much less lift (55% of the push upward, was 135%), and shots in the air no longer stack lift. During a slide it pushes 60% harder. Throwing a knife no longer resets the gun's fire cycle (together these allowed endless flight).
 - **Shiv's unlock "Bloodletting":** 50 Bleed stacks on one enemy (was 100).
+- **Mystic Expansion:** fixed the bonus range on vanilla survivors' abilities (Huntress' and Engineer's targeting, REX,
+  Merc's Eviscerate, Loader's grapple, aimed throws, ...), which 3.0 had stopped applying. Bullets were unaffected.
 
 ## 3.0.0
 - **Settings cleaned up**: the config now only holds each hero's key layout, audio volumes and your Deadlock folder/converter.

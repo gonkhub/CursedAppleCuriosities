@@ -53,7 +53,6 @@ namespace CursedAppleCuriosities.Survivors.Apollo
     /// </summary>
     public class ApolloUltLook : MonoBehaviour
     {
-        private static Material? _overlay;
         private CharacterBody _body = null!;
         private bool _on;
         private float _nextScan;
