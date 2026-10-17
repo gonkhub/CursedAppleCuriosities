@@ -54,9 +54,9 @@ namespace CursedAppleCuriosities.Survivors.Apollo
         public static float StabMin = 2.5f, StabMax = 4f, StabPerfect = 6.5f;
         public static float PerfectHeal = 0.2f;         // user 2.5: a perfect stab that lands heals 20% of max health
         public const float HoldMin = 0.25f, PerfectStart = 0.525f, PerfectLength = 0.25f, HoldMax = 1.1f; // Deadlock's timings
-        public const float StabLength = 13f;            // Deadlock SlashLength
+        public const float StabLength = 20f;            // Deadlock SlashLength 13 m; longer reach (user 3.1)
         public const float StabRadius = 1.6f;           // Deadlock SlashRadius
-        public const float StabDash = 3f, StabDashSpeed = 56f; // Deadlock AttackDashRange / AttackingDashSpeed 2200 hu/s: the stab's own lunge, where he aims
+        public const float StabDash = 6f, StabDashSpeed = 56f; // Deadlock AttackDashRange 3 m (6 since 3.1, user: more range) / AttackingDashSpeed 2200 hu/s: the stab's own lunge, where he aims, up and down too
         public const float ReadyDash = 4f, ReadyDashTime = 0.2f; // the hop as he readies it, the way he's moving (user 2.5; Deadlock's lunge_start_<dir>)
         public const int Stabs = 3;                     // Deadlock MaxStabs
         public const float StabRecastWindow = 5f;       // Deadlock RecastTime
@@ -67,6 +67,11 @@ namespace CursedAppleCuriosities.Survivors.Apollo
         // stun, 40% slow 4 s, 22 s) ----
         public const float RiposteWindow = 0.8f;        // Deadlock AbilityChannelTime
         public static float RiposteDamage = 2.5f;       // user 2.5 (was 600%)
+        public static float RiposteKickDamage = 4f;     // user 3.1: hold Riposte through the counter: after the slash, a full heavy melee kick
+        public const float RiposteKickAfter = 0.3f;     // the slash's beat before the kick's wind-up starts (my number)
+        public const float RiposteKickWindup = 0.5f;    // melee_start: the heavy melee's wind-up (my number; Abrams' is 0.4)
+        public const float RiposteKickImpact = 0.15f, RiposteKickDuration = 0.6f; // the kick lands this far into melee_hit; he's free after (my numbers)
+        public const float RiposteKickHold = 0.15f;     // held at least this long counts as holding (a tap on a close enemy is the slash)
         public const float RiposteDashSpeed = 76f;      // Deadlock DashSpeed 3000 hu/s
         public const float RiposteCounterRange = 50f;   // user 3.0: after a parry, pick the counter's target near the crosshair within 50 m
         public const float RiposteCounterConeDeg = 20f;
@@ -126,12 +131,16 @@ namespace CursedAppleCuriosities.Survivors.Apollo
             ("riposte", "ability_riposte", false, "hold", "full"),
             ("riposte_dash", "ability_riposte_counterattack_dash", false, "riposte_hit", "full"),
             ("riposte_hit", "ability_riposte_counterattack_hit", false, "locomotion", "full"),
+            ("riposte_kick_start", "melee_start", false, "hold", "full"),             // the counter held: a full heavy melee after the slash (user 3.1)
+            ("riposte_kick_start_air", "melee_in_air_start", false, "hold", "full"),
+            ("riposte_kick", "melee_hit", false, "locomotion", "full"),
+            ("riposte_kick_air", "melee_in_air_hit", false, "in_air", "full"),
             ("ult_start", "ability_superslash_ult_start", false, "ult_hold", "full"),
             ("ult_hold", "ability_superslash_ult_hold", true, "", "full"),
             ("ult_dash", "ability_superslash_ult_dash", false, "ult_finale", "full"),
             ("ult_finale", "ability_superslash_ult_finale", false, "locomotion", "full"));
 
-        public static readonly HashSet<string> Locked = FrameworkAnims.Locked("sigil", "lunge", "riposte_dash", "riposte_hit", "ult_dash", "ult_finale", "lunge_start_n", "lunge_start_e", "lunge_start_s", "lunge_start_w");
+        public static readonly HashSet<string> Locked = FrameworkAnims.Locked("sigil", "lunge", "riposte_dash", "riposte_hit", "riposte_kick_start", "riposte_kick_start_air", "riposte_kick", "riposte_kick_air", "ult_dash", "ult_finale", "lunge_start_n", "lunge_start_e", "lunge_start_s", "lunge_start_w");
 
         public static readonly DeadlockSound[] Sounds = BuildSounds();
 
@@ -155,6 +164,9 @@ namespace CursedAppleCuriosities.Survivors.Apollo
             Add("riposte_success", "sounds/abilities/fencer/riposte/fencer_riposte_success", 1f, 50f);
             Add("riposte_dash", "sounds/abilities/fencer/riposte/fencer_riposte_counterattack_cast", 1f, 50f);
             Add("riposte_hit", "sounds/abilities/fencer/riposte/fencer_riposte_counterattack_impact", 1f, 50f);
+            Add("kick_charge", "sounds/player/melee/shared/charged_melee_full", 0.9f, 30f);
+            Add("kick_swing", "sounds/player/melee/shared/swing_charged", 0.9f, 30f);
+            Add("kick_impact", "sounds/player/melee/shared/melee_charged_kick", 1f, 40f, 0.05f);
             Add("ult_voice", "sounds/vo/fencer/fencer_use_power4_start_02", 1f, 80f); // "Itani lo sahn..." (Deadlock's captions)
             Add("ult_cast", "sounds/abilities/fencer/super_slash/fencer_super_slash_cast", 1f, 80f);
             Add("ult_charge", "sounds/abilities/fencer/super_slash/fencer_super_slash_cast_delay", 1f, 80f);

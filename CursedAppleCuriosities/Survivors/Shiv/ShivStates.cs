@@ -11,6 +11,18 @@ using Kit = CursedAppleCuriosities.Deadlock.DeadlockSurvivorKit;
 // Entity states live in the EntityStates namespace tree, as RoR2's own do.
 namespace EntityStates.CursedApple.Shiv
 {
+    /// <summary>
+    /// When Shiv's gun is next ready (owner). The knife shares the Weapon machine and can cut a shot's cycle short; it now waits out the
+    /// rest of that cycle instead, so a throw never resets the gun (user 3.1: knife + alt fire chained into endless flight).
+    /// </summary>
+    public class ShivGunCycle : MonoBehaviour
+    {
+        public float ReadyAt;
+
+        public static void Fired(GameObject body, float cycle) => (body.GetComponent<ShivGunCycle>() ?? body.AddComponent<ShivGunCycle>()).ReadyAt = Time.fixedTime + cycle;
+        public static float Left(GameObject body) => body.TryGetComponent(out ShivGunCycle c) ? Mathf.Max(0f, c.ReadyAt - Time.fixedTime) : 0f;
+    }
+
     internal static class ShivShared
     {
         /// <summary>Enemies (one hurtbox each) in a sphere, seen from this client: the owner picks, the server hits.</summary>
@@ -62,6 +74,7 @@ namespace EntityStates.CursedApple.Shiv
         {
             base.OnEnter();
             _duration = ShivData.ShotCycle / attackSpeedStat;
+            if (isAuthority) ShivGunCycle.Fired(gameObject, _duration);
             StartAimMode(2f);
             ShivModel.Play(gameObject, "shoot");
             DeadlockSounds.Play("shiv_gun", transform.position, gameObject);
@@ -93,6 +106,7 @@ namespace EntityStates.CursedApple.Shiv
         {
             base.OnEnter();
             _duration = ShivData.AltCycle / attackSpeedStat;
+            if (isAuthority) ShivGunCycle.Fired(gameObject, _duration);
             StartAimMode(2f);
             ShivModel.Play(gameObject, "shoot_alt");
             DeadlockSounds.Play("shiv_gun_alt", transform.position, gameObject);
@@ -111,16 +125,18 @@ namespace EntityStates.CursedApple.Shiv
         {
             if (characterMotor == null) return;
             Vector3 push = -GetAimRay().direction * ShivData.AltKnockback;
-            if (push.y > 0f) push.y *= 1f + ShivData.AltKnockbackUpBonus;
+            if (push.y > 0f) push.y *= ShivData.AltKnockbackUp;
             Vector3 flat = new Vector3(push.x, 0f, push.z);
             if (EntityStateMachine.FindByCustomName(gameObject, "Body")?.state is DeadlockSlide slide)
             {
-                Vector3 v = slide.Dir * slide.Speed + flat;
+                Vector3 v = slide.Dir * slide.Speed + flat * ShivData.AltSlideKnockback; // a slide takes it harder (user 3.1, for the lost lift)
                 if (v.sqrMagnitude > 0.01f) { slide.Speed = v.magnitude; slide.Dir = v.normalized; }
                 if (push.y > 2f) { characterMotor.Motor.ForceUnground(); characterMotor.velocity = new Vector3(characterMotor.velocity.x, push.y, characterMotor.velocity.z); }
                 return;
             }
             Vector3 vel = characterMotor.velocity + push;
+            // The lift never stacks on what he already has (user 3.1): shot after shot in the air can't climb, only slow his fall.
+            if (push.y > 0f) vel.y = Mathf.Max(characterMotor.velocity.y, push.y);
             if (characterMotor.isGrounded)
             {
                 // On the ground the run would eat it: lift off a touch so it carries as air momentum.
@@ -145,6 +161,8 @@ namespace EntityStates.CursedApple.Shiv
     /// <summary>Serrated Knife (Deadlock citadel_ability_shiv_dagger): throw a knife that bleeds what it hits (ShivKnife). 3 charges (user).</summary>
     public class ThrowKnife : BaseSkillState
     {
+        private float _hold;
+
         public override void OnEnter()
         {
             base.OnEnter();
@@ -167,7 +185,13 @@ namespace EntityStates.CursedApple.Shiv
                     speedOverride = ShivData.KnifeSpeed,
                 });
             }
-            if (isAuthority) outer.SetNextStateToMain();
+            _hold = ShivGunCycle.Left(gameObject); // a shot it cut short: its cycle still runs out before the gun is back
+        }
+
+        public override void FixedUpdate()
+        {
+            base.FixedUpdate();
+            if (isAuthority && fixedAge >= _hold) outer.SetNextStateToMain();
         }
 
         public override InterruptPriority GetMinimumInterruptPriority() => InterruptPriority.Skill;

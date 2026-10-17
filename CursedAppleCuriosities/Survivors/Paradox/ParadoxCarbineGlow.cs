@@ -5,21 +5,21 @@ using Kit = CursedAppleCuriosities.Deadlock.DeadlockSurvivorKit;
 namespace CursedAppleCuriosities.Survivors.Paradox
 {
     /// <summary>
-    /// Kinetic Carbine's blue glow (user 3.0), every machine: a blue overlay and a blue light on Paradox while the Carbine is active
-    /// (the KineticCarbine state, which runs everywhere). Brighter as the charge builds. Apollo's red glow, in blue.
+    /// Kinetic Carbine's blue glow, every machine, while the Carbine is active (the KineticCarbine state, which runs everywhere).
+    /// 3.1 (user): it glows from her gun, not over her whole body (the 3.0 overlay just turned her white): a blue orb and a blue light
+    /// at the muzzle, both growing as the charge builds.
     /// </summary>
     public class ParadoxCarbineGlow : MonoBehaviour
     {
         private static readonly Color Blue = new Color(0.2f, 0.55f, 1f, 1f);
         private static Material? _blue;
-        private CharacterBody _body = null!;
-        private TemporaryOverlayInstance? _overlay;
+        private Transform? _orb;
         private Light? _light;
 
-        /// <summary>How far the charge has built (0-1), set by the state: the light grows with it.</summary>
+        /// <summary>How far the charge has built (0-1), set by the state: the glow grows with it.</summary>
         public float Charge;
 
-        /// <summary>The blue overlay: the Huntress's bright flash, tinted blue.</summary>
+        /// <summary>The orb's look: the Huntress's bright flash (a fresnel glow), tinted blue.</summary>
         private static Material? BlueMaterial()
         {
             if (_blue != null) return _blue;
@@ -33,34 +33,52 @@ namespace CursedAppleCuriosities.Survivors.Paradox
 
         private void Start()
         {
-            _body = GetComponent<CharacterBody>();
-            CharacterModel? model = _body.modelLocator != null && _body.modelLocator.modelTransform != null ? _body.modelLocator.modelTransform.GetComponent<CharacterModel>() : null;
+            var body = GetComponent<CharacterBody>();
+            Transform? model = body.modelLocator != null ? body.modelLocator.modelTransform : null;
+            Transform? muzzle = model != null && model.TryGetComponent(out ChildLocator children) ? children.FindChild(ParadoxSurvivor.MuzzleName) : null;
+            Transform at = muzzle != null ? muzzle : body.coreTransform != null ? body.coreTransform : transform;
+
             Material? blue = BlueMaterial();
-            if (model != null && blue != null)
+            if (blue != null)
             {
-                _overlay = TemporaryOverlayManager.AddOverlay(gameObject);
-                _overlay.duration = float.PositiveInfinity;
-                _overlay.animateShaderAlpha = false;
-                _overlay.destroyComponentOnEnd = false;
-                _overlay.originalMaterial = blue;
-                _overlay.AddToCharacterModel(model);
+                GameObject orb = GameObject.CreatePrimitive(PrimitiveType.Sphere);
+                orb.name = "ParadoxCarbineOrb";
+                Destroy(orb.GetComponent<Collider>());
+                var r = orb.GetComponent<MeshRenderer>();
+                r.sharedMaterial = blue;
+                r.shadowCastingMode = UnityEngine.Rendering.ShadowCastingMode.Off;
+                r.receiveShadows = false;
+                orb.transform.SetParent(at, false);
+                _orb = orb.transform;
             }
             var go = new GameObject("ParadoxCarbineLight");
-            go.transform.SetParent(_body.coreTransform != null ? _body.coreTransform : transform, false);
+            go.transform.SetParent(at, false);
             _light = go.AddComponent<Light>();
             _light.type = LightType.Point;
             _light.color = Blue;
-            _light.range = 4f + _body.radius * 2f;
+            _light.range = 3f;
         }
 
         private void Update()
         {
-            if (_light != null) _light.intensity = (1f + 1.5f * Charge) + 0.5f * Mathf.Sin(Time.time * 6f);
+            float flicker = Mathf.Sin(Time.time * 6f);
+            if (_light != null)
+            {
+                _light.intensity = 1.5f + 3f * Charge + 0.5f * flicker;
+                _light.range = 2.5f + 2.5f * Charge;
+            }
+            // Sized in world metres whatever the bone's own scale.
+            if (_orb != null && _orb.parent != null)
+            {
+                float metres = (0.12f + 0.25f * Charge) * (1f + 0.08f * flicker);
+                Vector3 s = _orb.parent.lossyScale;
+                _orb.localScale = new Vector3(metres / Mathf.Max(1e-4f, s.x), metres / Mathf.Max(1e-4f, s.y), metres / Mathf.Max(1e-4f, s.z));
+            }
         }
 
         private void OnDestroy()
         {
-            _overlay?.Destroy();
+            if (_orb != null) Destroy(_orb.gameObject);
             if (_light != null) Destroy(_light.gameObject);
         }
     }

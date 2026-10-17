@@ -51,7 +51,8 @@ namespace CursedAppleCuriosities.Survivors.Shiv
         public const float AltSpreadDeg = 5.5f;         // Deadlock m_flPelletScatterFactor 1.5
         public static float AltFalloffStart = 8f, AltFalloffEnd = 22f; // harsher than the shotgun's (user)
         public static float AltKnockback = 22f;         // m/s pushed away from the aim (user: strong, a movement tool)
-        public const float AltKnockbackUpBonus = 0.35f; // aiming down lifts a little more: a rocket-jump-like hop
+        public const float AltSlideKnockback = 1.6f;    // the push along the ground during a slide, x this (user 3.1: makes up for the lift)
+        public const float AltKnockbackUp = 0.55f;      // the push's upward part (user 3.1: was 1.35x, which with a knife reset meant endless flight)
 
         // ---- secondary: Serrated Knife (citadel_ability_shiv_dagger: 2 charges, 16 s, bleed 10/s for 5 s, 28% slow) ----
         public static float KnifeDamage = 1f;           // the hit itself (Deadlock ImpactDamage 0: RoR2 wants a hit to proc)
@@ -88,7 +89,8 @@ namespace CursedAppleCuriosities.Survivors.Shiv
         public static float KillingBlowCooldown = 30f;  // Deadlock 145; refunded by an execute (user)
 
         // ---- passive: Bloodletting (citadel_ability_shiv_defer_damage: 25% deferred over 6 s) + Rage ----
-        public static float DeferredShare = 0.75f;      // user 3.0 (was 50%; Deadlock DamagePctDeferred 25)
+        public static float DeferredShare = 0.5f;       // user 3.1 (75% in 3.0, 50% before; Deadlock DamagePctDeferred 25)
+        public static float DeferredShareRaged = 0.75f; // at full rage (user 3.1)
         public const float DeferredSeconds = 6f;        // Deadlock DeferredDamageDuration (user)
         public const float DeferredTick = 0.25f;
         public const float RageMax = 100f;

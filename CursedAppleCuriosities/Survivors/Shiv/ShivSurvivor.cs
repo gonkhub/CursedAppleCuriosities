@@ -253,7 +253,7 @@ namespace CursedAppleCuriosities.Survivors.Shiv
 
             LanguageAPI.Add(Token + "PASSIVE_NAME", "Bloodletting & Rage");
             LanguageAPI.Add(Token + "PASSIVE_DESC",
-                $"<style=cIsHealing>{ShivData.DeferredShare * 100f:0}%</style> of damage taken is dealt over <style=cIsUtility>{ShivData.DeferredSeconds:0}s</style> instead. " +
+                $"<style=cIsHealing>{ShivData.DeferredShare * 100f:0}%</style> (<style=cIsHealing>{ShivData.DeferredShareRaged * 100f:0}%</style> at full Rage) of damage taken is dealt over <style=cIsUtility>{ShivData.DeferredSeconds:0}s</style> instead. " +
                 $"Dealing damage builds <style=cIsDamage>Rage</style>; at full Rage, bleeds and Slice'n'Dice deal <style=cIsDamage>double</style> and Killing Blow executes below <style=cIsHealth>{ShivData.ExecuteThresholdRage * 100f:0}%</style>.");
 
             LanguageAPI.Add(Token + "GUN_NAME", "Shotgun");

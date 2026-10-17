@@ -209,13 +209,21 @@ namespace CursedAppleCuriosities.Deadlock
         private void OnDisable() { if (_body != null) _body.onSkillActivatedAuthority -= OnSkillUsed; }
         private void OnSkillUsed(GenericSkill skill) { if (skill != null && skill.skillDef != null && skill.skillDef.isCombatSkill) LastAttack = Time.time; }
 
+        /// <summary>
+        /// A hero's own health drain that isn't being hurt (Shiv's Bloodletting, user 3.1): given the body and a drop in health, how much
+        /// of it the drain explains (and uses up). Whatever is left over counts as damage.
+        /// </summary>
+        public static Func<CharacterBody, float, float>? ExplainDrop;
+
         /// <summary>Taking damage, seen from health + shield dropping (the server's damage events don't reach a client's owner copy).</summary>
         private void TrackHurt()
         {
             HealthComponent? hc = _body.healthComponent;
             if (hc == null) return;
             float hp = hc.health + hc.shield;
-            if (_lastHp >= 0f && hp < _lastHp - 0.01f) LastHurt = Time.time;
+            float drop = _lastHp >= 0f ? _lastHp - hp : 0f;
+            if (drop > 0.01f && ExplainDrop != null) drop -= ExplainDrop(_body, drop);
+            if (drop > 0.01f) LastHurt = Time.time;
             _lastHp = hp;
         }
 

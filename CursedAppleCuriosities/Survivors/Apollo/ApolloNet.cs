@@ -280,7 +280,7 @@ namespace CursedAppleCuriosities.Survivors.Apollo
             var ring = go.AddComponent<SevenRing>();
             ring.Radius = radius;
             ring.Seconds = seconds;
-            ring.Color = new Color(1f, 0.85f, 0.45f, 0.9f);
+            ring.Color = new Color(1f, 0.15f, 0.1f, 0.9f); // red (user 3.1; was his gold)
         }
     }
 

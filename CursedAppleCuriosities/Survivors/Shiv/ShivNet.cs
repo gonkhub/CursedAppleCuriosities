@@ -24,6 +24,7 @@ namespace CursedAppleCuriosities.Survivors.Shiv
             NetworkingAPI.RegisterMessageType<ShivExecuteMessage>();
             NetworkingAPI.RegisterMessageType<ShivPendingMessage>();
             ShivBloodletting.Hook();
+            DeadlockMover.ExplainDrop = ShivBloodletting.ExplainDrop;
             ShivRage.Hook();
             ShivRageHud.Hook();
             ShivBloodlettingBar.Hook();
@@ -199,7 +200,27 @@ namespace CursedAppleCuriosities.Survivors.Shiv
             && (info.damageType.damageType & (DamageType.DoT | DamageType.Silent)) == (DamageType.DoT | DamageType.Silent);
 
         /// <summary>Health still to drain (every client).</summary>
-        public float Pending { get; set; }
+        public float Pending
+        {
+            get => _pending;
+            set
+            {
+                // What the bar paid off is health he's about to lose (or just lost) to the drain, not a hit: the sprint keeps going (user 3.1).
+                if (value < _pending) { _drained += _pending - value; _drainedAt = Time.time; }
+                _pending = value;
+            }
+        }
+        private float _pending, _drained, _drainedAt;
+
+        /// <summary>DeadlockMover.ExplainDrop: the part of a health drop the drain paid for (used up as it's matched).</summary>
+        public static float ExplainDrop(CharacterBody body, float drop)
+        {
+            if (!body.TryGetComponent(out ShivBloodletting b)) return 0f;
+            if (Time.time - b._drainedAt > 0.5f) b._drained = 0f; // a stale credit (e.g. a cleanse) never hides a later hit
+            float explained = Mathf.Min(drop, b._drained + 0.05f);
+            b._drained = Mathf.Max(0f, b._drained - explained);
+            return explained;
+        }
 
         private void Awake() => _body = GetComponent<CharacterBody>();
 
@@ -237,7 +258,7 @@ namespace CursedAppleCuriosities.Survivors.Shiv
             HealthComponent hc = _body.healthComponent;
             float room = hc.combinedHealth - PendingTotal();
             if (room <= 0f) return null; // all of his health is already bloodletting: the hit lands in full (user)
-            float share = Mathf.Min(info.damage * ShivData.DeferredShare, room);
+            float share = Mathf.Min(info.damage * (ShivRage.Full(_body) ? ShivData.DeferredShareRaged : ShivData.DeferredShare), room); // 75% at full rage (user 3.1)
             if (share <= 0f) return null;
             info.damage -= share;
             int ticks = Mathf.Max(1, Mathf.RoundToInt(ShivData.DeferredSeconds / ShivData.DeferredTick));

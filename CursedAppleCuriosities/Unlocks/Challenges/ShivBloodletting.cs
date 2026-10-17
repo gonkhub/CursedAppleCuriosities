@@ -7,7 +7,7 @@ using UnityEngine;
 namespace CursedAppleCuriosities.Unlocks.Challenges
 {
     /// <summary>
-    /// Shiv's unlock (user 3.0, replaced "Killing Blow"): "Bloodletting", have 100 of your own Bleed stacks on a single enemy at once,
+    /// Shiv's unlock (user 3.0, replaced "Killing Blow"): "Bloodletting", have 50 of your own Bleed stacks on a single enemy at once (100 until 3.1, user),
     /// as any survivor (Tri-Tip Daggers, Bandit, ...). Only stacks you inflicted count, not other players'. Checked on the server
     /// each time a bleed lands, by counting the victim's DoT stacks from your body.
     /// </summary>
@@ -15,7 +15,7 @@ namespace CursedAppleCuriosities.Unlocks.Challenges
     public class ShivBloodletting : BaseAchievement
     {
         public const string Identifier = "CursedAppleShivBloodletting";
-        public const int Stacks = 100;
+        public const int Stacks = 50;
 
         public override void OnInstall()
         {

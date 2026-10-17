@@ -200,7 +200,12 @@ namespace EntityStates.CursedApple.Apollo
         {
             base.FixedUpdate();
             StartAimMode(0.5f);
-            if (!_glinted && fixedAge >= ApolloData.PerfectStart) { _glinted = true; DeadlockSounds.Play("apollo_lunge_glint", transform.position, gameObject); }
+            if (!_glinted && fixedAge >= ApolloData.PerfectStart)
+            {
+                _glinted = true;
+                DeadlockSounds.Play("apollo_lunge_glint", transform.position, gameObject);
+                ApolloBladeFlash.Flash(gameObject, ApolloData.PerfectLength); // every machine: his blade flashes red for the perfect window (user 3.1)
+            }
             if (!isAuthority) return;
             // The hop, then he hangs there while he readies it: gravity doesn't touch him (user 2.5).
             if (characterMotor != null)
@@ -222,6 +227,12 @@ namespace EntityStates.CursedApple.Apollo
             if ((released && fixedAge >= ApolloData.HoldMin) || fixedAge >= ApolloData.HoldMax) outer.SetNextState(new AdvanceStab { Held = fixedAge });
         }
 
+        public override void OnExit()
+        {
+            ApolloBladeFlash.Stop(gameObject); // let go (or the stab began): the flash ends with the readying
+            base.OnExit();
+        }
+
         public override InterruptPriority GetMinimumInterruptPriority() => InterruptPriority.PrioritySkill;
     }
 
@@ -236,9 +247,15 @@ namespace EntityStates.CursedApple.Apollo
             base.OnEnter();
             ApolloModel.Play(gameObject, "lunge");
             DeadlockSounds.Play("apollo_lunge_cast", transform.position, gameObject);
-            _dir = GetAimRay().direction;
-            _dash = ApolloShared.Flat(_dir, characterDirection.forward); // the stab lunges where he aims (the hop was when he readied it)
-            if (isAuthority && characterMotor != null) characterMotor.disableAirControlUntilCollision = false;
+            _dir = GetAimRay().direction.normalized;
+            // The stab lunges where he aims, up and down too (user 3.1, as Itani Lo Sahn): the motor's own collision stops him at the
+            // floor or a wall, so a stab aimed down slides along the ground rather than through it.
+            _dash = _dir;
+            if (isAuthority && characterMotor != null)
+            {
+                characterMotor.disableAirControlUntilCollision = false;
+                if (_dash.y > 0.05f) characterMotor.Motor.ForceUnground();
+            }
         }
 
         public override void FixedUpdate()
@@ -250,6 +267,7 @@ namespace EntityStates.CursedApple.Apollo
             {
                 characterMotor.velocity = Vector3.zero;
                 characterMotor.rootMotion += _dash * ApolloData.StabDashSpeed * Time.fixedDeltaTime;
+                if (_dash.y > 0.05f && characterMotor.isGrounded) characterMotor.Motor.ForceUnground();
                 return;
             }
             if (!_stabbed) Stab();
@@ -269,7 +287,7 @@ namespace EntityStates.CursedApple.Apollo
             if (ApolloSurvivor.WaveTracer != null)
                 EffectManager.SpawnEffect(ApolloSurvivor.WaveTracer, new EffectData { origin = characterBody.corePosition + _dir * length, start = characterBody.corePosition }, true);
             GetComponent<ApolloAdvanceRecast>()?.Stabbed();
-            if (characterMotor != null) characterMotor.velocity = _dash * characterBody.moveSpeed;
+            if (characterMotor != null) characterMotor.velocity = ApolloShared.Flat(_dash, characterDirection.forward) * characterBody.moveSpeed;
         }
 
         public override void OnSerialize(UnityEngine.Networking.NetworkWriter writer) { base.OnSerialize(writer); writer.Write(Held); }
@@ -327,11 +345,15 @@ namespace EntityStates.CursedApple.Apollo
         public override InterruptPriority GetMinimumInterruptPriority() => InterruptPriority.PrioritySkill;
     }
 
-    /// <summary>Riposte's counter: a fast dash to the chosen enemy (50 m at most), then a slash that stuns and slows everything close.</summary>
+    /// <summary>
+    /// Riposte's counter: a fast dash to the chosen enemy (50 m at most), then a slash that stuns and slows everything close. Riposte
+    /// still held when the slash lands (user 3.1): after it, a full heavy melee, wind-up and kick (RiposteKick), 400%.
+    /// </summary>
     public class RiposteDash : BaseState
     {
         public GameObject? Target;
-        private bool _slashed;
+        private bool _slashed, _let, _kick;
+        private float _slashedAt;
 
         public override void OnEnter()
         {
@@ -344,6 +366,7 @@ namespace EntityStates.CursedApple.Apollo
         {
             base.FixedUpdate();
             if (!isAuthority || characterMotor == null) return;
+            if (inputBank == null || !inputBank.skill3.down) _let = true; // let go at any point: the slash alone
             Vector3 goal = Target != null && Target.TryGetComponent(out CharacterBody t) ? t.corePosition : characterBody.corePosition + characterDirection.forward * 3f;
             Vector3 to = goal - characterBody.corePosition;
             bool far = to.magnitude > 2.5f && to.magnitude < ApolloData.RiposteCounterRange * 1.5f;
@@ -354,21 +377,84 @@ namespace EntityStates.CursedApple.Apollo
                 characterDirection.forward = ApolloShared.Flat(to, characterDirection.forward);
                 return;
             }
-            if (!_slashed) Slash(ApolloShared.Flat(to, characterDirection.forward));
+            if (!_slashed && !_let && fixedAge < ApolloData.RiposteKickHold) return; // arrived early: wait to see if it's a hold
+            if (!_slashed)
+            {
+                _slashed = true;
+                _slashedAt = fixedAge;
+                _kick = !_let; // still held as the slash lands: the kick follows it
+                Counter(characterBody, ApolloShared.Flat(to, characterDirection.forward), ApolloData.RiposteDamage, RollCrit());
+            }
+            characterMotor.velocity = Vector3.zero;
+            if (_kick && fixedAge - _slashedAt >= ApolloData.RiposteKickAfter) { outer.SetNextState(new RiposteKick { Target = Target }); return; } // its own state: every machine sees it
             if (fixedAge >= 0.8f) outer.SetNextStateToMain();
         }
 
-        private void Slash(Vector3 dir)
+        /// <summary>Owner: the counter's blow on everything in a 90 deg cone within 6 m (Deadlock SlashConeAngle 90). True if it hit.</summary>
+        public static bool Counter(CharacterBody body, Vector3 dir, float coefficient, bool crit)
         {
-            _slashed = true;
             var hit = new List<GameObject>();
-            foreach (GameObject g in ApolloShared.Around(characterBody.corePosition, ApolloData.RiposteSlashRadius, GetTeam()))
+            foreach (GameObject g in ApolloShared.Around(body.corePosition, ApolloData.RiposteSlashRadius, body.teamComponent.teamIndex))
             {
-                Vector3 to = g.transform.position - characterBody.corePosition;
+                Vector3 to = g.transform.position - body.corePosition;
                 to.y = 0f;
-                if (to.sqrMagnitude < 1f || Vector3.Angle(dir, to) <= 45f) hit.Add(g); // Deadlock SlashConeAngle 90
+                if (to.sqrMagnitude < 1f || Vector3.Angle(dir, to) <= 45f) hit.Add(g);
             }
-            if (hit.Count > 0) ApolloNet.ToServer(new ApolloHitMessage { Kind = ApolloHitKind.Riposte, Attacker = gameObject, Targets = hit.ToArray(), Coefficient = ApolloData.RiposteDamage, Dir = dir, Crit = RollCrit() });
+            if (hit.Count == 0) return false;
+            ApolloNet.ToServer(new ApolloHitMessage { Kind = ApolloHitKind.Riposte, Attacker = body.gameObject, Targets = hit.ToArray(), Coefficient = coefficient, Dir = dir, Crit = crit });
+            return true;
+        }
+
+        public override void OnSerialize(UnityEngine.Networking.NetworkWriter writer) { base.OnSerialize(writer); writer.Write(Target); }
+        public override void OnDeserialize(UnityEngine.Networking.NetworkReader reader) { base.OnDeserialize(reader); Target = reader.ReadGameObject(); }
+
+        public override InterruptPriority GetMinimumInterruptPriority() => InterruptPriority.Frozen;
+    }
+
+    /// <summary>
+    /// Riposte held through the counter (user 3.1): after the slash, a full heavy melee as Deadlock plays it, the wind-up (melee_start)
+    /// then the kick (melee_hit), 400%, stunning and slowing like the slash. Every machine plays it (the state is synced).
+    /// </summary>
+    public class RiposteKick : BaseState
+    {
+        public GameObject? Target;
+        private bool _swung, _kicked;
+        private bool Air => characterMotor != null && !characterMotor.isGrounded;
+
+        public override void OnEnter()
+        {
+            base.OnEnter();
+            ApolloModel.Play(gameObject, Air ? "riposte_kick_start_air" : "riposte_kick_start");
+            DeadlockSounds.Play("apollo_kick_charge", transform.position, gameObject);
+        }
+
+        public override void FixedUpdate()
+        {
+            base.FixedUpdate();
+            if (!_swung && fixedAge >= ApolloData.RiposteKickWindup)
+            {
+                _swung = true;
+                ApolloModel.Play(gameObject, Air ? "riposte_kick_air" : "riposte_kick");
+                DeadlockSounds.Play("apollo_kick_swing", transform.position, gameObject);
+            }
+            if (!isAuthority) return;
+            if (characterMotor != null) characterMotor.velocity = Vector3.zero; // he hangs where the counter put him
+            // Always turned to the riposte's target, wind-up and kick alike (user 3.1), wherever it was knocked or moves.
+            Vector3 dir = ApolloShared.Flat(characterDirection.forward, Vector3.forward);
+            if (Target != null && Target.TryGetComponent(out CharacterBody t) && t.healthComponent != null && t.healthComponent.alive)
+                dir = ApolloShared.Flat(t.corePosition - characterBody.corePosition, dir);
+            if (characterDirection != null)
+            {
+                characterDirection.moveVector = dir;
+                characterDirection.forward = dir;
+            }
+            if (!_kicked && fixedAge >= ApolloData.RiposteKickWindup + ApolloData.RiposteKickImpact)
+            {
+                _kicked = true;
+                if (RiposteDash.Counter(characterBody, dir, ApolloData.RiposteKickDamage, RollCrit()))
+                    DeadlockSounds.Play("apollo_kick_impact", characterBody.corePosition + dir * 2f);
+            }
+            if (fixedAge >= ApolloData.RiposteKickWindup + ApolloData.RiposteKickDuration) outer.SetNextStateToMain();
         }
 
         public override void OnSerialize(UnityEngine.Networking.NetworkWriter writer) { base.OnSerialize(writer); writer.Write(Target); }

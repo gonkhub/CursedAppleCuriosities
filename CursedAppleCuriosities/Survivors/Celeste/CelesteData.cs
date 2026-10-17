@@ -42,7 +42,7 @@ namespace CursedAppleCuriosities.Survivors.Celeste
         };
 
         // ---- primary: Carny Life (Deadlock: a bouncing, homing thrown blade every 0.58 s, 18 damage, gravity 0.2) ----
-        public static float DaggerDamage = 2f;          // 1.2 until 2.0, too light (user); blades on marked enemies still hit far harder
+        public static float DaggerDamage = 2.5f;        // 1.2 until 2.0, too light (user); 2 until 3.1 (user: moderate buff); blades on marked enemies still hit far harder
         public const float DaggerCycle = 0.58f;          // Deadlock m_flCycleTime
         public const float DaggerSpeed = 60f;            // a little faster than Deadlock's 50 m/s (user: 75 was too fast)
         public const float DaggerLoftDeg = 4f;           // thrown this far above the crosshair (user, 1.7)

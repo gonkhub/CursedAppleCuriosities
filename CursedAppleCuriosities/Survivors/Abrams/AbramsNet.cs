@@ -64,9 +64,20 @@ namespace CursedAppleCuriosities.Survivors.Abrams
             return list;
         }
 
-        /// <summary>Bosses and the biggest monsters can't be scooped up: Shoulder Charge bounces off them.</summary>
+        /// <summary>
+        /// Bosses and the biggest monsters can't be scooped up: Shoulder Charge bounces off them. Flying ones can (user 3.1): Seismic
+        /// Impact drags them down and Shoulder Charge carries them along. Voidling stays put (its fight is built around where it is).
+        /// </summary>
         public static bool TooBigToMove(CharacterBody? b) =>
-            b == null || b.isChampion || b.hullClassification == HullClassification.BeetleQueen;
+            b == null || (b.isChampion || b.hullClassification == HullClassification.BeetleQueen) && !Flier(b);
+
+        /// <summary>A body that flies and can be pushed: a free rigidbody flier (Wandering Vagrant, Solus Control Unit) or a flying motor.</summary>
+        public static bool Flier(CharacterBody b)
+        {
+            if (b.name.Contains("VoidRaidCrab")) return false;
+            if (b.characterMotor != null) return b.characterMotor.isFlying;
+            return b.GetComponent<RigidbodyMotor>() != null && b.TryGetComponent(out Rigidbody rb) && !rb.isKinematic;
+        }
     }
 
     /// <summary>What a hit is: sets its damage type and source on the server.</summary>
@@ -200,6 +211,7 @@ namespace CursedAppleCuriosities.Survivors.Abrams
         private CharacterBody? _body;
         private CharacterMotor? _motor;
         private Rigidbody? _rb;
+        private RigidbodyMotor? _rbMotor;
 
         public static int CountBy(CharacterBody by)
         {
@@ -213,6 +225,7 @@ namespace CursedAppleCuriosities.Survivors.Abrams
             _body = GetComponent<CharacterBody>();
             _motor = GetComponent<CharacterMotor>();
             _rb = GetComponent<Rigidbody>();
+            _rbMotor = GetComponent<RigidbodyMotor>();
             All.Add(this);
         }
 
@@ -277,7 +290,11 @@ namespace CursedAppleCuriosities.Survivors.Abrams
                 _motor.Motor.ForceUnground();
                 _motor.disableAirControlUntilCollision = true;
             }
-            else if (_rb != null && !_rb.isKinematic) _rb.velocity = v;
+            else if (_rb != null && !_rb.isKinematic)
+            {
+                _rb.velocity = v;
+                if (_rbMotor != null) _rbMotor.moveVector = Vector3.zero; // a flying boss (3.1) mustn't steer against the carry
+            }
             else transform.position += v * Time.fixedDeltaTime;
         }
     }

@@ -98,7 +98,7 @@ namespace CursedAppleCuriosities.Survivors.Apollo
                 }
             }
             SlashEffect = Kit.Recoloured(TryLoad<GameObject>("RoR2/Base/Merc/OmniImpactVFXSlashMerc.prefab"), "CursedAppleApolloSlash", Hue, effect: true);
-            SigilEffect = Kit.Recoloured(TryLoad<GameObject>("RoR2/Base/Common/VFX/OmniExplosionVFXQuick.prefab"), "CursedAppleApolloSigil", Hue, effect: true);
+            SigilEffect = Kit.Recoloured(TryLoad<GameObject>("RoR2/Base/Common/VFX/OmniExplosionVFXQuick.prefab"), "CursedAppleApolloSigil", 0f, effect: true); // red (user 3.1)
             UltEffect = Kit.Recoloured(TryLoad<GameObject>("RoR2/Base/Merc/ImpactMercEvis.prefab"), "CursedAppleApolloUlt", Hue, effect: true);
             SigilSlow = Buff("CursedAppleApolloSigilSlow", new Color(0.9f, 0.8f, 0.5f), debuff: true);
             RiposteSlow = Buff("CursedAppleApolloRiposteSlow", new Color(0.8f, 0.7f, 0.4f), debuff: true);
@@ -110,7 +110,7 @@ namespace CursedAppleCuriosities.Survivors.Apollo
             UltStreak = Kit.Recoloured(TryLoad<GameObject>("RoR2/Base/Huntress/TracerHuntressSnipe.prefab", "RoR2/Base/Characters/Huntress/TracerHuntressSnipe.prefab"), "CursedAppleApolloUltStreak", 0f, effect: true);
             RiposteLifestealBuff = Buff("CursedAppleApolloRiposteLifesteal", new Color(0.9f, 0.25f, 0.3f), debuff: false);
 
-            foreach (Type t in new[] { typeof(FireWave), typeof(DrawSigil), typeof(AdvanceReady), typeof(AdvanceStab), typeof(Riposte), typeof(RiposteDash), typeof(ItaniLoSahn) })
+            foreach (Type t in new[] { typeof(FireWave), typeof(DrawSigil), typeof(AdvanceReady), typeof(AdvanceStab), typeof(Riposte), typeof(RiposteDash), typeof(RiposteKick), typeof(ItaniLoSahn) })
                 ContentAddition.AddEntityState(t, out _);
             CreateSkills();
             BodyPrefab = CreateBody();
@@ -257,8 +257,8 @@ namespace CursedAppleCuriosities.Survivors.Apollo
             LanguageAPI.Add(Token + "SKIN_SAPPHIRE", "Sapphire");
             LanguageAPI.Add(Token + "DESCRIPTION",
                 "Apollo is the prince of North Ixia, sent away for his own safety and waiting to prove he's worthy of his family's ancestral blade.<color=#CCD3E0>\n\n" +
-                "< ! > Flawless Advance hits hardest when released on the glint. You get three stabs in a row.\n\n" +
-                "< ! > Riposte turns the next hit you take into a counterattack.\n\n" +
+                "< ! > Flawless Advance hits hardest when released while his blade flashes red. Aim up or down to stab at an angle. You get three stabs in a row.\n\n" +
+                "< ! > Riposte turns the next hit you take into a counterattack. Keep holding it through the counter to follow the slash with a heavy kick.\n\n" +
                 "< ! > Itani Lo Sahn freezes everything it cuts, then finishes them; it hits harder on wounded enemies.</color>\n");
             LanguageAPI.Add(Token + "OUTRO", "..and so he left, undefeated.");
             LanguageAPI.Add(Token + "FAILURE", "..and so he vanished, outmatched at last.");
@@ -268,10 +268,10 @@ namespace CursedAppleCuriosities.Survivors.Apollo
             LanguageAPI.Add(Token + "SIGIL_DESC", $"Draw a sigil ahead that bursts for <style=cIsDamage>{D(ApolloData.SigilDamage)} damage</style> and <style=cIsUtility>slows</style>, as you <style=cIsUtility>flip away</style> from it (look down to cast it below you). Gain <style=cIsDamage>+{D(ApolloData.SigilHaste)} fire rate</style>; a hit gives back <style=cIsUtility>1 stamina</style> and your air jumps.");
             LanguageAPI.Add(Token + "ADVANCE_NAME", "Flawless Advance");
             LanguageAPI.Add(Token + "ADVANCE_DESC",
-                $"Hold to ready a stab, release to lunge through enemies for <style=cIsDamage>{D(ApolloData.StabMin)}-{D(ApolloData.StabMax)} damage</style>; on the glint, <style=cIsDamage>{D(ApolloData.StabPerfect)}</style> and <style=cIsHealing>heal {D(ApolloData.PerfectHeal)} max health</style>. Up to <style=cIsUtility>{ApolloData.Stabs} stabs</style> in a row. Take <style=cIsHealing>{D(ApolloData.AdvanceDamageResist)} less damage</style> while advancing.");
+                $"Hold to ready a stab, release to lunge through enemies for <style=cIsDamage>{D(ApolloData.StabMin)}-{D(ApolloData.StabMax)} damage</style>, at any angle; while your blade flashes red, <style=cIsDamage>{D(ApolloData.StabPerfect)}</style> and <style=cIsHealing>heal {D(ApolloData.PerfectHeal)} max health</style>. Up to <style=cIsUtility>{ApolloData.Stabs} stabs</style> in a row. Take <style=cIsHealing>{D(ApolloData.AdvanceDamageResist)} less damage</style> while advancing.");
             LanguageAPI.Add(Token + "RIPOSTE_NAME", "Riposte");
             LanguageAPI.Add(Token + "RIPOSTE_DESC",
-                $"Ready a parry. The next hit is <style=cIsUtility>deflected</style>. Press again within {ApolloData.RiposteCounterWindow:0}s to dash at the enemy you aim at (up to {ApolloData.RiposteCounterRange:0} m) and slash for <style=cIsDamage>{D(ApolloData.RiposteDamage)} damage</style>, <style=cIsUtility>stunning</style> and slowing, then <style=cIsHealing>steal {D(ApolloData.RiposteLifesteal)} of damage dealt</style> for {ApolloData.RiposteLifestealSeconds:0}s.");
+                $"Ready a parry. The next hit is <style=cIsUtility>deflected</style>. Press again within {ApolloData.RiposteCounterWindow:0}s to dash at the enemy you aim at (up to {ApolloData.RiposteCounterRange:0} m) and slash for <style=cIsDamage>{D(ApolloData.RiposteDamage)} damage</style>, <style=cIsUtility>stunning</style> and slowing (keep holding to follow up with a heavy kick for <style=cIsDamage>{D(ApolloData.RiposteKickDamage)}</style>), then <style=cIsHealing>steal {D(ApolloData.RiposteLifesteal)} of damage dealt</style> for {ApolloData.RiposteLifestealSeconds:0}s.");
             LanguageAPI.Add(Token + "ULT_NAME", "Itani Lo Sahn");
             LanguageAPI.Add(Token + "ULT_DESC",
                 $"Don your mask (<style=cIsUtility>70% less damage taken</style>) and hold; release to <style=cIsUtility>teleport</style> through a long line, slashing for <style=cIsDamage>{D(ApolloData.UltImpact)} damage</style>. Struck enemies freeze in slow motion, then take <style=cIsDamage>{D(ApolloData.UltDelayed)} damage</style> " +
