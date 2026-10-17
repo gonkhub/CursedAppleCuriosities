@@ -59,7 +59,7 @@ namespace CursedAppleCuriosities.Survivors.Seven
         public const float BallSpeed = 43.2f;           // Deadlock m_flSpeed 1700 hu/s
         public const float BallHitSpeed = 3.5f;         // Deadlock m_flNonHeroHitSpeed 138 hu/s: it crawls while it's shocking something
         public const float BallLifetime = 5f;           // Deadlock MaxLifetime
-        public const float BallProc = 0.5f;
+        public const float BallProc = 0.7f;             // 0.5 until 3.1 (user: in line with the storm)
         public const float BallSlowLinger = 0.5f;      // enemies it shocks are slowed 80% (Slow80) while inside and this long after (user, 1.7)
 
         // ---- secondary (alt): Static Charge (Deadlock's v2: strike a unit or a spot) ----
@@ -83,7 +83,7 @@ namespace CursedAppleCuriosities.Survivors.Seven
         // ---- special: Storm Cloud (Seven floats and channels; the cloud grows to the whole map, user) ----
         // Damage per second follows the cloud's growth (user): Start + (End - Start) * t^3 over the channel, t = 0..1. A target in
         // the storm the whole 7 s takes 7 * (Start + (End - Start) / 4) = ~1925% (~1575% before 2.0, ~2520% before 1.7: the strikes are weaker
-        // but proc fully, user), dealt as a lightning bolt every StormStrikeGap s (25-200% each). Attack speed shortens the gap
+        // but proc at 0.7 since 3.1, user), dealt as a lightning bolt every StormStrikeGap s (25-200% each). Attack speed shortens the gap
         // (more bolts, so more damage and procs; user, 2.0). The ramp
         // always takes the base 7 s: Duration Extender only lengthens the time at full output.
         public static float StormDpsStart = 1.0f;       // (Deadlock 95 DPS flat)
@@ -102,7 +102,7 @@ namespace CursedAppleCuriosities.Survivors.Seven
         public static float StormFinalRadius = 1000f;   // Deadlock 30 m; the whole map by the end (user)
         public const float StormStrikeGap = 0.25f;      // s between bolts on each enemy at base attack speed (divided by attack speed), jittered 0.8-1.2x (Deadlock DamageInterval 0.3; 0.125 in 1.9, slowed in 2.0 for attack speed scaling, user)
         public const float StormStrayHit = 0.25f;       // s of storm DPS in each stray bolt's blast
-        public const float StormProc = 1f;              // every storm bolt procs fully (user)
+        public const float StormProc = 0.7f;            // 3.1 balance (user): a very high proc, not a guaranteed one (1.0 before)
         public const float StormStrayRate = 6f;         // stray bolts per second at random spots under the cloud (user), times attack speed
         public const float StormStrayRadius = 4f;       // m: each stray bolt's blast
         public const float StormStrayReach = 45f;       // m from Seven: strays fall where he can see them, even once the cloud is map-wide

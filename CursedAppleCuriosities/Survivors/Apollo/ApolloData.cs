@@ -31,7 +31,8 @@ namespace CursedAppleCuriosities.Survivors.Apollo
         };
 
         // ---- primary: Pride of Ixia, a flying sword wave (18.5 every 0.38 s, 5000 hu/s, no falloff over its 1000 hu reach) ----
-        public static float WaveDamage = 1.3f;
+        public static float WaveDamage = 2.3f;          // 3.1 balance (user): ~605%/s, ~757%/s with Disengaging Sigil's +25% fire rate (1.3 before)
+        public const float WaveProc = 1f;               // the vanilla primary standard (user 3.1: a perfectly average proc chance)
         public static float WaveCycle = 0.38f;          // Deadlock m_flCycleTime
         public static float WaveRange = 25.4f;          // Deadlock falloff ranges 1000 hu: the wave's reach
         public const float WaveRadius = 0.6f;           // the little blade's reach either side of its line

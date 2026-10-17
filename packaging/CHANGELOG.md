@@ -5,12 +5,20 @@ Fixes and balance, no new content.
 - **Apollo, Flawless Advance:** longer reach (20 m stab, 6 m lunge), and it now stabs at any angle, up or down, where you aim.
   His blade flashes bright red for the perfect window: let go while it's lit.
 - **Apollo, Disengaging Sigil:** its ring and burst are red.
+- **Apollo, Family Heirloom:** 230% per wave (was 130%).
 - **Apollo, Riposte:** keep holding Riposte through the counter and, after the slash, he winds up a full heavy melee kick (400%).
 - **Paradox, Kinetic Carbine:** the charge now glows blue from her gun instead of turning her white.
 - **Abrams:** Seismic Impact drags flying bosses down with him, and Shoulder Charge carries them along. Ground bosses still stop him.
+- **Inhibitor:** now a 25% chance on hit (was every hit).
+- **Siphon Bullets:** now a 25% chance on hit, stealing 4% of the damage dealt (was 1% on every hit); the per-enemy cap is unchanged.
+- **Seven:** Storm Cloud bolts and Lightning Ball proc at 0.7 (were 1.0 and 0.5); damage unchanged.
+- **Bebop:** Humble Pie's beam procs at 0.15 (was 0.05), so on-hit items work on it.
+- **Paradox:** burst rifle 65% per round (was 40%).
+- **Mina:** Nox Nostra releases 45 bats (was 75), plus the bonus bats as before.
 - **Celeste:** Carny Life 200% -> 250%.
 - **Shiv:** Bloodletting defers 50% of damage taken (was 75%), 75% at full Rage. Its drain no longer stops his sprint (real hits still do).
 - **Shiv, alt fire:** much less lift (55% of the push upward, was 135%), and shots in the air no longer stack lift. During a slide it pushes 60% harder. Throwing a knife no longer resets the gun's fire cycle (together these allowed endless flight).
+- **Shiv, Slice'n'Dice:** dashes 18 m (was 12); refunds now leave at least 2 s (was 1 s).
 - **Shiv's unlock "Bloodletting":** 50 Bleed stacks on one enemy (was 100).
 - **Mystic Expansion:** fixed the bonus range on vanilla survivors' abilities (Huntress' and Engineer's targeting, REX,
   Merc's Eviscerate, Loader's grapple, aimed throws, ...), which 3.0 had stopped applying. Bullets were unaffected.

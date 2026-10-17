@@ -69,8 +69,8 @@ namespace CursedAppleCuriosities.Survivors.Shiv
         public static float DashDamage = 6f;            // user: 600%
         public static float DashCooldown = 8f;          // Deadlock 16
         public static float DashCooldownPerHit = 1f;    // user: -1 s per enemy struck
-        public static float DashMinWait = 1f;           // user 3.0: the refund always leaves this long (at most 7 s off the 8 s cooldown)
-        public const float DashMetres = 12f;            // Deadlock DashRange
+        public static float DashMinWait = 2f;           // the refund always leaves this long (user: 1 s in 3.0, 2 s in 3.1 balance: at most 6 s off the 8 s cooldown)
+        public const float DashMetres = 18f;            // Deadlock DashRange 12; 18 since 3.1 (user: more range for the 2 s floor)
         public const float DashSpeed = 61f;             // Deadlock DashSpeed 2400 hu/s
         public const float AirAimPitch = 80f;           // in the air, Slice'n'Dice and Killing Blow follow the aim this far up or down (user 2.5)
         public const float DashRadius = 2.5f;           // Deadlock DashRadius

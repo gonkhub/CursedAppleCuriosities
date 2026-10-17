@@ -12,11 +12,11 @@ namespace CursedAppleCuriosities.Items
         public override string ItemName          => "Siphon Bullets";
         public override string ItemLangTokenName => "SIPHONBULLETS";
 
-        public override string ItemPickupDesc => "Hits steal max health from enemies.";
+        public override string ItemPickupDesc => "Chance on hit to steal max health from enemies.";
         public override string ItemFullDescription =>
-            $"Hitting an enemy steals " +
+            $"<style=cIsDamage>{ProcChance:0}%</style> chance on hit to steal " +
             $"<style=cIsHealing>{StealPerHitPercent * 100:0}% of the damage dealt</style> " +
-            $"as bonus max HP per hit, up to " +
+            $"as bonus max HP, up to " +
             $"<style=cIsHealing>{MaxStealPercent * 100:0}%</style> " +
             $"<style=cStack>(+{MaxStealPercent * 100:0}% per stack)</style> " +
             $"of that enemy's max HP. " +
@@ -29,7 +29,8 @@ namespace CursedAppleCuriosities.Items
         public override ItemTag[] ItemTags => new[] { ItemTag.Healing, ItemTag.Damage };
         protected override string IconFileName => "icon_siphonbullets.png";
 
-        public static float StealPerHitPercent;          // fraction of damage dealt stolen per hit
+        public static float StealPerHitPercent;          // fraction of damage dealt stolen per proc
+        public const float ProcChance = 25f;             // percent, x the hit's proc coefficient, luck applies (user 3.1; was every hit at 1%)
         public static float MaxStealPercent;             // cap per enemy per stack (of enemy max HP)
 
         /// <summary>
@@ -48,7 +49,7 @@ namespace CursedAppleCuriosities.Items
             StolenHealthBuff.iconSprite = CreatePlaceholderSprite(Color.red);
             ContentAddition.AddBuffDef(StolenHealthBuff);
 
-            StealPerHitPercent = 0.01f;
+            StealPerHitPercent = 0.04f; // x4 for the 25% chance (user 3.1): the same average
             MaxStealPercent = 0.10f;
             CreateLang();
             CreateItem();
@@ -79,6 +80,7 @@ namespace CursedAppleCuriosities.Items
 
             var victimHC = victim.GetComponent<HealthComponent>();
             if (victimHC == null) return;
+            if (!Util.CheckRoll(ProcChance * damageInfo.procCoefficient, attackerBody.master)) return;
 
             var tracker = attackerBody.GetComponent<SiphonBulletsTracker>()
                 ?? attackerBody.gameObject.AddComponent<SiphonBulletsTracker>();

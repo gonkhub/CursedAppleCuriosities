@@ -11,9 +11,9 @@ namespace CursedAppleCuriosities.Items
         public override string ItemName => "Inhibitor";
         public override string ItemLangTokenName => "INHIBITOR";
 
-        public override string ItemPickupDesc => "Enemies you hit deal less damage and are slowed.";
+        public override string ItemPickupDesc => "Chance on hit to make enemies deal less damage and slow them.";
         public override string ItemFullDescription =>
-            $"Hitting an enemy <style=cIsUtility>inhibits</style> it for <style=cIsUtility>{Duration}s</style>: it deals " +
+            $"<style=cIsUtility>{ProcChance:0}%</style> chance on hit to <style=cIsUtility>inhibit</style> an enemy for <style=cIsUtility>{Duration}s</style>: it deals " +
             $"<style=cIsHealing>{ReductionFor(1) * 100:0}%</style> <style=cStack>(+{ReductionFor(1) * 100:0}% per stack, hyperbolically)</style> " +
             $"<style=cIsHealing>less damage</style> and is <style=cIsUtility>slowed by {SlowAmount * 100:0}%</style>.";
 
@@ -25,6 +25,7 @@ namespace CursedAppleCuriosities.Items
         protected override string IconFileName => "icon_inhibitor.png";
 
         public const float Duration = 4f;
+        public const float ProcChance = 25f; // percent, x the hit's proc coefficient, luck applies (user 3.1; was every hit)
         public static float ReductionCoefficient; // hyperbolic: 1 - 1/(1 + c*stacks); 1/3 → 25%, 40%, 50%...
         public static float SlowAmount;
 
@@ -75,6 +76,7 @@ namespace CursedAppleCuriosities.Items
 
             var victimBody = victim.GetComponent<CharacterBody>();
             if (victimBody == null) return;
+            if (!Util.CheckRoll(ProcChance * damageInfo.procCoefficient, attackerBody.master)) return;
 
             var debuff = victimBody.GetComponent<InhibitorDebuff>()
                 ?? victimBody.gameObject.AddComponent<InhibitorDebuff>();

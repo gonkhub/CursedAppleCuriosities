@@ -37,7 +37,7 @@ namespace CursedAppleCuriosities.Survivors.Bebop
         // 0.3 s wind-up, 0.05 s when picked straight back up; falloff 787 -> 2000 hu to 10%) ----
         public static float BeamDamage = 0.28f;          // per tick (Deadlock 59 DPS, about the other guns' damage per second)
         public static float BeamTick = 0.084f;           // Deadlock m_flCycleTime
-        public static float BeamProc = 0.05f;            // 12 ticks a second: barely procs (user 2.5)... except on a hooked enemy (guaranteed: BebopNet)
+        public static float BeamProc = 0.15f;            // 12 ticks a second: ~1.8 procs/s (3.1 balance, user; 0.05 "barely procs" in 2.5)... except on a hooked enemy (guaranteed: BebopNet)
         public static float BeamRange = 32f;             // Deadlock m_flRange 1259.84 hu
         public const float BeamWindUp = 0.3f;            // Deadlock WindUpTime
         public const float BeamQuickWindUp = 0.05f;      // Deadlock NoWindUpTime: firing again soon after letting go

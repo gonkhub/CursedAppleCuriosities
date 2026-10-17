@@ -40,7 +40,7 @@ namespace CursedAppleCuriosities.Survivors.Apollo
                 var box = h.collider != null ? h.collider.GetComponent<HurtBox>() : null;
                 HealthComponent? hc = box != null ? box.healthComponent : null;
                 if (hc == null || !hc.alive || box!.teamIndex == by.teamComponent.teamIndex || !_hit.Add(hc)) continue;
-                ApolloNet.Hit(by, hc, pd != null ? pd.damage : by.damage * ApolloData.WaveDamage, pd != null && pd.crit, dir * 200f, DamageSource.Primary);
+                ApolloNet.Hit(by, hc, pd != null ? pd.damage : by.damage * ApolloData.WaveDamage, pd != null && pd.crit, dir * 200f, DamageSource.Primary, ApolloData.WaveProc);
                 ApolloNet.Effect(ApolloSurvivor.SlashEffect, ApolloNet.Core(hc), 1.2f, dir);
                 Destroy(gameObject); // no pierce (user 2.5)
                 return;

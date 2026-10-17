@@ -34,7 +34,7 @@ namespace CursedAppleCuriosities.Survivors.Paradox
         };
 
         // ---- primary: the burst rifle (citadel_weapon_chrono_set: 5-round bursts, 0.0735 s apart, 0.294 s between, falloff 20 -> 57.5 m) ----
-        public static float GunDamage = 0.4f;
+        public static float GunDamage = 0.65f;          // 0.4 until 3.1 (balance, user: 0.5, then 0.65 against the vanilla benchmark, ~553%/s)
         // Her rifle is her only proc source (user 3.0), middle of the pack: ~8.5 shots/s x 0.45 = ~3.8 procs/s, about Commando's.
         public const float GunProc = 0.45f;
         public const int BurstCount = 5;                // Deadlock m_iBurstShotCount

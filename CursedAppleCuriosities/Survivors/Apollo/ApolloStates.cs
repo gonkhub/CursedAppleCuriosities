@@ -81,7 +81,7 @@ namespace EntityStates.CursedApple.Apollo
             new BulletAttack
             {
                 owner = gameObject, weapon = gameObject, origin = aim.origin, aimVector = aim.direction, minSpread = 0f, maxSpread = 0f,
-                damage = ApolloData.WaveDamage * damageStat, procCoefficient = 1f, force = 200f,
+                damage = ApolloData.WaveDamage * damageStat, procCoefficient = ApolloData.WaveProc, force = 200f,
                 tracerEffectPrefab = ApolloSurvivor.WaveTracer, hitEffectPrefab = ApolloSurvivor.SlashEffect, muzzleName = ApolloSurvivor.MuzzleName,
                 isCrit = RollCrit(), radius = ApolloData.WaveRadius, maxDistance = ApolloData.WaveRange, smartCollision = true,
                 stopperMask = LayerIndex.world.mask, // the wave passes through enemies

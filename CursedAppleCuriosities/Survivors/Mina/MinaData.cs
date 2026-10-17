@@ -66,7 +66,7 @@ namespace CursedAppleCuriosities.Survivors.Mina
         public const float RetreatExitSpeed = 5f;       // Deadlock ExitVelocity 5 m
 
         // ---- special: Nox Nostra (ability_vampirebat_batswarm: leap 17 m/s at 60 deg, hover, 75 bats at 30/s, 150 s) ----
-        public static int Bats = 75;                    // Deadlock BatCount
+        public static int Bats = 45;                    // Deadlock BatCount 75 (45 since 3.1, user)
         public const int BonusBatsMax = 50;             // Deadlock BonusBatsMax
         public const float BatsPerSecond = 30f;         // Deadlock BatPerSecond
         public static float BatMaxHealth = 0.01f;       // user: 1% of max health a bat
