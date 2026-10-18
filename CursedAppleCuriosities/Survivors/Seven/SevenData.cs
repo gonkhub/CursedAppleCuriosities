@@ -7,8 +7,7 @@ namespace CursedAppleCuriosities.Survivors.Seven
     /// <summary>
     /// Seven's numbers (Deadlock's hero_gigawatt / citadel_ability_lightning_ball, _static_charge_v2, ability_power_surge,
     /// citadel_ability_storm_cloud, read from client 6774). Deadlock values are kept where RoR2 has the same scale (metres,
-    /// seconds, speeds; 39.37 hu = 1 m); damage becomes RoR2 damage coefficients and cooldowns RoR2-length. Headline knobs
-    /// are in the [Seven] config section.
+    /// seconds, speeds; 39.37 hu = 1 m); damage becomes RoR2 damage coefficients and cooldowns RoR2-length.
     /// </summary>
     public static class SevenData
     {
@@ -54,13 +53,13 @@ namespace CursedAppleCuriosities.Survivors.Seven
         // ---- secondary: Lightning Ball ----
         public static float BallDps = 2.5f;             // damage coefficient per second to each enemy inside (Deadlock 75 DPS)
         public static float BallCooldown = 7f;          // Deadlock 26
-        public static float BallRadius = 4.25f;         // Deadlock ShockRadius
+        public static float BallRadius = 6.375f;        // Deadlock ShockRadius 4.25; +50% (user, 1.9)
         public const float BallTick = 0.1f;             // Deadlock TickRate (0.1); RoR2 ticks it at 0.25 to keep procs sane
         public const float BallTickRoR2 = 0.25f;
         public const float BallSpeed = 43.2f;           // Deadlock m_flSpeed 1700 hu/s
         public const float BallHitSpeed = 3.5f;         // Deadlock m_flNonHeroHitSpeed 138 hu/s: it crawls while it's shocking something
         public const float BallLifetime = 5f;           // Deadlock MaxLifetime
-        public const float BallProc = 0.5f;
+        public const float BallProc = 0.7f;             // 0.5 until 3.1 (user: in line with the storm)
         public const float BallSlowLinger = 0.5f;      // enemies it shocks are slowed 80% (Slow80) while inside and this long after (user, 1.7)
 
         // ---- secondary (alt): Static Charge (Deadlock's v2: strike a unit or a spot) ----
@@ -70,7 +69,7 @@ namespace CursedAppleCuriosities.Survivors.Seven
         public const float StaticConeDeg = 20f;         // Deadlock m_flTargetingConeAngle
         public const float StaticDelay = 3.5f;          // Deadlock ShockDelay (user: keep it)
         public static float StaticStun = 3f;            // Deadlock 0.9 s; 3 s by design (user)
-        public static float StaticRadius = 5f;          // Deadlock ShockRadius; grows with Mystic Expansion
+        public static float StaticRadius = 10f;         // Deadlock ShockRadius 5, doubled in 2.0 (user); grows with Mystic Expansion
 
         // ---- utility: Power Surge ----
         public static float SurgeCooldown = 30f;        // Deadlock 50; 12 s gave near-permanent uptime (playtest)
@@ -83,11 +82,12 @@ namespace CursedAppleCuriosities.Survivors.Seven
 
         // ---- special: Storm Cloud (Seven floats and channels; the cloud grows to the whole map, user) ----
         // Damage per second follows the cloud's growth (user): Start + (End - Start) * t^3 over the channel, t = 0..1. A target in
-        // the storm the whole 7 s takes 7 * (Start + (End - Start) / 4) = ~1575% (was ~2520% before 1.7: the strikes are weaker
-        // but proc fully, user), dealt as a lightning bolt every StormStrikeGap s (12.5-75% each). The ramp
+        // the storm the whole 7 s takes 7 * (Start + (End - Start) / 4) = ~1925% (~1575% before 2.0, ~2520% before 1.7: the strikes are weaker
+        // but proc at 0.7 since 3.1, user), dealt as a lightning bolt every StormStrikeGap s (25-200% each). Attack speed shortens the gap
+        // (more bolts, so more damage and procs; user, 2.0). The ramp
         // always takes the base 7 s: Duration Extender only lengthens the time at full output.
         public static float StormDpsStart = 1.0f;       // (Deadlock 95 DPS flat)
-        public static float StormDpsEnd = 6.0f;
+        public static float StormDpsEnd = 8.0f;          // 600% until 2.0 (user)
         public static float StormDps(float t) => StormDpsStart + (StormDpsEnd - StormDpsStart) * t * t * t;
 
         /// <summary>The storm's radius after channelling for age seconds: 10 m growing (slowly, then fast) to the whole map. Server damage and every client's ring use this.</summary>
@@ -100,16 +100,16 @@ namespace CursedAppleCuriosities.Survivors.Seven
         public const float StormChannel = 7f;           // Deadlock AbilityChannelTime
         public const float StormInitialRadius = 30f;    // Deadlock InitialRadius 10 m; 30 m from the start (user, 1.7)
         public static float StormFinalRadius = 1000f;   // Deadlock 30 m; the whole map by the end (user)
-        public const float StormStrikeGap = 0.125f;     // s between bolts on each enemy, jittered 0.8-1.2x (Deadlock DamageInterval 0.3; user: much more often, doubled again in 1.9)
-        public const float StormStrayHit = 0.25f;       // s of storm DPS in each stray bolt's blast (the old strike gap; kept when the gap halved)
-        public const float StormProc = 1f;              // every storm bolt procs fully (user)
-        public const float StormStrayRate = 6f;         // stray bolts per second at random spots under the cloud (user)
+        public const float StormStrikeGap = 0.25f;      // s between bolts on each enemy at base attack speed (divided by attack speed), jittered 0.8-1.2x (Deadlock DamageInterval 0.3; 0.125 in 1.9, slowed in 2.0 for attack speed scaling, user)
+        public const float StormStrayHit = 0.25f;       // s of storm DPS in each stray bolt's blast
+        public const float StormProc = 0.7f;            // 3.1 balance (user): a very high proc, not a guaranteed one (1.0 before)
+        public const float StormStrayRate = 6f;         // stray bolts per second at random spots under the cloud (user), times attack speed
         public const float StormStrayRadius = 4f;       // m: each stray bolt's blast
         public const float StormStrayReach = 45f;       // m from Seven: strays fall where he can see them, even once the cloud is map-wide
         public const float StormRise = 3f;              // Deadlock CloudHeight 120 hu: he lifts this far
         public const float StormRiseTime = 0.6f;
-        public const float StormDrift = 1.5f;           // Deadlock FlightControlEnabled 1.5 m/s
-        public static float StormClimb = 1f;            // m/s: after the rise he keeps climbing slowly for the whole channel (user)
+        public const float StormDrift = 3f;             // Deadlock FlightControlEnabled 1.5 m/s, doubled (user, 2.0)
+        public static float StormClimb = 2f;            // m/s: after the rise he keeps climbing for the whole channel (user; doubled in 2.0)
         public const float StormBossScale = 0.5f;       // Deadlock m_flBossDamageScale
         public static float StrikeDamage = 6f;          // Lightning Strike (Deadlock 75)
         public const float StrikeRadius = 7f;           // Deadlock LightningStrikeRadius
@@ -117,40 +117,28 @@ namespace CursedAppleCuriosities.Survivors.Seven
         public const float StrikeRange = 120f;
         public const float StrikeKnockback = 3000f;     // Deadlock LightningStrikeKnockBackForce 500 (RoR2 force units)
 
-        public static void Bind(ConfigFile c)
+        public static void Bind(ConfigFile c) // the hero's config section is only its keybind layout (3.0)
         {
             Movement.Bind(c, Section);
-            BaseHealth = c.Bind(Section, "Base Health", BaseHealth, "Seven max health at level 1 (+33 per level).").Value;
-            GunDamage = c.Bind(Section, "Gun - Damage", GunDamage, "Damage coefficient per bullet (3-round bursts).").Value;
-            BurstCycle = c.Bind(Section, "Gun - Time Between Bursts", BurstCycle, "Seconds after a burst before the next (before attack speed).").Value;
-            GunFalloffStart = c.Bind(Section, "Gun - Falloff Start", GunFalloffStart, "Metres of full damage.").Value;
-            GunFalloffEnd = c.Bind(Section, "Gun - Falloff End", GunFalloffEnd, "Metres where damage reaches its floor (60%).").Value;
-            BallDps = c.Bind(Section, "Lightning Ball - Damage Per Second", BallDps, "Damage coefficient per second to every enemy inside the ball.").Value;
-            BallRadius = c.Bind(Section, "Lightning Ball - Radius", BallRadius, "Metres.").Value;
-            BallCooldown = c.Bind(Section, "Lightning Ball - Cooldown", BallCooldown, "Seconds.").Value;
-            StaticDamage = c.Bind(Section, "Static Charge - Damage", StaticDamage, "Damage coefficient when the charge goes off.").Value;
-            StaticStun = c.Bind(Section, "Static Charge - Stun", StaticStun, "Seconds enemies are stunned.").Value;
-            StaticRadius = c.Bind(Section, "Static Charge - Radius", StaticRadius, "Metres (grows with Mystic Expansion).").Value;
-            StaticCooldown = c.Bind(Section, "Static Charge - Cooldown", StaticCooldown, "Seconds.").Value;
-            SurgeChainDamage = c.Bind(Section, "Power Surge - Chain Damage", SurgeChainDamage, "Damage coefficient of the first jump of the shock.").Value;
-            SurgeChainGrowth = c.Bind(Section, "Power Surge - Chain Growth", SurgeChainGrowth, "Damage coefficient added on each further jump.").Value;
-            SurgeMoveSpeed = c.Bind(Section, "Power Surge - Move Speed", SurgeMoveSpeed, "Metres per second added while surging.").Value;
-            SurgeCooldown = c.Bind(Section, "Power Surge - Cooldown", SurgeCooldown, "Seconds.").Value;
-            StormDpsStart = c.Bind(Section, "Storm Cloud - Damage Per Second At Start", StormDpsStart, "Damage coefficient per second when the channel starts. Rises with the cloud's growth.").Value;
-            StormDpsEnd = c.Bind(Section, "Storm Cloud - Damage Per Second At End", StormDpsEnd, "Damage coefficient per second at the end of the channel.").Value;
-            StormFinalRadius = c.Bind(Section, "Storm Cloud - Final Radius", StormFinalRadius, "Metres the cloud reaches by the end of the channel (1000 = the whole map).").Value;
-            StrikeDamage = c.Bind(Section, "Storm Cloud - Lightning Strike Damage", StrikeDamage, "Damage coefficient of the one Lightning Strike per cast.").Value;
-            StormCooldown = c.Bind(Section, "Storm Cloud - Cooldown", StormCooldown, "Seconds.").Value;
         }
 
         // ---- Deadlock assets (read from the player's own install, never shipped) ----
 
         public const string DlModel = "models/heroes_staging/gigawatt_prisoner/gigawatt_prisoner.vmdl_c";
+
+        // Bunny Seven skin (user 3.0): funnymonkeyman's Bunny Seven, a Deadlock mod (https://gamebanana.com/mods/681692; a fan-made
+        // model on his skeleton, not Valve's and not shipped). The player drops its .vpk into a skins folder (or keeps it in Deadlock's
+        // addons); it is found by a file only it has and converted once, read-only, like his own model. Credit in the skin's name.
+        public const string BunnyKey = "seven_bunny";
+        public const string BunnyName = "Bunny Seven (by funnymonkeyman)";
+        public const string BunnyMarker = "models/heroes_staging/gigawatt_prisoner/materials/colourlightdarkpurple_vmat_g_tcolor_a9d5fdf5.vtex_c";
         public const float ModelHeightScale = 1.08f * 1.25f * 1.15f * 0.95f; // Lash's size, then x1.15 by playtest (heroes read small on the stand-in), then x0.95 (user, 1.7: all but Vyper a little smaller)
         public const string MuzzleBone = "muzzle_fx";
 
         // Deadlock's internal name for Seven is "gigawatt" (icons giga_*).
         public const string IconPortrait = "panorama/images/heroes/gigawatt_sm_psd.vtex_c";
+        // The primary shows the weapon itself (user 3.0, like Celeste's baton): Deadlock's shop image of the hero's gun.
+        public const string IconGun = "panorama/images/heroes/guns/gigawatt_gun_psd.vtex_c";
         public const string IconBall = "panorama/images/hud/abilities/giga_ball_psd.vtex_c";
         public const string IconStatic = "panorama/images/hud/abilities/giga_static_psd.vtex_c";
         public const string IconSurge = "panorama/images/hud/abilities/giga_chain_psd.vtex_c";
@@ -235,7 +223,7 @@ namespace CursedAppleCuriosities.Survivors.Seven
             new DeadlockSound { Id = "seven_vo_power3", VpkPrefix = "sounds/vo/gigawatt/gigawatt_use_power3", Chance = 0.6f, MinGap = 4f, Voice = true },
             // "_0": 01-09 and the 01 alt laugh, not the gigawatt_use_power4_as_enemy lines (what an enemy hears).
             new DeadlockSound { Id = "seven_vo_power4", VpkPrefix = "sounds/vo/gigawatt/gigawatt_use_power4_0", Range = 80f, MinGap = 4f, Voice = true },
-            // Desperation: the same abilities cast below a quarter health (DeadlockHeroVoice.Power picks them).
+            // Desperation: the same abilities cast below 35% health (DeadlockHeroVoice.Power picks them).
             new DeadlockSound { Id = "seven_vo_desperation_power1", VpkPrefix = "sounds/vo/gigawatt/gigawatt_desperation_power1", Chance = 0.8f, MinGap = 4f, Voice = true },
             new DeadlockSound { Id = "seven_vo_desperation_power2", VpkPrefix = "sounds/vo/gigawatt/gigawatt_desperation_power2", Chance = 0.8f, MinGap = 4f, Voice = true },
             new DeadlockSound { Id = "seven_vo_desperation_power3", VpkPrefix = "sounds/vo/gigawatt/gigawatt_desperation_power3", Chance = 0.8f, MinGap = 4f, Voice = true },

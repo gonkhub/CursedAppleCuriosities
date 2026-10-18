@@ -14,7 +14,7 @@ using UnityEngine.Networking;
 namespace CursedAppleCuriosities.Broker
 {
     /// <summary>
-    /// The Cursed Broker: a rare shrine (user, 1.7: 10% on any stage, 50% on stage 3 of every loop, and 50% per Bazaar
+    /// The Cursed Broker: a rare shrine (user, 1.7; 3.0: 2% on any stage, 50% on stage 3 of every loop, and 50% per Bazaar
     /// visit until one has appeared there this loop). Each player may curse
     /// one non-lunar item in their inventory once per broker. Opening it rolls one penalty per eligible item for
     /// that player (kept for that broker, so reopening can't reroll); the menu's tooltips show what each curse would
@@ -39,16 +39,11 @@ namespace CursedAppleCuriosities.Broker
 
         public static void Init(ConfigFile config)
         {
-            Enabled = config.Bind("Cursed Broker", "Enabled", true,
-                "Spawn the Cursed Broker, a rare shrine that curses one of your items: a far stronger item, a harsh penalty.").Value;
-            SpawnChance = config.Bind("Cursed Broker", "Spawn Chance", 0.1f,
-                "Chance that a Cursed Broker appears on any stage (0.1 = 10%). Stage 3 of each loop uses its own chance.").Value;
-            StageThreeChance = config.Bind("Cursed Broker", "Stage 3 Chance", 0.5f,
-                "Chance that a Cursed Broker appears on stage 3 of every loop (0.5 = 50%).").Value;
-            BazaarChance = config.Bind("Cursed Broker", "Bazaar Chance", 0.5f,
-                "Chance per visit to the Bazaar Between Time that a Cursed Broker appears there. Once one has, no more appear in the Bazaar until the next loop.").Value;
-            DebugAlwaysSpawn = config.Bind("Cursed Broker", "Debug - Spawn Every Stage", false,
-                "Testing: a Cursed Broker spawns on every stage, ignoring stage number and chance.").Value;
+            Enabled = true;
+            SpawnChance = 0.02f; // user 3.0 (was 10%)
+            StageThreeChance = 0.5f;
+            BazaarChance = 0.5f;
+            DebugAlwaysSpawn = false;
 
             LanguageAPI.Add(NameToken, "Cursed Broker");
             LanguageAPI.Add(ContextToken, "Consult the Cursed Broker");
@@ -163,6 +158,16 @@ namespace CursedAppleCuriosities.Broker
 
         // ───────────────────────────────────── spawning ─────────────────────────────────────
 
+        /// <summary>Server: a broker at this exact spot (a fixed place, e.g. the Deadlock map's souls dealer). Null when off.</summary>
+        public static GameObject? SpawnAt(Vector3 position, Quaternion rotation)
+        {
+            if (!Enabled || !CuriositiesExpansion.Enabled || !NetworkServer.active || _prefab == null) return null;
+            GameObject go = UnityEngine.Object.Instantiate(_prefab, position, rotation);
+            NetworkServer.Spawn(go);
+            CursedAppleCuriositiesPlugin.Logger?.LogInfo($"[CursedBroker] Placed at {position}.");
+            return go;
+        }
+
         private static bool StageEligible(Run run)
         {
             SceneDef? scene = SceneCatalog.mostRecentSceneDef;
@@ -182,6 +187,9 @@ namespace CursedAppleCuriosities.Broker
             bool forced = _forceNextStage;
             _forceNextStage = false;
             if (!forced && !StageEligible(run)) return;
+            // A stage with its own broker (a Deadlock district's souls dealer, placed before the director populates) never rolls a
+            // second one (user 3.0: Sunken Plaza had two).
+            if (UnityEngine.Object.FindObjectOfType<CursedBrokerMarker>() != null) return;
 
             var rng = new Xoroshiro128Plus(run.seed ^ (ulong)(run.stageClearCount + 1) * 0x9E3779B97F4A7C15UL);
             float chance = IsLoopStageThree(run) ? StageThreeChance : SpawnChance;

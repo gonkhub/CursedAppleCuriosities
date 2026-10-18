@@ -28,8 +28,7 @@ namespace CursedAppleCuriosities.Items
 
         public override void Init(ConfigFile config)
         {
-            DamageBonusPerStack = config.Bind("White", "Battle Vest - Damage Per Stack", 0.20f,
-                "Bonus damage per stack while above the health threshold.").Value;
+            DamageBonusPerStack = 0.20f;
             CreateLang();
             CreateItem();
             Hooks();
@@ -44,6 +43,7 @@ namespace CursedAppleCuriosities.Items
             On.RoR2.HealthComponent.orig_TakeDamage orig,
             HealthComponent self, DamageInfo damageInfo)
         {
+            if (FinalDamage(damageInfo)) { orig(self, damageInfo); return; } // already worked out (Bloodletting's ticks)
             if (NetworkServer.active
                 && damageInfo?.attacker != null
                 && damageInfo.damage > 0f)

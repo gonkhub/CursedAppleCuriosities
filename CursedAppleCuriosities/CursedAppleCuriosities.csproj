@@ -20,6 +20,8 @@
 
   <!-- ───── BepInEx ───── -->
   <ItemGroup>
+    <EmbeddedResource Include="Resources\stages\cac_stagescenes" LogicalName="cac_stagescenes" />
+    <EmbeddedResource Include="Resources\stages\cac_stageassets" LogicalName="cac_stageassets" />
     <EmbeddedResource Include="Resources\icon_kineticdash.png" />
     <EmbeddedResource Include="Resources\icon_berserker.png" />
     <EmbeddedResource Include="Resources\icon_ricochet.png" />
@@ -74,6 +76,10 @@
     </Reference>
     <Reference Include="MonoMod.Utils">
       <HintPath>$(ProfilePath)\BepInEx\core\MonoMod.Utils.dll</HintPath>
+      <Private>False</Private>
+    </Reference>
+    <Reference Include="MonoMod.RuntimeDetour">
+      <HintPath>$(ProfilePath)\BepInEx\core\MonoMod.RuntimeDetour.dll</HintPath>
       <Private>False</Private>
     </Reference>
   </ItemGroup>
@@ -147,6 +153,10 @@
       <HintPath>$(GameManagedPath)\UnityEngine.AudioModule.dll</HintPath>
       <Private>False</Private>
     </Reference>
+    <Reference Include="UnityEngine.AssetBundleModule">
+      <HintPath>$(GameManagedPath)\UnityEngine.AssetBundleModule.dll</HintPath>
+      <Private>False</Private>
+    </Reference>
     <Reference Include="UnityEngine.UnityWebRequestModule">
       <HintPath>$(GameManagedPath)\UnityEngine.UnityWebRequestModule.dll</HintPath>
       <Private>False</Private>
@@ -217,7 +227,7 @@
   <!-- Curiosities Dev is a clone of Hallowed Concepts Release (the post-DLC profile). The mod sits in Unknown-CursedAppleCuriosities
        there, so the build replaces it in place and there is never a second GUID. Hallowed Concepts Release stays frozen at 1.0.0. -->
   <!-- Debug only: a Release build registers just the released survivors and must not replace the dev DLL. -->
-  <Target Name="DeployToProfile" AfterTargets="Build" Condition="'$(Configuration)' != 'Release'">
+  <Target Name="DeployToProfile" AfterTargets="Build" Condition="'$(Configuration)' != 'Release' And '$(NoDeploy)' != 'true'">
     <MakeDir Directories="$(DevPluginDir)" />
     <Copy SourceFiles="$(TargetPath);$(NLayerDll)" DestinationFolder="$(DevPluginDir)" />
     <!-- Lash Playtest profile (clone of "Alloyed Goonlective super real"): same in-place replacement. -->
@@ -229,16 +239,30 @@
     <PlaytestPluginDir Condition="'$(PlaytestPluginDir)' == ''">C:\r2heimman\RiskOfRain2\profiles\Lash Playtest\BepInEx\plugins\Unknown-CursedAppleCuriosities</PlaytestPluginDir>
   </PropertyGroup>
 
-  <!-- ───── Deadlock model converter (Source2Viewer-CLI, MIT) next to the DLL, copied once from VrfSource ───── -->
-  <!-- It converts hero models from the player's OWN Deadlock install at runtime. No Valve file is ever shipped. -->
+  <!-- ───── Deadlock model converter (Source2Viewer-CLI, MIT) next to the DLL, from VrfSource ───── -->
+  <!-- It converts hero models and the map from the player's OWN Deadlock install at runtime. No Valve file is ever shipped. -->
+  <!-- tools\vrf (gitignored) holds the build in use: it must read the current Deadlock (2026-10-13's patch needs >= 20.0.7461). -->
   <PropertyGroup>
-    <VrfSource Condition="'$(VrfSource)' == ''">C:\r2heimman\Valheim\profiles\HeroBrew Playtest\BepInEx\plugins\gonkhub-HeroBrew\vrf</VrfSource>
+    <VrfSource Condition="'$(VrfSource)' == ''">$(MSBuildProjectDirectory)\..\tools\vrf</VrfSource>
   </PropertyGroup>
-  <!-- Every profile the DLL goes to gets it too (without it a changed clip list can't convert there). -->
-  <Target Name="DeployConverter" AfterTargets="DeployToProfile" Condition="Exists('$(VrfSource)\Source2Viewer-CLI.exe')">
+  <!-- Every profile the DLL goes to gets it too, refreshed when it changes (without it a changed clip list can't convert there). -->
+  <Target Name="DeployConverter" AfterTargets="DeployToProfile" Condition="Exists('$(VrfSource)\Source2Viewer-CLI.exe') And '$(NoDeploy)' != 'true'">
     <ItemGroup><VrfFiles Include="$(VrfSource)\**\*" /></ItemGroup>
-    <Copy Condition="!Exists('$(DevPluginDir)\vrf\Source2Viewer-CLI.exe')" SourceFiles="@(VrfFiles)" DestinationFolder="$(DevPluginDir)\vrf\%(RecursiveDir)" />
-    <Copy Condition="Exists('$(PlaytestPluginDir)') And !Exists('$(PlaytestPluginDir)\vrf\Source2Viewer-CLI.exe')" SourceFiles="@(VrfFiles)" DestinationFolder="$(PlaytestPluginDir)\vrf\%(RecursiveDir)" />
+    <Copy SkipUnchangedFiles="true" SourceFiles="@(VrfFiles)" DestinationFolder="$(DevPluginDir)\vrf\%(RecursiveDir)" />
+    <Copy SkipUnchangedFiles="true" Condition="Exists('$(PlaytestPluginDir)')" SourceFiles="@(VrfFiles)" DestinationFolder="$(PlaytestPluginDir)\vrf\%(RecursiveDir)" />
+  </Target>
+
+  <!-- ───── Deadlock map converter (CursedAppleMapConvert.exe, our own) next to the DLL ───── -->
+  <!-- Converts the Deadlock map stage from the player's OWN install in its own process (the game never carries the load). -->
+  <PropertyGroup>
+    <MapConvertDir>$(MSBuildProjectDirectory)\..\CursedAppleMapConvert\bin\Release\net472</MapConvertDir>
+  </PropertyGroup>
+  <Target Name="BuildMapConverter" AfterTargets="Build">
+    <Exec Command="dotnet build &quot;$(MSBuildProjectDirectory)\..\CursedAppleMapConvert\CursedAppleMapConvert.csproj&quot; -c Release -nologo -v q" />
+  </Target>
+  <Target Name="DeployMapConverter" AfterTargets="BuildMapConverter" Condition="'$(Configuration)' != 'Release' And '$(NoDeploy)' != 'true'">
+    <Copy SourceFiles="$(MapConvertDir)\CursedAppleMapConvert.exe;$(MapConvertDir)\CursedAppleMapConvert.exe.config" DestinationFolder="$(DevPluginDir)" />
+    <Copy Condition="Exists('$(PlaytestPluginDir)')" SourceFiles="$(MapConvertDir)\CursedAppleMapConvert.exe;$(MapConvertDir)\CursedAppleMapConvert.exe.config" DestinationFolder="$(PlaytestPluginDir)" />
   </Target>
 
   <!-- ───── Post-build (Release only): refresh the Thunderstore distributable zip ───── -->

@@ -1,0 +1,11 @@
+{
+  "version": "0.0.1",
+  "configurations": [
+    {
+      "name": "sound-review",
+      "runtimeExecutable": "python",
+      "runtimeArgs": ["-I", "-m", "http.server", "8765", "--bind", "127.0.0.1", "--directory", "C:/Users/EV-02/AppData/LocalLow/Hopoo Games, LLC/Risk of Rain 2/CursedApple/deadlock/sound_review"],
+      "port": 8765
+    }
+  ]
+}

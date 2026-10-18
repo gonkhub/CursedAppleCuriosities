@@ -103,6 +103,7 @@ namespace CursedAppleCuriosities.Survivors.Seven
                     if (SevenSurvivor.SurgeBuff == null) return;
                     body.ClearTimedBuffs(SevenSurvivor.SurgeBuff);
                     body.AddTimedBuff(SevenSurvivor.SurgeBuff, SevenData.SurgeDuration);
+                    CursedAppleCuriosities.Unlocks.Challenges.SevenHareTrigger.SurgeStarted(body); // Bunny Seven's challenge: a new Surge
                     break;
                 case SevenBuffKind.StormStart:
                     if (SevenSurvivor.StormBuff == null) return;
@@ -328,8 +329,9 @@ namespace CursedAppleCuriosities.Survivors.Seven
 
     /// <summary>
     /// Server, on Seven while Storm Cloud channels: every enemy inside the cloud that Seven can see is struck by a lightning
-    /// bolt every ~0.25 s (each on its own jittered clock, so the storm flickers rather than pulsing), proc 1.0; stray bolts
-    /// also fall on random spots near him. The cloud starts at 30 m and grows (slowly, then fast) to the whole map (user).
+    /// bolt every ~0.25 s, faster with attack speed (each on its own jittered clock, so the storm flickers rather than pulsing),
+    /// proc 1.0; stray bolts also fall on random spots near him, more of them with attack speed. Each bolt's damage is fixed, so
+    /// attack speed raises the storm's damage. The cloud starts at 30 m and grows (slowly, then fast) to the whole map (user).
     /// </summary>
     public class SevenStorm : MonoBehaviour
     {
@@ -358,26 +360,57 @@ namespace CursedAppleCuriosities.Survivors.Seven
             if (_tick < 0.05f) return;
             _tick = 0f;
             Vector3 eye = _body.corePosition + Vector3.up * 1f;
+            float gapBase = SevenData.StormStrikeGap / Mathf.Max(0.1f, _body.attackSpeed);
             foreach (HealthComponent hc in SevenNet.EnemiesIn(_body.corePosition, Radius, _body.teamComponent.teamIndex))
             {
-                if (!_next.TryGetValue(hc, out float due)) { _next[hc] = _age + Random.Range(0f, SevenData.StormStrikeGap); continue; }
+                if (!_next.TryGetValue(hc, out float due)) { _next[hc] = _age + Random.Range(0f, gapBase); continue; }
                 if (_age < due) continue;
                 Vector3 to = SevenNet.Core(hc);
-                // Deadlock: enemies out of Seven's line of sight take no damage.
-                if (Physics.Linecast(eye, to, LayerIndex.world.mask, QueryTriggerInteraction.Ignore)) continue;
-                float gap = SevenData.StormStrikeGap * Random.Range(0.8f, 1.2f);
-                _next[hc] = _age + gap;
-                float dmg = dps * gap;
+                // Deadlock: enemies out of Seven's line of sight take no damage. Seen = any part of them is (Visible).
+                if (!Visible(eye, hc, out Vector3 seen)) continue;
+                to = seen;
+                float jitter = Random.Range(0.8f, 1.2f);
+                _next[hc] = _age + gapBase * jitter;
+                float dmg = dps * SevenData.StormStrikeGap * jitter; // the base gap's worth: faster bolts add damage
                 if (hc.body != null && hc.body.isChampion) dmg *= SevenData.StormBossScale;
                 SevenNet.Hit(_body, hc, dmg, _body.RollCrit(), Vector3.zero, DamageSource.Special, SevenData.StormProc);
                 SevenNet.Effect(SevenSurvivor.BoltEffect, to, 1f);
             }
         }
 
+        /// <summary>
+        /// Can Seven see any part of this enemy? One line to its centre missed enemies whose middle sat behind a ledge, a rock or the
+        /// ground at their feet while the rest of them was in plain view (user 2.5): this tries its hurtbox's centre, its upper body
+        /// and top, and its core, each line stopping just short of the target (a big enemy's own collider can be world geometry).
+        /// </summary>
+        private static bool Visible(Vector3 eye, HealthComponent hc, out Vector3 seen)
+        {
+            CharacterBody? b = hc.body;
+            var points = new List<Vector3>(4);
+            Collider? box = b != null && b.mainHurtBox != null ? b.mainHurtBox.collider : null;
+            if (box != null)
+            {
+                Bounds bb = box.bounds;
+                points.Add(bb.center);
+                points.Add(bb.center + Vector3.up * bb.extents.y * 0.6f);
+                points.Add(new Vector3(bb.center.x, bb.max.y - 0.1f, bb.center.z));
+            }
+            points.Add(SevenNet.Core(hc));
+            foreach (Vector3 p in points)
+            {
+                Vector3 d = p - eye;
+                float len = d.magnitude;
+                if (len < 0.5f) { seen = p; return true; }
+                if (!Physics.Raycast(eye, d / len, len - 0.5f, LayerIndex.world.mask, QueryTriggerInteraction.Ignore)) { seen = p; return true; }
+            }
+            seen = points[0];
+            return false;
+        }
+
         /// <summary>Stray bolts: random spots on the ground under the cloud (within StormStrayReach of Seven), each a small blast.</summary>
         private void Strays(float dps)
         {
-            _stray += Time.fixedDeltaTime * SevenData.StormStrayRate;
+            _stray += Time.fixedDeltaTime * SevenData.StormStrayRate * Mathf.Max(0.1f, _body.attackSpeed);
             for (; _stray >= 1f; _stray -= 1f)
             {
                 Vector2 off = Random.insideUnitCircle * Mathf.Min(Radius, SevenData.StormStrayReach);
@@ -402,6 +435,9 @@ namespace CursedAppleCuriosities.Survivors.Seven
         private Rigidbody? _rb;
         private float _tick, _age;
         private bool _stuck;
+        /// <summary>Every enemy this ball has shocked (server), for Seven's Live Wire challenge.</summary>
+        private readonly HashSet<HealthComponent> _shocked = new HashSet<HealthComponent>();
+        private bool _reported;
 
         private void Awake()
         {
@@ -485,6 +521,12 @@ namespace CursedAppleCuriosities.Survivors.Seven
                 SevenNet.Hit(body, hc, SevenData.BallDps * SevenData.BallTickRoR2 * baseDamage, _pd != null && _pd.crit, Vector3.zero, DamageSource.Secondary, SevenData.BallProc);
                 if (hc.alive && hc.body != null) hc.body.AddTimedBuff(RoR2Content.Buffs.Slow80, SevenData.BallTickRoR2 + SevenData.BallSlowLinger);
                 SevenNet.Effect(SevenSurvivor.BoltEffect, SevenNet.Core(hc), 0.6f);
+                _shocked.Add(hc);
+            }
+            if (!_reported && _shocked.Count >= Unlocks.Challenges.SevenLiveWire.Enemies)
+            {
+                _reported = true;
+                Unlocks.Challenges.SevenLiveWire.BallFull(body);
             }
             if (_ps != null && !_stuck) _ps.desiredForwardSpeed = inside.Count > 0 ? SevenData.BallHitSpeed : SevenData.BallSpeed;
         }
@@ -496,6 +538,8 @@ namespace CursedAppleCuriosities.Survivors.Seven
         public GameObject? Follow;
         public float Radius = 5f, Seconds = 3.5f;
         public Color Color = Color.cyan;
+        /// <summary>No Static Charge hum (Bebop's Sticky Bomb borrows the ring: user 2.5).</summary>
+        public bool Mute;
         private LineRenderer _outer = null!, _inner = null!;
         private float _age;
 
@@ -503,7 +547,7 @@ namespace CursedAppleCuriosities.Survivors.Seven
         {
             _outer = SevenFx.Line("ring", Color, 0.12f, transform);
             _inner = SevenFx.Line("count", Color, 0.08f, transform);
-            _hum = DeadlockSounds.Loop("seven_static_loop", gameObject, Seconds);
+            if (!Mute) _hum = DeadlockSounds.Loop("seven_static_loop", gameObject, Seconds);
         }
 
         private DeadlockVoice? _hum;

@@ -49,10 +49,8 @@ namespace CursedAppleCuriosities.Items
             SpellslingerBuffDef.buffColor = color;
             ContentAddition.AddBuffDef(SpellslingerBuffDef);
 
-            AttackSpeedPerStack = config.Bind("Red", "Spellslinger - Attack Speed Per Stack", 0.10f,
-                "Attack speed per Spellslinger stack (gained on non-primary skill use).").Value;
-            CooldownPerStack = config.Bind("Red", "Spellslinger - Cooldown Reduction Per Stack", 0.04f,
-                "Share by which skill cooldowns are shortened per Spellslinger stack (capped at 50% total).").Value;
+            AttackSpeedPerStack = 0.10f;
+            CooldownPerStack = 0.04f;
             CreateLang();
             CreateItem();
             SpellslingerBuffDef.iconSprite = ItemDef?.pickupIconSprite ?? BuffIcon(null, color);
@@ -97,7 +95,9 @@ namespace CursedAppleCuriosities.Items
             if (SpellslingerBuffDef == null || SpellslingerBuffDef.buffIndex == BuffIndex.None) return;
             int stacks = sender.GetBuffCount(SpellslingerBuffDef);
             args.attackSpeedMultAdd += stacks * AttackSpeedPerStack;
-            args.cooldownMultAdd    -= Mathf.Min(stacks * CooldownPerStack, MaxCooldownReduction); // abilities feed abilities
+            // Abilities feed abilities. Not the legacy args.cooldownMultAdd: R2API clamps it at 0 (Math.Max(0, ...)),
+            // so a negative value there never shortened anything.
+            args.allSkills.cooldownMultiplier *= 1f - Mathf.Min(stacks * CooldownPerStack, MaxCooldownReduction);
         }
     }
 

@@ -22,7 +22,7 @@ namespace CursedAppleCuriosities.Items
         public override string ItemPickupDesc => "Your buffs, debuffs, stuns and abilities last longer.";
         public override string ItemFullDescription =>
             $"Everything you cause lasts <style=cIsUtility>{DurationPerStack * 100:0}%</style> " +
-            $"<style=cStack>(+{DurationPerStack * 100:0}% per stack)</style> longer: your <style=cIsUtility>buffs</style>, " +
+            $"<style=cStack>(+{DurationPerExtraStack * 100:0.#}% per stack)</style> longer: your <style=cIsUtility>buffs</style>, " +
             "the <style=cIsDamage>debuffs, stuns, freezes and damage over time</style> you inflict, and the effects, channels and " +
             "windows of your <style=cIsUtility>items, equipment and abilities</style>.";
 
@@ -32,13 +32,14 @@ namespace CursedAppleCuriosities.Items
         public override ItemTag[] ItemTags => new[] { ItemTag.Utility };
         protected override string IconFileName => "icon_durationextender.png";
 
-        public static float DurationPerStack;
+        public static float DurationPerStack;      // first copy
+        public static float DurationPerExtraStack; // 3.0 (user): 0.075, was linear 0.15 (x2.5 at 10 copies)
         private static ItemDef? _def;
 
         public override void Init(ConfigFile config)
         {
-            DurationPerStack = config.Bind("White", "Duration Extender - Duration Per Stack", 0.15f,
-                "Extra duration per stack (linear; 0.15 = +15%).").Value;
+            DurationPerStack = 0.15f;
+            DurationPerExtraStack = 0.075f;
             CreateLang();
             CreateItem();
             _def = ItemDef;
@@ -51,7 +52,7 @@ namespace CursedAppleCuriosities.Items
             float curse = Broker.CursePenalties.DurationFactor(body); // a Cursed Broker duration penalty shortens it
             if (_def == null || body == null || body.inventory == null) return curse;
             int count = body.inventory.GetItemCountEffective(_def);
-            return (count > 0 ? 1f + DurationPerStack * count : 1f) * curse;
+            return (count > 0 ? 1f + DurationPerStack + DurationPerExtraStack * (count - 1) : 1f) * curse;
         }
 
         public static float Multiplier(GameObject? owner) => owner != null ? Multiplier(owner.GetComponent<CharacterBody>()) : 1f;

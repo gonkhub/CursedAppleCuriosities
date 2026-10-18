@@ -77,7 +77,9 @@ namespace EntityStates.CursedApple.Victor
         public override void OnEnter()
         {
             base.OnEnter();
-            VictorModel.Play(gameObject, "battery");
+            // Running on the ground: the cast on his upper body over the run (Deadlock masks it so); standing or in the air: the full clip.
+            bool running = characterMotor != null && characterMotor.isGrounded && new Vector3(characterMotor.velocity.x, 0f, characterMotor.velocity.z).sqrMagnitude > 1f;
+            VictorModel.Play(gameObject, running ? "battery_run" : "battery");
             DeadlockHeroVoice.Power("victor_vo_power1", gameObject);
             StartAimMode(1f);
         }

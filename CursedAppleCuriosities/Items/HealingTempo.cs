@@ -56,18 +56,12 @@ namespace CursedAppleCuriosities.Items
             TempoBuffDef.iconSprite = BuffIcon(IconFileName, color);
             ContentAddition.AddBuffDef(TempoBuffDef);
 
-            HealPotencyFlat = config.Bind("Red", "Healing Tempo - Bonus Heal Potency", 0.25f,
-                "Extra healing received with one stack.").Value;
-            HealPotencyPerStack = config.Bind("Red", "Healing Tempo - Bonus Heal Potency Per Stack", 0.10f,
-                "Extra healing received per additional stack.").Value;
-            OverhealPerTempo = config.Bind("Red", "Healing Tempo - Overheal Per Tempo", 0.10f,
-                "Overhealing (as a fraction of max health) needed for one Tempo stack.").Value;
-            AttackSpeedPerTempo = config.Bind("Red", "Healing Tempo - Attack Speed Per Tempo", 0.10f,
-                "Attack speed per Tempo stack.").Value;
-            MoveSpeedPerTempo = config.Bind("Red", "Healing Tempo - Move Speed Per Tempo", 0.06f,
-                "Movement speed per Tempo stack.").Value;
-            BaseMaxTempo = config.Bind("Red", "Healing Tempo - Max Tempo", 4,
-                "Max Tempo stacks with one item (+2 per additional stack).").Value;
+            HealPotencyFlat = 0.25f;
+            HealPotencyPerStack = 0.10f;
+            OverhealPerTempo = 0.10f;
+            AttackSpeedPerTempo = 0.10f;
+            MoveSpeedPerTempo = 0.06f;
+            BaseMaxTempo = 4;
 
             EquipmentFx.RegisterSound("healingtempo_proc", "sounds/mods/armor/healing_tempo/healing_tempo_proc", volume: 0.6f, range: 30f, minGap: 0.4f);
             EquipmentFx.RegisterSound("healingtempo_end", "sounds/mods/armor/healing_tempo/healing_tempo_end", volume: 0.5f, range: 30f);

@@ -98,8 +98,7 @@ namespace CursedAppleCuriosities.Survivors.Seven
             Vector2 dir = Random.insideUnitCircle.normalized;
             float r = Random.Range(BoltRingMin, BoltRingMax) * Scale;
             Vector3 at = Home + new Vector3(dir.x, 0f, dir.y) * r;
-            if (SevenSurvivor.BoltEffect != null)
-                EffectManager.SpawnEffect(SevenSurvivor.BoltEffect, new EffectData { origin = at, scale = Scale }, false);
+            Effect(SevenSurvivor.BoltEffect, new EffectData { origin = at, scale = Scale });
             DeadlockSounds.Play("seven_strike_explode", at);
         }
     }

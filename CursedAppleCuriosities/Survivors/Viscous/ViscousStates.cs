@@ -125,10 +125,9 @@ namespace EntityStates.CursedApple.Viscous
         private DeadlockVoice? _loop;
         private DeadlockMover? _mover;
         private CameraTargetParams.CameraParamsOverrideHandle _camera;
-        private CharacterCameraParamsData _cameraBase;
         private float _cameraScale;
 
-        private float R => ViscousData.Radius(characterBody); // Mystic Expansion grows the ball (user)
+        private float R => ViscousData.Radius(characterBody); // Mystic Expansion and Colossus grow the ball (user)
 
         /// <summary>
         /// Move speed items (and slows) scale the ball's speeds (user): his move speed over his base, sprinting divided out
@@ -161,24 +160,24 @@ namespace EntityStates.CursedApple.Viscous
             _lastPos = transform.position;
             characterMotor.disableAirControlUntilCollision = false;
             ViscousNet.ToServer(new ViscousBallMessage { Body = gameObject, Rolling = true, Seconds = _duration });
-            if (cameraTargetParams != null)
-            {
-                _cameraBase = cameraTargetParams.currentCameraParamsData;
-                BallCamera(0.5f);
-            }
+            if (cameraTargetParams != null) BallCamera(0.5f);
         }
 
         /// <summary>
         /// Deadlock pulls the camera up and well back while rolling; a bigger ball (Mystic Expansion) pulls it further,
         /// in step with its radius (user).
         /// </summary>
+        /// Only the camera's position is overridden, from his own camera (not whatever blend is current: that could hold
+        /// another override on its way out), so removing it always returns the camera to normal.
         private void BallCamera(float transition)
         {
             _cameraScale = R / ViscousData.BallRadius;
-            if (_camera.isValid) cameraTargetParams.RemoveParamsOverride(_camera, transition);
-            CharacterCameraParamsData data = _cameraBase;
-            Vector3 pos = data.idealLocalCameraPos.value;
-            data.idealLocalCameraPos = new Vector3(pos.x, pos.y + 1.2f * _cameraScale, pos.z * 1.5f * _cameraScale);
+            if (_camera.isValid) _camera = cameraTargetParams.RemoveParamsOverride(_camera, transition);
+            Vector3 pos = cameraTargetParams.cameraParams != null ? cameraTargetParams.cameraParams.data.idealLocalCameraPos.value : new Vector3(0f, 0f, -10f);
+            var data = new CharacterCameraParamsData // every other field left at alpha 0: untouched
+            {
+                idealLocalCameraPos = new Vector3(pos.x, pos.y + 1.2f * _cameraScale, pos.z * 1.5f * _cameraScale), // converts at alpha 1
+            };
             _camera = cameraTargetParams.AddParamsOverride(new CameraTargetParams.CameraParamsOverrideRequest { cameraParamsData = data, priority = 1f }, transition);
         }
 
@@ -188,7 +187,7 @@ namespace EntityStates.CursedApple.Viscous
             if (characterBody != null) characterBody.isSprinting = false;
             if (!isAuthority || _ending) return;
             float dt = Time.fixedDeltaTime;
-            if (_camera.isValid && Mathf.Abs(R / ViscousData.BallRadius - _cameraScale) > 0.01f) BallCamera(0.5f); // the ball grew mid-roll
+            if (_camera.isValid && Mathf.Abs(R / ViscousData.BallRadius - _cameraScale) > 0.05f) BallCamera(0.5f); // the ball grew mid-roll
             if (_freezeLeft > 0f)
             {
                 // Boss impact (user): the ball stops dead for a moment, then rolls on with the speed and heading it had.
@@ -334,10 +333,15 @@ namespace EntityStates.CursedApple.Viscous
         private void Contact()
         {
             Vector3 center = Center;
-            float radius = ViscousData.BallHitRadius * MysticExpansion.RadiusMultiplier(characterBody);
+            float radius = ViscousData.BallHitRadius * R / ViscousData.BallRadius; // grows with the ball (Mystic Expansion, Colossus)
             var normal = new List<GameObject>();
             var bosses = new List<GameObject>();
             Vector3 dir = _dir;
+            // Heavy (Loader's punch): the faster the ball is going at impact, rolling or falling, the harder it hits; and a
+            // bigger ball (Mystic Expansion) hits harder in step with its size (user, 2.0). Speed is read before a rebound.
+            float vy = characterMotor != null ? characterMotor.velocity.y : 0f;
+            float speed = Mathf.Sqrt(_speed * _speed + vy * vy);
+            float coeff = (ViscousData.BallDamage + ViscousData.BallHeavyDamage * speed) * (R / ViscousData.BallRadius);
             foreach (HurtBox h in Shared.Enemies(center, radius, GetTeam()))
             {
                 HealthComponent hc = h.healthComponent;
@@ -349,10 +353,6 @@ namespace EntityStates.CursedApple.Viscous
                 Vector3 away = Shared.Flat(center - h.transform.position, -_dir);
                 if (Vector3.Dot(_dir, away) < 0f) BounceOff(away, h.transform.position, impact: true);
             }
-            // Heavy (Loader's punch): the faster the ball is going, rolling or falling, the harder it hits.
-            float vy = characterMotor != null ? characterMotor.velocity.y : 0f;
-            float speed = Mathf.Sqrt(_speed * _speed + vy * vy);
-            float coeff = ViscousData.BallDamage + ViscousData.BallHeavyDamage * speed;
             if (normal.Count > 0)
                 ViscousNet.ToServer(new ViscousHitMessage
                 {
@@ -371,6 +371,8 @@ namespace EntityStates.CursedApple.Viscous
 
         public override void OnExit()
         {
+            // The camera first: nothing below can leave it pulled back.
+            if (cameraTargetParams != null && _camera.isValid) _camera = cameraTargetParams.RemoveParamsOverride(_camera, 0.6f);
             ViscousBallSkillDef.MarkEnded(gameObject); // the press that ended it can't start the next one
             DeadlockSounds.Stop(_loop);
             DeadlockSounds.Play("viscous_ball_end", transform.position, gameObject);
@@ -380,7 +382,6 @@ namespace EntityStates.CursedApple.Viscous
             if (isAuthority)
             {
                 ViscousNet.ToServer(new ViscousBallMessage { Body = gameObject, Rolling = false });
-                if (cameraTargetParams != null && _camera.isValid) cameraTargetParams.RemoveParamsOverride(_camera, 0.6f);
                 // Deadlock keeps the ball's momentum as he pops out of it.
                 Vector3 v = characterMotor.velocity;
                 characterMotor.velocity = _dir * Mathf.Min(_speed, characterBody.moveSpeed * 1.5f) + Vector3.up * v.y;

@@ -10,8 +10,8 @@ namespace CursedAppleCuriosities.Items
 {
     /// <summary>
     /// The Goose Egg family: one equipment per yield (Grey → whites, Green → greens, Red → reds, Golden → boss items,
-    /// Void → void items). Each egg gains a stack every 5:00 (config) while held, uncapped; activate to hatch every
-    /// stack's worth (nothing happens at 0 stacks). -25% damage while held. Progress belongs to each individual egg:
+    /// Void → void items). Each egg gains a stack every 5:00 (config) while held, uncapped; activate to hatch (nothing
+    /// happens at 0 stacks). Each stack yields more than the last (<see cref="Hatched"/>), so holding pays off. -25% damage while held. Progress belongs to each individual egg:
     /// kept per equipment slot while held (<see cref="GooseEggProgress"/>) and carried on the pickup when the egg is
     /// swapped out (<see cref="GooseEggPickupProgress"/>), so a dropped egg keeps its own.
     /// Eggs share one slot in the drop pool: only the Grey Egg is droppable, and every drop table rolls it into a
@@ -23,11 +23,13 @@ namespace CursedAppleCuriosities.Items
 
         protected abstract Yield Kind { get; }
         protected abstract Color Tint { get; }
-        protected abstract int DefaultPerStack { get; }
+        protected abstract int DefaultFirstStack { get; }
+        protected abstract float DefaultExtraPerStack { get; }
         protected abstract float DefaultDropWeight { get; }
         protected abstract string YieldText { get; }
 
-        public int PerStack;
+        public int FirstStack;
+        public float ExtraPerStack;
         public float DropWeight;
         public BuffDef? StackBuff;
 
@@ -40,11 +42,16 @@ namespace CursedAppleCuriosities.Items
         public static int StacksFor(float seconds) => Mathf.FloorToInt(seconds / Mathf.Max(1f, SecondsPerStack));
         public static bool IsEgg(EquipmentDef? def) => def != null && ByDef.ContainsKey(def);
 
+        /// <summary>Items hatched at this many stacks: stack k yields FirstStack + (k-1)·ExtraPerStack, summed.</summary>
+        public int Hatched(int stacks) =>
+            stacks <= 0 ? 0 : Mathf.Max(0, Mathf.FloorToInt(FirstStack * stacks + ExtraPerStack * stacks * (stacks - 1) / 2f + 0.001f));
+
         public override string PickupDesc => $"Lower your damage while held. Matures over time; hatch it for {YieldText}.";
         public override string FullDescription =>
             $"While held, deal <style=cIsHealth>-{DamagePenalty * 100:0}% damage</style>. " +
             $"Gains a stack every <style=cIsUtility>{Mathf.FloorToInt(SecondsPerStack / 60f)}:{Mathf.FloorToInt(SecondsPerStack % 60f):00}</style> while held. " +
-            $"<style=cIsUtility>Activate</style> to hatch, yielding <style=cIsDamage>{PerStack} {YieldText}</style> per stack. " +
+            $"<style=cIsUtility>Activate</style> to hatch, yielding <style=cIsDamage>{Hatched(1)} {YieldText}</style> at 1 stack, " +
+            $"<style=cIsDamage>{Hatched(2)}</style> at 2 and <style=cIsDamage>{Hatched(3)}</style> at 3: each stack is worth more than the last. " +
             "Progress is retained if dropped.";
         public override string Lore =>
             "I won't lie, I don't know what that does, but my kid says all the mystics are buying it!";
@@ -56,15 +63,12 @@ namespace CursedAppleCuriosities.Items
         {
             if (All.Count == 0)
             {
-                SecondsPerStack = config.Bind("Equipment", "Goose Eggs - Seconds Per Stack", 300f, // 150 at first; 5 min by playtest
-                    "Seconds an egg must be held to gain a stack.").Value;
-                DamagePenalty = config.Bind("Equipment", "Goose Eggs - Damage Penalty", 0.25f,
-                    "Damage reduction while any egg is held.").Value;
+                SecondsPerStack = 300f; // 150 at first; 5 min by playtest
+                DamagePenalty = 0.25f;
             }
-            PerStack = config.Bind("Equipment", $"{EquipmentName} - Items Per Stack", DefaultPerStack,
-                "Items hatched per stack.").Value;
-            DropWeight = config.Bind("Equipment", $"{EquipmentName} - Drop Weight", DefaultDropWeight,
-                "Relative chance an egg drop is this egg.").Value;
+            FirstStack = DefaultFirstStack;
+            ExtraPerStack = DefaultExtraPerStack;
+            DropWeight = DefaultDropWeight;
 
             StackBuff = ScriptableObject.CreateInstance<BuffDef>();
             StackBuff.name = "CursedApple_Maturation" + Kind;
@@ -126,7 +130,7 @@ namespace CursedAppleCuriosities.Items
             int stacks = StacksFor(GooseEggProgress.For(inventory).Get(location));
             if (stacks <= 0) return false; // not ready: keep the egg, no cooldown
 
-            SpawnItems(body, stacks * PerStack);
+            SpawnItems(body, Hatched(stacks));
             EquipmentFx.Sound("gooseegg_hatch", body.corePosition, body.gameObject);
             EquipmentFx.Effect("RoR2/Base/BonusGoldPackOnKill/MoneyPackPickupEffect.prefab", body.corePosition, body.radius * 2f);
             EquipmentFx.Effect("RoR2/Base/Common/VFX/LevelUpEffect.prefab", body.corePosition, body.radius);
@@ -299,7 +303,8 @@ namespace CursedAppleCuriosities.Items
         public override string EquipmentLangTokenName => "GREYGOOSEEGG";
         protected override Yield Kind => Yield.White;
         protected override Color Tint => new Color(0.85f, 0.85f, 0.85f);
-        protected override int DefaultPerStack => 15;
+        protected override int DefaultFirstStack => 4;
+        protected override float DefaultExtraPerStack => 2f;
         protected override float DefaultDropWeight => 45f;
         protected override string YieldText => "white items";
     }
@@ -310,7 +315,8 @@ namespace CursedAppleCuriosities.Items
         public override string EquipmentLangTokenName => "GREENGOOSEEGG";
         protected override Yield Kind => Yield.Green;
         protected override Color Tint => new Color(0.45f, 0.95f, 0.35f);
-        protected override int DefaultPerStack => 5;
+        protected override int DefaultFirstStack => 2;
+        protected override float DefaultExtraPerStack => 1f;
         protected override float DefaultDropWeight => 27f;
         protected override string YieldText => "green items";
     }
@@ -321,7 +327,8 @@ namespace CursedAppleCuriosities.Items
         public override string EquipmentLangTokenName => "REDGOOSEEGG";
         protected override Yield Kind => Yield.Red;
         protected override Color Tint => new Color(1f, 0.3f, 0.25f);
-        protected override int DefaultPerStack => 1;
+        protected override int DefaultFirstStack => 1;
+        protected override float DefaultExtraPerStack => 0.5f;
         protected override float DefaultDropWeight => 12f;
         protected override string YieldText => "red items";
     }
@@ -332,7 +339,8 @@ namespace CursedAppleCuriosities.Items
         public override string EquipmentLangTokenName => "GOLDENGOOSEEGG";
         protected override Yield Kind => Yield.Boss;
         protected override Color Tint => new Color(1f, 0.85f, 0.1f);
-        protected override int DefaultPerStack => 2;
+        protected override int DefaultFirstStack => 1;
+        protected override float DefaultExtraPerStack => 1f;
         protected override float DefaultDropWeight => 8f;
         protected override string YieldText => "yellow items";
     }
@@ -343,7 +351,8 @@ namespace CursedAppleCuriosities.Items
         public override string EquipmentLangTokenName => "VOIDGOOSEEGG";
         protected override Yield Kind => Yield.Void;
         protected override Color Tint => new Color(0.8f, 0.4f, 1f);
-        protected override int DefaultPerStack => 2;
+        protected override int DefaultFirstStack => 2;
+        protected override float DefaultExtraPerStack => 1f;
         protected override float DefaultDropWeight => 8f;
         protected override string YieldText => "void items";
         public override string FullDescription => base.FullDescription +
@@ -357,19 +366,37 @@ namespace CursedAppleCuriosities.Items
         private CharacterBody _body = null!;
         private GooseEggProgress? _progress;
         private int _shown = -1;
+        private float _lastStopwatch = float.NaN;
 
         private void Awake() => _body = GetComponent<CharacterBody>();
 
+        /// <summary>
+        /// How far the run timer itself moved since the last tick. Eggs mature on the run's clock, so they stop wherever
+        /// it does, whatever stopped it: the Bazaar, Gilded Coast, between stages, trial gongs' force pause (user, 1.7/2.0).
+        /// A jump (timer set by the game or a mod) counts as nothing.
+        /// </summary>
+        private float RunTimerDelta()
+        {
+            Run? run = Run.instance;
+            if (run == null || run.isGameOverServer) { _lastStopwatch = float.NaN; return 0f; }
+            float now = run.GetRunStopwatch();
+            float delta = float.IsNaN(_lastStopwatch) ? 0f : now - _lastStopwatch;
+            _lastStopwatch = now;
+            return delta > 0f && delta < 1f ? delta : 0f;
+        }
+
         private void FixedUpdate()
         {
+            if (!NetworkServer.active) return;
+            float delta = RunTimerDelta(); // read every tick, so time not spent holding never counts later
             Inventory? inventory = _body.inventory;
-            if (!NetworkServer.active || Egg?.EquipmentDef == null || inventory == null) return;
+            if (Egg?.EquipmentDef == null || inventory == null) return;
             EquipmentLocation location = inventory.activeEquipmentLocation;
             if (inventory.GetEquipmentIndex(in location) != Egg.EquipmentDef.equipmentIndex) return;
             _progress ??= GooseEggProgress.For(inventory);
-            // Eggs mature on the run's clock: not while it's stopped (the Bazaar, Gilded Coast, between stages...; user, 1.7).
-            bool paused = Run.instance == null || Run.instance.isRunStopwatchPaused;
-            float seconds = _progress.Get(location) + (paused ? 0f : Time.fixedDeltaTime);
+            // Only while the holder is alive (user, 2.0). Holding is checked above: only the active slot matures.
+            if (_body.healthComponent == null || !_body.healthComponent.alive) delta = 0f;
+            float seconds = _progress.Get(location) + delta;
             _progress.Set(location, seconds);
             int stacks = GooseEgg.StacksFor(seconds);
             if (stacks == _shown || Egg.StackBuff == null || Egg.StackBuff.buffIndex == BuffIndex.None) return;

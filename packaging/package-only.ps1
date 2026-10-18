@@ -8,11 +8,19 @@
 
   Output:
     dist\CursedAppleCuriosities-<version>.zip   (version read from manifest.json)
+
+  -WithFanSkins: the friends' build. Also packs the fan-made skin models (Deadlock mod .vpk files: TSelky's Spirit Guardian
+  Celeste, funnymonkeyman's Bunny Seven) from FanSkinsDir into plugins/skins, where the mod looks for them, and names the zip
+  ...-<version>-friends.zip. NEVER upload that one to Thunderstore: the default zip (without them) is the public release; the
+  mod authors haven't been asked yet (user, 2026-10-16).
 #>
 
 param(
     # Source2Viewer-CLI folder (MIT) bundled as plugins/vrf. The csproj passes its $(VrfSource).
-    [string]$VrfSource = 'C:\r2heimman\Valheim\profiles\HeroBrew Playtest\BepInEx\plugins\gonkhub-HeroBrew\vrf'
+    [string]$VrfSource = (Join-Path $PSScriptRoot '..\tools\vrf'),
+    # Friends' build only: pack the fan-made skin .vpk files too (see above).
+    [switch]$WithFanSkins,
+    [string]$FanSkinsDir = (Join-Path $env:USERPROFILE 'AppData\LocalLow\Hopoo Games, LLC\Risk of Rain 2\CursedApple\skins')
 )
 
 $ErrorActionPreference = 'Stop'
@@ -49,12 +57,26 @@ try {
     $nlayer = Join-Path $env:USERPROFILE '.nuget\packages\nlayer\1.16.0\lib\netstandard2.0\NLayer.dll'
     if (-not (Test-Path $nlayer)) { throw "NLayer.dll not found at $nlayer (run a build to restore it)." }
     Copy-Item $nlayer (Join-Path $pluginsDir 'NLayer.dll')
+    # Our own Deadlock map converter (runs the stage conversion in its own process).
+    $mapConvert = Join-Path $projectRoot 'CursedAppleMapConvert\bin\Release\net472'
+    if (-not (Test-Path (Join-Path $mapConvert 'CursedAppleMapConvert.exe'))) { throw "CursedAppleMapConvert.exe not built at $mapConvert." }
+    Copy-Item (Join-Path $mapConvert 'CursedAppleMapConvert.exe') $pluginsDir
+    Copy-Item (Join-Path $mapConvert 'CursedAppleMapConvert.exe.config') $pluginsDir
     # Model converter: turns the player's OWN Deadlock hero models into glTF at runtime. No Valve file is shipped.
     if (-not (Test-Path (Join-Path $VrfSource 'Source2Viewer-CLI.exe'))) { throw "Source2Viewer-CLI.exe not found in $VrfSource." }
     Copy-Item $VrfSource (Join-Path $pluginsDir 'vrf') -Recurse
+    # Friends' build: the fan-made skin models, beside the DLL (DeadlockInstall.FindVpkWith looks in plugins\skins).
+    if ($WithFanSkins) {
+        $vpks = @(Get-ChildItem -Path $FanSkinsDir -Filter '*.vpk' -File -ErrorAction SilentlyContinue)
+        if ($vpks.Count -eq 0) { throw "No fan skin .vpk files in $FanSkinsDir." }
+        $skinsDir = Join-Path $pluginsDir 'skins'
+        New-Item -ItemType Directory -Path $skinsDir | Out-Null
+        foreach ($v in $vpks) { Copy-Item $v.FullName (Join-Path $skinsDir $v.Name); Write-Host "  + fan skin $($v.Name)" -ForegroundColor DarkCyan }
+    }
 
     if (-not (Test-Path $distDir)) { New-Item -ItemType Directory -Path $distDir | Out-Null }
-    $zipPath = Join-Path $distDir "$pkgName-$version.zip"
+    $zipName = if ($WithFanSkins) { "$pkgName-$version-friends.zip" } else { "$pkgName-$version.zip" }
+    $zipPath = Join-Path $distDir $zipName
     if (Test-Path $zipPath) { Remove-Item $zipPath -Force }
 
     # Not Compress-Archive: Windows PowerShell 5.1 writes '\' entry separators, which
@@ -69,7 +91,8 @@ try {
         }
     }
     finally { $zip.Dispose() }
-    Write-Host "Packaged $pkgName v$version -> dist\$pkgName-$version.zip" -ForegroundColor Green
+    Write-Host "Packaged $pkgName v$version -> dist\$zipName" -ForegroundColor Green
+    if ($WithFanSkins) { Write-Host "Friends' build (fan skins inside): do NOT upload this one to Thunderstore." -ForegroundColor Yellow }
 }
 finally {
     Remove-Item $stage -Recurse -Force -ErrorAction SilentlyContinue

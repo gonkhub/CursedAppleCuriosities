@@ -30,6 +30,8 @@ namespace CursedAppleCuriosities.Survivors.Lash
         /// <summary>Skin icon in the hero's own palette (skin, dark leather, brown, the blue accent), not the stand-in's.</summary>
         private static Sprite DefaultSkinIcon => _defaultSkinIcon ??= Kit.SkinIcon(new Color(0.8f, 0.6f, 0.46f), new Color(0.28f, 0.2f, 0.17f), new Color(0.5f, 0.33f, 0.24f), new Color(0.15f, 0.45f, 0.8f));
         private static Sprite? _defaultSkinIcon;
+        private static Sprite GildedSkinIcon => _gildedSkinIcon ??= Kit.SkinIcon(new Color(0.8f, 0.6f, 0.46f), new Color(0.85f, 0.68f, 0.2f), new Color(0.5f, 0.33f, 0.24f), new Color(0.95f, 0.78f, 0.25f));
+        private static Sprite? _gildedSkinIcon;
 
         public static GameObject? BodyPrefab, DisplayPrefab;
         public static SurvivorDef? Survivor;
@@ -49,8 +51,9 @@ namespace CursedAppleCuriosities.Survivors.Lash
             LashData.Bind(config);
 
             foreach (DeadlockSound s in LashData.Sounds) DeadlockSounds.Register(s);
+            DeadlockHeroVoice.Track(BodyName, LashData.Hero, "lash");
             DeadlockPingVoice.Track(BodyName, LashData.Hero, "lash");
-            foreach (string icon in new[] { LashData.IconPortrait, LashData.IconGroundStrike, LashData.IconGrapple, LashData.IconDeathSlam })
+            foreach (string icon in new[] { LashData.IconPortrait, LashData.IconGun, LashData.IconGroundStrike, LashData.IconGrapple, LashData.IconDeathSlam })
                 DeadlockInstall.WantIcon(icon);
             DeadlockHeroes.Register(LashModelSwap.Def);
             DeadlockInstall.WantModel(LashModelSwap.Def.ModelRequest());
@@ -66,8 +69,6 @@ namespace CursedAppleCuriosities.Survivors.Lash
             LashNet.Register();
 
             host.AddComponent<LashIcons>();
-            GlobalEventManager.onCharacterDeathGlobal += OnDeath;
-            GlobalEventManager.onClientDamageNotified += OnDamaged;
         }
 
         // ---------------- assets ----------------
@@ -184,7 +185,7 @@ namespace CursedAppleCuriosities.Survivors.Lash
             locator.special = Slot(body, "Special", _deathSlam!);
             locator.passiveSkill = new SkillLocator.PassiveSkill
             {
-                enabled = true,
+                enabled = false, // hidden: it only described the Deadlock movement, and the user cut those blurbs (3.0)
                 skillNameToken = Token + "PASSIVE_NAME",
                 skillDescriptionToken = Token + "PASSIVE_DESC",
                 icon = ItemBase.CreatePlaceholderSprite(Color),
@@ -199,7 +200,7 @@ namespace CursedAppleCuriosities.Survivors.Lash
             // Reserve the muzzle slot now: ChildLocators can't grow after load. It points at the glove once Lash is on.
             var locatorChildren = model.GetComponent<ChildLocator>();
             if (locatorChildren != null && locatorChildren.FindChild(MuzzleName) == null) locatorChildren.AddChild(MuzzleName, model);
-            Kit.OwnSkin(model.gameObject, "skinCursedAppleLashDEFAULT", Token + "SKIN_DEFAULT", DefaultSkinIcon);
+            Kit.OwnSkin(model.gameObject, "skinCursedAppleLashDEFAULT", Token + "SKIN_DEFAULT", DefaultSkinIcon, ("skinCursedAppleLashGILDED", Token + "SKIN_GILDED", GildedSkinIcon));
 
             BiggerCamera(body);
             ContentAddition.AddBody(body);
@@ -229,7 +230,7 @@ namespace CursedAppleCuriosities.Survivors.Lash
                 var swap = cm.gameObject.AddComponent<DeadlockModelSwap>();
                 swap.HeroKey = LashData.Hero;
                 swap.IsDisplay = true;
-                Kit.OwnSkin(cm.gameObject, "skinCursedAppleLashDISPLAY", Token + "SKIN_DEFAULT", DefaultSkinIcon);
+                Kit.OwnSkin(cm.gameObject, "skinCursedAppleLashDISPLAY", Token + "SKIN_DEFAULT", DefaultSkinIcon, ("skinCursedAppleLashDISPLAYGILDED", Token + "SKIN_GILDED", GildedSkinIcon));
             }
             display.AddComponent<LashDisplayIntro>();
             return display;
@@ -246,7 +247,7 @@ namespace CursedAppleCuriosities.Survivors.Lash
             Survivor.outroFlavorToken = Token + "OUTRO";
             Survivor.mainEndingEscapeFailureFlavorToken = Token + "FAILURE";
             Survivor.primaryColor = Color;
-            Survivor.desiredSortPosition = 100f;
+            Survivor.desiredSortPosition = 106f; // RosterOrder re-sorts the whole roster A-Z at load (user 3.0)
             ContentAddition.AddSurvivorDef(Survivor);
         }
 
@@ -272,6 +273,7 @@ namespace CursedAppleCuriosities.Survivors.Lash
                 locator.passiveSkill = passive;
                 _gun!.icon = passive.icon;
             }
+            Set(_gun, LashData.IconGun); // the weapon itself (user 3.0); the portrait stays if it isn't cached
             CursedAppleCuriositiesPlugin.Logger?.LogInfo($"[Lash] icons: {(portrait != null ? "from Deadlock" : "placeholders (no Deadlock icons cached)")}");
         }
 
@@ -296,42 +298,6 @@ namespace CursedAppleCuriosities.Survivors.Lash
             model.AddComponent<DeadlockFootsteps>().HeroKey = LashData.Hero;
         }
 
-        private static readonly Dictionary<GameObject, float> LastHealth = new Dictionary<GameObject, float>();
-
-        /// <summary>Every client: Lash grunts when hit (big hits more often) and warns when his health runs low.</summary>
-        private static void OnDamaged(DamageDealtMessage msg)
-        {
-            if (msg.victim == null || !(msg.victim.GetComponent<DeadlockMover>() is DeadlockMover mover && mover.HeroKey == LashData.Hero)) return;
-            var hc = msg.victim.GetComponent<HealthComponent>();
-            if (hc == null || !hc.alive) return;
-            float max = Mathf.Max(1f, hc.fullCombinedHealth);
-            Vector3 at = msg.victim.transform.position;
-            if (msg.damage >= max * 0.15f) DeadlockSounds.Play("lash_vo_pain", at, msg.victim);
-            else DeadlockSounds.Play("lash_vo_pain_small", at, msg.victim);
-            float frac = hc.combinedHealth / max;
-            float before = LastHealth.TryGetValue(msg.victim, out float b) ? b : 1f;
-            LastHealth[msg.victim] = frac;
-            if (frac < 0.25f && before >= 0.25f) DeadlockSounds.Play("lash_vo_low_health", at, msg.victim);
-        }
-
-        private static readonly List<float> RecentKills = new List<float>();
-
-        // ---------------- voice ----------------
-
-        private static void OnDeath(DamageReport report)
-        {
-            if (report.attackerBody != null && report.attackerBody.bodyIndex == BodyCatalog.FindBodyIndex(BodyName) && report.attackerBody.hasEffectiveAuthority)
-            {
-                // Twelve kills within 10 s: a killstreak line instead of the usual kill one.
-                RecentKills.Add(Time.time);
-                RecentKills.RemoveAll(t => Time.time - t > 10f);
-                if (RecentKills.Count >= 12) { DeadlockSounds.Play("lash_vo_killstreak", report.attackerBody.corePosition, report.attackerBody.gameObject); RecentKills.Clear(); }
-                else DeadlockSounds.Play("lash_vo_kill", report.attackerBody.corePosition, report.attackerBody.gameObject);
-            }
-            if (report.victimBody != null && report.victimBody.bodyIndex == BodyCatalog.FindBodyIndex(BodyName))
-                DeadlockSounds.Play("lash_vo_death", report.victimBody.corePosition);
-        }
-
         // ---------------- language ----------------
 
         /// <summary>Readable key names for tooltips (Unity counts mouse buttons from 0).</summary>
@@ -344,6 +310,7 @@ namespace CursedAppleCuriosities.Survivors.Lash
             LanguageAPI.Add(Token + "NAME", "Lash");
             LanguageAPI.Add(Token + "SUBTITLE", "Showman of the Cursed Apple");
             LanguageAPI.Add(Token + "SKIN_DEFAULT", "Default");
+            LanguageAPI.Add(Token + "SKIN_GILDED", "Gilded");
             LanguageAPI.Add(Token + "DESCRIPTION",
                 "Jacob Lash is an Asshole<color=#CCD3E0>\n\n" +
                 "< ! > Ground Strike hits harder the further you fall. Grapple up, then strike back down.\n\n" +
@@ -354,9 +321,7 @@ namespace CursedAppleCuriosities.Survivors.Lash
             LanguageAPI.Add(Token + "LORE", "A showman from the Cursed Apple, lost to the stars and looking for a bigger stage.");
 
             LanguageAPI.Add(Token + "PASSIVE_NAME", "Perfect Cardio, Perfect Form, Perfect Hair");
-            LanguageAPI.Add(Token + "PASSIVE_DESC",
-                "Lash <style=cIsUtility>sprints automatically</style> when out of combat. " +
-                $"He can <style=cIsUtility>slide</style>, and <style=cIsUtility>air jump/dash</style> up to {LashData.Movement.AirJumps} times.");
+            LanguageAPI.Add(Token + "PASSIVE_DESC", "");
 
             LanguageAPI.Add(Token + "GUN_NAME", "Lash's Glove");
             LanguageAPI.Add(Token + "GUN_DESC", $"Fire a three-round burst for <style=cIsDamage>3x{D(LashData.GunDamage)} damage</style>.");

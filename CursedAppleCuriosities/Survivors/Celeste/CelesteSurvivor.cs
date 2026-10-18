@@ -31,6 +31,8 @@ namespace CursedAppleCuriosities.Survivors.Celeste
         private static Sprite? _defaultSkinIcon;
         private static Sprite MintSkinIcon => _mintSkinIcon ??= Kit.SkinIcon(new Color(0.6f, 0.93f, 0.82f), new Color(0.27f, 0.19f, 0.15f), new Color(0.24f, 0.55f, 0.5f), new Color(0.86f, 0.72f, 0.64f));
         private static Sprite? _mintSkinIcon;
+        private static Sprite GuardianSkinIcon => _guardianSkinIcon ??= Kit.SkinIcon(new Color(0.96f, 0.9f, 0.62f), new Color(0.35f, 0.42f, 0.78f), new Color(0.93f, 0.95f, 1f), new Color(0.62f, 0.82f, 0.98f));
+        private static Sprite? _guardianSkinIcon;
         public const float ProjectileHue = 0.72f; // her blades and orb: light blue-violet (user)
         public const float Hue = 0.9f;       // her light is pink, as her hair
 
@@ -54,6 +56,13 @@ namespace CursedAppleCuriosities.Survivors.Celeste
                 DeadlockInstall.WantIcon(icon);
             DeadlockHeroes.Register(CelesteModel.Def);
             DeadlockInstall.WantModel(CelesteModel.Def.ModelRequest());
+            DeadlockInstall.WantModel(new DeadlockInstall.ModelRequest
+            {
+                Hero = CelesteData.GuardianKey,
+                DlModel = CelesteData.DlModel, // TSelky's mod replaces her model at the same path
+                Source = () => DeadlockInstall.FindVpkWith(CelesteData.GuardianMarker),
+                Missing = "needs TSelky's Spirit Guardian Celeste mod (a Deadlock mod .vpk): put it in Risk of Rain 2's CursedApple\\skins folder or Deadlock's addons folder, then restart",
+            });
 
             LoadAssets();
             CreateBuffs();
@@ -66,7 +75,8 @@ namespace CursedAppleCuriosities.Survivors.Celeste
             CreateSurvivor();
             AddLanguage();
             CelesteNet.Register();
-            DeadlockHeroVoice.Track(BodyName, CelesteData.Hero);
+            DeadlockHeroVoice.Track(BodyName, CelesteData.Hero, "unicorn");
+            DeadlockPingVoice.Track(BodyName, CelesteData.Hero, "unicorn");
             EquipmentFx.RegisterBuffFx(PrismBuff, "RoR2/Base/LunarGolem/LunarDefense.prefab", "celeste_prism_loop"); // a crystal shell
             EquipmentFx.RegisterBuffFx(MarkBuff, "RoR2/Base/Merc/MercExposeEffect.prefab", "celeste_mark_loop"); // a mark over marked enemies
             RoR2Application.onLoad += () => BodyIndex = BodyCatalog.FindBodyIndex(BodyName);
@@ -273,7 +283,8 @@ namespace CursedAppleCuriosities.Survivors.Celeste
             Kit.MuteStandIn(body, model.gameObject, CelesteData.Hero);
             var children = model.GetComponent<ChildLocator>();
             if (children != null && children.FindChild(MuzzleName) == null) children.AddChild(MuzzleName, model);
-            Kit.OwnSkin(model.gameObject, "skinCursedAppleCelesteDEFAULT", Token + "SKIN_DEFAULT", DefaultSkinIcon, ("skinCursedAppleCelesteMINT", Token + "SKIN_MINT", MintSkinIcon));
+            Kit.OwnSkin(model.gameObject, "skinCursedAppleCelesteDEFAULT", Token + "SKIN_DEFAULT", DefaultSkinIcon, ("skinCursedAppleCelesteMINT", Token + "SKIN_MINT", MintSkinIcon),
+                ("skinCursedAppleCelesteGUARDIAN", Token + "SKIN_GUARDIAN", GuardianSkinIcon));
 
             Kit.BiggerCamera(body, "ccpCursedAppleCeleste", 0.6f, 1.25f); // pivot up (m), distance (x Commando's) for the bigger model
             ContentAddition.AddBody(body);
@@ -290,7 +301,8 @@ namespace CursedAppleCuriosities.Survivors.Celeste
                 var swap = cm.gameObject.AddComponent<DeadlockModelSwap>();
                 swap.HeroKey = CelesteData.Hero;
                 swap.IsDisplay = true;
-                Kit.OwnSkin(cm.gameObject, "skinCursedAppleCelesteDISPLAY", Token + "SKIN_DEFAULT", DefaultSkinIcon, ("skinCursedAppleCelesteDISPLAYMINT", Token + "SKIN_MINT", MintSkinIcon));
+                Kit.OwnSkin(cm.gameObject, "skinCursedAppleCelesteDISPLAY", Token + "SKIN_DEFAULT", DefaultSkinIcon, ("skinCursedAppleCelesteDISPLAYMINT", Token + "SKIN_MINT", MintSkinIcon),
+                    ("skinCursedAppleCelesteDISPLAYGUARDIAN", Token + "SKIN_GUARDIAN", GuardianSkinIcon));
             }
             display.AddComponent<CelesteDisplayIntro>();
             display.AddComponent<CelesteGlow>();
@@ -308,7 +320,7 @@ namespace CursedAppleCuriosities.Survivors.Celeste
             Survivor.outroFlavorToken = Token + "OUTRO";
             Survivor.mainEndingEscapeFailureFlavorToken = Token + "FAILURE";
             Survivor.primaryColor = Color;
-            Survivor.desiredSortPosition = 107f;
+            Survivor.desiredSortPosition = 103f; // RosterOrder re-sorts the whole roster A-Z at load (user 3.0)
             ContentAddition.AddSurvivorDef(Survivor);
         }
 
@@ -353,6 +365,7 @@ namespace CursedAppleCuriosities.Survivors.Celeste
             LanguageAPI.Add(Token + "SUBTITLE", "The Carny");
             LanguageAPI.Add(Token + "SKIN_DEFAULT", "Default");
             LanguageAPI.Add(Token + "SKIN_MINT", "Mint");
+            LanguageAPI.Add(Token + "SKIN_GUARDIAN", CelesteData.GuardianName);
             LanguageAPI.Add(Token + "DESCRIPTION",
                 "Celeste ran away with the carnival and never stopped performing.<color=#CCD3E0>\n\n" +
                 "< ! > Mark enemies with Light Eater, then finish them with your blades.\n\n" +
@@ -364,7 +377,7 @@ namespace CursedAppleCuriosities.Survivors.Celeste
 
             LanguageAPI.Add(Token + "PASSIVE_NAME", "Showstopper");
             LanguageAPI.Add(Token + "PASSIVE_DESC",
-                $"Falls <style=cIsUtility>25% slower</style> with better air control, and <style=cIsUtility>hovers</style> while casting. <style=cIsUtility>{CelesteData.Movement.StaminaPips} stamina</style>; air jump and air dash twice.");
+                $"Falls <style=cIsUtility>25% slower</style> with better air control, and <style=cIsUtility>hovers</style> while casting.");
 
             LanguageAPI.Add(Token + "BLADE_NAME", "Carny Life");
             LanguageAPI.Add(Token + "BLADE_DESC",
@@ -373,12 +386,12 @@ namespace CursedAppleCuriosities.Survivors.Celeste
             LanguageAPI.Add(Token + "FLARE_NAME", "Light Eater");
             LanguageAPI.Add(Token + "FLARE_DESC",
                 $"Flare in a cone for <style=cIsDamage>{D(CelesteData.FlareDamage)} damage</style> and <style=cIsUtility>mark</style> enemies for {CelesteData.MarkSeconds:0}s. " +
-                $"Your blades deal <style=cIsDamage>+{D(CelesteData.MarkDaggerBonus)}</style> to marked enemies, and you <style=cIsHealing>heal {D(CelesteData.MarkLifesteal)}</style> of damage dealt to them.");
+                $"You deal <style=cIsDamage>+{D(CelesteData.MarkDamageBonus)} damage</style> to marked enemies, and you <style=cIsHealing>heal {D(CelesteData.MarkLifesteal)}</style> of damage dealt to them.");
 
             LanguageAPI.Add(Token + "BEAM_NAME", "Radiant Daggers");
             LanguageAPI.Add(Token + "BEAM_DESC",
                 $"Hold to aim, release to call down a beam of light that explodes after {CelesteData.BeamDelay:0.#}s for <style=cIsDamage>{D(CelesteData.BeamDamage)} damage</style>. " +
-                $"Each enemy hit grants <style=cIsDamage>+{D(CelesteData.RadianceDamage)} damage</style> for {CelesteData.RadianceSeconds:0}s, <style=cIsDamage>stacking without limit</style>.");
+                $"Each enemy hit grants <style=cIsDamage>+{D(CelesteData.RadianceDamage)} damage</style> for {CelesteData.RadianceSeconds:0}s, <style=cIsDamage>stacking without limit</style> (each cast's stacks run out on their own).");
 
             LanguageAPI.Add(Token + "PRISM_NAME", "Dazzling Trick");
             LanguageAPI.Add(Token + "PRISM_DESC",

@@ -141,7 +141,7 @@ namespace CursedAppleCuriosities.Broker
             // Skill-slot damage (attacker) and incoming DoT / elite damage (victim). Server.
             On.RoR2.HealthComponent.TakeDamage += (orig, self, info) =>
             {
-                if (CurseLedger.Any && info != null && self != null)
+                if (CurseLedger.Any && info != null && self != null && !Items.ItemBase.FinalDamage(info))
                 {
                     CharacterBody? attacker = info.attacker != null ? info.attacker.GetComponent<CharacterBody>() : null;
                     if (attacker != null)

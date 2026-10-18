@@ -35,17 +35,18 @@ namespace CursedAppleCuriosities.Deadlock
         private static bool _hooked;
 
         /// <summary>Applies once the catalogs and vanilla rule sets are ready (item indices don't exist before).</summary>
-        public static void Register(string heroName, Func<GameObject?[]> prefabs, HeroItemRule[] rules)
+        /// <param name="hidden">Items or equipment (by name) that show nothing on this hero.</param>
+        public static void Register(string heroName, Func<GameObject?[]> prefabs, HeroItemRule[] rules, string[]? hidden = null)
         {
             if (!_hooked) { _hooked = true; Hook(); }
             RoR2Application.onLoad += () =>
             {
-                try { Apply(heroName, prefabs(), rules); }
+                try { Apply(heroName, prefabs(), rules, hidden ?? Array.Empty<string>()); }
                 catch (Exception e) { CursedAppleCuriositiesPlugin.Logger?.LogWarning($"{Tag} {heroName}: {e}"); }
             };
         }
 
-        private static void Apply(string heroName, GameObject?[] prefabs, HeroItemRule[] rules)
+        private static void Apply(string heroName, GameObject?[] prefabs, HeroItemRule[] rules, string[] hidden)
         {
             var models = new List<CharacterModel>();
             foreach (GameObject? p in prefabs)
@@ -78,6 +79,16 @@ namespace CursedAppleCuriosities.Deadlock
                 ItemDisplayRuleSet.KeyAssetRuleGroup group = groups[i];
                 if (Place(ref group.displayRuleGroup, r)) { groups[i] = group; applied++; }
                 else missing.Add($"{r.Key}[{r.Index}]");
+            }
+
+            foreach (string name in hidden)
+            {
+                UnityEngine.Object? key = ItemCatalog.GetItemDef(ItemCatalog.FindItemIndex(name));
+                if (key == null) key = EquipmentCatalog.GetEquipmentDef(EquipmentCatalog.FindEquipmentIndex(name));
+                if (key == null) { missing.Add(name); continue; }
+                groups.RemoveAll(g => g.keyAsset == key);
+                // An empty group listed last, so nothing from the source shows either.
+                groups.Add(new ItemDisplayRuleSet.KeyAssetRuleGroup { keyAsset = key, displayRuleGroup = DisplayRuleGroup.empty });
             }
 
             var idrs = ScriptableObject.CreateInstance<ItemDisplayRuleSet>();

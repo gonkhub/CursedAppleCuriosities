@@ -6,7 +6,7 @@ namespace CursedAppleCuriosities.Survivors.Abrams
 {
     /// <summary>
     /// Abrams' numbers (Deadlock's hero_atlas / citadel_*_bull*, read from build 25841406). Deadlock values are kept where RoR2 has the same scale (metres, seconds, speeds); damage becomes RoR2
-    /// damage coefficients and cooldowns RoR2-length. Headline knobs are in the [Abrams] config section.
+    /// damage coefficients and cooldowns RoR2-length.
     /// </summary>
     public static class AbramsData
     {
@@ -103,35 +103,9 @@ namespace CursedAppleCuriosities.Survivors.Abrams
         public static float SlamStun = 1.6f;            // Deadlock StunDuration
         public const float SlamLanding = 0.7f;          // Deadlock m_flLandingTime: planted after the impact
 
-        public static void Bind(ConfigFile c)
+        public static void Bind(ConfigFile c) // the hero's config section is only its keybind layout (3.0)
         {
             Movement.Bind(c, Section);
-            BaseHealth = c.Bind(Section, "Base Health", BaseHealth, "Abrams max health at level 1 (+48 per level).").Value;
-            PelletDamage = c.Bind(Section, "Shotgun - Pellet Damage", PelletDamage, "Damage coefficient per pellet.").Value;
-            Pellets = c.Bind(Section, "Shotgun - Pellets", Pellets, "Pellets per shot.").Value;
-            SiphonDps = c.Bind(Section, "Siphon Life - Damage Per Second", SiphonDps, "Damage coefficient per second to every enemy in range.").Value;
-            SiphonHeal = c.Bind(Section, "Siphon Life - Heal Fraction", SiphonHeal, "Share of Siphon Life damage healed back.").Value;
-            SiphonRadius = c.Bind(Section, "Siphon Life - Radius", SiphonRadius, "Metres.").Value;
-            SiphonCooldown = c.Bind(Section, "Siphon Life - Cooldown", SiphonCooldown, "Seconds.").Value;
-            MeleeDamage = c.Bind(Section, "Heavy Melee - Damage", MeleeDamage, "Damage coefficient.").Value;
-            MeleeCooldown = c.Bind(Section, "Heavy Melee - Cooldown", MeleeCooldown, "Seconds.").Value;
-            ChargeDamage = c.Bind(Section, "Shoulder Charge - Damage", ChargeDamage, "Damage coefficient to each enemy scooped up.").Value;
-            ChargeWallDamage = c.Bind(Section, "Shoulder Charge - Wall Damage", ChargeWallDamage, "Damage coefficient to each carried enemy slammed into a wall.").Value;
-            ChargeSpeed = c.Bind(Section, "Shoulder Charge - Start Speed", ChargeSpeed, "Metres per second at the start of the charge.").Value;
-            ChargeSpeedMax = c.Bind(Section, "Shoulder Charge - End Speed", ChargeSpeedMax, "Metres per second the charge builds up to.").Value;
-            ChargeWallStun = c.Bind(Section, "Shoulder Charge - Wall Stun", ChargeWallStun, "Seconds carried enemies are stunned when slammed into a wall.").Value;
-            ChargeCooldown = c.Bind(Section, "Shoulder Charge - Cooldown", ChargeCooldown, "Seconds.").Value;
-            ResilienceFraction = c.Bind(Section, "Infernal Resilience - Regen Fraction", ResilienceFraction, $"Share of damage taken that heals back over {ResilienceSeconds:0} s.").Value;
-            ResilienceArmor = c.Bind(Section, "Infernal Resilience - Armor", ResilienceArmor, "Bonus armor from the passive.").Value;
-            MeleeLifesteal = c.Bind(Section, "Heavy Melee - Lifesteal", MeleeLifesteal, "Share of Heavy Melee damage dealt healed back.").Value;
-            SlamDamage = c.Bind(Section, "Seismic Impact - Damage", SlamDamage, "Damage coefficient around the landing.").Value;
-            SlamRadius = c.Bind(Section, "Seismic Impact - Radius", SlamRadius, "Metres.").Value;
-            SlamStun = c.Bind(Section, "Seismic Impact - Stun", SlamStun, "Seconds enemies hit are stunned.").Value;
-            SlamCrashSpeed = c.Bind(Section, "Seismic Impact - Crash Speed", SlamCrashSpeed, "Metres per second on the way down.").Value;
-            SlamCooldown = c.Bind(Section, "Seismic Impact - Cooldown", SlamCooldown, "Seconds.").Value;
-            SlamPullRadius = c.Bind(Section, "Seismic Impact - Pull Radius", SlamPullRadius, "Enemies within this many metres when the crash starts are dragged down to the landing.").Value;
-            CameraHeight = c.Bind(Section, "Camera - Height", CameraHeight, "Metres the camera is raised above the default survivor camera.").Value;
-            CameraDistance = c.Bind(Section, "Camera - Distance", CameraDistance, "Camera distance behind Abrams, as a multiple of the default survivor camera.").Value;
         }
 
         // ---- Deadlock assets (read from the player's own install, never shipped) ----
@@ -145,6 +119,10 @@ namespace CursedAppleCuriosities.Survivors.Abrams
 
         // Deadlock's internal name for Abrams is "bull" (hero_atlas).
         public const string IconPortrait = "panorama/images/heroes/bull_sm_psd.vtex_c";
+        // The primary shows the weapon itself (user 3.0, like Celeste's baton): Deadlock's shop image of the hero's gun.
+        public const string IconGun = "panorama/images/heroes/guns/bull_gun_psd.vtex_c";
+        // Heavy Melee (user 3.0): Deadlock's Melee Charge item icon, a charging fist.
+        public const string IconMelee = "panorama/images/items/weapon/melee_charge_psd.vtex_c";
         public const string IconSiphon = "panorama/images/hud/abilities/bull_drain_psd.vtex_c";
         public const string IconCharge = "panorama/images/hud/abilities/bull_charge_psd.vtex_c";
         public const string IconResilience = "panorama/images/hud/abilities/bull_beef_psd.vtex_c";
@@ -231,7 +209,7 @@ namespace CursedAppleCuriosities.Survivors.Abrams
             new DeadlockSound { Id = "abrams_vo_power1", VpkPrefix = "sounds/vo/atlas/atlas_use_power1", Chance = 0.6f, MinGap = 4f, Voice = true },
             new DeadlockSound { Id = "abrams_vo_power2", VpkPrefix = "sounds/vo/atlas/atlas_use_power2", Chance = 0.6f, MinGap = 4f, Voice = true },
             new DeadlockSound { Id = "abrams_vo_power4", VpkPrefix = "sounds/vo/atlas/atlas_use_power4", Range = 50f, MinGap = 4f, Voice = true },
-            // Desperation: the same abilities cast below a quarter health (DeadlockHeroVoice.Power picks them).
+            // Desperation: the same abilities cast below 35% health (DeadlockHeroVoice.Power picks them).
             new DeadlockSound { Id = "abrams_vo_desperation_power1", VpkPrefix = "sounds/vo/atlas/atlas_desperation_power1", Chance = 0.8f, MinGap = 4f, Voice = true },
             new DeadlockSound { Id = "abrams_vo_desperation_power2", VpkPrefix = "sounds/vo/atlas/atlas_desperation_power2", Chance = 0.8f, MinGap = 4f, Voice = true },
             new DeadlockSound { Id = "abrams_vo_desperation_power4", VpkPrefix = "sounds/vo/atlas/atlas_desperation_power4", Range = 50f, MinGap = 4f, Voice = true },

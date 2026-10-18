@@ -31,9 +31,9 @@ namespace CursedAppleCuriosities.Items
         public static float BaseMaxBonus;
         public const float MaxBonusPerStack = 0.12f;
         // A little out-of-danger regen (user): flat, not growing with level, so it helps early and fades late; well under
-        // Cautious Slug (+3 hp/s, scaling with level) and Fortitude (1% max health/s).
+        // Cautious Slug (+3 hp/s, scaling with level).
         public static float BaseRegen = 1f;
-        public const float RegenPerStack = 0.5f;
+        public const float RegenPerStack = 1f; // 0.5 until 3.0 (user)
 
         public static ItemDef?  StaticItemDef;
         public static BuffDef?  SprintBuffDef;
@@ -49,10 +49,7 @@ namespace CursedAppleCuriosities.Items
             SprintBuffDef.iconSprite = BuffIcon(IconFileName, color);
             ContentAddition.AddBuffDef(SprintBuffDef);
 
-            BaseMaxBonus = config.Bind("White", "Sprint Boots - Max Move Speed", 0.25f,
-                "Maximum sprint move-speed bonus at 1 stack.").Value;
-            BaseRegen = config.Bind("White", "Sprint Boots - Out Of Danger Regen", BaseRegen,
-                "Health per second regenerated while out of danger at 1 stack (+0.5 per extra stack). Flat: doesn't grow with level.").Value;
+            BaseMaxBonus = 0.25f;
             CreateLang();
             CreateItem();
             StaticItemDef = ItemDef;

@@ -43,8 +43,7 @@ namespace CursedAppleCuriosities.Items
             DashBuffDef.iconSprite = BuffIcon(IconFileName, color);
             ContentAddition.AddBuffDef(DashBuffDef);
 
-            AttackSpeedPerStack = config.Bind("White", "Kinetic Dash - Attack Speed Per Stack", 0.20f,
-                "Attack speed granted per stack after using your utility skill.").Value;
+            AttackSpeedPerStack = 0.20f;
             CreateLang();
             CreateItem();
             Hooks();

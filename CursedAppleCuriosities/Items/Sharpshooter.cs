@@ -33,8 +33,7 @@ namespace CursedAppleCuriosities.Items
 
         public override void Init(ConfigFile config)
         {
-            MaxBonusPerStack = config.Bind("White", "Long Range - Max Bonus Damage", 0.30f,
-                "Bonus damage per stack when hitting an enemy at maximum range.").Value;
+            MaxBonusPerStack = 0.30f;
             CreateLang();
             CreateItem();
             Hooks();
@@ -52,6 +51,7 @@ namespace CursedAppleCuriosities.Items
             HealthComponent self,
             DamageInfo damageInfo)
         {
+            if (FinalDamage(damageInfo)) { orig(self, damageInfo); return; } // already worked out (Bloodletting's ticks)
             if (NetworkServer.active
                 && damageInfo != null
                 && damageInfo.attacker != null

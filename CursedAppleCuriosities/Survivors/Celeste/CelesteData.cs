@@ -42,7 +42,7 @@ namespace CursedAppleCuriosities.Survivors.Celeste
         };
 
         // ---- primary: Carny Life (Deadlock: a bouncing, homing thrown blade every 0.58 s, 18 damage, gravity 0.2) ----
-        public static float DaggerDamage = 1.2f;        // a light poke (user): her damage is Shining Wonder and blades on marked enemies
+        public static float DaggerDamage = 2.5f;        // 1.2 until 2.0, too light (user); 2 until 3.1 (user: moderate buff); blades on marked enemies still hit far harder
         public const float DaggerCycle = 0.58f;          // Deadlock m_flCycleTime
         public const float DaggerSpeed = 60f;            // a little faster than Deadlock's 50 m/s (user: 75 was too fast)
         public const float DaggerLoftDeg = 4f;           // thrown this far above the crosshair (user, 1.7)
@@ -50,33 +50,35 @@ namespace CursedAppleCuriosities.Survivors.Celeste
         public const float DaggerDragFrom = 10f;         // metres flown before it starts losing airspeed (user; 15, then earlier so it is already slowing at 20 m)
         public const float DaggerStopAt = 90f;           // by here its forward speed has eased all the way out and it only drops (user: gradual, not steep; 45, doubled)
         public const float DaggerHomeConeDeg = 22.5f;    // Deadlock: homes onto an enemy within ~45 deg of its flight
-        public const float DaggerHomeRange = 45f;
+        public const float DaggerHomeRange = 45f;        // Mystic Expansion: farther
         public const float DaggerTurnDegPerSec = 150f;  // gentle, so the arc shows
         public const float DaggerBounceKeep = 0.7f;      // speed kept by its one bounce off the world
         public const float DaggerLifetime = 3f;
 
         // ---- secondary: Light Eater (Deadlock: 70 deg cone, 10 m, 0.3 s delay, 40 damage; marked 8 s; 15 per bullet; 18% lifesteal) ----
-        public static float FlareDamage = 4f;
+        public static float FlareDamage = 2f;             // 400% until 2.0 (user)
         public static float FlareRange = 15f;            // Deadlock AbilityCastRange 10 m; 15 by playtest (user). Mystic Expansion widens it
         public const float FlareConeDeg = 35f;           // half of Deadlock's 70 deg TargetingConeAngle
         public const float FlareDelay = 0.3f;            // Deadlock AbilityCastDelay
         public static float FlareCooldown = 7f;          // Deadlock 20
         public static float MarkSeconds = 8f;            // Deadlock AbilityDuration
-        public static float MarkDaggerBonus = 1.8f;      // extra damage coefficient on each Carny Life hit on a marked enemy (Deadlock Damage 15)
+        // Extra damage on everything she deals to a marked enemy (user 3.0: all her damage, not just Carny Life). Until 3.0 it was a flat
+        // +250% on blades only (1.8 until 2.0); +125% keeps a blade on a marked enemy exactly as hard as that (200% x 2.25 = 450%).
+        public static float MarkDamageBonus = 1.25f;
         public static float MarkLifesteal = 0.18f;       // share of her damage to marked enemies she heals (Deadlock AbilityLifestealPercentHero)
         public const float FlareHangFall = 1f;           // m/s: she hangs in the air while casting (Deadlock m_flJumpFallSpeedMax)
 
         // ---- secondary alt: Radiant Daggers (Deadlock: 30 m, 1.4 s to form, 8 m, 55 damage, a stacking spirit buff per hero hit) ----
         public static float BeamDamage = 6f;
-        public static float BeamRange = 30f;             // Deadlock AbilityCastRange
+        public static float BeamRange = 30f;             // Deadlock AbilityCastRange (Mystic Expansion: farther)
         public static float BeamRadius = 8f;             // Deadlock ExplosionRadius
         public const float BeamDelay = 1.4f;             // Deadlock PreExplosionDuration
         public static float BeamCooldown = 10f;          // Deadlock 33
-        public static float RadianceDamage = 0.07f;      // per stack (Deadlock MagicIncreasePerStack 7%)
-        public const float RadianceSeconds = 30f;        // Deadlock BuffDuration
+        public static float RadianceDamage = 0.10f;      // per stack (Deadlock MagicIncreasePerStack 7%; 10% in 3.0 when each cast got its own timer, user)
+        public const float RadianceSeconds = 10f;        // Deadlock BuffDuration 30; 10 (user, 2.0). Duration Extender lengthens it
 
         // ---- utility: Dazzling Trick (Deadlock: a 100 barrier for 4 s; broken = 14 m burst, half the barrier as damage, a 1.75 s silence: a stun here, user) ----
-        public static float PrismBarrier = 0.2f;         // share of max health (Deadlock CombatBarrier 100 of 690 health)
+        public static float PrismBarrier = 0.3f;         // share of max health (Deadlock CombatBarrier 100 of 690 health; 20% until 2.0, user)
         public const float PrismSeconds = 4f;            // Deadlock MaxLifetime
         public static float PrismDamage = 5f;            // the burst when it breaks
         public static float PrismRadius = 14f;           // Deadlock ExplodeRadius
@@ -98,33 +100,22 @@ namespace CursedAppleCuriosities.Survivors.Celeste
         public const float OrbFlightSeconds = 3f;        // without a target it flies on this long, then lingers where it is
         public const float OrbMinHold = 0.35f;           // Deadlock AbilityCastDelay 0.75 is the wind-up; she can release after this
         public const float OrbMaxHold = 6f;              // held this long, it fires by itself
+        // Each bounce (user, 2.0): it launches slowly, steeply up, arcing toward where the next target stood; after a moment
+        // its aim slides onto the target's live position and its turning tightens, and it speeds up the whole way.
+        public const float OrbLaunchSpeed = 6f;          // m/s off the enemy it just hit
+        public const float OrbLaunchUpDeg = 60f;         // above the straight line to the target (capped at 80 deg above level)
+        public const float OrbArcSeconds = 0.35f;        // it follows the arc to the target's old spot this long
+        public const float OrbTrackSeconds = 0.6f;       // then over this long, its aim moves onto the moving target
+        public const float OrbTurnStart = 120f;          // deg/s while arcing ...
+        public const float OrbTurnEnd = 900f;            // ... rising to this once it tracks
+        public const float OrbAccel = 40f;               // m/s2
+        public const float OrbMaxSpeed = 45f;
+        public const float OrbFinalApproach = 4f;        // m: this close, it flies straight at the target
         public const float OrbAimFall = 3f;              // m/s: aiming in the air slows her fall (Deadlock: "slows Celeste's glide")
 
-        public static void Bind(ConfigFile c)
+        public static void Bind(ConfigFile c) // the hero's config section is only its keybind layout (3.0)
         {
             Movement.Bind(c, Section);
-            BaseHealth = c.Bind(Section, "Base Health", BaseHealth, "Celeste max health at level 1 (+28 per level).").Value;
-            DaggerDamage = c.Bind(Section, "Carny Life - Damage", DaggerDamage, "Damage coefficient of each thrown blade.").Value;
-            FlareDamage = c.Bind(Section, "Light Eater - Damage", FlareDamage, "Damage coefficient of the flare.").Value;
-            FlareRange = c.Bind(Section, "Light Eater - Range", FlareRange, "Metres (a 70 degree cone).").Value;
-            FlareCooldown = c.Bind(Section, "Light Eater - Cooldown", FlareCooldown, "Seconds.").Value;
-            MarkSeconds = c.Bind(Section, "Light Eater - Mark Duration", MarkSeconds, "Seconds an enemy stays marked.").Value;
-            MarkDaggerBonus = c.Bind(Section, "Light Eater - Blade Bonus", MarkDaggerBonus, "Extra damage coefficient of each Carny Life hit on a marked enemy.").Value;
-            MarkLifesteal = c.Bind(Section, "Light Eater - Lifesteal", MarkLifesteal, "Share of Celeste's damage to marked enemies that heals her.").Value;
-            BeamDamage = c.Bind(Section, "Radiant Daggers - Damage", BeamDamage, "Damage coefficient of the beam's explosion.").Value;
-            BeamRange = c.Bind(Section, "Radiant Daggers - Range", BeamRange, "Metres to the aimed spot.").Value;
-            BeamRadius = c.Bind(Section, "Radiant Daggers - Radius", BeamRadius, "Metres.").Value;
-            BeamCooldown = c.Bind(Section, "Radiant Daggers - Cooldown", BeamCooldown, "Seconds.").Value;
-            RadianceDamage = c.Bind(Section, "Radiant Daggers - Damage Per Stack", RadianceDamage, "Damage bonus per Radiance stack (one per enemy hit, no cap, all lasting 30 s from the latest hit).").Value;
-            PrismBarrier = c.Bind(Section, "Dazzling Trick - Barrier", PrismBarrier, "Barrier as a share of max health.").Value;
-            PrismDamage = c.Bind(Section, "Dazzling Trick - Damage", PrismDamage, "Damage coefficient of the burst when the barrier breaks.").Value;
-            PrismRadius = c.Bind(Section, "Dazzling Trick - Radius", PrismRadius, "Metres.").Value;
-            PrismStun = c.Bind(Section, "Dazzling Trick - Stun", PrismStun, "Seconds enemies caught are stunned.").Value;
-            PrismCooldown = c.Bind(Section, "Dazzling Trick - Cooldown", PrismCooldown, "Seconds.").Value;
-            OrbDamage = c.Bind(Section, "Shining Wonder - Damage", OrbDamage, "Damage coefficient of each hit.").Value;
-            OrbBounces = c.Bind(Section, "Shining Wonder - Bounces", OrbBounces, "Bounces after the first hit.").Value;
-            OrbBounceRange = c.Bind(Section, "Shining Wonder - Bounce Range", OrbBounceRange, "Metres from the enemy it just hit to the next target (the nearest enemy, or Celeste's prism).").Value;
-            OrbCooldown = c.Bind(Section, "Shining Wonder - Cooldown", OrbCooldown, "Seconds.").Value;
         }
 
         // ---- Deadlock assets (read from the player's own install, never shipped) ----
@@ -132,6 +123,13 @@ namespace CursedAppleCuriosities.Survivors.Celeste
         public const string DlModel = "models/heroes_wip/unicorn/unicorn.vmdl_c";
         public const float ModelHeightScale = 1.08f * 1.25f * 1.15f * 0.95f; // Lash's size, then x1.15 by playtest, then x0.95 (user, 1.7: all but Vyper a little smaller)
         public const string MuzzleBone = "hand_R";           // she throws from her right hand
+
+        // Spirit Guardian skin: TSelky's Spirit Guardian Celeste, a Deadlock mod (a fan-made model on her skeleton, not Valve's
+        // and not shipped). The player drops TSelky's .vpk into a skins folder (or keeps it in Deadlock's addons); it is found by
+        // a file only it has and converted once, read-only, like her own model.
+        public const string GuardianKey = "celeste_spiritguardian";
+        public const string GuardianName = "Spirit Guardian (by TSelky)";
+        public const string GuardianMarker = "models/heroes_wip/unicorn/materials/guardian_star_ring.vtex_c";
 
         public const string IconPortrait = "panorama/images/heroes/unicorn_sm_psd.vtex_c";
         public const string IconFlare = "panorama/images/hud/abilities/unicorn/unicorn_flare_psd.vtex_c";
@@ -181,6 +179,7 @@ namespace CursedAppleCuriosities.Survivors.Celeste
             ("orb_end", "ability_unicorn_dazzlingorb_end", false, "locomotion", "full"),
             ("orb_end_air", "ability_unicorn_dazzlingorb_inair_end", false, "in_air", "full"),
             ("select", "ui_hero_select", false, "locomotion", "full"),
+            ("reload", "reload_idle", false, "locomotion", "full"),   // her lobby intro, after the dash (user, 2.0)
             ("parry", "parry", false, "locomotion", "full"),          // Counterspell (DeadlockMover plays it)
             ("parry_air", "parry_inair", false, "in_air", "full"),
             ("death", "knockdown_large_start", false, "hold", "full"),
@@ -190,7 +189,7 @@ namespace CursedAppleCuriosities.Survivors.Celeste
         public const float JumpPose = 0.8f, AirDashPose = 0.8f; // her air-dash clip is 0.83 s: it plays (nearly) through (user: it snapped back too soon)
 
         public static readonly HashSet<string> Locked = new HashSet<string>
-        { "dash_ground", "dash_air_forward", "dash_air_back", "dash_air_left", "dash_air_right", "death", "select" };
+        { "dash_ground", "dash_air_forward", "dash_air_back", "dash_air_left", "dash_air_right", "death", "select", "reload" };
 
         /// <summary>
         /// Deadlock sounds from her own folders (picked by name while the user was away: review pending). VO by ability:
@@ -241,6 +240,7 @@ namespace CursedAppleCuriosities.Survivors.Celeste
             new DeadlockSound { Id = "celeste_vo_effort", VpkPrefix = "sounds/vo/unicorn/emote/unicorn_effort_dash", Volume = 0.8f, Chance = 0.5f, MinGap = 0.5f, Voice = true },
             new DeadlockSound { Id = "celeste_vo_efforts", VpkPrefix = "sounds/vo/unicorn/emote/unicorn_effort_general", Volume = 0.7f, Chance = 0.4f, MinGap = 1f, Voice = true },
             // Her own movement foley and footsteps.
+            new DeadlockSound { Id = "celeste_reload", VpkPrefix = "sounds/weapons/unicorn/reload/unicorn_reload_start", Volume = 0.7f, Range = 25f },
             new DeadlockSound { Id = "celeste_dash", VpkPrefix = "sounds/player/movement/unicorn/unicorn_foley_short", Volume = 0.8f, Range = 25f, MinGap = 0.1f },
             new DeadlockSound { Id = "celeste_land", VpkPrefix = "sounds/player/footsteps/unicorn/unicorn_footstep_jumpland", Volume = 0.7f, Range = 25f, MinGap = 0.2f },
             new DeadlockSound { Id = "celeste_footstep", VpkPrefix = "sounds/player/footsteps/unicorn/unicorn_footstep", Volume = 0.3f, Range = 20f, MinGap = 0.12f },

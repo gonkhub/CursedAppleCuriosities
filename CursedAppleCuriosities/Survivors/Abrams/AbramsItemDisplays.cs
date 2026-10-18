@@ -13,7 +13,8 @@ namespace CursedAppleCuriosities.Survivors.Abrams
     public static class AbramsItemDisplays
     {
         public static void Register() =>
-            HeroItemDisplays.Register("Abrams", () => new[] { AbramsSurvivor.BodyPrefab, AbramsSurvivor.DisplayPrefab }, Rules);
+            // Ghor's Tome: hidden (user; every Abrams starts with one).
+            HeroItemDisplays.Register("Abrams", () => new[] { AbramsSurvivor.BodyPrefab, AbramsSurvivor.DisplayPrefab }, Rules, new[] { "BonusGoldPackOnKill" });
 
         /// <summary>
         /// Where each of Commando's attach points sits on Abrams: (Abrams bone, local position, angles, scale on it).
@@ -191,7 +192,6 @@ namespace CursedAppleCuriosities.Survivors.Abrams
             new HeroItemRule("GainArmor", 0, "CalfL", "CalfL", new Vector3(-0.21751F, 0.25105F, -0.02698F), new Vector3(74.09125F, 342.35486F, 73.48681F), new Vector3(0.8F, 0.8F, 0.8F)),
             new HeroItemRule("IgniteOnKill", 0, "ThighL", "ThighL", new Vector3(0.107F, 0.18856F, -0.0834F), new Vector3(75.11079F, 115.53243F, 260.64393F), new Vector3(0.76107F, 0.76107F, 0.76107F)),
             new HeroItemRule("LunarTrinket", 0, "HandR", "HandR", new Vector3(0.00758F, 0.09213F, 0.02152F), new Vector3(15.00001F, 270F, 270F), new Vector3(0.7F, 0.7F, 0.7F)),
-            new HeroItemRule("BonusGoldPackOnKill", 0, "Chest", "Chest", new Vector3(0.00427F, 0.27981F, -0.27923F), new Vector3(352.15513F, 179.76009F, 359.96408F), new Vector3(0.1F, 0.1F, 0.1F)),
             new HeroItemRule("JumpDamageStrike", 0, "FootL", "FootL", new Vector3(0.03284F, 0.07338F, -0.08193F), new Vector3(352.75788F, 2.0555F, 166.71893F), new Vector3(0.5F, 0.5F, 0.5F)),
             new HeroItemRule("JumpDamageStrike", 1, "FootR", "FootR", new Vector3(-0.03147F, 0.07464F, -0.08257F), new Vector3(352.47788F, 357.5504F, 193.56264F), new Vector3(0.5F, 0.5F, 0.5F)),
             new HeroItemRule("SecondarySkillMagazine", 0, "GunL", "GunL", new Vector3(-0.00855F, 0.32029F, 0.01166F), new Vector3(22.36445F, 89.52879F, 0.72164F), new Vector3(0.06F, 0.06F, 0.06F)),

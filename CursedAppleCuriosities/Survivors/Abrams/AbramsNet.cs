@@ -64,9 +64,20 @@ namespace CursedAppleCuriosities.Survivors.Abrams
             return list;
         }
 
-        /// <summary>Bosses and the biggest monsters can't be scooped up: Shoulder Charge bounces off them.</summary>
+        /// <summary>
+        /// Bosses and the biggest monsters can't be scooped up: Shoulder Charge bounces off them. Flying ones can (user 3.1): Seismic
+        /// Impact drags them down and Shoulder Charge carries them along. Voidling stays put (its fight is built around where it is).
+        /// </summary>
         public static bool TooBigToMove(CharacterBody? b) =>
-            b == null || b.isChampion || b.hullClassification == HullClassification.BeetleQueen;
+            b == null || (b.isChampion || b.hullClassification == HullClassification.BeetleQueen) && !Flier(b);
+
+        /// <summary>A body that flies and can be pushed: a free rigidbody flier (Wandering Vagrant, Solus Control Unit) or a flying motor.</summary>
+        public static bool Flier(CharacterBody b)
+        {
+            if (b.name.Contains("VoidRaidCrab")) return false;
+            if (b.characterMotor != null) return b.characterMotor.isFlying;
+            return b.GetComponent<RigidbodyMotor>() != null && b.TryGetComponent(out Rigidbody rb) && !rb.isKinematic;
+        }
     }
 
     /// <summary>What a hit is: sets its damage type and source on the server.</summary>
@@ -153,14 +164,16 @@ namespace CursedAppleCuriosities.Survivors.Abrams
             var body = Attacker.GetComponent<CharacterBody>();
             if (body == null) return;
             bool crit = Wall && body.RollCrit();
+            int slammed = 0;
             foreach (AbramsCarry c in AbramsCarry.All.ToArray())
             {
                 if (c == null || c.By != body) continue;
                 // Slammed into a wall: every carried enemy takes the wall damage (user 2026-10-12), then is pinned and stunned.
                 var hc = c.GetComponent<HealthComponent>();
-                if (Wall && hc != null && hc.alive) AbramsNet.Hit(body, hc, AbramsData.ChargeWallDamage * body.damage, crit, Vector3.zero, DamageSource.Utility);
+                if (Wall && hc != null && hc.alive) { slammed++; AbramsNet.Hit(body, hc, AbramsData.ChargeWallDamage * body.damage, crit, Vector3.zero, DamageSource.Utility); }
                 c.Release(Stun, Fling);
             }
+            if (slammed > 0) Unlocks.Challenges.AbramsFreightTrain.WallSlam(body, slammed);
         }
     }
 
@@ -198,6 +211,7 @@ namespace CursedAppleCuriosities.Survivors.Abrams
         private CharacterBody? _body;
         private CharacterMotor? _motor;
         private Rigidbody? _rb;
+        private RigidbodyMotor? _rbMotor;
 
         public static int CountBy(CharacterBody by)
         {
@@ -211,6 +225,7 @@ namespace CursedAppleCuriosities.Survivors.Abrams
             _body = GetComponent<CharacterBody>();
             _motor = GetComponent<CharacterMotor>();
             _rb = GetComponent<Rigidbody>();
+            _rbMotor = GetComponent<RigidbodyMotor>();
             All.Add(this);
         }
 
@@ -275,7 +290,11 @@ namespace CursedAppleCuriosities.Survivors.Abrams
                 _motor.Motor.ForceUnground();
                 _motor.disableAirControlUntilCollision = true;
             }
-            else if (_rb != null && !_rb.isKinematic) _rb.velocity = v;
+            else if (_rb != null && !_rb.isKinematic)
+            {
+                _rb.velocity = v;
+                if (_rbMotor != null) _rbMotor.moveVector = Vector3.zero; // a flying boss (3.1) mustn't steer against the carry
+            }
             else transform.position += v * Time.fixedDeltaTime;
         }
     }
@@ -316,7 +335,8 @@ namespace CursedAppleCuriosities.Survivors.Abrams
                 if (fx && AbramsSurvivor.DrainEffect != null && hc.body != null)
                     EffectManager.SimpleImpactEffect(AbramsSurvivor.DrainEffect, hc.body.corePosition, Vector3.up, true);
             }
-            if (dealt > 0f) _body.healthComponent.Heal(dealt * AbramsData.SiphonHeal, default(ProcChainMask));
+            if (dealt > 0f)
+                CursedAppleCuriosities.Unlocks.Challenges.AbramsSeeingRed.Siphoned(_body, _body.healthComponent.Heal(dealt * AbramsData.SiphonHeal, default(ProcChainMask))); // Crimson's challenge
         }
 
         private void Update()
@@ -437,7 +457,7 @@ namespace CursedAppleCuriosities.Survivors.Abrams
     /// </summary>
     public class AbramsResilienceBar : MonoBehaviour
     {
-        private static readonly Color Tint = new Color(1f, 0.55f, 0.3f, 0.55f); // Abrams' ember, see-through: health to come
+        private static readonly Color Tint = new Color(1f, 0.4f, 0.75f, 0.6f); // pink, see-through: health to come (user 2.5: the old ember read as yellow, like Shiv's Bloodletting and barrier)
 
         private RoR2.UI.HealthBar _bar = null!;
         private RectTransform? _fill;

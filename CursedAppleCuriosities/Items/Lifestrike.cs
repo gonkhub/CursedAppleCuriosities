@@ -15,8 +15,7 @@ namespace CursedAppleCuriosities.Items
         public override string ItemFullDescription =>
             $"Hitting an enemy within <style=cIsUtility>{Range}m</style> heals you for " +
             $"<style=cIsHealing>{BaseHealFraction * 100:0}% of the damage dealt</style> " +
-            $"<style=cStack>(+{HealFractionPerStack * 100:0}% per stack)</style>, up to " +
-            $"<style=cIsHealing>{BaseHealCapFraction * 100:0}% of your max health</style> per hit, and " +
+            $"<style=cStack>(+{HealFractionPerStack * 100:0}% per stack)</style>, and " +
             $"<style=cIsUtility>slows</style> them for <style=cIsUtility>{SlowDuration}s</style>.";
 
         public override string ItemLore =>
@@ -27,24 +26,32 @@ namespace CursedAppleCuriosities.Items
         protected override string IconFileName => "icon_lifestrike.png";
 
         public const float Range               = 13f;
+        public static ItemDef? StaticItemDef;
         public static float BaseHealFraction;            // of damage dealt
         public const float HealFractionPerStack = 0.04f;
-        public const float BaseHealCapFraction = 0.04f; // per-hit cap as a fraction of max HP
-        public const float HealCapPerStack     = 0.02f;
         public const float SlowDuration        = 2f;
 
         public override void Init(ConfigFile config)
         {
-            BaseHealFraction = config.Bind("Green", "Lifestrike - Heal Fraction Of Damage", 0.08f,
-                "Healing as a fraction of damage dealt on a close hit, at 1 stack.").Value;
+            BaseHealFraction = 0.08f;
             CreateLang();
             CreateItem();
+            StaticItemDef = ItemDef;
             Hooks();
         }
 
         public override void Hooks()
         {
             On.RoR2.GlobalEventManager.OnHitEnemy += OnHitEnemy;
+            On.RoR2.CharacterBody.OnInventoryChanged += OnInventoryChanged;
+        }
+
+        // Inventories sync to every client, so each machine attaches the range ring itself; it only draws for the local player.
+        private void OnInventoryChanged(On.RoR2.CharacterBody.orig_OnInventoryChanged orig, CharacterBody self)
+        {
+            orig(self);
+            if (self.inventory != null && self.inventory.GetItemCountEffective(ItemDef) > 0 && self.GetComponent<LifestrikeRing>() == null)
+                self.gameObject.AddComponent<LifestrikeRing>();
         }
 
         private void OnHitEnemy(
@@ -54,6 +61,7 @@ namespace CursedAppleCuriosities.Items
             GameObject victim)
         {
             orig(self, damageInfo, victim);
+            if (damageInfo == null || damageInfo.rejected) return; // blocked hits proc nothing (vanilla's own check is inside orig)
 
             if (!NetworkServer.active) return;
             if (damageInfo == null || victim == null) return;
@@ -74,13 +82,76 @@ namespace CursedAppleCuriosities.Items
             if (victimBody != null && RoR2Content.Buffs.Slow50 != null)
                 victimBody.AddTimedBuff(RoR2Content.Buffs.Slow50, SlowDuration);
 
-            // Heal the attacker for a fraction of the damage dealt, capped per hit by max HP so it
-            // can't run away on huge hits (the failure mode we hit with Siphon Bullets).
+            // Heal the attacker for a fraction of the damage dealt.
             float fraction = BaseHealFraction + HealFractionPerStack * (count - 1);
-            float capFrac  = BaseHealCapFraction + HealCapPerStack * (count - 1);
-            float heal     = Mathf.Min(damageInfo.damage * fraction, attackerBody.maxHealth * capFrac);
+            float heal     = damageInfo.damage * fraction;
             if (heal > 0f)
                 attackerBody.healthComponent?.Heal(heal, default(ProcChainMask));
+        }
+    }
+
+    /// <summary>
+    /// Lifestrike's range on the ground around the local player (user 3.0, like Spirit Snatch's ring, in green): hits on enemies
+    /// inside it heal. Mystic Expansion widens it with the item.
+    /// </summary>
+    public class LifestrikeRing : MonoBehaviour
+    {
+        private const int Segments = 64;
+        private static readonly Color RingColor = new Color(0.25f, 0.85f, 0.35f, 0.22f); // green, faint
+
+        private CharacterBody _body = null!;
+        private LineRenderer? _ring;
+
+        private void Awake() => _body = GetComponent<CharacterBody>();
+
+        private void LateUpdate()
+        {
+            if (_body == null) return;
+            var inv = _body.inventory;
+            if (inv == null || Lifestrike.StaticItemDef == null || inv.GetItemCountEffective(Lifestrike.StaticItemDef) <= 0)
+            {
+                Destroy(this);
+                return;
+            }
+            bool show = _body.hasEffectiveAuthority && _body.isPlayerControlled && _body.healthComponent != null && _body.healthComponent.alive;
+            if (!show)
+            {
+                if (_ring != null) _ring.enabled = false;
+                return;
+            }
+            if (_ring == null) _ring = MakeRing();
+            if (_ring == null) return;
+            _ring.enabled = true;
+            float r = Lifestrike.Range * MysticExpansion.RadiusMultiplier(_body);
+            Vector3 c = _body.footPosition + Vector3.up * 0.3f;
+            for (int i = 0; i < Segments; i++)
+            {
+                float a = i * Mathf.PI * 2f / Segments;
+                _ring.SetPosition(i, c + new Vector3(Mathf.Cos(a) * r, 0f, Mathf.Sin(a) * r));
+            }
+        }
+
+        private static LineRenderer? MakeRing()
+        {
+            Material? mat = SpiritSnatch.RingMaterial != null ? SpiritSnatch.RingMaterial : CursedAppleCuriosities.Deadlock.DeadlockSurvivorKit.LineMaterial();
+            if (mat == null) return null;
+            var go = new GameObject("CursedApple_LifestrikeRing");
+            var lr = go.AddComponent<LineRenderer>();
+            lr.material = mat; // an instance: the tint is this ring's alone
+            if (lr.material.HasProperty("_TintColor")) lr.material.SetColor("_TintColor", RingColor);
+            lr.startColor = lr.endColor = RingColor;
+            lr.startWidth = lr.endWidth = 0.08f;
+            lr.positionCount = Segments;
+            lr.loop = true;
+            lr.useWorldSpace = true;
+            lr.shadowCastingMode = UnityEngine.Rendering.ShadowCastingMode.Off;
+            lr.receiveShadows = false;
+            return lr;
+        }
+
+        private void OnDestroy()
+        {
+            if (_ring != null) Destroy(_ring.gameObject);
         }
     }
 }

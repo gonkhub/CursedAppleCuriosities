@@ -36,9 +36,9 @@ namespace CursedAppleCuriosities.Survivors.GreyTalon
         };
 
         // ---- primary: the bow (slow, very long range hitscan: user) ----
-        public static float BowDamage = 3f;
+        public static float BowDamage = 2.4f;           // 3 until 2.0: weak points (x1.5) made it too strong (user)
         public static float BowCycle = 0.6f;            // Deadlock m_flCycleTime
-        public const float BowRange = 600f;             // Deadlock 7000 hu (178 m): far longer here (user: very long range)
+        public const float BowRange = 600f;             // Deadlock 7000 hu (178 m): far longer here (user: very long range); Mystic Expansion: farther (every bullet)
         // Falloff (user: the primary only, full damage across about half of most maps first). Deadlock: 18 m -> 54 m, to 10%.
         public static float BowFalloffStart = 150f;
         public static float BowFalloffEnd = 300f;
@@ -51,9 +51,10 @@ namespace CursedAppleCuriosities.Survivors.GreyTalon
         public static float ChargedCooldown = 6f;       // Deadlock 17
         public const float ChargeTime = 0.5f;           // Deadlock AbilityCastDelay: drawn after this, then held
         public const float ChargedMoveSpeed = 1.5f;     // Deadlock ChannelMoveSpeed 1.5 m/s while drawing and holding
-        public const float ChargedSpeed = 203.2f;       // Deadlock m_flBulletSpeed 8000 hu/s
-        public static float ChargedRadius = 1.5f;       // wider than Deadlock's 24 hu (0.61 m) (user)
-        public const float ChargedRange = 600f;         // Deadlock 10000 hu; no falloff (user)
+        public const float ChargedSpeed = 406.4f;       // Deadlock m_flBulletSpeed 8000 hu/s (203 m/s), doubled (user, 2.0)
+        public static float ChargedRadius = 3f;         // wider than Deadlock's 24 hu (0.61 m) (user; 1.5 until 2.0). Enemies only: walls stop it at ChargedWallRadius
+        public const float ChargedWallRadius = 0.3f;    // m: the arrow's own thickness against terrain, so a fat hitbox doesn't snag the floor
+        public const float ChargedRange = 600f;         // Deadlock 10000 hu; no falloff (user); Mystic Expansion: farther
         public const float ChargedDrop = 3f;            // m/s2 (Deadlock gravity scale 0.3)
         // Camera while drawn (Deadlock CameraHeightOffset 20 hu, CameraHorizontalOffset 15 hu): over the right shoulder, zoomed.
         public const float ChargedFov = 45f;
@@ -79,7 +80,7 @@ namespace CursedAppleCuriosities.Survivors.GreyTalon
         // ---- special: Guided Owl (user: 1200%, steered; very long cooldown; untargetable while casting) ----
         public static float OwlDamage = 25f;            // user: 1200% -> 2500% (Deadlock Damage 230 +0.94x spirit)
         public const float OwlExecute = 0.75f;          // a blast dealing more than this share of the target's current health (with shield and barrier) kills it (user, 1.7)
-        public static float OwlBossBonus = 0.2f;        // owl damage per boss it killed, whole run (user; Deadlock: +8 spirit per kill)
+        public static float OwlBossBonus = 0.1f;        // owl damage per boss, elite or miniboss it killed, whole run (user: 20% bosses only until 2.0; Deadlock: +8 spirit per kill)
         public static float OwlCooldown = 125f;         // Deadlock's own, kept (user: very very long)
         public const float OwlCastDelay = 1.5f;         // Deadlock AbilityCastDelay
         public const float OwlFlight = 20f;             // Deadlock AbilityChannelTime
@@ -89,35 +90,15 @@ namespace CursedAppleCuriosities.Survivors.GreyTalon
         public const float OwlDecel = 7.6f;             // Deadlock m_flSpeedDeccel 300 hu/s2
         public static float OwlTurnDegPerSec = 110f;    // Deadlock m_flTrackAmount 110
         public const float OwlHitRadius = 0.76f;        // Deadlock m_flTriggerRadius 30 hu
-        public static float OwlRadius = 12f;            // Deadlock ExplosionRadius
+        public static float OwlRadius = 36f;            // Deadlock ExplosionRadius 12; tripled (user, 2.0)
         public const float OwlStun = 0.75f;             // Deadlock StunDuration
         public static float OwlExitGrace = 2f;          // seconds still invulnerable and cloaked once he has control back (user)
         public const float OwlCameraHold = 0.8f;        // Deadlock m_flCameraHoldAtExplosion
         public const float OwlCameraBack = 4f, OwlCameraUp = 1f;
 
-        public static void Bind(ConfigFile c)
+        public static void Bind(ConfigFile c) // the hero's config section is only its keybind layout (3.0)
         {
             Movement.Bind(c, Section);
-            BaseHealth = c.Bind(Section, "Base Health", BaseHealth, "Grey Talon max health at level 1 (+30 per level).").Value;
-            BowDamage = c.Bind(Section, "Bow - Damage", BowDamage, "Damage coefficient per arrow.").Value;
-            BowCycle = c.Bind(Section, "Bow - Time Between Shots", BowCycle, "Seconds between shots before attack speed.").Value;
-            BowFalloffStart = c.Bind(Section, "Bow - Falloff Start", BowFalloffStart, "Metres of full damage.").Value;
-            BowFalloffEnd = c.Bind(Section, "Bow - Falloff End", BowFalloffEnd, "Metres where damage reaches its floor (50%).").Value;
-            ChargedDamage = c.Bind(Section, "Charged Shot - Damage", ChargedDamage, "Damage coefficient to every enemy it pierces.").Value;
-            ChargedRadius = c.Bind(Section, "Charged Shot - Hit Radius", ChargedRadius, "Metres around the arrow's path that it hits.").Value;
-            ChargedCooldown = c.Bind(Section, "Charged Shot - Cooldown", ChargedCooldown, "Seconds.").Value;
-            RainCooldown = c.Bind(Section, "Rain of Arrows - Cooldown", RainCooldown, "Seconds.").Value;
-            RainLaunchSpeed = c.Bind(Section, "Rain of Arrows - Leap Speed", RainLaunchSpeed, "Metres per second of the leap (kept if you cancel it on the way up).").Value;
-            RainHeight = c.Bind(Section, "Rain of Arrows - Leap Height", RainHeight, "Metres up where the leap stops and the glide begins.").Value;
-            RainRepeatHit = c.Bind(Section, "Rain of Arrows - Repeat Hit Damage", RainRepeatHit, "Damage multiplier for each further arrow of one 5-arrow shot that hits the same enemy.").Value;
-            RainDuration = c.Bind(Section, "Rain of Arrows - Glide", RainDuration, "Seconds of glide and split arrows.").Value;
-            OwlDamage = c.Bind(Section, "Guided Owl - Damage", OwlDamage, "Damage coefficient of the owl's blast.").Value;
-            OwlBossBonus = c.Bind(Section, "Guided Owl - Boss Kill Bonus", OwlBossBonus, "Extra owl damage for each boss it has killed this run (0.2 = +20%).").Value;
-            OwlRadius = c.Bind(Section, "Guided Owl - Radius", OwlRadius, "Metres.").Value;
-            OwlCooldown = c.Bind(Section, "Guided Owl - Cooldown", OwlCooldown, "Seconds.").Value;
-            OwlSpeed = c.Bind(Section, "Guided Owl - Cruise Speed", OwlSpeed, "Metres per second without forward held (it speeds up to 36 while forward is held).").Value;
-            OwlExitGrace = c.Bind(Section, "Guided Owl - Exit Grace", OwlExitGrace, "Seconds Grey Talon stays invulnerable and unseen after the owl ends or is released.").Value;
-            OwlTurnDegPerSec = c.Bind(Section, "Guided Owl - Turn Rate", OwlTurnDegPerSec, "Degrees per second the owl turns toward where you look.").Value;
         }
 
         /// <summary>The bow's damage at a distance: full to the falloff start, easing to the floor at its end.</summary>
@@ -138,6 +119,10 @@ namespace CursedAppleCuriosities.Survivors.GreyTalon
         public const string PerchedOwlMesh = "owl_bodygroup"; // the owl on his arm: hidden (user)
 
         public const string IconPortrait = "panorama/images/heroes/archer_sm_psd.vtex_c";
+
+        // The primary shows the weapon itself (user 3.0, like Celeste's baton): Deadlock's shop image of the hero's gun.
+
+        public const string IconGun = "panorama/images/heroes/guns/archer_gun_psd.vtex_c";
         public const string IconCharged = "panorama/images/hud/abilities/archer/archer_charged_shot_psd.vtex_c";
         public const string IconRain = "panorama/images/hud/abilities/archer/archer_power_jump_psd.vtex_c";
         public const string IconOwl = "panorama/images/hud/abilities/archer/archer_guided_arrow_psd.vtex_c";

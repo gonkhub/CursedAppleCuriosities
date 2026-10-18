@@ -43,7 +43,7 @@ namespace CursedAppleCuriosities.Survivors.Vyper
         {
             VyperData.Bind(config);
             foreach (DeadlockSound s in VyperData.Sounds) DeadlockSounds.Register(s);
-            foreach (string icon in new[] { VyperData.IconPortrait, VyperData.IconDagger, VyperData.IconVenom, VyperData.IconSlither, VyperData.IconBola })
+            foreach (string icon in new[] { VyperData.IconPortrait, VyperData.IconGun, VyperData.IconDagger, VyperData.IconVenom, VyperData.IconSlither, VyperData.IconBola })
                 DeadlockInstall.WantIcon(icon);
             DeadlockHeroes.Register(VyperModel.Def);
             DeadlockInstall.WantModel(VyperModel.Def.ModelRequest());
@@ -64,9 +64,11 @@ namespace CursedAppleCuriosities.Survivors.Vyper
             CreateSurvivor();
             AddLanguage();
             VyperNet.Register();
-            DeadlockHeroVoice.Track(BodyName, VyperData.Hero);
+            DeadlockHeroVoice.Track(BodyName, VyperData.Hero, "viper");
+            DeadlockPingVoice.Track(BodyName, VyperData.Hero, "viper");
             EquipmentFx.RegisterBuffFx(VenomBuff, null, "vyper_venom_loop");
             EquipmentFx.RegisterBuffFx(PetrifyBuff, "RoR2/Base/GainArmor/ElephantDefense.prefab", "vyper_petrify_loop"); // a stone shell while petrified
+            VyperPetrifyLook.Register(); // and the body itself turned to stone, frozen in place (user 3.0)
 
             host.AddComponent<VyperIcons>();
         }
@@ -202,7 +204,7 @@ namespace CursedAppleCuriosities.Survivors.Vyper
             Survivor.outroFlavorToken = Token + "OUTRO";
             Survivor.mainEndingEscapeFailureFlavorToken = Token + "FAILURE";
             Survivor.primaryColor = Color;
-            Survivor.desiredSortPosition = 103f;
+            Survivor.desiredSortPosition = 113f; // RosterOrder re-sorts the whole roster A-Z at load (user 3.0)
             ContentAddition.AddSurvivorDef(Survivor);
         }
 
@@ -233,6 +235,7 @@ namespace CursedAppleCuriosities.Survivors.Vyper
                 locator.passiveSkill = passive;
             }
             if (portrait != null) _gun!.icon = Kit.Sprite(portrait);
+            Set(_gun, VyperData.IconGun); // the weapon itself (user 3.0); the portrait stays if it isn't cached
             CursedAppleCuriositiesPlugin.Logger?.LogInfo($"[Vyper] icons: {(portrait != null ? "from Deadlock" : "placeholders (no Deadlock icons cached)")}");
         }
 
@@ -256,7 +259,7 @@ namespace CursedAppleCuriosities.Survivors.Vyper
 
             LanguageAPI.Add(Token + "PASSIVE_NAME", "Slither");
             LanguageAPI.Add(Token + "PASSIVE_DESC",
-                $"Slides further and turns faster, and The Rattler fires <style=cIsDamage>{VyperData.GunSlideFireRate * 100f:0}% faster</style> while sliding. <style=cIsUtility>{VyperData.Movement.StaminaPips} stamina</style>.");
+                $"Slides further and turns faster, and The Rattler fires <style=cIsDamage>{VyperData.GunSlideFireRate * 100f:0}% faster</style> while sliding.");
 
             LanguageAPI.Add(Token + "GUN_NAME", "The Rattler");
             LanguageAPI.Add(Token + "GUN_DESC",

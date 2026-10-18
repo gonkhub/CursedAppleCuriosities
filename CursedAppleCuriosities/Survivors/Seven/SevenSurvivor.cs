@@ -28,6 +28,11 @@ namespace CursedAppleCuriosities.Survivors.Seven
         /// <summary>Skin icon in the hero's own palette (prison orange, dark grey, canvas, his electric blue), not the stand-in's.</summary>
         private static Sprite DefaultSkinIcon => _defaultSkinIcon ??= Kit.SkinIcon(new Color(0.85f, 0.45f, 0.15f), new Color(0.24f, 0.24f, 0.24f), new Color(0.75f, 0.67f, 0.5f), new Color(0.2f, 0.3f, 0.85f));
         private static Sprite? _defaultSkinIcon;
+        // Bunny Seven: black suit, white cuffs and collar, purple, his skin tone.
+        private static Sprite BunnySkinIcon => _bunnySkinIcon ??= Kit.SkinIcon(new Color(0.1f, 0.1f, 0.12f), new Color(0.92f, 0.92f, 0.9f), new Color(0.45f, 0.25f, 0.6f), new Color(0.85f, 0.65f, 0.55f));
+        private static Sprite? _bunnySkinIcon;
+        private static Sprite OverchargedSkinIcon => _overchargedSkinIcon ??= Kit.SkinIcon(new Color(0.7f, 0.88f, 1f), new Color(0.24f, 0.24f, 0.24f), new Color(0.75f, 0.67f, 0.5f), new Color(0.2f, 0.3f, 0.85f));
+        private static Sprite? _overchargedSkinIcon;
         /// <summary>Seven's lightning is orange (user): his effects are recoloured to this hue.</summary>
         public const float Hue = 0.07f;
         public static readonly Color Orange = Color.HSVToRGB(Hue, 0.85f, 1f);
@@ -49,10 +54,17 @@ namespace CursedAppleCuriosities.Survivors.Seven
         {
             SevenData.Bind(config);
             foreach (DeadlockSound s in SevenData.Sounds) DeadlockSounds.Register(s);
-            foreach (string icon in new[] { SevenData.IconPortrait, SevenData.IconBall, SevenData.IconStatic, SevenData.IconSurge, SevenData.IconStorm })
+            foreach (string icon in new[] { SevenData.IconPortrait, SevenData.IconGun, SevenData.IconBall, SevenData.IconStatic, SevenData.IconSurge, SevenData.IconStorm })
                 DeadlockInstall.WantIcon(icon);
             DeadlockHeroes.Register(SevenModel.Def);
             DeadlockInstall.WantModel(SevenModel.Def.ModelRequest());
+            DeadlockInstall.WantModel(new DeadlockInstall.ModelRequest
+            {
+                Hero = SevenData.BunnyKey,
+                DlModel = SevenData.DlModel, // funnymonkeyman's mod replaces his model at the same path
+                Source = () => DeadlockInstall.FindVpkWith(SevenData.BunnyMarker),
+                Missing = "needs funnymonkeyman's Bunny Seven mod (a Deadlock mod .vpk, gamebanana.com/mods/681692): put it in Risk of Rain 2's CursedApple\\skins folder or Deadlock's addons folder, then restart",
+            });
 
             LoadAssets();
             CreateBuffs();
@@ -70,11 +82,11 @@ namespace CursedAppleCuriosities.Survivors.Seven
                 if (SurgeBuff != null && body.HasBuff(SurgeBuff) && body.baseMoveSpeed > 0f)
                     args.moveSpeedMultAdd += SevenData.SurgeMoveSpeed / body.baseMoveSpeed;
             };
-            DeadlockHeroVoice.Track(BodyName, SevenData.Hero);
+            DeadlockHeroVoice.Track(BodyName, SevenData.Hero, "gigawatt");
+            DeadlockPingVoice.Track(BodyName, SevenData.Hero, "gigawatt");
             EquipmentFx.RegisterBuffFx(SurgeBuff, null, "seven_surge_loop");
             EquipmentFx.RegisterBuffFx(StormBuff, null, "seven_storm_loop");
             EquipmentFx.RegisterBuffFx(StormBuff, null, "seven_storm_aoe_loop");
-            // Ping lines wait for the user's sound review (DeadlockPingVoice registers Deadlock VO itself).
 
             host.AddComponent<SevenIcons>();
         }
@@ -88,10 +100,10 @@ namespace CursedAppleCuriosities.Survivors.Seven
         {
             // Electric bullets (user): Artificer's unused lightning-laser tracer and her lightning sparks, in Seven's hue;
             // Commando's tracer and hitspark if those are missing
-            TracerEffect = Kit.Recoloured(TryLoad<GameObject>("RoR2/Junk/Characters/Mage/TracerMageLightningLaser.prefab", "RoR2/Junk/Mage/TracerMageLightningLaser.prefab",
+            TracerEffect = Kit.Recoloured(TryLoad<GameObject>("RoR2/Junk/Mage/TracerMageLightningLaser.prefab",
                 "RoR2/Base/Commando/TracerCommandoDefault.prefab", "RoR2/Base/Characters/Commando/TracerCommandoDefault.prefab"), "CursedAppleSevenTracer", Hue, effect: true);
             Thin(TracerEffect, 0.15f); // Artificer's laser is a thick beam: a hairline of it (user)
-            HitEffect = Kit.Recoloured(TryLoad<GameObject>("RoR2/Base/Common/VFX/Stylized(Omni)/OmniImpactVFXLightning.prefab",
+            HitEffect = Kit.Recoloured(TryLoad<GameObject>("RoR2/Base/Common/VFX/OmniImpactVFXLightning.prefab",
                 "RoR2/Base/Commando/HitsparkCommando.prefab", "RoR2/Base/Characters/Commando/HitsparkCommando.prefab"), "CursedAppleSevenHit", Hue, effect: true);
             MuzzleEffect = Kit.Recoloured(TryLoad<GameObject>("RoR2/Base/Mage/MuzzleflashMageLightning.prefab", "RoR2/Base/Characters/Mage/Skills/MuzzleflashMageLightning.prefab"), "CursedAppleSevenMuzzle", Hue, effect: true);
             StrikeEffect = Kit.Recoloured(TryLoad<GameObject>("RoR2/Base/Lightning/LightningStrikeImpact.prefab", "RoR2/Base/Equipment/Lightning/LightningStrikeImpact.prefab"), "CursedAppleSevenStrike", Hue, effect: true);
@@ -150,7 +162,7 @@ namespace CursedAppleCuriosities.Survivors.Seven
             {
                 // The orb itself: orange, and bigger (the range sphere around it shows the real reach).
                 GameObject ghost = Kit.Recoloured(pc.ghostPrefab, "CursedAppleSevenLightningBallGhost", Hue, effect: false)!;
-                ghost.transform.localScale *= 1.8f;
+                ghost.transform.localScale *= 2.7f; // 1.8x, then +50% with the radius (1.9)
                 pc.ghostPrefab = ghost;
             }
             return p;
@@ -234,7 +246,8 @@ namespace CursedAppleCuriosities.Survivors.Seven
             Kit.MuteStandIn(body, model.gameObject, SevenData.Hero);
             var children = model.GetComponent<ChildLocator>();
             if (children != null && children.FindChild(MuzzleName) == null) children.AddChild(MuzzleName, model);
-            Kit.OwnSkin(model.gameObject, "skinCursedAppleSevenDEFAULT", Token + "SKIN_DEFAULT", DefaultSkinIcon);
+            Kit.OwnSkin(model.gameObject, "skinCursedAppleSevenDEFAULT", Token + "SKIN_DEFAULT", DefaultSkinIcon, ("skinCursedAppleSevenOVERCHARGED", Token + "SKIN_OVERCHARGED", OverchargedSkinIcon),
+                ("skinCursedAppleSevenBUNNY", Token + "SKIN_BUNNY", BunnySkinIcon));
 
             Kit.BiggerCamera(body, "ccpCursedAppleSeven", 0.6f, 1.25f); // pivot up (m), distance (x Commando's) for the bigger model
             ContentAddition.AddBody(body);
@@ -252,7 +265,8 @@ namespace CursedAppleCuriosities.Survivors.Seven
                 swap.HeroKey = SevenData.Hero;
                 swap.IsDisplay = true;
                 cm.gameObject.AddComponent<SevenStormLook>(); // keeps the Storm Cloud skeleton hidden in the lobby
-                Kit.OwnSkin(cm.gameObject, "skinCursedAppleSevenDISPLAY", Token + "SKIN_DEFAULT", DefaultSkinIcon);
+                Kit.OwnSkin(cm.gameObject, "skinCursedAppleSevenDISPLAY", Token + "SKIN_DEFAULT", DefaultSkinIcon, ("skinCursedAppleSevenDISPLAYOVERCHARGED", Token + "SKIN_OVERCHARGED", OverchargedSkinIcon),
+                    ("skinCursedAppleSevenDISPLAYBUNNY", Token + "SKIN_BUNNY", BunnySkinIcon));
             }
             display.AddComponent<SevenDisplayIntro>();
             return display;
@@ -269,7 +283,7 @@ namespace CursedAppleCuriosities.Survivors.Seven
             Survivor.outroFlavorToken = Token + "OUTRO";
             Survivor.mainEndingEscapeFailureFlavorToken = Token + "FAILURE";
             Survivor.primaryColor = Color;
-            Survivor.desiredSortPosition = 102f; // after Lash and Abrams
+            Survivor.desiredSortPosition = 109f; // RosterOrder re-sorts the whole roster A-Z at load (user 3.0)
             ContentAddition.AddSurvivorDef(Survivor);
         }
 
@@ -301,6 +315,7 @@ namespace CursedAppleCuriosities.Survivors.Seven
                 passive.icon = _gun.icon;
                 locator.passiveSkill = passive;
             }
+            Set(_gun, SevenData.IconGun); // the weapon itself (user 3.0); the portrait stays if it isn't cached
             CursedAppleCuriositiesPlugin.Logger?.LogInfo($"[Seven] icons: {(portrait != null ? "from Deadlock" : "placeholders (no Deadlock icons cached)")}");
         }
 
@@ -312,6 +327,8 @@ namespace CursedAppleCuriosities.Survivors.Seven
             LanguageAPI.Add(Token + "NAME", "Seven");
             LanguageAPI.Add(Token + "SUBTITLE", "The Storm That Would Not Die");
             LanguageAPI.Add(Token + "SKIN_DEFAULT", "Default");
+            LanguageAPI.Add(Token + "SKIN_OVERCHARGED", "Overcharged");
+            LanguageAPI.Add(Token + "SKIN_BUNNY", SevenData.BunnyName); // credit to funnymonkeyman (gamebanana.com/mods/681692)
             LanguageAPI.Add(Token + "DESCRIPTION",
                 "Seven is a condemned occultist who laughed his way out of his own execution.<color=#CCD3E0>\n\n" +
                 "< ! > Throw Lightning Ball into a crowd: it slows down to keep shocking them.\n\n" +
@@ -323,7 +340,7 @@ namespace CursedAppleCuriosities.Survivors.Seven
 
             LanguageAPI.Add(Token + "PASSIVE_NAME", "Electric Current");
             LanguageAPI.Add(Token + "PASSIVE_DESC",
-                "Sprints automatically out of combat; dash, air jump and slide. During <style=cIsUtility>Power Surge</style> he keeps sprinting until hit.");
+                "During <style=cIsUtility>Power Surge</style> he keeps sprinting until hit.");
 
             LanguageAPI.Add(Token + "GUN_NAME", "Cold Calculus");
             LanguageAPI.Add(Token + "GUN_DESC",
@@ -343,7 +360,7 @@ namespace CursedAppleCuriosities.Survivors.Seven
 
             LanguageAPI.Add(Token + "STORM_NAME", "Storm Cloud");
             LanguageAPI.Add(Token + "STORM_DESC",
-                $"<style=cIsUtility>Float</style> and channel a storm for <style=cIsUtility>{SevenData.StormChannel:0}s</style> that grows from {SevenData.StormInitialRadius:0} m to cover <style=cIsDamage>the whole map</style>, striking every enemy you can see with lightning for <style=cIsDamage>{D(SevenData.StormDpsStart)}-{D(SevenData.StormDpsEnd)} damage per second</style>. " +
+                $"<style=cIsUtility>Float</style> and channel a storm for <style=cIsUtility>{SevenData.StormChannel:0}s</style> that grows from {SevenData.StormInitialRadius:0} m to cover <style=cIsDamage>the whole map</style>, striking every enemy you can see with lightning for <style=cIsDamage>{D(SevenData.StormDpsStart)}-{D(SevenData.StormDpsEnd)} damage per second</style>, <style=cIsDamage>more with attack speed</style>. " +
                 $"Primary calls a <style=cIsDamage>Lightning Strike</style> for {D(SevenData.StrikeDamage)}.");
         }
     }

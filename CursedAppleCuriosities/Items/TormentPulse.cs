@@ -37,8 +37,7 @@ namespace CursedAppleCuriosities.Items
 
         public override void Init(ConfigFile config)
         {
-            DamageCoefficient = config.Bind("Green", "Torment Pulse - Damage Coefficient", 2.0f,
-                "Damage per pulse as a fraction of base damage (2.0 = 200%).").Value;
+            DamageCoefficient = 2.0f;
             CreateLang();
             CreateItem();
             Hooks();

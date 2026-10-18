@@ -46,8 +46,7 @@ namespace CursedAppleCuriosities.Items
             HuntersDebuffDef.iconSprite = BuffIcon(IconFileName, color);
             ContentAddition.AddBuffDef(HuntersDebuffDef);
 
-            DamageAmplifyPerStack = config.Bind("Green", "Hunters Aura - Damage Amp Per Stack", 0.08f,
-                "Incoming-damage amplification on enemies in the aura, per stack (tripled when isolated).").Value;
+            DamageAmplifyPerStack = 0.08f;
             CreateLang();
             CreateItem();
             Hooks();
@@ -85,6 +84,7 @@ namespace CursedAppleCuriosities.Items
             HealthComponent self,
             DamageInfo damageInfo)
         {
+            if (FinalDamage(damageInfo)) { orig(self, damageInfo); return; } // already worked out (Bloodletting's ticks)
             if (NetworkServer.active
                 && damageInfo != null
                 && self.body != null

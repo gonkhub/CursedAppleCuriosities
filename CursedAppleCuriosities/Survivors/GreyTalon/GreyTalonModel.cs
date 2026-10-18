@@ -26,6 +26,14 @@ namespace CursedAppleCuriosities.Survivors.GreyTalon
             Anims = GreyTalonData.Anims,
             RootLocked = GreyTalonData.Locked,
             ItemAnchors = GreyTalonItemDisplays.Anchors,
+            // Night Owl (skin 1, his mastery, user 3.0): his greens (cloak, bow wraps) turn violet, and his oranges and browns
+            // (scarf, leather, bow) turn blue. Body and bow textures only: his face and hair keep their colours.
+            Skins = new[] { new DeadlockSkin { Id = "nightowl1", Only = new[] { "archer_color", "archer_bow_color" }, Recolor = px =>
+            {
+                bool greens = DeadlockSkin.HueShift(70f, 175f, 120f)(px);  // greens first (they leave the orange range)
+                bool browns = DeadlockSkin.HueShift(-10f, 50f, -165f)(px);
+                return greens || browns;
+            } } },
             // Charged Shot drawn: walks and stands with the bow up (ability_charged_shot_walk_*).
             LocoSet = body => GreyTalonSurvivor.ChargingBuff != null && body.HasBuff(GreyTalonSurvivor.ChargingBuff) ? "charged" : null,
             HoldSeconds = id => id == "jump" || id == "air_jump" || id == "wall_jump" || id == "in_air" || id == "falling" ? 30f : 3f,

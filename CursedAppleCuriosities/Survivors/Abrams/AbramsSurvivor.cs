@@ -45,12 +45,9 @@ namespace CursedAppleCuriosities.Survivors.Abrams
         public static void Init(ConfigFile config, GameObject host)
         {
             AbramsData.Bind(config);
-            if (!config.Bind("Abrams - Debug", "Fitted Item Anchors", true,
-                    "Item attach points fitted to Abrams' body. Off: the older automatic attach points (items will sit as before the item pass).").Value)
-                AbramsModel.Def.ItemAnchors = null;
 
             foreach (DeadlockSound s in AbramsData.Sounds) DeadlockSounds.Register(s);
-            foreach (string icon in new[] { AbramsData.IconPortrait, AbramsData.IconSiphon, AbramsData.IconCharge, AbramsData.IconResilience, AbramsData.IconSlam })
+            foreach (string icon in new[] { AbramsData.IconPortrait, AbramsData.IconGun, AbramsData.IconMelee, AbramsData.IconSiphon, AbramsData.IconCharge, AbramsData.IconResilience, AbramsData.IconSlam })
                 DeadlockInstall.WantIcon(icon);
             DeadlockHeroes.Register(AbramsModel.Def);
             DeadlockInstall.WantModel(AbramsModel.Def.ModelRequest());
@@ -67,7 +64,7 @@ namespace CursedAppleCuriosities.Survivors.Abrams
             AbramsNet.Register();
             AbramsResilience.Hook();
             AbramsResilienceBar.Hook();
-            DeadlockHeroVoice.Track(BodyName, AbramsData.Hero);
+            DeadlockHeroVoice.Track(BodyName, AbramsData.Hero, "atlas");
             DeadlockPingVoice.Track(BodyName, AbramsData.Hero, "atlas");
 
             host.AddComponent<AbramsIcons>();
@@ -178,7 +175,7 @@ namespace CursedAppleCuriosities.Survivors.Abrams
             locator.primary = Kit.Slot(body, BodyName, "Primary", _shotgun!);
             locator.secondary = Kit.Slot(body, BodyName, "Secondary", _siphon!);
             locator.utility = Kit.Slot(body, BodyName, "Utility", _charge!);
-            locator.special = Kit.Slot(body, BodyName, "Special", _melee!, _slam!);
+            locator.special = Kit.Slot(body, BodyName, "Special", _slam!, _melee!); // Seismic Impact default, Heavy Melee the alt (user, 2026-10-15)
             locator.passiveSkill = new SkillLocator.PassiveSkill
             {
                 enabled = true,
@@ -197,7 +194,8 @@ namespace CursedAppleCuriosities.Survivors.Abrams
             // Reserve the muzzle slot now: ChildLocators can't grow after load. It points at the gun once Abrams is on.
             var children = model.GetComponent<ChildLocator>();
             if (children != null && children.FindChild(MuzzleName) == null) children.AddChild(MuzzleName, model);
-            Kit.OwnSkin(model.gameObject, "skinCursedAppleAbramsDEFAULT", Token + "SKIN_DEFAULT", DefaultSkinIcon, ("skinCursedAppleAbramsGREEN", Token + "SKIN_GREEN", GreenSkinIcon));
+            Kit.OwnSkin(model.gameObject, "skinCursedAppleAbramsDEFAULT", Token + "SKIN_DEFAULT", DefaultSkinIcon, ("skinCursedAppleAbramsGREEN", Token + "SKIN_GREEN", GreenSkinIcon),
+                ("skinCursedAppleAbramsCRIMSON", Token + "SKIN_CRIMSON", AbramsModel.CrimsonIcon));
 
             BigCamera(body);
             ContentAddition.AddBody(body);
@@ -228,7 +226,8 @@ namespace CursedAppleCuriosities.Survivors.Abrams
                 var swap = cm.gameObject.AddComponent<DeadlockModelSwap>();
                 swap.HeroKey = AbramsData.Hero;
                 swap.IsDisplay = true;
-                Kit.OwnSkin(cm.gameObject, "skinCursedAppleAbramsDISPLAY", Token + "SKIN_DEFAULT", DefaultSkinIcon, ("skinCursedAppleAbramsDISPLAYGREEN", Token + "SKIN_GREEN", GreenSkinIcon));
+                Kit.OwnSkin(cm.gameObject, "skinCursedAppleAbramsDISPLAY", Token + "SKIN_DEFAULT", DefaultSkinIcon, ("skinCursedAppleAbramsDISPLAYGREEN", Token + "SKIN_GREEN", GreenSkinIcon),
+                    ("skinCursedAppleAbramsDISPLAYCRIMSON", Token + "SKIN_CRIMSON", AbramsModel.CrimsonIcon));
             }
             return display;
         }
@@ -244,7 +243,7 @@ namespace CursedAppleCuriosities.Survivors.Abrams
             Survivor.outroFlavorToken = Token + "OUTRO";
             Survivor.mainEndingEscapeFailureFlavorToken = Token + "FAILURE";
             Survivor.primaryColor = Color;
-            Survivor.desiredSortPosition = 101f; // right after Lash
+            Survivor.desiredSortPosition = 100f; // RosterOrder re-sorts the whole roster A-Z at load (user 3.0)
             ContentAddition.AddSurvivorDef(Survivor);
         }
 
@@ -275,6 +274,8 @@ namespace CursedAppleCuriosities.Survivors.Abrams
                 locator.passiveSkill = passive;
             }
             if (portrait != null) { _shotgun!.icon = Kit.Sprite(portrait); _melee!.icon = _shotgun.icon; }
+            Set(_shotgun, AbramsData.IconGun); // the weapon itself (user 3.0); the portrait stays if it isn't cached
+            Set(_melee, AbramsData.IconMelee); // Heavy Melee: a melee icon (user 3.0)
             CursedAppleCuriositiesPlugin.Logger?.LogInfo($"[Abrams] icons: {(portrait != null ? "from Deadlock" : "placeholders (no Deadlock icons cached)")}");
         }
 
@@ -286,7 +287,8 @@ namespace CursedAppleCuriosities.Survivors.Abrams
             LanguageAPI.Add(Token + "NAME", "Abrams");
             LanguageAPI.Add(Token + "SUBTITLE", "The Bull of the Cursed Apple");
             LanguageAPI.Add(Token + "SKIN_DEFAULT", "Default");
-            LanguageAPI.Add(Token + "SKIN_GREEN", "Green");
+            LanguageAPI.Add(Token + "SKIN_GREEN", "Greenbrams"); // user 3.0
+            LanguageAPI.Add(Token + "SKIN_CRIMSON", "Crimson");
             LanguageAPI.Add(Token + "DESCRIPTION",
                 "Abrams is a hard-boiled detective who settles his cases up close.<color=#CCD3E0>\n\n" +
                 "< ! > Get close: your shotgun's pellets fall off fast with range.\n\n" +
@@ -300,8 +302,7 @@ namespace CursedAppleCuriosities.Survivors.Abrams
             LanguageAPI.Add(Token + "PASSIVE_NAME", "Infernal Resilience");
             LanguageAPI.Add(Token + "PASSIVE_DESC",
                 $"<style=cIsHealing>Regenerate {D(AbramsData.ResilienceFraction)}</style> of all damage taken over <style=cIsUtility>{AbramsData.ResilienceSeconds:0}s</style>. " +
-                $"Gain <style=cIsHealing>+{AbramsData.ResilienceArmor:0} armor</style>. " +
-                "Abrams <style=cIsUtility>sprints automatically</style> out of combat, and can <style=cIsUtility>slide</style>, <style=cIsUtility>dash</style> and <style=cIsUtility>air jump</style>.");
+                $"Gain <style=cIsHealing>+{AbramsData.ResilienceArmor:0} armor</style>.");
 
             LanguageAPI.Add(Token + "SHOTGUN_NAME", "Abrams' Shotgun");
             LanguageAPI.Add(Token + "SHOTGUN_DESC",

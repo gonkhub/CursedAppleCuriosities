@@ -38,7 +38,7 @@ namespace CursedAppleCuriosities.Deadlock
             ((ScriptableObject)family).name = bodyName + name + "Family";
             var variants = new SkillFamily.Variant[defs.Length];
             for (int i = 0; i < defs.Length; i++)
-                variants[i] = new SkillFamily.Variant { skillDef = defs[i], viewableNode = new ViewablesCatalog.Node(defs[i].skillNameToken, false, null) };
+                variants[i] = new SkillFamily.Variant { skillDef = defs[i], viewableNode = new ViewablesCatalog.Node(defs[i].skillNameToken, false, null), unlockableDef = Unlocks.SkillUnlocks.For(defs[i]) };
             family.variants = variants;
             ContentAddition.AddSkillFamily(family);
             var slot = body.AddComponent<GenericSkill>();
@@ -82,6 +82,7 @@ namespace CursedAppleCuriosities.Deadlock
             skin.name = skinName;
             skin.nameToken = nameToken; // rootObject stays the stand-in's: the skin's transform paths are built from it
             if (icon != null) skin.icon = icon;
+            skin.unlockableDef = Unlocks.SkinUnlocks.For(skinName, icon); // a mastery recolour (3.0) starts locked
             return skin;
         }
 
@@ -179,7 +180,20 @@ namespace CursedAppleCuriosities.Deadlock
             foreach (MonoBehaviour b in display.GetComponentsInChildren<MonoBehaviour>(true))
                 if (b is AnimationEvents || b is PlaySoundOnEvent || b.GetType().Name == "AkEvent" || b.GetType().Name == "AkAmbient") b.enabled = false;
             display.AddComponent<SilentStandInAnimator>();
+            // The twirl's PlaySoundOnEnter is set up by the Animator after Awake, so blanking it there found nothing and Commando's gun
+            // spin played for every hero but Mina (whose intro starts her far out of earshot). Skip it at the source instead (user 2.5).
+            if (!_twirlHooked)
+            {
+                _twirlHooked = true;
+                On.RoR2.Mecanim.PlaySoundOnEnter.OnStateEnter += (orig, self, animator, info, layer) =>
+                {
+                    if (animator != null && animator.GetComponentInParent<SilentStandInAnimator>() != null) return;
+                    orig(self, animator, info, layer);
+                };
+            }
         }
+
+        private static bool _twirlHooked;
 
         /// <summary>
         /// The twirl sound is a PlaySoundOnEnter on the stand-in's animator controller, which is shared with the
@@ -302,6 +316,32 @@ namespace CursedAppleCuriosities.Deadlock
         }
 
         /// <summary>The first of several Addressables keys that loads (a missing asset costs its effect, never the hero).</summary>
+        private static Material? _line, _area;
+
+        /// <summary>
+        /// A plain glowing line material for LineRenderers coloured by their start/end colours. Shader.Find is off limits in RoR2
+        /// (RoR2BepInExPack throws for unknown names: Ivy's preview, Paradox's wall border and Bebop's beam never drew), so it's the
+        /// laser-pointer beam, as Abrams' rings use. Shared: tint with the line's colours, not the material.
+        /// </summary>
+        public static Material LineMaterial()
+        {
+            if (_line != null) return _line;
+            Material? laser = TryLoad<Material>("Kit", "RoR2/Base/Common/VFX/matLaserPointerBeam.mat", "RoR2/Base/Loader/matLoaderHookRope.mat");
+            _line = new Material(laser != null ? laser : DeadlockHeroes.MakeMaterial("Kit", "line", null)) { name = "matCursedAppleLine" };
+            if (_line.HasProperty("_TintColor")) _line.SetColor("_TintColor", Color.white);
+            return _line;
+        }
+
+        /// <summary>RoR2's own see-through area indicator (Helfire's range sphere), for filled ground discs. A fresh copy: tint it.</summary>
+        public static Material? AreaMaterial(Color tint)
+        {
+            _area ??= TryLoad<Material>("Kit", "RoR2/Base/BurnNearby/matHelfireRangeIndicator.mat");
+            if (_area == null) return null;
+            var m = new Material(_area);
+            if (m.HasProperty("_TintColor")) m.SetColor("_TintColor", tint);
+            return m;
+        }
+
         public static T? TryLoad<T>(string tag, params string[] keys) where T : UnityEngine.Object
         {
             foreach (string key in keys)

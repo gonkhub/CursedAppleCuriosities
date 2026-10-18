@@ -28,6 +28,9 @@ namespace CursedAppleCuriosities.Survivors.Celeste
             {
                 float barrierBefore = self.barrier;
                 bool prism = CelesteSurvivor.PrismBuff != null && self.body != null && self.body.HasBuff(CelesteSurvivor.PrismBuff);
+                // Light Eater: everything Celeste deals to a marked enemy hits harder (user 3.0: all her damage, not just her blades).
+                if (NetworkServer.active && info.attacker != null && Marked(self) && info.attacker.TryGetComponent(out CharacterBody from) && from.bodyIndex == CelesteSurvivor.BodyIndex)
+                    info.damage *= 1f + CelesteData.MarkDamageBonus;
                 orig(self, info);
                 if (!NetworkServer.active || info.rejected) return;
                 // Dazzling Trick: the hit that takes the barrier down breaks the prism.
@@ -96,7 +99,7 @@ namespace CursedAppleCuriosities.Survivors.Celeste
 
         /// <summary>
         /// Server: Radiant Daggers hit this many enemies: that many more Radiance stacks, uncapped (user: it's taken in place of
-        /// Light Eater, her only healing), and the whole pile's 30 s timer starts over (CelesteRadiance).
+        /// Light Eater, her only healing), each cast's batch running out after RadianceSeconds (Duration Extender lengthens it) on its own (CelesteRadiance).
         /// </summary>
         public static void AddRadiance(CharacterBody celeste, int stacks)
         {
@@ -165,6 +168,7 @@ namespace CursedAppleCuriosities.Survivors.Celeste
                     hits++;
                 }
             if (hits > 0) EquipmentFx.Sound("celeste_flare_hit", Origin + dir * 3f);
+            if (hits > 0) Unlocks.Challenges.CelesteSpotlight.AfterFlare(body, CelesteSurvivor.MarkBuff);
             CursedAppleCuriositiesPlugin.Logger?.LogInfo($"[Celeste] Light Eater: {hits} marked");
         }
     }
@@ -238,23 +242,33 @@ namespace CursedAppleCuriosities.Survivors.Celeste
     /// </summary>
     public class CelesteRadiance : MonoBehaviour
     {
+        // Each cast's stacks run out on their own timer (user, 3.0: one shared timer that every cast reset never ran out
+        // once cooldown reduction let her recast before it ended).
+        private readonly List<(int Stacks, float Until)> _batches = new List<(int, float)>();
         private CharacterBody _body = null!;
-        private float _until;
 
         private void Awake() => _body = GetComponent<CharacterBody>();
 
         public void Add(int stacks, float seconds)
         {
             if (CelesteSurvivor.RadianceBuff == null) return;
-            _body.SetBuffCount(CelesteSurvivor.RadianceBuff.buffIndex, _body.GetBuffCount(CelesteSurvivor.RadianceBuff) + stacks);
-            _until = Time.fixedTime + seconds;
+            _batches.Add((stacks, Time.fixedTime + seconds));
+            Show();
         }
 
         private void FixedUpdate()
         {
-            if (CelesteSurvivor.RadianceBuff == null || Time.fixedTime < _until || !_body.HasBuff(CelesteSurvivor.RadianceBuff)) return;
-            _body.SetBuffCount(CelesteSurvivor.RadianceBuff.buffIndex, 0);
-            EquipmentFx.Sound("celeste_beam_buff_expire", _body.corePosition, _body.gameObject);
+            if (CelesteSurvivor.RadianceBuff == null || _batches.Count == 0) return;
+            if (_batches.RemoveAll(b => Time.fixedTime >= b.Until) == 0) return;
+            Show();
+            if (_batches.Count == 0) EquipmentFx.Sound("celeste_beam_buff_expire", _body.corePosition, _body.gameObject);
+        }
+
+        private void Show()
+        {
+            int total = 0;
+            foreach (var b in _batches) total += b.Stacks;
+            _body.SetBuffCount(CelesteSurvivor.RadianceBuff!.buffIndex, total);
         }
     }
 
@@ -412,7 +426,8 @@ namespace CursedAppleCuriosities.Survivors.Celeste
             TeamIndex team = TeamComponent.GetObjectTeam(owner);
             HealthComponent? best = null;
             float bestAngle = CelesteData.DaggerHomeConeDeg;
-            foreach (HealthComponent hc in CelesteNet.EnemiesIn(transform.position, CelesteData.DaggerHomeRange, team))
+            float range = CelesteData.DaggerHomeRange * MysticExpansion.RadiusMultiplier(owner.GetComponent<CharacterBody>());
+            foreach (HealthComponent hc in CelesteNet.EnemiesIn(transform.position, range, team))
             {
                 float a = Vector3.Angle(v, CelesteNet.Core(hc) - transform.position);
                 if (a < bestAngle && CelesteNet.Visible(transform.position, CelesteNet.Core(hc))) { bestAngle = a; best = hc; }
@@ -432,8 +447,7 @@ namespace CursedAppleCuriosities.Survivors.Celeste
                 _done = true;
                 float dmg = _pd != null ? _pd.damage : body.damage;
                 bool crit = _pd != null && _pd.crit;
-                float coeff = CelesteData.DaggerDamage + (CelesteNet.Marked(hc) ? CelesteData.MarkDaggerBonus : 0f);
-                CelesteNet.Hit(body, hc, coeff * dmg, crit, DamageSource.Primary, 1f, transform.position);
+                CelesteNet.Hit(body, hc, CelesteData.DaggerDamage * dmg, crit, DamageSource.Primary, 1f, transform.position);
                 EquipmentFx.Sound("celeste_gun_impact", transform.position);
                 Destroy(gameObject);
                 return;
@@ -475,6 +489,9 @@ namespace CursedAppleCuriosities.Survivors.Celeste
         private int _hits;
         private float _flight, _linger, _search, _orbit;
         private bool _lingering;
+        // The current bounce's flight (_leg < 0: none, the first throw flies straight at OrbSpeed).
+        private float _leg = -1f, _speed;
+        private Vector3 _legAim;
         private DeadlockVoice? _hum;
 
         private void Awake()
@@ -506,6 +523,7 @@ namespace CursedAppleCuriosities.Survivors.Celeste
                 {
                     _search = 0.1f;
                     _target = Seek(owner, _hits == 0);
+                    if (_target != null && _leg >= 0f) Retarget(); // its target died mid-flight: it turns onto the next
                 }
                 if (_target == null && (_flight > CelesteData.OrbFlightSeconds || HitsWorld(_rb.velocity * dt))) StartLinger();
             }
@@ -515,17 +533,54 @@ namespace CursedAppleCuriosities.Survivors.Celeste
                 _linger += dt;
                 _search -= dt;
                 if (_search <= 0f) { _search = 0.15f; _target = Next(owner); }
-                if (_target != null) { _lingering = false; _linger = 0f; }
+                if (_target != null) { _lingering = false; _linger = 0f; Launch(); }
                 else if (_linger > CelesteData.OrbLinger) { Expire(); return; }
             }
             if (_target != null)
             {
                 Vector3 to = CelesteNet.Core(_target) - transform.position;
                 float reach = CelesteData.OrbRadius + (_target.body != null ? _target.body.radius : 0.5f);
-                if (to.magnitude <= reach + CelesteData.OrbSpeed * dt) { Strike(owner, _target); return; }
-                _rb.velocity = to.normalized * CelesteData.OrbSpeed; // committed: it flies through walls to its target (user)
+                float speed = _leg >= 0f ? _speed : CelesteData.OrbSpeed;
+                if (to.magnitude <= reach + speed * dt) { Strike(owner, _target); return; }
+                // Committed: it flies through walls to its target (user).
+                _rb.velocity = _leg >= 0f ? Fly(to, dt) : to.normalized * CelesteData.OrbSpeed;
             }
             if (_rb.velocity.sqrMagnitude > 0.01f) transform.rotation = Quaternion.LookRotation(_rb.velocity);
+        }
+
+        /// <summary>Off an enemy (or the prism, or out of its orbit): slow and steep, toward where the target is now.</summary>
+        private void Launch()
+        {
+            if (_target == null || _rb == null) return;
+            _leg = 0f;
+            _speed = CelesteData.OrbLaunchSpeed;
+            _legAim = CelesteNet.Core(_target);
+            Vector3 line = _legAim - transform.position;
+            Vector3 flat = Vector3.ProjectOnPlane(line, Vector3.up);
+            if (flat.sqrMagnitude < 0.01f) flat = Vector3.forward;
+            float pitch = Mathf.Min(80f, Mathf.Atan2(line.y, flat.magnitude) * Mathf.Rad2Deg + CelesteData.OrbLaunchUpDeg);
+            Vector3 dir = Quaternion.AngleAxis(-pitch, Vector3.Cross(Vector3.up, flat.normalized)) * flat.normalized;
+            _rb.velocity = dir * _speed;
+        }
+
+        /// <summary>A new target mid-flight: it keeps its speed and tracks the new one from here.</summary>
+        private void Retarget()
+        {
+            _legAim = CelesteNet.Core(_target!);
+            _leg = Mathf.Max(_leg, CelesteData.OrbArcSeconds);
+        }
+
+        /// <summary>One step of a bounce: arc toward the target's old spot, then track it, faster all the while.</summary>
+        private Vector3 Fly(Vector3 toTarget, float dt)
+        {
+            _leg += dt;
+            _speed = Mathf.Min(CelesteData.OrbMaxSpeed, _speed + CelesteData.OrbAccel * dt);
+            if (toTarget.magnitude < CelesteData.OrbFinalApproach) return toTarget.normalized * _speed;
+            float track = Mathf.Clamp01((_leg - CelesteData.OrbArcSeconds) / CelesteData.OrbTrackSeconds);
+            Vector3 aim = Vector3.Lerp(_legAim, transform.position + toTarget, track) - transform.position;
+            Vector3 dir = _rb!.velocity.sqrMagnitude > 0.01f ? _rb.velocity.normalized : aim.normalized;
+            float turn = Mathf.Lerp(CelesteData.OrbTurnStart, CelesteData.OrbTurnEnd, track) * Mathf.Deg2Rad * dt;
+            return Vector3.RotateTowards(dir, aim.normalized, turn, 0f) * _speed;
         }
 
         private float BounceRange(CharacterBody owner) => CelesteData.OrbBounceRange * MysticExpansion.RadiusMultiplier(owner);
@@ -583,6 +638,7 @@ namespace CursedAppleCuriosities.Survivors.Celeste
         private void StartLinger()
         {
             _lingering = true;
+            _leg = -1f;
             _linger = 0f;
             if (_last != null && _last.body != null)
             {
@@ -591,6 +647,8 @@ namespace CursedAppleCuriosities.Survivors.Celeste
             }
             EquipmentFx.Sound("celeste_orb_linger", transform.position, gameObject);
         }
+
+        private readonly System.Collections.Generic.Dictionary<HealthComponent, int> _perEnemy = new System.Collections.Generic.Dictionary<HealthComponent, int>(); // Encore challenge
 
         private void Strike(CharacterBody owner, HealthComponent hc)
         {
@@ -602,6 +660,9 @@ namespace CursedAppleCuriosities.Survivors.Celeste
                 using (DurationExtender.From(owner)) hc.body.AddTimedBuff(CelesteSurvivor.OrbSlow, CelesteData.OrbSlowSeconds);
             if (CelesteSurvivor.OrbHitEffect != null) EffectManager.SpawnEffect(CelesteSurvivor.OrbHitEffect, new EffectData { origin = CelesteNet.Core(hc), scale = 2f }, true);
             _hits++;
+            _perEnemy.TryGetValue(hc, out int same);
+            _perEnemy[hc] = ++same;
+            Unlocks.Challenges.CelesteEncore.Hit(owner, same);
             _last = hc;
             transform.position = CelesteNet.Core(hc);
             bool final = _hits > CelesteData.OrbBounces;
@@ -610,6 +671,7 @@ namespace CursedAppleCuriosities.Survivors.Celeste
             if (final) { Destroy(gameObject); return; }
             _target = Next(owner);
             if (_target == null) StartLinger();
+            else Launch();
         }
 
         /// <summary>Off Celeste's prism: no damage, the prism restarts, and it counts as a bounce.</summary>
@@ -624,6 +686,7 @@ namespace CursedAppleCuriosities.Survivors.Celeste
             if (_hits > CelesteData.OrbBounces) { Destroy(gameObject); return; }
             _target = Next(owner);
             if (_target == null) StartLinger();
+            else Launch();
         }
 
         private void Expire()

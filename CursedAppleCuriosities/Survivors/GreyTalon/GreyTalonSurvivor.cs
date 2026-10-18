@@ -28,6 +28,8 @@ namespace CursedAppleCuriosities.Survivors.GreyTalon
         /// <summary>Skin icon in the hero's own palette (green coat, orange scarf, teal, leather), not the stand-in's.</summary>
         private static Sprite DefaultSkinIcon => _defaultSkinIcon ??= Kit.SkinIcon(new Color(0.2f, 0.42f, 0.25f), new Color(0.85f, 0.36f, 0.15f), new Color(0.3f, 0.7f, 0.55f), new Color(0.58f, 0.38f, 0.22f));
         private static Sprite? _defaultSkinIcon;
+        private static Sprite NightOwlSkinIcon => _nightOwlSkinIcon ??= Kit.SkinIcon(new Color(0.32f, 0.2f, 0.45f), new Color(0.2f, 0.45f, 0.9f), new Color(0.45f, 0.35f, 0.7f), new Color(0.22f, 0.32f, 0.6f));
+        private static Sprite? _nightOwlSkinIcon;
         /// <summary>The owl's blast and glow are green (user).</summary>
         public const float OwlHue = 0.33f;
 
@@ -48,7 +50,7 @@ namespace CursedAppleCuriosities.Survivors.GreyTalon
             // His own Deadlock sounds wait for the user's review (their rule); the shared movement ones are already approved.
             foreach (DeadlockSound s in GreyTalonData.Sounds)
                 if (GreyTalonData.SoundsApproved || GreyTalonData.PreApproved.Contains(s.Id)) DeadlockSounds.Register(s);
-            foreach (string icon in new[] { GreyTalonData.IconPortrait, GreyTalonData.IconCharged, GreyTalonData.IconRain, GreyTalonData.IconOwl })
+            foreach (string icon in new[] { GreyTalonData.IconPortrait, GreyTalonData.IconGun, GreyTalonData.IconCharged, GreyTalonData.IconRain, GreyTalonData.IconOwl })
                 DeadlockInstall.WantIcon(icon);
             DeadlockHeroes.Register(GreyTalonModel.Def);
             DeadlockInstall.WantModel(GreyTalonModel.Def.ModelRequest());
@@ -71,8 +73,8 @@ namespace CursedAppleCuriosities.Survivors.GreyTalon
                 if (ChargingBuff != null && body.HasBuff(ChargingBuff))
                     args.moveSpeedReductionMultAdd += GreyTalonData.BaseSpeed / GreyTalonData.ChargedMoveSpeed - 1f;
             };
-            DeadlockHeroVoice.Track(BodyName, GreyTalonData.Hero);
-            // Ping lines wait for the user's sound review (DeadlockPingVoice registers Deadlock VO itself).
+            DeadlockHeroVoice.Track(BodyName, GreyTalonData.Hero, "orion");
+            DeadlockPingVoice.Track(BodyName, GreyTalonData.Hero, "orion");
 
             host.AddComponent<GreyTalonIcons>();
         }
@@ -136,21 +138,30 @@ namespace CursedAppleCuriosities.Survivors.GreyTalon
             GameObject? source = pc.ghostPrefab != null ? pc.ghostPrefab : TryLoad<GameObject>("RoR2/DLC4/LynxArcher/LynxArcherArrowGhost.prefab", "RoR2/DLC1/Railgunner/RailgunnerPistolProjectileGhost.prefab");
             if (source == null) return p;
             GameObject ghost = source.InstantiateClone("CursedAppleGreyTalonChargedArrowGhost", false);
-            ghost.transform.localScale *= 2.5f;
+            ghost.transform.localScale *= 4f; // 2.5 until 2.0 (user: more obvious)
             // A long bright streak behind it (user: a tracer for the arrow), in the Huntress snipe tracer's material.
             Material? streak = TracerEffect != null && TracerEffect.GetComponentInChildren<LineRenderer>(true) is LineRenderer line ? line.sharedMaterial : null;
             if (streak != null)
             {
                 var trail = ghost.AddComponent<TrailRenderer>();
                 trail.sharedMaterial = streak;
-                trail.time = 0.25f;
-                trail.startWidth = 0.5f;
+                trail.time = 0.45f;
+                trail.startWidth = 1.6f;
                 trail.endWidth = 0f;
                 trail.minVertexDistance = 0.5f;
                 trail.numCapVertices = 2;
                 trail.startColor = new Color(0.7f, 0.85f, 1f, 1f);
                 trail.endColor = new Color(0.7f, 0.85f, 1f, 0f);
             }
+            // A light that travels with it, so it reads in daylight and lights up what it passes.
+            var glow = new GameObject("ChargedGlow");
+            glow.transform.SetParent(ghost.transform, false);
+            Light light = glow.AddComponent<Light>();
+            light.type = LightType.Point;
+            light.color = new Color(0.6f, 0.8f, 1f);
+            light.range = 12f;
+            light.intensity = 6f;
+            light.shadows = LightShadows.None;
             pc.ghostPrefab = ghost;
             return p;
         }
@@ -214,7 +225,7 @@ namespace CursedAppleCuriosities.Survivors.GreyTalon
             locator.special = Kit.Slot(body, BodyName, "Special", _owl!);
             locator.passiveSkill = new SkillLocator.PassiveSkill
             {
-                enabled = true,
+                enabled = false, // hidden: it only described the Deadlock movement, and the user cut those blurbs (3.0)
                 skillNameToken = Token + "PASSIVE_NAME",
                 skillDescriptionToken = Token + "PASSIVE_DESC",
                 icon = ItemBase.CreatePlaceholderSprite(Color),
@@ -227,7 +238,7 @@ namespace CursedAppleCuriosities.Survivors.GreyTalon
             Kit.MuteStandIn(body, model.gameObject, GreyTalonData.Hero);
             var children = model.GetComponent<ChildLocator>();
             if (children != null && children.FindChild(MuzzleName) == null) children.AddChild(MuzzleName, model);
-            Kit.OwnSkin(model.gameObject, "skinCursedAppleGreyTalonDEFAULT", Token + "SKIN_DEFAULT", DefaultSkinIcon);
+            Kit.OwnSkin(model.gameObject, "skinCursedAppleGreyTalonDEFAULT", Token + "SKIN_DEFAULT", DefaultSkinIcon, ("skinCursedAppleGreyTalonNIGHTOWL", Token + "SKIN_NIGHTOWL", NightOwlSkinIcon));
 
             ContentAddition.AddBody(body);
             return body;
@@ -243,7 +254,7 @@ namespace CursedAppleCuriosities.Survivors.GreyTalon
                 var swap = cm.gameObject.AddComponent<DeadlockModelSwap>();
                 swap.HeroKey = GreyTalonData.Hero;
                 swap.IsDisplay = true;
-                Kit.OwnSkin(cm.gameObject, "skinCursedAppleGreyTalonDISPLAY", Token + "SKIN_DEFAULT", DefaultSkinIcon);
+                Kit.OwnSkin(cm.gameObject, "skinCursedAppleGreyTalonDISPLAY", Token + "SKIN_DEFAULT", DefaultSkinIcon, ("skinCursedAppleGreyTalonDISPLAYNIGHTOWL", Token + "SKIN_NIGHTOWL", NightOwlSkinIcon));
             }
             display.AddComponent<GreyTalonDisplayIntro>();
             return display;
@@ -260,7 +271,7 @@ namespace CursedAppleCuriosities.Survivors.GreyTalon
             Survivor.outroFlavorToken = Token + "OUTRO";
             Survivor.mainEndingEscapeFailureFlavorToken = Token + "FAILURE";
             Survivor.primaryColor = Color;
-            Survivor.desiredSortPosition = 104f; // after Lash, Abrams, Seven and Vyper
+            Survivor.desiredSortPosition = 104f; // RosterOrder re-sorts the whole roster A-Z at load (user 3.0)
             ContentAddition.AddSurvivorDef(Survivor);
         }
 
@@ -290,6 +301,7 @@ namespace CursedAppleCuriosities.Survivors.GreyTalon
                 passive.icon = _bow.icon;
                 locator.passiveSkill = passive;
             }
+            Set(_bow, GreyTalonData.IconGun); // the weapon itself (user 3.0); the portrait stays if it isn't cached
             CursedAppleCuriositiesPlugin.Logger?.LogInfo($"[GreyTalon] icons: {(portrait != null ? "from Deadlock" : "placeholders (no Deadlock icons cached)")}");
         }
 
@@ -301,6 +313,7 @@ namespace CursedAppleCuriosities.Survivors.GreyTalon
             LanguageAPI.Add(Token + "NAME", "Grey Talon");
             LanguageAPI.Add(Token + "SUBTITLE", "The Last Hunt");
             LanguageAPI.Add(Token + "SKIN_DEFAULT", "Default");
+            LanguageAPI.Add(Token + "SKIN_NIGHTOWL", "Night Owl");
             LanguageAPI.Add(Token + "DESCRIPTION",
                 "Grey Talon spent forty years hunting monsters. This planet has more than he can count.<color=#CCD3E0>\n\n" +
                 "< ! > His bow keeps full damage across long distances: keep your distance.\n\n" +
@@ -312,8 +325,7 @@ namespace CursedAppleCuriosities.Survivors.GreyTalon
             LanguageAPI.Add(Token + "LORE", "Every monster he ever hunted had a weakness. He meant to find this one's.");
 
             LanguageAPI.Add(Token + "PASSIVE_NAME", "Seasoned Hunter");
-            LanguageAPI.Add(Token + "PASSIVE_DESC",
-                $"<style=cIsUtility>{GreyTalonData.Movement.StaminaPips} stamina</style>. Dash, air jump and slide; sprints automatically out of combat.");
+            LanguageAPI.Add(Token + "PASSIVE_DESC", "");
 
             LanguageAPI.Add(Token + "BOW_NAME", "Bow");
             LanguageAPI.Add(Token + "BOW_DESC",
@@ -330,7 +342,7 @@ namespace CursedAppleCuriosities.Survivors.GreyTalon
             LanguageAPI.Add(Token + "OWL_NAME", "Guided Owl");
             LanguageAPI.Add(Token + "OWL_DESC",
                 $"Steer a spirit owl that explodes for <style=cIsDamage>{D(GreyTalonData.OwlDamage)} damage</style> and <style=cIsDamage>stuns</style>, <style=cIsHealth>executing</style> anything that loses over {D(GreyTalonData.OwlExecute)} of its remaining health. You are <style=cIsUtility>invulnerable</style> while steering. " +
-                $"Each boss it kills permanently grants <style=cIsDamage>+{D(GreyTalonData.OwlBossBonus)} damage</style>.");
+                $"Each boss, elite or miniboss it kills permanently grants <style=cIsDamage>+{D(GreyTalonData.OwlBossBonus)} damage</style>.");
         }
     }
 

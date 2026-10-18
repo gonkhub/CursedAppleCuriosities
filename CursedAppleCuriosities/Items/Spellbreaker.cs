@@ -43,8 +43,7 @@ namespace CursedAppleCuriosities.Items
             CooldownBuffDef.iconSprite = BuffIcon(IconFileName, color);
             ContentAddition.AddBuffDef(CooldownBuffDef);
 
-            DamageReduction = config.Bind("Red", "Spellbreaker - Damage Reduction", 0.75f,
-                "Fraction of a heavy hit negated when the block triggers.").Value;
+            DamageReduction = 0.75f;
             CreateLang();
             CreateItem();
             Hooks();
@@ -77,6 +76,7 @@ namespace CursedAppleCuriosities.Items
             HealthComponent self,
             DamageInfo damageInfo)
         {
+            if (FinalDamage(damageInfo)) { orig(self, damageInfo); return; } // already worked out (Bloodletting's ticks)
             if (NetworkServer.active
                 && damageInfo != null
                 && self.body?.inventory != null

@@ -18,6 +18,7 @@ namespace CursedAppleCuriosities.Survivors.Victor
             yield return null; // the Deadlock model attaches on its first frame
             yield return null;
             VictorReassembly? parts = VictorReassembly.Spawn(gameObject, Down);
+            if (parts != null) Own(parts); // a scene-root object: cleared if he is clicked off mid-reassembly
             if (parts == null) Play("revive_hold");
             DeadlockSounds.Play("victor_revive_start", Home);
             for (float t = 0f; t < Down; t += Time.deltaTime)

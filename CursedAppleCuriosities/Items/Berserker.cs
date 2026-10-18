@@ -45,8 +45,7 @@ namespace CursedAppleCuriosities.Items
             RageBuffDef.buffColor = color;
             ContentAddition.AddBuffDef(RageBuffDef);
 
-            DamagePerStack = config.Bind("Green", "Berserker - Damage Per Rage Stack", 0.08f,
-                "Bonus damage per Rage stack.").Value;
+            DamagePerStack = 0.08f;
             CreateLang();
             CreateItem();
             RageBuffDef.iconSprite = ItemDef?.pickupIconSprite ?? BuffIcon(null, color);
@@ -77,7 +76,7 @@ namespace CursedAppleCuriosities.Items
             orig(self, damageInfo);
 
             if (!NetworkServer.active) return;
-            if (damageInfo == null || damageInfo.damage <= 0f) return;
+            if (damageInfo == null || damageInfo.damage <= 0f || damageInfo.rejected) return; // blocked hits (Tougher Times, wards, Ethereal Shift) aren't damage taken
             if (self.body?.inventory == null) return;
 
             int itemCount = self.body.inventory.GetItemCountEffective(ItemDef);

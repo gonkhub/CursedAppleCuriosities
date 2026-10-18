@@ -7,7 +7,7 @@ namespace CursedAppleCuriosities.Survivors.Victor
     /// <summary>
     /// Victor's numbers (Deadlock's hero_frank / ability_frank_*, read 2026-10-12). Deadlock values are kept where RoR2 has
     /// the same scale (metres, seconds, speeds; 39.37 hu = 1 m); damage becomes RoR2 damage coefficients and cooldowns
-    /// RoR2-length. Kit and rules are the user's (memory victor-design). Headline knobs are in the [Victor] config section.
+    /// RoR2-length. Kit and rules are the user's (memory victor-design).
     /// </summary>
     public static class VictorData
     {
@@ -73,13 +73,13 @@ namespace CursedAppleCuriosities.Survivors.Victor
         public static float AuraMaxDamage = 6f;         // per second once fully ramped: 600% at 8 s (user; Deadlock MaxDPS 58)
         public static float AuraSelfMin = 0.011f;       // share of his max health per second at the start (Deadlock: 70% of the enemy DPS)
         public static float AuraSelfMax = 0.05f;        // ...and once ramped
-        public const float AuraTick = 0.25f;            // Deadlock TickRate
+        public const float AuraTick = 0.25f;            // Deadlock TickRate; attack speed shortens it (user, 2.0)
         public static float AuraProc = 0.5f;            // per tick (4 ticks a second), like Torment Pulse
         public static float AuraCooldown = 2f;          // after it ends (Deadlock AbilityCooldown); it stays on until toggled off or he dies (user)
         public const float AuraEndGrace = 0.3f;         // special again after this ends it early (Deadlock "End Aura")
 
         // ---- passive: Shocking Reanimation (Deadlock ultimate, here automatic: user; 240 s cooldown: user) ----
-        public static float ReviveCooldown = 90f;       // user (Deadlock 240); also ready again on every new stage
+        public static float ReviveCooldown = 120f;      // user (Deadlock 240; 90 before 3.0); also ready again on every new stage
         public const float ReviveChannel = 3f;          // Deadlock AbilityChannelTime
         public const float RevivePost = 0.66f;          // Deadlock AbilityPostCastDuration
         public static float ReviveHealth = 0.5f;        // Deadlock RespawnHealthPercent
@@ -90,32 +90,9 @@ namespace CursedAppleCuriosities.Survivors.Victor
         public const float ReviveSlowPerStep = 0.25f;   // 5 steps = 125% slow at first, fading (Deadlock SlowPercent 120, diminishing)
         public const int ReviveSlowSteps = 5;
 
-        public static void Bind(ConfigFile c)
+        public static void Bind(ConfigFile c) // the hero's config section is only its keybind layout (3.0)
         {
             Movement.Bind(c, Section);
-            BaseHealth = c.Bind(Section, "Base Health", BaseHealth, "Victor max health at level 1 (+36 per level).").Value;
-            GunDamage = c.Bind(Section, "Gun - Damage", GunDamage, "Damage coefficient per bullet.").Value;
-            BatteryDamage = c.Bind(Section, "Pain Battery - Damage", BatteryDamage, "Damage coefficient to each enemy the bolts hit (once per enemy).").Value;
-            BatteryFillFraction = c.Bind(Section, "Pain Battery - Damage To Fill", BatteryFillFraction, "Damage Victor must take (to health, shield or barrier) to fill the battery, as a share of his max health.").Value;
-            BatteryHealMissing = c.Bind(Section, "Pain Battery - Heal Per Hit", BatteryHealMissing, "Share of missing health healed for each enemy hit.").Value;
-            BatteryRange = c.Bind(Section, "Pain Battery - Range", BatteryRange, "Metres.").Value;
-            JumpstartCost = c.Bind(Section, "Jumpstart - Health Cost", JumpstartCost, "Share of current health Jumpstart costs.").Value;
-            JumpstartHealRatio = c.Bind(Section, "Jumpstart - Heal Ratio", JumpstartHealRatio, "Healing over time as a multiple of the health it cost (above 1: always more than he spent).").Value;
-            JumpstartMinHeal = c.Bind(Section, "Jumpstart - Minimum Heal", JumpstartMinHeal, "Least healing, as a share of max health.").Value;
-            JumpstartSpeed = c.Bind(Section, "Jumpstart - Move Speed", JumpstartSpeed, "Bonus move speed in m/s at the start, fading over 4.5 s.").Value;
-            JumpstartCooldown = c.Bind(Section, "Jumpstart - Cooldown", JumpstartCooldown, "Seconds.").Value;
-            AuraRadius = c.Bind(Section, "Aura of Suffering - Radius", AuraRadius, "Metres.").Value;
-            AuraRampSeconds = c.Bind(Section, "Aura of Suffering - Ramp Time", AuraRampSeconds, "Seconds of continuous uptime to reach max damage (and max self damage), which then holds.").Value;
-            AuraMinDamage = c.Bind(Section, "Aura of Suffering - Min Damage", AuraMinDamage, "Damage coefficient per second at the start.").Value;
-            AuraMaxDamage = c.Bind(Section, "Aura of Suffering - Max Damage", AuraMaxDamage, "Damage coefficient per second once fully ramped.").Value;
-            AuraSelfMin = c.Bind(Section, "Aura of Suffering - Self Damage Min", AuraSelfMin, "Share of Victor's max health lost per second at the start.").Value;
-            AuraSelfMax = c.Bind(Section, "Aura of Suffering - Self Damage Max", AuraSelfMax, "Share of Victor's max health lost per second once ramped.").Value;
-            AuraProc = c.Bind(Section, "Aura of Suffering - Proc Coefficient", AuraProc, "Proc coefficient of each tick (4 ticks a second).").Value;
-            AuraCooldown = c.Bind(Section, "Aura of Suffering - Cooldown", AuraCooldown, "Seconds after it is toggled off.").Value;
-            ReviveCooldown = c.Bind(Section, "Shocking Reanimation - Cooldown", ReviveCooldown, "Seconds. It is also ready again whenever a new stage starts.").Value;
-            ReviveHealth = c.Bind(Section, "Shocking Reanimation - Health", ReviveHealth, "Share of max health he comes back with.").Value;
-            ReviveDamage = c.Bind(Section, "Shocking Reanimation - Damage", ReviveDamage, "Damage coefficient of the blast when he gets up.").Value;
-            ReviveRadius = c.Bind(Section, "Shocking Reanimation - Radius", ReviveRadius, "Metres.").Value;
         }
 
         // ---- Deadlock assets (read from the player's own install, never shipped) ----
@@ -132,6 +109,10 @@ namespace CursedAppleCuriosities.Survivors.Victor
         public const string FxHover = "frank_hover_death_anim_fx_anim";
 
         public const string IconPortrait = "panorama/images/heroes/frank_sm_psd.vtex_c";
+
+        // The primary shows the weapon itself (user 3.0, like Celeste's baton): Deadlock's shop image of the hero's gun.
+
+        public const string IconGun = "panorama/images/heroes/guns/frank_gun_psd.vtex_c";
         public const string IconBattery = "panorama/images/hud/abilities/frank/frank_pain_battery_psd.vtex_c";
         public const string IconJumpstart = "panorama/images/hud/abilities/frank/frank_jump_start_psd.vtex_c";
         public const string IconAura = "panorama/images/hud/abilities/frank/frank_aura_of_suffering_psd.vtex_c";
@@ -170,6 +151,7 @@ namespace CursedAppleCuriosities.Survivors.Victor
             ("slide_getup", "slide_getup", false, "locomotion", "full"),
             ("shoot", "shoot_idle", false, "locomotion", "delta"),   // a full pose clip (no additive version): played as its motion only
             ("battery", "ability_pain_battery", false, "locomotion", "full"),
+            ("battery_run", "ability_pain_battery", false, "locomotion", "upper"), // cast while running: upper body only (Deadlock's frank_abilitymask)
             ("jumpstart", "ability_jumpstart", false, "locomotion", "full"),
             ("aura", "cast_channeling_start", false, "locomotion", "delta"), // he keeps moving and shooting while it runs
             ("aura_end", "cast_end", false, "locomotion", "delta"),
@@ -213,7 +195,7 @@ namespace CursedAppleCuriosities.Survivors.Victor
             new DeadlockSound { Id = "victor_vo_power2", VpkPrefix = "sounds/vo/frank/frank_use_power2", Chance = 0.6f, MinGap = 4f, Voice = true },
             new DeadlockSound { Id = "victor_vo_power3", VpkPrefix = "sounds/vo/frank/frank_use_power3", Chance = 0.7f, MinGap = 4f, Voice = true },
             new DeadlockSound { Id = "victor_vo_power4", VpkPrefix = "sounds/vo/frank/frank_use_power4", Range = 60f, MinGap = 4f, Voice = true },
-            // Desperation: the same abilities cast below a quarter health (DeadlockHeroVoice.Power picks them; he has 1-3).
+            // Desperation: the same abilities cast below 35% health (DeadlockHeroVoice.Power picks them; he has 1-3).
             new DeadlockSound { Id = "victor_vo_desperation_power1", VpkPrefix = "sounds/vo/frank/frank_desperation_power1", Chance = 0.8f, MinGap = 4f, Voice = true },
             new DeadlockSound { Id = "victor_vo_desperation_power2", VpkPrefix = "sounds/vo/frank/frank_desperation_power2", Chance = 0.8f, MinGap = 4f, Voice = true },
             new DeadlockSound { Id = "victor_vo_desperation_power3", VpkPrefix = "sounds/vo/frank/frank_desperation_power3", Chance = 0.8f, MinGap = 4f, Voice = true },

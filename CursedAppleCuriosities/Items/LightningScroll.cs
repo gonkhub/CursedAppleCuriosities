@@ -45,10 +45,8 @@ namespace CursedAppleCuriosities.Items
 
         public override void Init(ConfigFile config)
         {
-            BaseDamage = config.Bind("Red", "Lightning Scroll - Damage", 5f,
-                "Lightning strike damage as a multiple of your base damage (5 = 500%).").Value;
-            DamagePerStack = config.Bind("Red", "Lightning Scroll - Damage Per Stack", 2.5f,
-                "Additional strike damage per extra copy (2.5 = +250%).").Value;
+            BaseDamage = 5f;
+            DamagePerStack = 2.5f;
 
             var color             = new Color(0.65f, 0.35f, 1f);
             MarkBuffDef           = ScriptableObject.CreateInstance<BuffDef>();

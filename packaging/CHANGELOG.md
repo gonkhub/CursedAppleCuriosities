@@ -1,5 +1,111 @@
 # Changelog
 
+## 3.1.0
+Fixes and balance, no new content.
+- **Apollo, Flawless Advance:** longer reach (20 m stab, 6 m lunge), and it now stabs at any angle, up or down, where you aim.
+  His blade flashes bright red for the perfect window: let go while it's lit.
+- **Apollo, Disengaging Sigil:** its ring and burst are red.
+- **Apollo, Family Heirloom:** 230% per wave (was 130%).
+- **Apollo, Riposte:** keep holding Riposte through the counter and, after the slash, he winds up a full heavy melee kick (400%).
+- **Paradox, Kinetic Carbine:** the charge now glows blue from her gun instead of turning her white.
+- **Abrams:** Seismic Impact drags flying bosses down with him, and Shoulder Charge carries them along. Ground bosses still stop him.
+- **Inhibitor:** now a 25% chance on hit (was every hit).
+- **Siphon Bullets:** now a 25% chance on hit, stealing 4% of the damage dealt (was 1% on every hit); the per-enemy cap is unchanged.
+- **Seven:** Storm Cloud bolts and Lightning Ball proc at 0.7 (were 1.0 and 0.5); damage unchanged.
+- **Bebop:** Humble Pie's beam procs at 0.15 (was 0.05), so on-hit items work on it.
+- **Paradox:** burst rifle 65% per round (was 40%).
+- **Mina:** Nox Nostra releases 45 bats (was 75), plus the bonus bats as before.
+- **Celeste:** Carny Life 200% -> 250%.
+- **Shiv:** Bloodletting defers 50% of damage taken (was 75%), 75% at full Rage. Its drain no longer stops his sprint (real hits still do).
+- **Shiv, alt fire:** much less lift (55% of the push upward, was 135%), and shots in the air no longer stack lift. During a slide it pushes 60% harder. Throwing a knife no longer resets the gun's fire cycle (together these allowed endless flight).
+- **Shiv, Slice'n'Dice:** dashes 18 m (was 12); refunds now leave at least 2 s (was 1 s).
+- **Shiv's unlock "Bloodletting":** 50 Bleed stacks on one enemy (was 100).
+- **Mystic Expansion:** fixed the bonus range on vanilla survivors' abilities (Huntress' and Engineer's targeting, REX,
+  Merc's Eviscerate, Loader's grapple, aimed throws, ...), which 3.0 had stopped applying. Bullets were unaffected.
+
+## 3.0.0
+- **Settings cleaned up**: the config now only holds each hero's key layout, audio volumes and your Deadlock folder/converter.
+  Every balance number is built in, and the old tuning entries are removed from your config file the first time you start
+  the game, so everyone plays the same numbers. You no longer need to reset or delete your config after updating.
+- Five new survivors from Deadlock: **Shiv**, **Mina**, **Paradox**, **Bebop** and **Apollo** (thirteen in all). The
+  character select is sorted A-Z, vanilla survivors included.
+
+### Unlockables
+- **Every Deadlock hero starts locked.** Mina, Bebop, Paradox and Lash are hidden as silhouettes in the Deadlock
+  districts (the Challenges menu gives a hint for each); every other hero unlocks through their own challenge, playable
+  as any survivor (e.g. Abrams: Infernal Resilience, Seven: Electric Chair).
+- **Alt skills** for Abrams, Seven, Celeste, Viscous, Shiv, Paradox, Bebop and Apollo start locked behind challenges.
+- **Mastery skins** for all thirteen heroes (beat the game or obliterate on Monsoon).
+- **Challenge skins**: Abrams Crimson, Mina Blackmore Colors, Apollo Sapphire, Viscous Pisscous and Bebop Chrome.
+- **Fan-made model skins**: Celeste's **Spirit Guardian** (TSelky's Spirit Guardian Celeste, challenge **Celeste: Encore**)
+  and Seven's **Bunny Seven** (funnymonkeyman's Bunny Seven, challenge **Seven: Hare Trigger**). They read your own copy
+  of the mod's `.vpk` (see the README); without it the skin shows the hero's own model.
+
+### Deadlock district stages
+- If you own Deadlock, four districts of its map can replace a stage: **Haunted Lot** (stage 1), **Umbria University** (2),
+  **Sunken Plaza** (3) and **Chinatown** (4), each at a 10% chance and only when every player in the lobby has the same map
+  converted.
+- Their shops sell items at chest prices plus a 20% Shop Tax, and every purchase raises that shop's prices by another 25%
+  for the stage. The climb ropes launch you like geysers, and Sunken Plaza's pit holds a hostile Bebop.
+
+### Balance
+- **Cursed Broker**: 2% chance on any stage (was 10%); stage 3 and Bazaar chances unchanged. Chinatown's souls dealer
+  garage always has one.
+- **Spirit Snatch**: barrier equal to 10% (+10% per stack) of the damage you deal to enemies within 13 m, uncapped (was 1%
+  of max health per hit).
+- **Toxic Bullets**: hits fill a Toxin meter on the enemy (1000% of your damage fills it), which drains if you stop
+  hitting. Full: poison for 0.5% of max health per second per stack (was 1%) and -50% healing.
+- **Intensifying Magazine**: +45% at one stack, +15% per extra stack (was +30% each). The ramp now shows as a buff.
+- **Mystic Expansion**: +30% at one stack, +15% per extra stack (was +30% each).
+- **Duration Extender**: +15% at one stack, +7.5% per extra stack (was +15% each).
+- **Tankbuster** and **Spirit Burn** trigger on hits of 400% or more (was 500%).
+- **Fortitude**: +15% max health per stack and nothing else.
+- **Lifestrike**: no cap on healing per hit. **Sprint Boots**: +1 health/s per stack out of danger (was +0.5).
+- **Trophy Collector**: $10 per minute per Trophy, +50% for each Trophy beyond the first.
+- **Abrams**: Seismic Impact is his default special, Heavy Melee the alternate.
+- **Apollo**'s Riposte only parries; press it again within 3 s to dash-counter the enemy you aim at.
+- **Bebop**'s Sticky Bomb can go on allies, and Humble Pie is drawn as a red ray to the crosshair.
+- **Celeste**: each Radiant Daggers cast's Radiance stacks expire on their own 10 s timer, +10% damage each (was 7%).
+  Light Eater's mark makes all her damage to the enemy +125%.
+- **Mina** can cast Sanguine Retreat during Nox Nostra and pick the ult back up where she reforms.
+- **Shiv**: Bloodletting defers 75% of damage taken (was 50%) and drains exactly what its yellow bar shows. Full Rage holds
+  6 s before draining. Slice'n'Dice always keeps at least 1 s of cooldown.
+- **Victor**: Shocking Reanimation cooldown 120 s (was 90 s).
+- **Vyper**'s petrified enemies turn to stone and freeze in place.
+
+### Fixes
+- **Spellslinger**'s shorter cooldowns now actually apply (they never did).
+- Mod on-hit items no longer trigger on hits the target blocks (Petrified enemies, invulnerable bosses, Tougher Times).
+- **Berserker** no longer gains Rage from blocked hits; **Counterspell**'s ward is no longer used up by damage-over-time
+  ticks; **Ethereal Shift** blocks every kind of damage.
+- **Soul Urn** only drops when an enemy hits you (not self-damage, falls or allies).
+- **Mystic Expansion** grows Captain's supply-drop range. Seven's hits show his lightning sparks; Shiv's full-Rage glow
+  shows.
+- **Focus Lens** echoes exactly 50% of the damage the target took.
+- Lobby intros clean up their sounds and effects when you switch heroes mid-intro; Paradox's Pulse Bomb no longer
+  cancels her Kinetic Carbine; Mina's ult pose no longer sticks.
+
+## 2.0.0
+- Updating from an older version: your config file keeps the values it already has, so balance changes from past
+  updates only apply to settings you reset to their defaults, or if you delete
+  `BepInEx/config/com.cursedapple.curiosities.cfg` before starting the game.
+- Five new survivors from Deadlock: **Vyper**, **Grey Talon**, **Victor**, **Viscous** and **Celeste**.
+- New: the **Soul Urn**. On 30% of stages an urn waits at least 180 m from the teleporter. Pick it up and carry it to the
+  teleporter before its timer runs out (30 s or more, longer the further away it spawned) without taking damage. Getting
+  hit, running out of time or dying sends it back. A delivery drops 3 items, +1 for every stage already cleared.
+- **Seven**: **Storm Cloud** ramps up to 800% damage per second (was 600%), drifts and climbs twice as fast and follows your
+  move speed. Its bolts come every 0.25 s, faster with attack speed. **Lightning Ball** is 50% bigger. **Static Charge**'s
+  blast radius is doubled (5 -> 10 m).
+- **Mystic Expansion** also extends cast ranges: vanilla survivors' bullets, aim arcs, target searches and Loader's grapple,
+  plus the new heroes' ranged skills.
+- The **Curiosity Catalog** item is gone (its after-teleporter shop and chest lockout with it).
+- **Artifact of the Curio** also filters what Command's picks and printers offer.
+- **Goose Eggs**: each stack now hatches more than the last. Grey yields 4 whites at 1 stack, 10 at 2, 18 at 3; Green 2/5/9;
+  Red 1/2/4; Golden 1/3/6; Void 2/5/9. New config keys (**First Stack Items**, **Extra Items Per Stack**) replace
+  **Items Per Stack**.
+- **Goose Eggs** only mature while their holder is alive and the run timer is actually counting up (they now also stop
+  during trial gongs and anywhere else the timer is held).
+
 ## 1.9.0
 - Updating from an older version: your config file keeps the values it already has, so the Goose Egg change below only
   applies if you reset **Goose Eggs - Damage Penalty** to its default (or delete the config file).

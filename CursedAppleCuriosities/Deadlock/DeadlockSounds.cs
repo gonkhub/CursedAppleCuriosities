@@ -16,8 +16,12 @@ namespace CursedAppleCuriosities.Deadlock
         public bool Voice;
         /// <summary>Per play: pitch varies by up to +/- this share, volume drops by up to this share (rapid fire stays lively).</summary>
         public float PitchJitter, VolumeJitter;
+        /// <summary>Distance never takes it below this share of its volume: team callouts (pings) heard map-wide, still panned.</summary>
+        public float MinGain;
         /// <summary>Vanilla Wwise event played instead when this player has no Deadlock copy (or null).</summary>
         public string? Fallback;
+        /// <summary>Mix bus, set from the path on Register (see <see cref="DeadlockSounds.BusOf"/>).</summary>
+        public DeadlockSounds.Bus Bus;
     }
 
     /// <summary>
@@ -37,6 +41,7 @@ namespace CursedAppleCuriosities.Deadlock
             public bool Followed; // started on an object: Unity's null check turns true once it is destroyed
             public float Until = float.MaxValue;
             public float Gain = 1f;
+            public object? Owner; // DeadlockSounds.Owner when it started (a lobby display): StopOwned silences it
         }
 
         private static DeadlockSounds? _instance;
@@ -50,8 +55,47 @@ namespace CursedAppleCuriosities.Deadlock
         private static volatile bool _decoded;
         private bool _decoding;
 
+        /// <summary>
+        /// Mix buses. Deadlock's raw files are mastered hot next to RoR2's mix, and footsteps and guns (which you hear
+        /// constantly) worst of all; each row's own Volume stays the balance within its bus.
+        /// </summary>
+        public enum Bus { Voice, Ability, Movement, Footstep, Weapon }
+
+        private static readonly (string Key, float Default, string Info)[] BusConfig =
+        {
+            ("Voice Volume", 1f, "Hero voice lines, pings and the Soul Urn."),
+            ("Ability Volume", 0.8f, "Ability and item sounds."),
+            ("Movement Volume", 0.6f, "Jumps, landings, dashes, slides and wall jumps."),
+            ("Footstep Volume", 0.45f, "Hero footsteps."),
+            ("Weapon Volume", 0.5f, "Hero gunfire, reloads and weapon impacts."),
+        };
+        private static BepInEx.Configuration.ConfigEntry<float>[]? _busVolume;
+
+        public static void Bind(BepInEx.Configuration.ConfigFile config)
+        {
+            _busVolume = new BepInEx.Configuration.ConfigEntry<float>[BusConfig.Length];
+            for (int i = 0; i < BusConfig.Length; i++)
+                _busVolume[i] = config.Bind("Audio", BusConfig[i].Key, BusConfig[i].Default,
+                    BusConfig[i].Info + " Multiplies the mod's Deadlock sounds on top of RoR2's master and SFX sliders (0-2, 1 = as recorded).");
+        }
+
+        private static float BusVolume(Bus bus) => _busVolume != null ? Mathf.Clamp(_busVolume[(int)bus].Value, 0f, 2f) : BusConfig[(int)bus].Default;
+
+        /// <summary>Which bus a Deadlock path mixes on: its folder in pak01 says what kind of sound it is.</summary>
+        public static Bus BusOf(DeadlockSound s)
+        {
+            string p = s.VpkPrefix;
+            if (s.Voice || p.StartsWith("sounds/vo/")) return Bus.Voice;
+            if (p.StartsWith("sounds/weapons/")) return Bus.Weapon;
+            if (p.StartsWith("sounds/player/footsteps/")) return p.Contains("jumpland") ? Bus.Movement : Bus.Footstep;
+            if (p.Contains("umbrella")) return Bus.Ability; // Mina's hover lives under player/movement but is her kit
+            if (p.StartsWith("sounds/player/movement/") || p.StartsWith("sounds/player/wall_jump") || p.StartsWith("sounds/gameplay/slide/")) return Bus.Movement;
+            return Bus.Ability; // abilities, items (mods), melee
+        }
+
         public static void Register(DeadlockSound s)
         {
+            s.Bus = BusOf(s);
             Rows[s.Id] = s;
             DeadlockInstall.WantSound(s.VpkPrefix);
         }
@@ -159,13 +203,13 @@ namespace CursedAppleCuriosities.Deadlock
                 bool orphan = p.Voice.Loop && p.Followed && (p.Follow == null || !p.Follow.gameObject.activeInHierarchy);
                 if (p.Voice.Finished || p.Voice.Stopped || orphan || Time.time > p.Until) { p.Voice.Stopped = true; Active.RemoveAt(i); continue; }
                 if (p.Follow != null) p.Pos = p.Follow.position + Vector3.up;
-                float gain = p.Row.Volume * p.Gain * _volume * (unfocused ? 0f : 1f), pan = 0f;
+                float gain = p.Row.Volume * BusVolume(p.Row.Bus) * p.Gain * _volume * (unfocused ? 0f : 1f), pan = 0f;
                 if (hasListener)
                 {
                     Vector3 to = p.Pos - ear;
                     float dist = to.magnitude, near = 5f, max = Mathf.Max(near + 1f, p.Row.Range);
                     float fade = Mathf.Clamp01(1f - (dist - near) / (max - near));
-                    gain *= fade * fade; // squared: drops off quickly past the near zone, silent at Range
+                    gain *= Mathf.Max(p.Row.MinGain, fade * fade); // squared: drops off quickly past the near zone, silent at Range
                     if (dist > 0.01f) pan = Mathf.Clamp(Vector3.Dot(to / dist, right), -1f, 1f) * 0.8f * Mathf.InverseLerp(2f, 8f, dist);
                 }
                 else if (inRun) gain = 0f; // mid-run with nowhere to hear from (loading, scene change): stay quiet
@@ -194,7 +238,7 @@ namespace CursedAppleCuriosities.Deadlock
         {
             var voice = new DeadlockVoice { Clip = clip, Loop = loop };
             if (row.PitchJitter > 0f) voice.Pitch = 1.0 + Random.Range(-row.PitchJitter, row.PitchJitter);
-            var p = new Playing { Voice = voice, Row = row, Pos = pos, Follow = follow != null ? follow.transform : null, Followed = follow != null };
+            var p = new Playing { Voice = voice, Row = row, Pos = pos, Follow = follow != null ? follow.transform : null, Followed = follow != null, Owner = Owner };
             if (row.VolumeJitter > 0f) p.Gain = 1f - Random.Range(0f, row.VolumeJitter);
             if (seconds > 0f) p.Until = Time.time + seconds;
             Active.Add(p);
@@ -205,14 +249,24 @@ namespace CursedAppleCuriosities.Deadlock
 
         public static bool Has(string id) => Rows.ContainsKey(id);
 
-        /// <summary>Play a sound at a point, or following a GameObject (follow != null).</summary>
-        public static void Play(string id, Vector3 pos, GameObject? follow = null)
+        /// <summary>How many takes of a sound this player's cache holds (0 before decoding or without Deadlock).</summary>
+        public static int Takes(string id)
+        {
+            if (!_decoded) return 0;
+            lock (Clips) return Clips.TryGetValue(id, out var list) ? list.Count : 0;
+        }
+
+        /// <summary>
+        /// Play a sound at a point, or following a GameObject (follow != null). <paramref name="speaker"/> names who is
+        /// talking when that isn't the followed object (the Soul Urn riding on its carrier), so the two don't cut each other off.
+        /// </summary>
+        public static void Play(string id, Vector3 pos, GameObject? follow = null, string? speaker = null)
         {
             if (!Rows.TryGetValue(id, out DeadlockSound row)) return;
             if (LastPlayed.TryGetValue(id, out float last) && Time.time - last < row.MinGap) return;
             // A hero never talks over themself; other heroes' lines don't block yours. The speaker is the object the
             // line follows, or the hero prefix ("abrams_vo_death") for lines left at a point.
-            string speaker = follow != null ? follow.GetInstanceID().ToString() : id.Substring(0, Mathf.Max(0, id.IndexOf('_')));
+            speaker ??= follow != null ? follow.GetInstanceID().ToString() : id.Substring(0, Mathf.Max(0, id.IndexOf('_')));
             if (row.Voice && LastVoice.TryGetValue(speaker, out float spoke) && Time.time - spoke < 1.5f) return;
             if (Random.value > row.Chance) return;
             PcmClip? clip = Pick(id);
@@ -237,6 +291,18 @@ namespace CursedAppleCuriosities.Deadlock
         public static void Stop(DeadlockVoice? voice)
         {
             if (voice != null) voice.Stopped = true;
+        }
+
+        /// <summary>
+        /// Who is playing sounds right now (main thread; set around a lobby display's intro and select line). Every sound started
+        /// meanwhile belongs to them, and StopOwned silences them all at once.
+        /// </summary>
+        public static object? Owner;
+
+        /// <summary>Silence every sound started for this owner (user 3.0: a hero clicked off in the lobby goes quiet at once).</summary>
+        public static void StopOwned(object owner)
+        {
+            foreach (Playing p in Active) if (p.Owner == owner) p.Voice.Stopped = true;
         }
     }
 }

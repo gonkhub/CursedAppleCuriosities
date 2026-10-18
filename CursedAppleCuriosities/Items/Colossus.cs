@@ -38,16 +38,34 @@ namespace CursedAppleCuriosities.Items
 
         public static BuffDef? ColossusBuffDef;
 
+        /// <summary>
+        /// How much bigger Colossus makes this body (1 without it), from the synced buff count so every machine agrees:
+        /// the base step for stack 1, then a geometrically decaying step per extra stack.
+        /// </summary>
+        public static float SizeMultiplier(CharacterBody? body)
+        {
+            int stacks = body != null && ColossusBuffDef != null && ColossusBuffDef.buffIndex != BuffIndex.None ? body.GetBuffCount(ColossusBuffDef.buffIndex) : 0;
+            return SizeForStacks(stacks);
+        }
+
+        public static float SizeForStacks(int stacks)
+        {
+            float growth = 0f;
+            float step = ScaleFactor - 1f;
+            for (int i = 0; i < stacks; i++)
+            {
+                growth += step;
+                step *= ScaleDecay;
+            }
+            return 1f + growth;
+        }
+
         public override void Init(ConfigFile config)
         {
-            CooldownSeconds = config.Bind("Equipment", "Colossus - Cooldown", 35f,
-                "Equipment cooldown in seconds.").Value;
-            DamageResist = config.Bind("Equipment", "Colossus - Damage Resistance", 0.65f,
-                "Damage resistance from a single activation. Extra activations stack multiplicatively (diminishing returns).").Value;
-            MaxResist = config.Bind("Equipment", "Colossus - Max Damage Resistance", 0.90f,
-                "Maximum damage resistance reachable by stacking activations.").Value;
-            MaxStacks = config.Bind("Equipment", "Colossus - Max Stacks", 5,
-                "Maximum number of stacked activations (each further grows size and resistance).").Value;
+            CooldownSeconds = 35f;
+            DamageResist = 0.65f;
+            MaxResist = 0.90f;
+            MaxStacks = 5;
 
             var color              = new Color(0.55f, 0.25f, 0.9f);
             ColossusBuffDef        = ScriptableObject.CreateInstance<BuffDef>();
@@ -104,6 +122,7 @@ namespace CursedAppleCuriosities.Items
             HealthComponent self,
             DamageInfo damageInfo)
         {
+            if (ItemBase.FinalDamage(damageInfo)) { orig(self, damageInfo); return; } // already worked out (Bloodletting's ticks)
             if (NetworkServer.active && damageInfo != null && self.body != null)
             {
                 var effect = self.body.GetComponent<ColossusEffect>();
@@ -252,16 +271,7 @@ namespace CursedAppleCuriosities.Items
                 _originalScale = _model.localScale;
             }
             _shownStacks = stacks;
-            // From the original scale (never compounded): the base step for stack 1, then a geometrically
-            // decaying step per extra stack, so it keeps growing but by less each time.
-            float growth = 0f;
-            float step   = Colossus.ScaleFactor - 1f;
-            for (int i = 0; i < stacks; i++)
-            {
-                growth += step;
-                step   *= Colossus.ScaleDecay;
-            }
-            _model.localScale = _originalScale * (1f + growth);
+            _model.localScale = _originalScale * Colossus.SizeForStacks(stacks); // from the original scale, never compounded
         }
 
         private void OnDestroy()

@@ -118,9 +118,9 @@ namespace EntityStates.CursedApple.Celeste
         }
 
         /// <summary>The spot under the crosshair within range; out of reach in the air, the ground below it (the beam spans every height).</summary>
-        public static Vector3 Target(Ray aim)
+        public static Vector3 Target(Ray aim, CharacterBody? body)
         {
-            float range = CelesteData.BeamRange;
+            float range = CelesteData.BeamRange * MysticExpansion.RadiusMultiplier(body);
             Vector3 point = Physics.Raycast(aim, out RaycastHit hit, range, LayerIndex.world.mask | LayerIndex.entityPrecise.mask, QueryTriggerInteraction.Ignore)
                 ? hit.point : aim.GetPoint(range);
             if (Physics.Raycast(point + Vector3.up * 0.5f, Vector3.down, out RaycastHit ground, 60f, LayerIndex.world.mask, QueryTriggerInteraction.Ignore))
@@ -135,7 +135,7 @@ namespace EntityStates.CursedApple.Celeste
             if (!_released)
             {
                 StartAimMode(0.5f);
-                _point = Target(GetAimRay());
+                _point = Target(GetAimRay(), characterBody);
                 _preview?.Show(_point, CelesteData.BeamRadius * MysticExpansion.RadiusMultiplier(characterBody));
                 if (inputBank.skill2.down) return;
                 Release();

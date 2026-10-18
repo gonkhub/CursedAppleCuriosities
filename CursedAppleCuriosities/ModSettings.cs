@@ -27,6 +27,22 @@ namespace CursedAppleCuriosities
             Register(config, icon); // separate method: RiskOfOptions types load only when it's installed
         }
 
+        /// <summary>
+        /// Drops every key in the cfg file that nothing binds any more (3.0, user: only keybinds, volumes and the Deadlock
+        /// install paths are settings now). BepInEx otherwise keeps old keys in the file forever. Call after every Bind.
+        /// </summary>
+        public static void PurgeOrphans(ConfigFile config)
+        {
+            var orphans = (System.Collections.Generic.Dictionary<ConfigDefinition, string>?)typeof(ConfigFile)
+                .GetProperty("OrphanedEntries", System.Reflection.BindingFlags.Instance | System.Reflection.BindingFlags.NonPublic | System.Reflection.BindingFlags.Public)
+                ?.GetValue(config);
+            if (orphans == null || orphans.Count == 0) return;
+            int n = orphans.Count;
+            orphans.Clear();
+            config.Save();
+            CursedAppleCuriositiesPlugin.Logger?.LogInfo($"Config: removed {n} old settings from the cfg file.");
+        }
+
         [MethodImpl(MethodImplOptions.NoInlining | MethodImplOptions.NoOptimization)]
         private static void Register(ConfigFile config, Sprite? icon)
         {

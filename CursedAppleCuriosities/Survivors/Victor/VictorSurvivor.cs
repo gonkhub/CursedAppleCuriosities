@@ -27,11 +27,13 @@ namespace CursedAppleCuriosities.Survivors.Victor
         /// <summary>Skin icon in the hero's own palette (bone-white skin, iron, dried red, blue trousers), not the stand-in's.</summary>
         private static Sprite DefaultSkinIcon => _defaultSkinIcon ??= Kit.SkinIcon(new Color(0.78f, 0.76f, 0.7f), new Color(0.22f, 0.22f, 0.23f), new Color(0.58f, 0.16f, 0.16f), new Color(0.24f, 0.31f, 0.55f));
         private static Sprite? _defaultSkinIcon;
+        private static Sprite GreenMonsterSkinIcon => _greenMonsterSkinIcon ??= Kit.SkinIcon(new Color(0.45f, 0.72f, 0.35f), new Color(0.22f, 0.22f, 0.23f), new Color(0.42f, 0.22f, 0.55f), new Color(0.3f, 0.55f, 0.25f));
+        private static Sprite? _greenMonsterSkinIcon;
         public const float Hue = 0.33f;      // his VFX are green, the aura range grey (user)
 
         public static GameObject? BodyPrefab, DisplayPrefab;
         public static SurvivorDef? Survivor;
-        public static BuffDef? BatteryBuff, JumpstartBuff, AuraBuff, ReanimatingBuff, ReviveCooldownBuff, ReviveSlow;
+        public static BuffDef? BatteryBuff, BatteryChargesBuff, JumpstartBuff, AuraBuff, ReanimatingBuff, ReviveCooldownBuff, ReviveSlow;
 
         public static GameObject? TracerEffect, HitEffect, MuzzleEffect, BoltTracer, ZapEffect, WaveEffect, BlastEffect;
         public static Material? IndicatorMaterial; // the aura ring (Abrams' Siphon Life ring material)
@@ -44,7 +46,7 @@ namespace CursedAppleCuriosities.Survivors.Victor
         {
             VictorData.Bind(config);
             foreach (DeadlockSound s in VictorData.Sounds) DeadlockSounds.Register(s);
-            foreach (string icon in new[] { VictorData.IconPortrait, VictorData.IconBattery, VictorData.IconJumpstart, VictorData.IconAura, VictorData.IconRevive })
+            foreach (string icon in new[] { VictorData.IconPortrait, VictorData.IconGun, VictorData.IconBattery, VictorData.IconJumpstart, VictorData.IconAura, VictorData.IconRevive })
                 DeadlockInstall.WantIcon(icon);
             DeadlockHeroes.Register(VictorModel.Def);
             DeadlockInstall.WantModel(VictorModel.Def.ModelRequest());
@@ -62,7 +64,8 @@ namespace CursedAppleCuriosities.Survivors.Victor
             CreateSurvivor();
             AddLanguage();
             VictorNet.Register();
-            DeadlockHeroVoice.Track(BodyName, VictorData.Hero);
+            DeadlockHeroVoice.Track(BodyName, VictorData.Hero, "frank");
+            DeadlockPingVoice.Track(BodyName, VictorData.Hero, "frank");
             EquipmentFx.RegisterBuffFx(AuraBuff, null, "victor_aura_loop");
             EquipmentFx.RegisterBuffFx(JumpstartBuff, null, "victor_jumpstart_loop");
 
@@ -85,7 +88,8 @@ namespace CursedAppleCuriosities.Survivors.Victor
 
         private static void CreateBuffs()
         {
-            BatteryBuff = Buff("CursedAppleVictorBattery", Color, debuff: false, stack: true);
+            BatteryBuff = Buff("CursedAppleVictorBattery", Color, debuff: false, stack: true); // the charge filling, 0..100 %
+            BatteryChargesBuff = Buff("CursedAppleVictorBatteryCharges", Color, debuff: false, stack: true, hidden: true); // charges ready
             JumpstartBuff = Buff("CursedAppleVictorJumpstart", new Color(0.5f, 0.85f, 0.5f), debuff: false, stack: true);
             AuraBuff = Buff("CursedAppleVictorAura", new Color(0.7f, 0.7f, 0.7f), debuff: false, stack: false);
             ReanimatingBuff = Buff("CursedAppleVictorReanimating", Color, debuff: false, stack: false);
@@ -126,6 +130,9 @@ namespace CursedAppleCuriosities.Survivors.Victor
             _battery = Skill<VictorBatterySkillDef>("Battery", typeof(FirePainBattery), "Weapon", VictorData.BatteryCooldown, InterruptPriority.Skill);
             _battery.mustKeyPress = true;
             _battery.cancelSprintingOnActivation = true;
+            // Its stock is the charges the battery holds (one per stock: Backup Magazine adds more), never time.
+            _battery.baseRechargeInterval = 0f;
+            _battery.rechargeStock = 0;
 
             _jumpstart = Skill<SkillDef>("Jumpstart", typeof(Jumpstart), "Weapon", VictorData.JumpstartCooldown, InterruptPriority.Skill);
             _jumpstart.mustKeyPress = true;
@@ -182,7 +189,7 @@ namespace CursedAppleCuriosities.Survivors.Victor
             Kit.MuteStandIn(body, model.gameObject, VictorData.Hero);
             var children = model.GetComponent<ChildLocator>();
             if (children != null && children.FindChild(MuzzleName) == null) children.AddChild(MuzzleName, model);
-            Kit.OwnSkin(model.gameObject, "skinCursedAppleVictorDEFAULT", Token + "SKIN_DEFAULT", DefaultSkinIcon);
+            Kit.OwnSkin(model.gameObject, "skinCursedAppleVictorDEFAULT", Token + "SKIN_DEFAULT", DefaultSkinIcon, ("skinCursedAppleVictorGREENMONSTER", Token + "SKIN_GREENMONSTER", GreenMonsterSkinIcon));
 
             Kit.BiggerCamera(body, "ccpCursedAppleVictor", 0.8f, 1.3f); // pivot up (m), distance (x Commando's) for the bigger model
             ContentAddition.AddBody(body);
@@ -199,7 +206,7 @@ namespace CursedAppleCuriosities.Survivors.Victor
                 var swap = cm.gameObject.AddComponent<DeadlockModelSwap>();
                 swap.HeroKey = VictorData.Hero;
                 swap.IsDisplay = true;
-                Kit.OwnSkin(cm.gameObject, "skinCursedAppleVictorDISPLAY", Token + "SKIN_DEFAULT", DefaultSkinIcon);
+                Kit.OwnSkin(cm.gameObject, "skinCursedAppleVictorDISPLAY", Token + "SKIN_DEFAULT", DefaultSkinIcon, ("skinCursedAppleVictorDISPLAYGREENMONSTER", Token + "SKIN_GREENMONSTER", GreenMonsterSkinIcon));
             }
             display.AddComponent<VictorDisplayIntro>();
             return display;
@@ -216,7 +223,7 @@ namespace CursedAppleCuriosities.Survivors.Victor
             Survivor.outroFlavorToken = Token + "OUTRO";
             Survivor.mainEndingEscapeFailureFlavorToken = Token + "FAILURE";
             Survivor.primaryColor = Color;
-            Survivor.desiredSortPosition = 105f; // after Grey Talon
+            Survivor.desiredSortPosition = 111f; // RosterOrder re-sorts the whole roster A-Z at load (user 3.0)
             ContentAddition.AddSurvivorDef(Survivor);
         }
 
@@ -246,6 +253,7 @@ namespace CursedAppleCuriosities.Survivors.Victor
                 locator.passiveSkill = passive;
             }
             if (portrait != null) _gun!.icon = Kit.Sprite(portrait);
+            Set(_gun, VictorData.IconGun); // the weapon itself (user 3.0); the portrait stays if it isn't cached
             CursedAppleCuriositiesPlugin.Logger?.LogInfo($"[Victor] icons: {(portrait != null ? "from Deadlock" : "placeholders (no Deadlock icons cached)")}");
         }
 
@@ -258,6 +266,7 @@ namespace CursedAppleCuriosities.Survivors.Victor
             LanguageAPI.Add(Token + "NAME", "Victor");
             LanguageAPI.Add(Token + "SUBTITLE", "The Reanimated");
             LanguageAPI.Add(Token + "SKIN_DEFAULT", "Default");
+            LanguageAPI.Add(Token + "SKIN_GREENMONSTER", "Green Monster");
             LanguageAPI.Add(Token + "DESCRIPTION",
                 "Victor woke up on a mortuary table, stitched together from strangers. Pain is the one thing he understands.<color=#CCD3E0>\n\n" +
                 "< ! > Pain Battery only fills when you get hurt, by anything, yourself included.\n\n" +
@@ -278,7 +287,7 @@ namespace CursedAppleCuriosities.Survivors.Victor
 
             LanguageAPI.Add(Token + "BATTERY_NAME", "Pain Battery");
             LanguageAPI.Add(Token + "BATTERY_DESC",
-                $"<style=cIsHealth>Charges from damage you take</style>. When full, fire {VictorData.BatteryBolts} bolts for <style=cIsDamage>{D(VictorData.BatteryDamage)} damage</style>. Each enemy hit <style=cIsHealing>heals {P(VictorData.BatteryHealMissing)} of missing health</style>.");
+                $"<style=cIsHealth>Charges from damage you take</style>. Each full charge fires {VictorData.BatteryBolts} bolts for <style=cIsDamage>{D(VictorData.BatteryDamage)} damage</style>. Each enemy hit <style=cIsHealing>heals {P(VictorData.BatteryHealMissing)} of missing health</style>.");
 
             LanguageAPI.Add(Token + "JUMPSTART_NAME", "Jumpstart");
             LanguageAPI.Add(Token + "JUMPSTART_DESC",
@@ -286,7 +295,7 @@ namespace CursedAppleCuriosities.Survivors.Victor
 
             LanguageAPI.Add(Token + "AURA_NAME", "Aura of Suffering");
             LanguageAPI.Add(Token + "AURA_DESC",
-                $"Toggle an aura dealing <style=cIsDamage>{D(VictorData.AuraMinDamage)}-{D(VictorData.AuraMaxDamage)} damage per second</style> to nearby enemies, ramping up over {VictorData.AuraRampSeconds:0}s. <style=cIsHealth>It hurts you too</style>.");
+                $"Toggle an aura dealing <style=cIsDamage>{D(VictorData.AuraMinDamage)}-{D(VictorData.AuraMaxDamage)} damage per second</style> to nearby enemies, ramping up over {VictorData.AuraRampSeconds:0}s and faster with attack speed. <style=cIsHealth>It hurts you too</style>.");
         }
     }
 

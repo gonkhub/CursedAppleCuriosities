@@ -59,7 +59,7 @@ namespace CursedAppleCuriosities.Deadlock
         /// like the base texture under the skin's id. Null when the recolour leaves the texture as it was: the skin uses
         /// the base texture there (remembered as an empty cache entry).
         /// </summary>
-        public static TexData? PrepareSkin(string pngFile, string id, Func<byte[], bool> recolor)
+        public static TexData? PrepareSkin(string pngFile, string id, Func<byte[], int, int, bool> recolor)
         {
             var fi = new FileInfo(pngFile);
             var t = new TexData { Key = KeyOf(pngFile) + ":" + id, Name = Path.GetFileNameWithoutExtension(fi.Name) + "_" + id };
@@ -71,12 +71,30 @@ namespace CursedAppleCuriosities.Deadlock
             try { rgba = Png.Decode(File.ReadAllBytes(pngFile), out w, out h); }
             catch (Exception e) { CursedAppleCuriositiesPlugin.Logger?.LogWarning($"[Deadlock] {fi.Name} ({id}): {e.Message}"); }
             if (rgba == null) return null;
-            bool changed = recolor(rgba);
+            bool changed = recolor(rgba, w, h);
             if (changed) Encode(t, rgba, w, h);
             else t.Raw = Array.Empty<byte>();
             try { WriteCache(cache, fi, t); }
             catch (Exception e) { CursedAppleCuriositiesPlugin.Logger?.LogWarning($"[Deadlock] couldn't cache {fi.Name} ({id}): {e.Message}"); }
             return changed ? t : null;
+        }
+
+        /// <summary>Background thread: a standalone cache file (map textures, written by CursedAppleMapConvert; null if unreadable).</summary>
+        public static TexData? ReadStandalone(string cacheFile)
+        {
+            var t = new TexData { Key = cacheFile, Name = Path.GetFileNameWithoutExtension(cacheFile) };
+            if (!File.Exists(cacheFile)) return null;
+            try
+            {
+                using var br = new BinaryReader(File.OpenRead(cacheFile));
+                if (br.ReadUInt32() != Magic || br.ReadInt32() != Version) return null;
+                br.ReadInt64(); br.ReadInt64(); // no source file
+                t.W = br.ReadInt32(); t.H = br.ReadInt32(); t.Format = (TextureFormat)br.ReadInt32(); t.Mips = br.ReadBoolean();
+                int n = br.ReadInt32();
+                t.Raw = br.ReadBytes(n);
+                return t.Raw.Length == n ? t : null;
+            }
+            catch { return null; }
         }
 
         /// <summary>Mipmapped and block-compressed (DXT1, DXT5 when the alpha is used), or RGBA32 when the size isn't a multiple of 4.</summary>

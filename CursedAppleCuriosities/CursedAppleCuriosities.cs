@@ -4,10 +4,15 @@ using CursedAppleCuriosities.Artifacts;
 using CursedAppleCuriosities.Deadlock;
 using CursedAppleCuriosities.Items;
 using CursedAppleCuriosities.Survivors.Abrams;
+using CursedAppleCuriosities.Survivors.Apollo;
+using CursedAppleCuriosities.Survivors.Bebop;
 using CursedAppleCuriosities.Survivors.Celeste;
 using CursedAppleCuriosities.Survivors.GreyTalon;
 using CursedAppleCuriosities.Survivors.Lash;
+using CursedAppleCuriosities.Survivors.Mina;
+using CursedAppleCuriosities.Survivors.Paradox;
 using CursedAppleCuriosities.Survivors.Seven;
+using CursedAppleCuriosities.Survivors.Shiv;
 using CursedAppleCuriosities.Survivors.Victor;
 using CursedAppleCuriosities.Survivors.Viscous;
 using CursedAppleCuriosities.Survivors.Vyper;
@@ -37,7 +42,7 @@ namespace CursedAppleCuriosities
         internal static new ManualLogSource? Logger { get; private set; }
 
         // All ItemDefs and EquipmentDefs registered by this mod — populated after init.
-        // Used by CuriosityShop to filter drop tables to mod-only items.
+        // Used by the Artifact of the Curio to keep drops to mod-only items.
         public static HashSet<ItemDef>      ModItemDefs      { get; } = new HashSet<ItemDef>();
         public static HashSet<EquipmentDef> ModEquipmentDefs { get; } = new HashSet<EquipmentDef>();
 
@@ -92,6 +97,7 @@ namespace CursedAppleCuriosities
 
             try { CuriositiesExpansion.Init(); } // before items: their defs require it
             catch (Exception e) { Logger.LogError($"  ! Expansion failed to init: {e}"); }
+            Logger.LogInfo($"  plugin hooks + expansion done at {clock.ElapsedMilliseconds} ms");
             InitItems();
             Logger.LogInfo($"  items done at {clock.ElapsedMilliseconds} ms");
             InitEquipments();
@@ -100,10 +106,19 @@ namespace CursedAppleCuriosities
             InitSurvivors();
             Logger.LogInfo($"  survivors done at {clock.ElapsedMilliseconds} ms");
 
-            try { Broker.CursedBroker.Init(Config); Logger.LogInfo("  + [Interactable] Cursed Broker"); }
+            var lap = System.Diagnostics.Stopwatch.StartNew();
+            try { Stages.DeadlockMap.DeadlockMaps.Init(Config); Logger.LogInfo($"  + [Stage] Deadlock districts ({lap.ElapsedMilliseconds} ms)"); }
+            catch (Exception e) { Logger.LogError($"  ! [Stage] Deadlock map failed to init: {e}"); }
+            lap.Restart();
+            try { Broker.CursedBroker.Init(Config); Logger.LogInfo($"  + [Interactable] Cursed Broker ({lap.ElapsedMilliseconds} ms)"); }
             catch (Exception e) { Logger.LogError($"  ! [Interactable] Cursed Broker failed to init: {e}"); }
+            lap.Restart();
+            try { Interactables.SoulUrn.Init(Config); Logger.LogInfo($"  + [Interactable] Soul Urn ({lap.ElapsedMilliseconds} ms)"); }
+            catch (Exception e) { Logger.LogError($"  ! [Interactable] Soul Urn failed to init: {e}"); }
+            try { if (Interactables.SoulUrn.Enabled) Interactables.SoulUrnVoice.Init(gameObject); }
+            catch (Exception e) { Logger.LogError($"  ! [Interactable] Soul Urn voice failed to init: {e}"); }
 
-            // Populate the sets used by CuriosityShop to filter drop tables.
+            // Populate the sets the Artifact of the Curio keeps drops to.
             foreach (var item in _items)
                 if (item.ItemDef != null) ModItemDefs.Add(item.ItemDef);
             foreach (var eq in _equipments)
@@ -111,8 +126,12 @@ namespace CursedAppleCuriosities
 
             DurationExtender.HookSources(); // last: wraps every other hook on hits and damage
 
+            try { ModSettings.PurgeOrphans(Config); }
+            catch (Exception e) { Logger.LogError($"  ! Config cleanup failed: {e}"); }
+            lap.Restart();
             try { ModSettings.TryRegister(Config, ItemBase.LoadEmbeddedIcon("icon_curiositycatalog.png")); }
             catch (Exception e) { Logger.LogError($"  ! Settings page failed: {e}"); }
+            Logger.LogInfo($"  settings page {lap.ElapsedMilliseconds} ms");
 
             Logger.LogInfo($"{PluginInfo.PLUGIN_NAME} v{PluginInfo.PLUGIN_VERSION} loaded in {clock.ElapsedMilliseconds} ms.");
         }
@@ -124,17 +143,26 @@ namespace CursedAppleCuriosities
         private void InitSurvivors()
         {
             DeadlockInstall.Bind(Config);
+            DeadlockSounds.Bind(Config);
             DeadlockSounds.Ensure(gameObject);
-            var heroes = new (string Name, Action<BepInEx.Configuration.ConfigFile, UnityEngine.GameObject> Init)[]
+            Unlocks.SurvivorUnlocks.Init();
+            Survivors.RosterOrder.Hook(); // the whole roster A-Z, vanilla included (user 3.0)
+            var heroes = new (string Name, Action<BepInEx.Configuration.ConfigFile, UnityEngine.GameObject> Init, Func<RoR2.SurvivorDef?> Def)[]
             {
-                ("Lash", LashSurvivor.Init),
-                ("Abrams", AbramsSurvivor.Init),
-                ("Seven", SevenSurvivor.Init),
-                ("Vyper", VyperSurvivor.Init),
-                ("Grey Talon", GreyTalonSurvivor.Init),
-                ("Victor", VictorSurvivor.Init),
-                ("Viscous", ViscousSurvivor.Init),
-                ("Celeste", CelesteSurvivor.Init),
+                ("Lash", LashSurvivor.Init, () => LashSurvivor.Survivor),
+                ("Abrams", AbramsSurvivor.Init, () => AbramsSurvivor.Survivor),
+                ("Seven", SevenSurvivor.Init, () => SevenSurvivor.Survivor),
+                ("Vyper", VyperSurvivor.Init, () => VyperSurvivor.Survivor),
+                ("Grey Talon", GreyTalonSurvivor.Init, () => GreyTalonSurvivor.Survivor),
+                ("Victor", VictorSurvivor.Init, () => VictorSurvivor.Survivor),
+                ("Viscous", ViscousSurvivor.Init, () => ViscousSurvivor.Survivor),
+                ("Celeste", CelesteSurvivor.Init, () => CelesteSurvivor.Survivor),
+                ("Shiv", ShivSurvivor.Init, () => ShivSurvivor.Survivor),
+                ("Mina", MinaSurvivor.Init, () => MinaSurvivor.Survivor),
+                ("Paradox", ParadoxSurvivor.Init, () => ParadoxSurvivor.Survivor),
+                ("Bebop", BebopSurvivor.Init, () => BebopSurvivor.Survivor),
+                // Ivy is shelved (user 3.0: her animations never came right); her code stays in Survivors/Ivy, unregistered.
+                ("Apollo", ApolloSurvivor.Init, () => ApolloSurvivor.Survivor),
             };
             foreach (var hero in heroes)
             {
@@ -147,6 +175,7 @@ namespace CursedAppleCuriosities
                 try
                 {
                     hero.Init(Config, gameObject);
+                    Unlocks.SurvivorUnlocks.Lock(hero.Name, hero.Def());
                     Logger?.LogInfo($"  + [Survivor] {hero.Name} ({clock.ElapsedMilliseconds} ms)");
                 }
                 catch (Exception e)
@@ -166,7 +195,7 @@ namespace CursedAppleCuriosities
         /// Survivors ship one at a time: Release builds (the Thunderstore package) register only these.
         /// Debug builds (development) register every hero.
         /// </summary>
-        private static readonly string[] ReleasedSurvivors = { "Lash", "Abrams", "Seven" };
+        private static readonly string[] ReleasedSurvivors = { "Lash", "Abrams", "Seven", "Vyper", "Grey Talon", "Victor", "Viscous", "Celeste", "Shiv", "Mina", "Paradox", "Bebop", "Apollo" };
 
         private static bool IsReleased(string hero)
         {
@@ -186,10 +215,11 @@ namespace CursedAppleCuriosities
             {
                 try
                 {
+                    var clock = System.Diagnostics.Stopwatch.StartNew();
                     var eq = (EquipmentBase)Activator.CreateInstance(type);
                     eq.Init(Config);
                     _equipments.Add(eq);
-                    Logger?.LogInfo($"  + [Equipment] {eq.EquipmentName}");
+                    Logger?.LogInfo($"  + [Equipment] {eq.EquipmentName} ({clock.ElapsedMilliseconds} ms)");
                 }
                 catch (Exception e)
                 {
@@ -230,10 +260,11 @@ namespace CursedAppleCuriosities
             {
                 try
                 {
+                    var clock = System.Diagnostics.Stopwatch.StartNew();
                     var item = (ItemBase)Activator.CreateInstance(type);
                     item.Init(Config);
                     _items.Add(item);
-                    Logger?.LogInfo($"  + {item.ItemName}");
+                    Logger?.LogInfo($"  + {item.ItemName} ({clock.ElapsedMilliseconds} ms)");
                 }
                 catch (Exception e)
                 {
@@ -248,6 +279,6 @@ namespace CursedAppleCuriosities
     {
         public const string PLUGIN_GUID = "com.cursedapple.curiosities";
         public const string PLUGIN_NAME = "Cursed Apple Curiosities";
-        public const string PLUGIN_VERSION = "1.9.0";
+        public const string PLUGIN_VERSION = "3.1.0";
     }
 }

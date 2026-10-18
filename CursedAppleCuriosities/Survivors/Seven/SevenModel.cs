@@ -22,6 +22,14 @@ namespace CursedAppleCuriosities.Survivors.Seven
             Anims = SevenData.Anims,
             RootLocked = SevenData.Locked,
             ItemAnchors = SevenItemDisplays.Anchors,
+            // Overcharged (skin 1, his mastery, user 3.0): his oranges turned to a pale electric blue (hue +185, 40% toward white);
+            // his own blue accents, leather and greys stay.
+            Skins = new[]
+            {
+                new DeadlockSkin { Id = "overcharged1", Recolor = DeadlockSkin.HueShift(5f, 50f, 185f, 0.12f, 0.4f) },
+                // Bunny Seven (skin 2): funnymonkeyman's model, from their Deadlock mod (SevenData.BunnyKey).
+                new DeadlockSkin { Id = "bunny", Model = SevenData.BunnyKey, ModelName = SevenData.BunnyName },
+            },
             // His Storm Cloud skeleton (Deadlock's blue_illum): orange and glowing (user). Shown only while channeling: SevenStormLook.
             MaterialGlows = new System.Collections.Generic.Dictionary<string, Color> { ["blue_illum"] = SevenSurvivor.Orange },
             LoopRule = c =>

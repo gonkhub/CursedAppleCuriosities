@@ -35,12 +35,9 @@ namespace CursedAppleCuriosities.Items
 
         public override void Init(ConfigFile config)
         {
-            CooldownSeconds = config.Bind("Equipment", "Focus Lens - Cooldown", 45f,
-                "Equipment cooldown in seconds.").Value;
-            MarkDuration = config.Bind("Equipment", "Focus Lens - Silence Duration", 4.5f,
-                "Seconds the target is silenced and the damage it takes is recorded.").Value;
-            EchoFraction = config.Bind("Equipment", "Focus Lens - Echo Fraction", 0.5f,
-                "Share of the recorded damage dealt again when the silence ends (0.5 = 50%).").Value;
+            CooldownSeconds = 45f;
+            MarkDuration = 4.5f;
+            EchoFraction = 0.5f;
 
             var color                 = new Color(0.65f, 0.4f, 1f);
             FocusedBuffDef            = ScriptableObject.CreateInstance<BuffDef>();
@@ -90,17 +87,18 @@ namespace CursedAppleCuriosities.Items
             return true;
         }
 
-        // Record after orig so rejected or blocked hits don't count; the echo itself is never recorded.
+        // Record what the hit really took (health, shield and barrier lost: after crits, armour and every damage bonus, user 3.0;
+        // it was the raw damage number before them). Rejected or blocked hits take nothing; the echo itself is never recorded.
         private void HealthComponent_TakeDamage(
             On.RoR2.HealthComponent.orig_TakeDamage orig,
             HealthComponent self,
             DamageInfo damageInfo)
         {
+            var mark = NetworkServer.active && self.body != null ? self.body.GetComponent<FocusLensMark>() : null;
+            float before = mark != null ? self.combinedHealth : 0f;
             orig(self, damageInfo);
-            if (!NetworkServer.active || damageInfo == null || damageInfo.rejected || self.body == null) return;
-
-            var mark = self.body.GetComponent<FocusLensMark>();
-            if (mark != null) mark.Record(damageInfo);
+            if (mark == null || damageInfo == null || damageInfo.rejected) return;
+            mark.Record(damageInfo, before - self.combinedHealth);
         }
     }
 
@@ -124,11 +122,11 @@ namespace CursedAppleCuriosities.Items
         }
 
         // Every source counts (allies, DoTs, other enemies); the enemy's own self-damage does not.
-        public void Record(DamageInfo damageInfo)
+        public void Record(DamageInfo damageInfo, float lost)
         {
-            if (_timer <= 0f || _echoing || damageInfo.damage <= 0f) return;
+            if (_timer <= 0f || _echoing || lost <= 0f) return;
             if (damageInfo.attacker == _body.gameObject) return;
-            _recorded += damageInfo.damage;
+            _recorded += lost;
         }
 
         private void FixedUpdate()
@@ -149,7 +147,7 @@ namespace CursedAppleCuriosities.Items
                 damage           = echo,
                 procCoefficient  = 0f,
                 position         = _body.corePosition,
-                damageType       = new DamageTypeCombo(DamageType.Generic, DamageTypeExtended.Generic, DamageSource.Equipment),
+                damageType       = new DamageTypeCombo(DamageType.BypassArmor, DamageTypeExtended.BypassDamageCalculations, DamageSource.Equipment), // the tally is already after armour and bonuses: exactly the share, not reduced again
                 damageColorIndex = DamageColorIndex.WeakPoint,
             });
             _echoing = false;

@@ -36,14 +36,10 @@ namespace CursedAppleCuriosities.Items
 
         public override void Init(ConfigFile config)
         {
-            CooldownSeconds = config.Bind("Equipment", "Cultist Sacrifice - Cooldown", 120f,
-                "Equipment cooldown in seconds.").Value;
-            GoldMultiplier = config.Bind("Equipment", "Cultist Sacrifice - Gold Multiplier", 4f,
-                "Total gold from a sacrificed enemy, as a multiple of what it would normally drop (elites already drop more).").Value;
-            BlessingHealth = config.Bind("Equipment", "Cultist Sacrifice - Blessing Max Health", 50f,
-                "Flat max health while the Blessing lasts.").Value;
-            BlessingDuration = config.Bind("Equipment", "Cultist Sacrifice - Blessing Duration", 105f,
-                "Seconds the Blessing lasts; keep it a little under the cooldown.").Value;
+            CooldownSeconds = 120f;
+            GoldMultiplier = 4f;
+            BlessingHealth = 50f;
+            BlessingDuration = 105f;
 
             var color                  = new Color(0.75f, 0.15f, 0.2f);
             BlessingBuffDef            = ScriptableObject.CreateInstance<BuffDef>();

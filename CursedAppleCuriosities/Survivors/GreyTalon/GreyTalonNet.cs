@@ -54,6 +54,10 @@ namespace CursedAppleCuriosities.Survivors.GreyTalon
         }
 
         /// <summary>Enemies of a team whose hurtboxes touch a sphere (one per body).</summary>
+        /// <summary>Kills that grow the Guided Owl: bosses, champions, elites and minibosses (the Halcyonite, the Halcyon Shrine's guardian) (user, 2.0).</summary>
+        public static bool IsTrophy(CharacterBody? b) =>
+            b != null && (b.isChampion || b.isBoss || b.isElite || b.bodyIndex == BodyCatalog.FindBodyIndex("HalcyoniteBody"));
+
         public static List<HealthComponent> EnemiesIn(Vector3 center, float radius, TeamIndex team)
         {
             var list = new List<HealthComponent>();
@@ -190,7 +194,7 @@ namespace CursedAppleCuriosities.Survivors.GreyTalon
             int bossKills = 0;
             foreach (HealthComponent hc in GreyTalonNet.EnemiesIn(Point, radius, body.teamComponent.teamIndex))
             {
-                bool boss = hc.body != null && (hc.body.isChampion || hc.body.isBoss);
+                bool boss = GreyTalonNet.IsTrophy(hc.body);
                 Vector3 away = GreyTalonNet.Core(hc) - Point;
                 float before = hc.combinedHealth;
                 GreyTalonNet.Hit(body, hc, damage, Crit, (away.sqrMagnitude > 0.01f ? away.normalized : Vector3.up) * 1200f, DamageSource.Special, 1f);
@@ -204,12 +208,12 @@ namespace CursedAppleCuriosities.Survivors.GreyTalon
             {
                 trophies.Kills += bossKills;
                 trophies.Show(body);
-                CursedAppleCuriositiesPlugin.Logger?.LogInfo($"[GreyTalon] owl killed {bossKills} boss(es): {trophies.Kills} this run, owl damage x{1f + GreyTalonData.OwlBossBonus * trophies.Kills:0.##}");
+                CursedAppleCuriositiesPlugin.Logger?.LogInfo($"[GreyTalon] owl killed {bossKills} boss(es)/elite(s)/miniboss(es): {trophies.Kills} this run, owl damage x{1f + GreyTalonData.OwlBossBonus * trophies.Kills:0.##}");
             }
         }
     }
 
-    /// <summary>Server, on the player's master: bosses the Guided Owl has killed this run (each makes it stronger: user).</summary>
+    /// <summary>Server, on the player's master: bosses, elites and minibosses the Guided Owl has killed this run (each makes it stronger: user).</summary>
     public class GreyTalonOwlTrophies : MonoBehaviour
     {
         public int Kills;
@@ -275,7 +279,16 @@ namespace CursedAppleCuriosities.Survivors.GreyTalon
         {
             if (!NetworkServer.active || _done) return;
             Vector3 now = transform.position;
-            if (!_started) { _started = true; _last = now; return; }
+            if (!_started)
+            {
+                _started = true;
+                _last = now;
+                // Mystic Expansion: it flies farther (ChargedRange is its lifetime at full speed).
+                var simple = GetComponent<ProjectileSimple>();
+                var owner = GetComponent<ProjectileController>().owner;
+                if (simple != null && owner != null) simple.lifetime *= MysticExpansion.RadiusMultiplier(owner.GetComponent<CharacterBody>());
+                return;
+            }
             Vector3 d = now - _last;
             float len = d.magnitude;
             if (len < 1e-4f) return;
@@ -283,24 +296,26 @@ namespace CursedAppleCuriosities.Survivors.GreyTalon
             var pd = GetComponent<ProjectileDamage>();
             CharacterBody? by = pc.owner != null ? pc.owner.GetComponent<CharacterBody>() : null;
             if (by == null || by.teamComponent == null) { Destroy(gameObject); return; }
-            RaycastHit[] hits = Physics.SphereCastAll(_last, GreyTalonData.ChargedRadius, d / len, len, LayerIndex.world.mask | LayerIndex.entityPrecise.mask, QueryTriggerInteraction.Ignore);
+            // Terrain with the arrow's own thickness, enemies with the wide hitbox (ChargedRadius) up to where it hits terrain.
+            bool wall = Physics.SphereCast(_last, GreyTalonData.ChargedWallRadius, d / len, out RaycastHit wallHit, len, LayerIndex.world.mask, QueryTriggerInteraction.Ignore);
+            float reach = wall ? wallHit.distance : len;
+            RaycastHit[] hits = Physics.SphereCastAll(_last, GreyTalonData.ChargedRadius, d / len, reach, LayerIndex.entityPrecise.mask, QueryTriggerInteraction.Ignore);
             System.Array.Sort(hits, (a, b) => a.distance.CompareTo(b.distance));
             foreach (RaycastHit h in hits)
             {
-                if (((1 << h.collider.gameObject.layer) & LayerIndex.world.mask) != 0)
-                {
-                    Vector3 at = h.point != Vector3.zero ? h.point : _last;
-                    GreyTalonNet.Effect(GreyTalonSurvivor.ChargedHitEffect, at, 1f, h.normal);
-                    _done = true;
-                    Destroy(gameObject);
-                    return;
-                }
                 HurtBox? box = h.collider.GetComponent<HurtBox>();
                 HealthComponent? hc = box != null ? box.healthComponent : null;
                 if (hc == null || !hc.alive || box!.teamIndex == by.teamComponent.teamIndex || !_hit.Add(hc)) continue;
                 GreyTalonNet.Hit(by, hc, pd != null ? pd.damage : by.damage * GreyTalonData.ChargedDamage, pd != null && pd.crit, d / len * (pd != null ? pd.force : 1500f), DamageSource.Secondary, 1f, h.point);
-                GreyTalonNet.Effect(GreyTalonSurvivor.ChargedHitEffect, h.point != Vector3.zero ? h.point : GreyTalonNet.Core(hc), 1f, -d);
+                GreyTalonNet.Effect(GreyTalonSurvivor.ChargedHitEffect, h.point != Vector3.zero ? h.point : GreyTalonNet.Core(hc), 2f, -d);
                 EquipmentFx.Sound("greytalon_charge_hit", GreyTalonNet.Core(hc));
+            }
+            if (wall)
+            {
+                GreyTalonNet.Effect(GreyTalonSurvivor.ChargedHitEffect, wallHit.point != Vector3.zero ? wallHit.point : _last, 2f, wallHit.normal);
+                _done = true;
+                Destroy(gameObject);
+                return;
             }
             _last = now;
         }

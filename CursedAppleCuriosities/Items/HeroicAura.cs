@@ -44,10 +44,8 @@ namespace CursedAppleCuriosities.Items
             AuraBuffDef.iconSprite = BuffIcon(IconFileName, color);
             ContentAddition.AddBuffDef(AuraBuffDef);
 
-            BaseDamageResist = config.Bind("Green", "Heroic Aura - Damage Resist Per Stack", 0.08f,
-                "Incoming-damage reduction for allies in the aura, per stack.").Value;
-            BaseAttackSpeed = config.Bind("Green", "Heroic Aura - Attack Speed Per Stack", 0.08f,
-                "Attack speed granted to allies in the aura, per stack.").Value;
+            BaseDamageResist = 0.08f;
+            BaseAttackSpeed = 0.08f;
             CreateLang();
             CreateItem();
             Hooks();
@@ -89,6 +87,7 @@ namespace CursedAppleCuriosities.Items
             HealthComponent self,
             DamageInfo damageInfo)
         {
+            if (FinalDamage(damageInfo)) { orig(self, damageInfo); return; } // already worked out (Bloodletting's ticks)
             if (NetworkServer.active
                 && damageInfo != null
                 && self.body != null

@@ -145,6 +145,18 @@ namespace CursedAppleCuriosities.Deadlock
                 if (MiniJson.Arr(n, "children") is List<object> kids)
                     foreach (object c in kids) underRoot.Add(MiniJson.Str(nodes[Convert.ToInt32(c)], "name") ?? "");
             }
+            // Rest translations (the converter's axes), for the bones PinStrayBones puts back.
+            var restPos = new Dictionary<string, Vector3>();
+            var restRot = new Dictionary<string, Quaternion>();
+            foreach (object n in nodes)
+            {
+                if (MiniJson.Str(n, "name") is not string nn) continue;
+                if (MiniJson.Arr(n, "translation") is List<object> t && t.Count == 3)
+                    restPos[nn] = new Vector3(-Convert.ToSingle(t[0]), Convert.ToSingle(t[1]), Convert.ToSingle(t[2]));
+                restRot[nn] = MiniJson.Arr(n, "rotation") is List<object> q && q.Count == 4
+                    ? new Quaternion(Convert.ToSingle(q[0]), -Convert.ToSingle(q[1]), -Convert.ToSingle(q[2]), Convert.ToSingle(q[3]))
+                    : Quaternion.identity;
+            }
             foreach (object a in anims)
             {
                 string name = (MiniJson.Str(a, "name") ?? "").Replace('\\', '/');
@@ -183,8 +195,10 @@ namespace CursedAppleCuriosities.Deadlock
                     if (times.Length > 0 && track != root) clip.Length = Mathf.Max(clip.Length, times[times.Length - 1]);
                 }
                 RemoveRootTravel(clip, root, rootRest, underRoot, besideRoot);
+                PinStrayBones(clip, restPos, restRot, underRoot, besideRoot);
                 clips[name] = clip;
             }
+            Recenter(clips, underRoot, besideRoot);
             return clips;
         }
 
@@ -259,6 +273,61 @@ namespace CursedAppleCuriosities.Deadlock
                         root.SampleRot(t.RotTimes![k], out Quaternion rr);
                         t.Rot[k] = turn0 * Quaternion.Inverse(rr) * t.Rot[k];
                     }
+            }
+        }
+
+        /// <summary>
+        /// A full clip that starts with the body well away from the hero's idle stance: Apollo's ability_lunge_aim holds his pelvis
+        /// (and his sword's chain) 1.4 m off the spot his idle stands on. RoR2 keeps the body on the capsule; his coat's cloth points
+        /// stayed with it and stretched across the gap (user 2.5: "completely contorts"). Such a clip is moved back, horizontally,
+        /// onto the idle's spot: every bone in the pelvis's frame shifts by the same amount.
+        /// </summary>
+        private static void Recenter(Dictionary<string, AnimClip> clips, HashSet<string> underRoot, HashSet<string> besideRoot)
+        {
+            AnimTrack? Pelvis(AnimClip c) => c.Tracks.Find(x => x.Bone == "pelvis" && x.Pos != null && x.Pos.Length > 0);
+            AnimClip? idle = null;
+            foreach (var kv in clips)
+                if (kv.Key.Contains("stand_idle") || idle == null && kv.Key.EndsWith("idle") && Pelvis(kv.Value) is AnimTrack ip && ip.Pos![0].y > 0.5f)
+                    idle = kv.Value;
+            AnimTrack? reference = idle != null ? Pelvis(idle) : null;
+            if (reference == null) return;
+            HashSet<string> frame = underRoot.Contains("pelvis") ? underRoot : besideRoot;
+            Vector3 home = reference.Pos![0];
+            foreach (var kv in clips)
+            {
+                string name = kv.Key;
+                AnimClip c = kv.Value;
+                AnimTrack? p = Pelvis(c);
+                if (p == null || p.Pos![0].magnitude < 0.05f) continue; // an additive clip: offsets, not a pose
+                Vector3 off = p.Pos[0] - home;
+                off.y = 0f;
+                // 1 m: Abrams' leap and Lash's slam start half a metre off on purpose; runs carry their own travel.
+                if (off.magnitude < 1f || name.Contains("run") || name.Contains("sprint")) continue;
+                foreach (AnimTrack t in c.Tracks)
+                {
+                    if (t.Pos == null || !frame.Contains(t.Bone) || t.Bone.StartsWith("$cloth", StringComparison.Ordinal)) continue;
+                    for (int k = 0; k < t.Pos.Length; k++) t.Pos[k] -= off;
+                }
+            }
+        }
+
+        /// <summary>
+        /// A physics bone deep in the skeleton that a clip bakes in world space: Shiv's rage reliquary (reliquary_0, on his
+        /// belt) carries all 12.7 m of dash_ground's travel, so it flew off him and snapped back, as Abrams' coat once did.
+        /// Real bones stray at most ~3.7 m from where they start (Grey Talon's owl, weapon hands): past 5 m a track is put back at its rest spot.
+        /// </summary>
+        private static void PinStrayBones(AnimClip clip, Dictionary<string, Vector3> restPos, Dictionary<string, Quaternion> restRot, HashSet<string> underRoot, HashSet<string> besideRoot)
+        {
+            foreach (AnimTrack t in clip.Tracks)
+            {
+                if (t.Pos == null || t.Pos.Length < 2 || underRoot.Contains(t.Bone) || besideRoot.Contains(t.Bone)) continue;
+                if (t.Bone.StartsWith("$cloth", StringComparison.Ordinal) || !restPos.TryGetValue(t.Bone, out Vector3 rest)) continue;
+                float stray = 0f;
+                foreach (Vector3 p in t.Pos) stray = Mathf.Max(stray, (p - t.Pos[0]).magnitude);
+                if (stray < 5f) continue;
+                for (int k = 0; k < t.Pos.Length; k++) t.Pos[k] = rest;
+                if (t.Rot != null && restRot.TryGetValue(t.Bone, out Quaternion rr))
+                    for (int k = 0; k < t.Rot.Length; k++) t.Rot[k] = rr; // its tilt was baked in too
             }
         }
 
@@ -343,7 +412,12 @@ namespace CursedAppleCuriosities.Deadlock
                         byImage[img] = tex;
                         var skinTex = new TexData?[skinCount];
                         for (int k = 0; k < skinCount && found; k++)
-                            skinTex[k] = HeroTextures.PrepareSkin(path!, skinRecolors![k].Id, skinRecolors[k].Recolor);
+                            if (skinRecolors![k].Applies(Path.GetFileName(path!)))
+                            {
+                                DeadlockSkin recolor = skinRecolors[k];
+                                string file = Path.GetFileName(path!);
+                                skinTex[k] = HeroTextures.PrepareSkin(path!, recolor.Id, (px, w, h) => recolor.Apply(file, px, w, h));
+                            }
                         skinsByImage[img] = skinTex;
                     }
                     mat.Tex = tex;

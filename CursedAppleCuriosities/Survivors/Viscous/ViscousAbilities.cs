@@ -316,6 +316,8 @@ namespace CursedAppleCuriosities.Survivors.Viscous
     public class ViscousGlob : MonoBehaviour, IProjectileImpactBehavior
     {
         public bool Splatter;
+        /// <summary>Server: kills this glob has made (Viscous' Splash Zone challenge).</summary>
+        internal int ChallengeKills;
 
         private ProjectileController _pc = null!;
         private ProjectileDamage? _pd;
@@ -324,10 +326,12 @@ namespace CursedAppleCuriosities.Survivors.Viscous
         private float _age, _lastBurst = -10f;
         private int _bursts;
         private bool _scaled, _done;
+        private readonly System.Collections.Generic.HashSet<HealthComponent> _passed = new System.Collections.Generic.HashSet<HealthComponent>();
         private DeadlockVoice? _hum;
 
         // The alt glob flies its Deadlock range (m_flRange) and bursts there; Splatter bounces until it's spent or times out.
-        private float Lifetime => Splatter ? ViscousData.SplatterLifetime : ViscousData.AltRange / ViscousData.AltSpeed;
+        private float Lifetime => Splatter ? ViscousData.SplatterLifetime
+            : ViscousData.AltRange * MysticExpansion.RadiusMultiplier(_pc != null && _pc.owner != null ? _pc.owner.GetComponent<CharacterBody>() : null) / ViscousData.AltSpeed; // Mystic Expansion: farther
 
         private void Awake()
         {
@@ -370,10 +374,12 @@ namespace CursedAppleCuriosities.Survivors.Viscous
         public void OnProjectileImpact(ProjectileImpactInfo info)
         {
             if (_done || !UnityEngine.Networking.NetworkServer.active) return;
-            // Splatter goes straight through enemies (user): no burst, no bounce, and that body is ignored from now on.
+            // Splatter goes straight through enemies (user): no burst, no bounce, and that body is ignored from now on. It
+            // hurts each enemy it passes through, once (user 2.5).
             if (Splatter && info.collider != null && (info.collider.GetComponent<HurtBox>() != null || info.collider.GetComponentInParent<CharacterBody>() != null))
             {
                 foreach (Collider mine in GetComponentsInChildren<Collider>()) Physics.IgnoreCollision(mine, info.collider);
+                PassThrough(info.collider);
                 if (_rb != null) { _rb.position = _lastPos; _rb.velocity = _lastVel; }
                 return;
             }
@@ -391,6 +397,28 @@ namespace CursedAppleCuriosities.Survivors.Viscous
             if (_rb != null) _rb.velocity = v;
             _lastVel = v;
             transform.position += n * 0.25f;
+        }
+
+        /// <summary>Server: a hit on an enemy the glob flies through (once per enemy, whichever hurtbox it touched).</summary>
+        private void PassThrough(Collider c)
+        {
+            GameObject? owner = _pc.owner;
+            HurtBox? box = c.GetComponent<HurtBox>();
+            HealthComponent? hc = box != null ? box.healthComponent : c.GetComponentInParent<HealthComponent>();
+            if (owner == null || hc == null || !hc.alive || !_passed.Add(hc)) return;
+            if (TeamComponent.GetObjectTeam(hc.gameObject) == TeamComponent.GetObjectTeam(owner)) return;
+            var di = new DamageInfo
+            {
+                attacker = owner, inflictor = gameObject, damage = (_pd != null ? _pd.damage : 0f) * ViscousData.SplatterPassDamage,
+                crit = _pd != null && _pd.crit, position = transform.position, force = _lastVel.normalized * 300f, procCoefficient = 1f,
+                damageColorIndex = DamageColorIndex.Default, damageType = DamageSource.Secondary,
+            };
+            hc.TakeDamage(di);
+            if (di.rejected) return;
+            GlobalEventManager.instance.OnHitEnemy(di, hc.gameObject);
+            GlobalEventManager.instance.OnHitAll(di, hc.gameObject);
+            if (ViscousSurvivor.SplatterEffect != null) EffectManager.SpawnEffect(ViscousSurvivor.SplatterEffect, new EffectData { origin = transform.position, scale = 1.5f }, true);
+            EquipmentFx.Sound("viscous_splatter_burst", transform.position);
         }
 
         private void Burst(Vector3 at)
